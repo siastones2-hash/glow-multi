@@ -270,15 +270,19 @@ function requireAuth(req, res, next) {
   next();
 }
 function requireAdmin(req, res, next) {
-  if (!req.session.userId) return res.status(401).json({ error: '로그인 필요' });
-  if (!['admin','superadmin'].includes(req.session.role))
-    return res.status(403).json({ error: '관리자 권한 필요' });
+  const token = getToken(req);
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) return res.status(401).json({ error: '로그인 필요' });
+  if (!['admin','superadmin'].includes(payload.role)) return res.status(403).json({ error: '관리자 권한 필요' });
+  req.session = payload;
   next();
 }
 function requireSuperAdmin(req, res, next) {
-  if (!req.session.userId) return res.status(401).json({ error: '로그인 필요' });
-  if (req.session.role !== 'superadmin')
-    return res.status(403).json({ error: '슈퍼관리자 권한 필요' });
+  const token = getToken(req);
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) return res.status(401).json({ error: '로그인 필요' });
+  if (payload.role !== 'superadmin') return res.status(403).json({ error: '슈퍼관리자 권한 필요' });
+  req.session = payload;
   next();
 }
 async function tgAlert(msg) {
