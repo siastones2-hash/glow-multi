@@ -219,11 +219,12 @@ if (svcCount === 0) {
 // ══════════════════════════════
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.set('trust proxy', 1);
 app.use(session({
   secret: 'glow-multi-secret-2024',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, secure: false, sameSite: 'lax' }
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
