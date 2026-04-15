@@ -1036,8 +1036,8 @@ async function openUserDetail(uid){
     +'<div class="card" style="margin-bottom:12px">'
     +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">등급 변경</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button class="bp bsm" style="padding:9px 14px" onclick="changeRole(\''+u.id+'\',\'관리자\')">관리자로</button>'
-    +'<button class="bo bsm" onclick="changeRole(\''+u.id+'\',\'일반회원\')">일반회원으로</button>'
+    +'<button class="bp bsm" style="padding:9px 14px" onclick="changeRole(\''+u.id+'\',\'admin\')">관리자로</button>'
+    +'<button class="bo bsm" onclick="changeRole(\''+u.id+'\',\'user\')">일반회원으로</button>'
     +'</div></div>'
     +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">최근 주문 ('+orders.length+'건)</div>'
     +'<div class="tw"><table><thead><tr><th>서비스</th><th>수량</th><th>금액</th><th>상태</th></tr></thead><tbody>'
@@ -1315,12 +1315,7 @@ async function resetPw(uid){
   if(d.error){toast(d.error,'err');return}
   toast('비밀번호 초기화 완료','ok');ge('newPwInput').value='';
 }
-async function changeRole(uid,role){
-  if(!confirm(role==='admin'?'관리자로 변경?':'일반회원으로 변경?'))return;
-  var d=await api('/api/admin/users/role','POST',{uid:uid,role:role});
-  if(d.error){toast(d.error,'err');return}
-  toast('등급 변경 완료','ok');closeM('mDetail');loadAdmUsers();
-}
+
 async function createSite(){
   var domain=ge('nsDomain').value.trim(),name=ge('nsName').value.trim();
   var logo=ge('nsLogo').value||'✨';
