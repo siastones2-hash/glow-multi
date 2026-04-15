@@ -148,8 +148,9 @@ if (!superAdmin) {
 }
 
 // 기본 서비스 데이터
-// 항상 기본 서비스 데이터 동기화
-const svcCount = db.prepare('SELECT COUNT(*) as c FROM services WHERE id LIKE \'yt%\' OR id LIKE \'ig%\' OR id LIKE \'tt%\'').get().c;
+// 기본 70개 서비스만 유지 (API 동기화 서비스 제거)
+db.prepare("DELETE FROM services WHERE id LIKE 'api_%'").run();
+const svcCount = db.prepare('SELECT COUNT(*) as c FROM services').get().c;
 if (svcCount === 0) {
   const svcs = [
     // ── YouTube (10개) ──
@@ -854,7 +855,20 @@ app.get('/api/super/dashboard', requireSuperAdmin, (req, res) => {
   const totalOrders = db.prepare('SELECT COUNT(*) as c FROM orders').get().c;
   const totalRevenue = db.prepare('SELECT SUM(charge) as s FROM orders').get().s || 0;
   const pendingCharges = db.prepare("SELECT COUNT(*) as c FROM charges WHERE status='pending'").get().c;
-  const apiBalance = null; // 런타임에 Peakerr에서 가져옴
+  // API 잔액 실시간 조회
+  let apiBalance = null;
+  try {
+    const apiKey = getGlobalSetting('peakerr_api_key');
+    if (apiKey) {
+      const balResp = await fetch('https://peakerr.com/api/v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ key: apiKey, action: 'balance' })
+      });
+      const balData = await balResp.json();
+      if (balData.balance) apiBalance = parseFloat(balData.balance).toFixed(2);
+    }
+  } catch(e) {}
 
   // 사이트별 통계
   const siteStats = sites.map(s => ({
@@ -865,7 +879,7 @@ app.get('/api/super/dashboard', requireSuperAdmin, (req, res) => {
     pendingCharge: db.prepare("SELECT COUNT(*) as c FROM charges WHERE site_id=? AND status='pending'").get(s.id).c,
   }));
 
-  res.json({ sites: siteStats, totalUsers, totalOrders, totalRevenue, pendingCharges });
+  res.json({ sites: siteStats, totalUsers, totalOrders, totalRevenue, pendingCharges, apiBalance });
 });
 
 function detectPlat(n) {
