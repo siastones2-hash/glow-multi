@@ -1168,7 +1168,7 @@ function renderSiteList(sites){
       +'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
       +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\')">💰 크레딧 충전</button>'
-      +'<button class="btn binf bxs" onclick="editSite('+JSON.stringify(s).replace(/"/g,"'").replace(/'/g,"&apos;")+')"}>수정</button>'
+      +'<button class="btn binf bxs" onclick="editSite('+JSON.stringify(s).replace(/"/g,"'").replace(/'/g,"&apos;")+')">' + '수정</button>'
       +'<button class="btn bpu bxs" onclick="manageAdmin(\''+s.id+'\')">👤 관리자</button>'
       +(s.id!=='default'?'<button class="btn ber bxs" onclick="deleteSite(\''+s.id+'\',\''+s.name+'\')">🗑 삭제</button>':'')
       +(s.pending충전하기>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pending충전하기+'건</button>':'')
