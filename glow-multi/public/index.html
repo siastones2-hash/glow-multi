@@ -875,7 +875,7 @@ async function loadChargeHis(){
 
 // ── 일반 관리자 ──
 async function loadAdmDash(){
-  var d=await api('/api/관리자/stats');
+  var d=await api('/api/admin/stats');
   ge('aSU').textContent=d.일반회원s||0;ge('aSO').textContent=d.orders||0;
   ge('aSR').textContent=gf(d.revenue||0);ge('aSC').textContent=d.pendingCharges||0;
 
@@ -886,7 +886,7 @@ async function loadAdmDash(){
   }
 
   loadAdmOrders();
-  var s=await api('/api/관리자/settings');
+  var s=await api('/api/admin/settings');
   if(s){
     var isSuperAdmin=s.isSuperAdmin;
     // API 설정 - 슈퍼어드민만
@@ -917,7 +917,7 @@ function goAdm(tab,el){
   if(tab==='charges')loadAdmCharges();
 }
 async function loadAdmOrders(){
-  var d=await api('/api/관리자/orders');var tb=ge('aOTb'),h='';
+  var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   d.forEach(function(o){
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
@@ -932,9 +932,9 @@ async function loadAdmOrders(){
   });
   tb.innerHTML=h;
 }
-async function chgOSt(id,st){await api('/api/관리자/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
+async function chgOSt(id,st){await api('/api/admin/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
 async function loadAdmOrders(){
-  var d=await api('/api/관리자/일반회원s');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
+  var d=await api('/api/admin/일반회원s');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
   d.forEach(function(u){
     var is정지=u.status==='banned';
     var isAdmin=['admin','superadmin'].includes(u.role);
@@ -956,7 +956,7 @@ async function loadAdmOrders(){
   ge('aUTb').innerHTML=h;
 }
 async function loadAdmCharges(){
-  var d=await api('/api/관리자/charges');var tb=ge('aCTb'),h='';
+  var d=await api('/api/admin/charges');var tb=ge('aCTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
@@ -971,7 +971,7 @@ async function loadAdmCharges(){
   tb.innerHTML=h;
 }
 async function procCharge(id,action){
-  var d=await api('/api/관리자/charges/process','POST',{id:id,action:action});
+  var d=await api('/api/admin/charges/process','POST',{id:id,action:action});
   if(d.error){toast(d.error,'err');return}
   toast(action==='approve'?'충전 승인 완료 ✨':'충전 거절','ok');
   loadAdmCharges();loadAdmDash();
@@ -984,26 +984,26 @@ function openBalM(el){
 }
 async function applyBal(){
   var d=parseFloat(ge('balDelta').value);if(isNaN(d)){toast('금액을 입력하세요','err');return}
-  var r=await api('/api/관리자/일반회원s/balance','POST',{uid:ge('balUid').value,delta:d});
+  var r=await api('/api/admin/일반회원s/balance','POST',{uid:ge('balUid').value,delta:d});
   if(r.error){toast(r.error,'err');return}
   closeM('mBal');loadAdmOrders();toast('잔액 수정 완료 ✨','ok');
 }
 async function banUser(uid,uname){
   if(!confirm(uname+'님을 정지/해제하시겠습니까?'))return;
-  var d=await api('/api/관리자/일반회원s/ban','POST',{uid:uid});
+  var d=await api('/api/admin/일반회원s/ban','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(d.status==='banned'?uname+'님 정지됨':uname+'님 정지 해제','ok');
   loadAdmOrders();
 }
 async function deleteUser(uid,uname){
   if(!confirm(uname+'님을 강제 탈퇴시키겠습니까?\n모든 주문/충전 내역이 삭제됩니다!'))return;
-  var d=await api('/api/관리자/일반회원s/delete','POST',{uid:uid});
+  var d=await api('/api/admin/일반회원s/delete','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(uname+'님 탈퇴 처리 완료','ok');
   loadAdmOrders();loadAdmDash();
 }
 async function openUserDetail(uid){
-  var d=await api('/api/관리자/일반회원s/'+uid+'/detail');
+  var d=await api('/api/admin/일반회원s/'+uid+'/detail');
   if(d.error){toast(d.error,'err');return}
   var u=d.일반회원,orders=d.orders||[];
   var html='<div style="padding:20px">'
@@ -1044,13 +1044,13 @@ async function openUserDetail(uid){
 async function resetPw(uid){
   var pw=ge('newPwInput').value.trim();
   if(!pw||pw.length<6){toast('6자 이상 입력하세요','err');return}
-  var d=await api('/api/관리자/일반회원s/resetpw','POST',{uid:uid,newpw:pw});
+  var d=await api('/api/admin/일반회원s/resetpw','POST',{uid:uid,newpw:pw});
   if(d.error){toast(d.error,'err');return}
   toast('비밀번호 초기화 완료','ok');ge('newPwInput').value='';
 }
 async function changeRole(uid,role){
   if(!confirm(role==='admin'?'관리자로 변경?':'일반회원으로 변경?'))return;
-  var d=await api('/api/관리자/일반회원s/role','POST',{uid:uid,role:role});
+  var d=await api('/api/admin/일반회원s/role','POST',{uid:uid,role:role});
   if(d.error){toast(d.error,'err');return}
   toast('등급 변경 완료','ok');closeM('mDetail');loadAdmOrders();
 }
@@ -1058,58 +1058,58 @@ async function changeRole(uid,role){
 // 설정 저장
 async function saveSiteSettings(){
   var sn=ge('st사이트Name'),sk=ge('stKakao'),sb=ge('stBank'),sm=ge('stMg'),se=ge('stEx');
-  if(sn&&sn.value)await api('/api/관리자/settings/save','POST',{key:'name',value:sn.value});
-  if(sk)await api('/api/관리자/settings/save','POST',{key:'kakao',value:sk.value});
-  if(sb)await api('/api/관리자/settings/save','POST',{key:'bank',value:sb.value});
-  if(sm&&sm.value)await api('/api/관리자/settings/save','POST',{key:'margin',value:sm.value});
-  if(se&&se.value)await api('/api/관리자/settings/save','POST',{key:'exrate',value:se.value});
+  if(sn&&sn.value)await api('/api/admin/settings/save','POST',{key:'name',value:sn.value});
+  if(sk)await api('/api/admin/settings/save','POST',{key:'kakao',value:sk.value});
+  if(sb)await api('/api/admin/settings/save','POST',{key:'bank',value:sb.value});
+  if(sm&&sm.value)await api('/api/admin/settings/save','POST',{key:'margin',value:sm.value});
+  if(se&&se.value)await api('/api/admin/settings/save','POST',{key:'exrate',value:se.value});
   await loadSiteConfig();await loadSvcs();
   toast('설정 저장 완료 ✨','ok');
 }
 async function saveTgSettings(){
   var tt=ge('stTgToken'),tc=ge('stTgChat');
-  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/관리자/settings/save','POST',{key:'tg_token',value:tt.value});
-  if(tc)await api('/api/관리자/settings/save','POST',{key:'tg_chat',value:tc.value});
+  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
+  if(tc)await api('/api/admin/settings/save','POST',{key:'tg_chat',value:tc.value});
   if(tt)tt.value='••••(설정됨)';
   toast('텔레그램 저장 완료 ✨','ok');
 }
 async function saveApiKey(){
   var ak=ge('stApiKey');
   if(!ak||!ak.value||ak.value.includes('설정됨')){toast('API 키를 입력하세요','err');return}
-  var d=await api('/api/관리자/settings/save','POST',{key:'peakerr_api_key',value:ak.value});
+  var d=await api('/api/admin/settings/save','POST',{key:'peakerr_api_key',value:ak.value});
   if(d.error){toast(d.error,'err');return}
   ak.value='••••(설정됨)';toast('API 키 저장 완료 ✨','ok');
 }
 async function saveGlobalSetting(key,inputId){
   var v=ge(inputId).value.trim();
   if(!v||v.includes('설정됨')){toast('값을 입력하세요','err');return}
-  var d=await api('/api/관리자/settings/save','POST',{key:key,value:v});
+  var d=await api('/api/admin/settings/save','POST',{key:key,value:v});
   if(d.error){toast(d.error,'err');return}
   ge(inputId).value='••••(설정됨)';toast('저장 완료 ✨','ok');
 }
 async function saveGlobalTg(){
   var tt=ge('spTgToken'),tc=ge('spTgChat');
-  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/관리자/settings/save','POST',{key:'tg_token',value:tt.value});
-  if(tc)await api('/api/관리자/settings/save','POST',{key:'tg_chat',value:tc.value});
+  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
+  if(tc)await api('/api/admin/settings/save','POST',{key:'tg_chat',value:tc.value});
   if(tt)tt.value='••••(설정됨)';
   toast('텔레그램 저장 완료 ✨','ok');
 }
 async function testApi(){
   var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>확인 중...';
-  var d=await api('/api/관리자/api-test');
+  var d=await api('/api/admin/api-test');
   var msg=d.ok?'<span style="color:#10B981">✅ 연결 성공! 잔액: $'+parseFloat(d.balance).toFixed(4)+'</span>':'<span style="color:#EF4444">❌ 실패: '+d.error+'</span>';
   if(res)res.innerHTML=msg;
 }
 async function syncSvcs(){
   var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 중...';
-  var d=await api('/api/관리자/api-sync');
+  var d=await api('/api/admin/api-sync');
   var msg=d.ok?'<span style="color:#10B981">✅ '+d.count+'개 동기화 완료!</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
   if(res)res.innerHTML=msg;
   if(d.ok){loadSvcs();toast('서비스 '+d.count+'개 동기화 ✨','ok')}
 }
 async function testTg(){
   var res=ge('tgRes')||ge('spTgRes');if(res)res.innerHTML='<span class="spin spin2"></span>테스트 중...';
-  var d=await api('/api/관리자/tg-test','POST');
+  var d=await api('/api/admin/tg-test','POST');
   var msg=d.ok?'<span style="color:#10B981">✅ 성공! 텔레그램 확인해보세요</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
   if(res)res.innerHTML=msg;
 }
@@ -1124,7 +1124,7 @@ async function loadSuperDash(){
   renderSiteList(d.sites||[]);
 
   // 글로벌 설정 로드
-  var s=await api('/api/관리자/settings');
+  var s=await api('/api/admin/settings');
   if(s){
     var sk=ge('spApiKey'),st=ge('spTgToken'),sc=ge('spTgChat');
     if(sk)sk.value=s.apikey||'';
@@ -1166,7 +1166,7 @@ function renderSiteList(sites){
   }).join('');
 }
 async function loadSuperOrders(){
-  var d=await api('/api/관리자/orders');var tb=ge('spOTb'),h='';
+  var d=await api('/api/admin/orders');var tb=ge('spOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   d.forEach(function(o){
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_id||'-')+'</td>'
@@ -1180,7 +1180,7 @@ async function loadSuperOrders(){
   tb.innerHTML=h;
 }
 async function loadSuperCharges(){
-  var d=await api('/api/관리자/charges');var tb=ge('spCTb'),h='';
+  var d=await api('/api/admin/charges');var tb=ge('spCTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_id||'-')+'</td>'
