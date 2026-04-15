@@ -69,6 +69,8 @@ async function initDB() {
       exrate REAL DEFAULT 1380,
       credit REAL DEFAULT 0,
       active INTEGER DEFAULT 1,
+      tg_token TEXT DEFAULT '',
+      tg_chat TEXT DEFAULT '',
       created TIMESTAMP DEFAULT NOW()
     )
   `);
@@ -139,12 +141,24 @@ async function initDB() {
       value TEXT NOT NULL
     )
   `);
+  await query(`
+    CREATE TABLE IF NOT EXISTS credit_requests (
+      id TEXT PRIMARY KEY,
+      site_id TEXT NOT NULL,
+      site_name TEXT NOT NULL,
+      amount REAL NOT NULL,
+      note TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      created TIMESTAMP DEFAULT NOW()
+    )
+  `);
 
   // 기본 설정
   const defaults = {
     peakerr_api_key: process.env.PEAKERR_API_KEY || '',
     tg_token: process.env.TG_TOKEN || '',
-    tg_chat: process.env.TG_CHAT || ''
+    tg_chat: process.env.TG_CHAT || '',
+    super_margin: '50'  // 슈퍼관리자 마진율 (%)
   };
   for (const [k, v] of Object.entries(defaults)) {
     await query(`INSERT INTO global_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO NOTHING`, [k, v]);
@@ -250,6 +264,10 @@ async function initDB() {
     }
   }
 
+  // 마이그레이션
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS tg_token TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS tg_chat TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`CREATE TABLE IF NOT EXISTS credit_requests (id TEXT PRIMARY KEY, site_id TEXT NOT NULL, site_name TEXT NOT NULL, amount REAL NOT NULL, note TEXT DEFAULT '', status TEXT DEFAULT 'pending', created TIMESTAMP DEFAULT NOW())`); } catch(e) {}
   console.log('✅ DB 초기화 완료');
 }
 
@@ -320,9 +338,14 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-async function tgAlert(msg) {
-  const token = await getGlobalSetting('tg_token');
-  const chat = await getGlobalSetting('tg_chat');
+async function tgAlert(msg, site) {
+  // 사이트별 텔레그램 우선, 없으면 글로벌
+  let token = site?.tg_token || '';
+  let chat = site?.tg_chat || '';
+  if (!token || !chat) {
+    token = await getGlobalSetting('tg_token');
+    chat = await getGlobalSetting('tg_chat');
+  }
   if (!token || !chat) return;
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -333,9 +356,10 @@ async function tgAlert(msg) {
   } catch(e) { console.log('TG 오류:', e.message); }
 }
 
-async function tgChargeAlert(chargeId, userName, amount, note, siteName) {
-  const token = await getGlobalSetting('tg_token');
-  const chat = await getGlobalSetting('tg_chat');
+async function tgChargeAlert(chargeId, userName, amount, note, site) {
+  const siteName = typeof site === 'object' ? site.name : site;
+  let token = (typeof site === 'object' ? site.tg_token : '') || await getGlobalSetting('tg_token');
+  let chat = (typeof site === 'object' ? site.tg_chat : '') || await getGlobalSetting('tg_chat');
   if (!token || !chat) return;
   const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`;
   try {
@@ -414,12 +438,16 @@ app.get('/api/me', requireAuth, async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const site = req.site;
-    const mg = site ? site.margin : 50;
+    const siteMg = site ? site.margin : 50;
     const ex = site ? site.exrate : 1380;
+    const superMgStr = await getGlobalSetting('super_margin');
+    const superMg = parseFloat(superMgStr || '50');
     const r = await query(`SELECT * FROM services WHERE active=1 ORDER BY id`);
     res.json(r.rows.map(s => ({
       ...s,
-      sell: Math.round(s.rate / 1000 * 1000 * ex * (1 + mg / 100))
+      // 1단계: 원가 * (1 + 슈퍼마진) = 슈퍼가
+      // 2단계: 슈퍼가 * (1 + 사이트마진) = 최종 고객가
+      sell: Math.round(s.rate / 1000 * ex * (1 + superMg / 100) * (1 + siteMg / 100))
     })));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -434,9 +462,12 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (qtyNum < svc.min || qtyNum > svc.max)
       return res.json({ error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다` });
     const site = req.site;
-    const mg = site ? site.margin : 50;
+    const siteMg = site ? site.margin : 50;
     const ex = site ? site.exrate : 1380;
-    const charge = svc.rate / 1000 * qtyNum * ex * (1 + mg / 100);
+    const superMgStr2 = await getGlobalSetting('super_margin');
+    const superMg2 = parseFloat(superMgStr2 || '50');
+    // 고객이 내는 금액 = 원가 * (1+슈퍼마진) * (1+사이트마진)
+    const charge = svc.rate / 1000 * qtyNum * ex * (1 + superMg2 / 100) * (1 + siteMg / 100);
     const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
     const user = userR.rows[0];
     if ((user.balance || 0) < charge)
@@ -464,7 +495,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
       [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, apiOrderId ? 'processing' : 'pending']);
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
-    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n🔗 ${link}`);
+    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n🔗 ${link}`, site);
     res.json({ ok: true, orderId, apiOrderId, balance: updR.rows[0].balance });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -486,7 +517,7 @@ app.post('/api/charges', requireAuth, async (req, res) => {
     const id = 'C' + Date.now();
     await query(`INSERT INTO charges(id,site_id,uid,uname,amount,note,status) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       [id, req.siteId, user.id, user.name, amt, note || '', 'pending']);
-    tgChargeAlert(id, user.name, amt, note, req.site?.name || 'GLOW');
+    tgChargeAlert(id, user.name, amt, note, req.site || {name:'GLOW'});
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -648,7 +679,7 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
     await query(`UPDATE charges SET status=$1 WHERE id=$2`, [status, id]);
     if (action === 'approve') {
       await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge.amount, charge.uid]);
-      tgAlert(`✅ 충전승인 [${req.site?.name}]\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}`);
+      tgAlert(`✅ 충전승인 [${req.site?.name}]\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}`, req.site);
     }
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -659,15 +690,19 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
     const site = req.site;
     const isSuperAdmin = req.session.role === 'superadmin';
     const apikey = await getGlobalSetting('peakerr_api_key');
-    const tg_token = await getGlobalSetting('tg_token');
-    const tg_chat = await getGlobalSetting('tg_chat');
+    const global_tg_token = await getGlobalSetting('tg_token');
+    const global_tg_chat = await getGlobalSetting('tg_chat');
+    const super_margin = await getGlobalSetting('super_margin');
     res.json({
       name: site?.name || '', kakao: site?.kakao || '',
       bank: site?.bank || '', margin: site?.margin || 50,
       exrate: site?.exrate || 1380, credit: site?.credit || 0,
       apikey: isSuperAdmin ? (apikey ? '••••(설정됨)' : '') : '(슈퍼관리자 전용)',
-      tg_token: isSuperAdmin ? (tg_token ? '••••(설정됨)' : '') : '',
-      tg_chat: isSuperAdmin ? tg_chat : '',
+      tg_token: isSuperAdmin ? (global_tg_token ? '••••(설정됨)' : '') : (site?.tg_token ? '••••(설정됨)' : ''),
+      tg_chat: isSuperAdmin ? global_tg_chat : (site?.tg_chat || ''),
+      site_tg_token: site?.tg_token || '',
+      site_tg_chat: site?.tg_chat || '',
+      super_margin: isSuperAdmin ? (super_margin || '50') : undefined,
       isSuperAdmin
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -679,9 +714,20 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
     const isSuperAdmin = req.session.role === 'superadmin';
     const superOnly = ['peakerr_api_key', 'tg_token', 'tg_chat'];
     if (superOnly.includes(key)) {
-      if (!isSuperAdmin) return res.json({ error: '슈퍼관리자 전용 설정입니다' });
-      await setGlobalSetting(key, value);
-      return res.json({ ok: true });
+      if (isSuperAdmin) {
+        await setGlobalSetting(key, value);
+        return res.json({ ok: true });
+      }
+      // 일반 어드민은 사이트별 tg 저장
+      if (key === 'tg_token') {
+        await query(`UPDATE sites SET tg_token=$1 WHERE id=$2`, [value, req.siteId]);
+        return res.json({ ok: true });
+      }
+      if (key === 'tg_chat') {
+        await query(`UPDATE sites SET tg_chat=$1 WHERE id=$2`, [value, req.siteId]);
+        return res.json({ ok: true });
+      }
+      return res.json({ error: '슈퍼관리자 전용 설정입니다' });
     }
     const siteFields = ['name','kakao','bank','margin','exrate','primary_color','accent_color','logo'];
     if (siteFields.includes(key)) {
@@ -785,19 +831,104 @@ app.post('/api/tg-webhook', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/admin/tg-test', requireSuperAdmin, async (req, res) => {
+app.post('/api/admin/tg-test', requireAdmin, async (req, res) => {
   try {
-    const token = await getGlobalSetting('tg_token');
-    const chat = await getGlobalSetting('tg_chat');
+    const isSuperAdmin = req.session.role === 'superadmin';
+    let token, chat;
+    if (isSuperAdmin) {
+      token = await getGlobalSetting('tg_token');
+      chat = await getGlobalSetting('tg_chat');
+    } else {
+      const site = req.site;
+      token = site?.tg_token || '';
+      chat = site?.tg_chat || '';
+    }
     if (!token || !chat) return res.json({ error: '텔레그램 설정을 먼저 저장하세요' });
     const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: '✅ GLOW 멀티 알림 테스트 성공! ✨' })
+      body: JSON.stringify({ chat_id: chat, text: `✅ ${req.site?.name || 'GLOW'} 알림 테스트 성공! ✨` })
     });
     const data = await resp.json();
     if (data.ok) res.json({ ok: true });
     else res.json({ error: data.description });
   } catch(e) { res.json({ error: e.message }); }
+});
+
+
+// ── 어드민 크레딧 요청 API ──
+
+// 어드민이 슈퍼관리자에게 크레딧 요청
+app.post('/api/admin/credit-request', requireAdmin, async (req, res) => {
+  try {
+    const { amount, note } = req.body;
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return res.json({ error: '금액을 입력하세요' });
+    const site = req.site;
+    if (!site) return res.json({ error: '사이트 정보를 찾을 수 없습니다' });
+    const id = 'CR' + Date.now();
+    await query(`INSERT INTO credit_requests(id,site_id,site_name,amount,note,status) VALUES($1,$2,$3,$4,$5,$6)`,
+      [id, site.id, site.name, amt, note || '', 'pending']);
+    // 슈퍼관리자 텔레그램 알림
+    const token = await getGlobalSetting('tg_token');
+    const chat = await getGlobalSetting('tg_chat');
+    if (token && chat) {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chat,
+          text: `💰 <b>크레딧 요청</b>\n🏢 ${site.name}\n💵 $${amt}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`,
+          parse_mode: 'HTML'
+        })
+      });
+    }
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 어드민이 본인 크레딧 요청 내역 조회
+app.get('/api/admin/credit-requests', requireAdmin, async (req, res) => {
+  try {
+    const r = await query(`SELECT * FROM credit_requests WHERE site_id=$1 ORDER BY created DESC`, [req.siteId]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 슈퍼관리자 - 전체 크레딧 요청 조회
+app.get('/api/super/credit-requests', requireSuperAdmin, async (req, res) => {
+  try {
+    const r = await query(`SELECT * FROM credit_requests ORDER BY created DESC`);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 슈퍼관리자 - 크레딧 요청 처리 (승인/거절)
+app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id, action } = req.body;
+    const r = await query(`SELECT * FROM credit_requests WHERE id=$1`, [id]);
+    const cr = r.rows[0];
+    if (!cr) return res.json({ error: '요청을 찾을 수 없습니다' });
+    if (cr.status !== 'pending') return res.json({ error: '이미 처리된 요청입니다' });
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    await query(`UPDATE credit_requests SET status=$1 WHERE id=$2`, [status, id]);
+    if (action === 'approve') {
+      await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [cr.amount, cr.site_id]);
+      // 해당 사이트 텔레그램 알림
+      const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [cr.site_id]);
+      const site = siteR.rows[0];
+      if (site?.tg_token && site?.tg_chat) {
+        await fetch(`https://api.telegram.org/bot${site.tg_token}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: site.tg_chat,
+            text: `✅ <b>크레딧 충전 완료</b>\n💵 $${cr.amount} 충전됨\n현재 잔액 확인해주세요`,
+            parse_mode: 'HTML'
+          })
+        });
+      }
+    }
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── 슈퍼어드민 API ──
@@ -853,6 +984,16 @@ app.post('/api/super/sites/delete', requireSuperAdmin, async (req, res) => {
     await query(`DELETE FROM charges WHERE site_id=$1`, [siteId]);
     await query(`DELETE FROM users WHERE site_id=$1`, [siteId]);
     await query(`DELETE FROM sites WHERE id=$1`, [siteId]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    const allowed = ['super_margin', 'peakerr_api_key', 'tg_token', 'tg_chat'];
+    if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
+    await setGlobalSetting(key, value);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
