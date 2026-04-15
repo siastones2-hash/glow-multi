@@ -883,8 +883,11 @@ async function loadChargeHis(){
 // ── 일반 관리자 ──
 async function loadAdmDash(){
   var d=await api('/api/admin/stats');
-  ge('aSU').textContent=d.users||0;ge('aSO').textContent=d.orders||0;
-  ge('aSR').textContent=gf(d.revenue||0);ge('aSC').textContent=d.pendingCharges||0;
+  if(!d||d.error){return;}
+  if(ge('aSU'))ge('aSU').textContent=d.users||0;
+  if(ge('aSO'))ge('aSO').textContent=d.orders||0;
+  if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
+  if(ge('aSC'))ge('aSC').textContent=d.pendingCharges||0;
 
   // 크레딧 표시 (일반 어드민만)
   if(CUR.role==='admin'&&d.credit!==undefined){
