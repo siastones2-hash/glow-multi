@@ -1235,8 +1235,17 @@ async function deleteSite(siteId, siteName){
   if(confirm2 !== siteName){toast('사이트 이름이 일치하지 않습니다','err');return}
   var d=await api('/api/super/sites/delete','POST',{siteId});
   if(d.error){toast(d.error,'err');return}
-  toast('사이트가 삭제되었습니다','ok');
-  loadSuperDash();
+  toast('사이트가 삭제되었습니다 ✨','ok');
+  // 즉시 DOM에서 카드 제거
+  var siteList=ge('siteList');
+  if(siteList){
+    var cards=siteList.querySelectorAll('.site-card');
+    cards.forEach(function(card){
+      if(card.innerHTML.includes(siteId)){card.remove();}
+    });
+  }
+  // 서버에서 최신 데이터로 새로고침
+  setTimeout(function(){loadSuperDash();},500);
 }
 async function manageAdmin(siteId){
   var d=await api('/api/super/users');
