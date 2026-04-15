@@ -1,7 +1,8 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
-const session = require('express-session');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'glow-jwt-secret-2024';
 const fetch = require('node-fetch');
 const path = require('path');
 
@@ -219,13 +220,15 @@ if (svcCount === 0) {
 // ══════════════════════════════
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.set('trust proxy', 1);
-app.use(session({
-  secret: 'glow-multi-secret-2024',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, secure: false, sameSite: 'lax' }
-}));
+// JWT 인증 미들웨어
+function getToken(req) {
+  const auth = req.headers['authorization'];
+  if (auth && auth.startsWith('Bearer ')) return auth.slice(7);
+  return null;
+}
+function verifyToken(token) {
+  try { return jwt.verify(token, JWT_SECRET); } catch(e) { return null; }
+}
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── 1. 도메인 매핑 미들웨어 (핵심!) ──
@@ -260,7 +263,10 @@ function setGlobalSetting(key, value) {
   db.prepare('INSERT OR REPLACE INTO global_settings(key,value) VALUES(?,?)').run(key, value);
 }
 function requireAuth(req, res, next) {
-  if (!req.session.userId) return res.status(401).json({ error: '로그인 필요' });
+  const token = getToken(req);
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) return res.status(401).json({ error: '로그인 필요' });
+  req.session = payload;
   next();
 }
 function requireAdmin(req, res, next) {
@@ -351,11 +357,11 @@ app.post('/api/login', (req, res) => {
   if (targetUser.status === 'banned')
     return res.json({ error: '정지된 계정입니다. 관리자에게 문의하세요.' });
 
-  req.session.userId = targetUser.id;
-  req.session.role = targetUser.role;
-  req.session.siteId = req.siteId;
-
-  res.json({ ok: true, user: {
+  const token = jwt.sign(
+    { userId: targetUser.id, role: targetUser.role, siteId: req.siteId },
+    JWT_SECRET, { expiresIn: '7d' }
+  );
+  res.json({ ok: true, token, user: {
     id: targetUser.id, name: targetUser.name,
     email: targetUser.email, role: targetUser.role,
     balance: targetUser.balance
@@ -373,13 +379,14 @@ app.post('/api/register', (req, res) => {
   db.prepare('INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES(?,?,?,?,?,?,?)')
     .run(id, req.siteId, name, email, hash, 'user', 0);
   const newUser = db.prepare('SELECT * FROM users WHERE id=?').get(id);
-  req.session.userId = newUser.id;
-  req.session.role = newUser.role;
-  req.session.siteId = req.siteId;
-  res.json({ ok: true, user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, balance: newUser.balance }});
+  const token = jwt.sign(
+    { userId: newUser.id, role: newUser.role, siteId: req.siteId },
+    JWT_SECRET, { expiresIn: '7d' }
+  );
+  res.json({ ok: true, token, user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, balance: newUser.balance }});
 });
 
-app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ ok: true }); });
+app.post('/api/logout', (req, res) => { res.json({ ok: true }); });
 
 app.get('/api/me', requireAuth, (req, res) => {
   const user = db.prepare('SELECT id,name,email,role,balance,status FROM users WHERE id=?').get(req.session.userId);
