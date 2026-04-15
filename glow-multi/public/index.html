@@ -135,9 +135,9 @@ tr:last-child td{border-bottom:none}
     </div>
   </nav>
   <div class="hero">
-    <div class="htag"><div class="tdot"></div>소셜 성장 자동화 플랫폼</div>
-    <h1>콘텐츠가 <span class="gt">빛나도록</span><br>우리가 성장시킵니다</h1>
-    <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:460px;margin:0 auto 28px;font-weight:300">유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다</p>
+    <div class="htag"><div class="tdot"></div><span id="heroBadge">소셜 성장 자동화 플랫폼</span></div>
+    <h1 id="heroSlogan">콘텐츠가 <span class="gt" id="heroSloganSpan">빛나도록</span><br><span id="heroSloganSub">우리가 성장시킵니다</span></h1>
+    <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:460px;margin:0 auto 28px;font-weight:300" id="heroDesc">유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다</p>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:32px">
       <button class="bp bplg" onclick="goAuth('register')">✨ 지금 무료로 시작하기</button>
       <button class="bo" style="padding:15px 28px;font-size:14px;border-radius:14px" onclick="goAuth('login')">기존 계정 로그인</button>
@@ -148,10 +148,10 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
   <div class="sts">
-    <div class="st"><div style="font-size:26px;font-weight:800" class="gt">10K+</div><div style="font-size:11px;color:var(--tm)">서비스 종류</div></div>
-    <div class="st"><div style="font-size:26px;font-weight:800" class="gt">24H</div><div style="font-size:11px;color:var(--tm)">빠른 처리</div></div>
-    <div class="st"><div style="font-size:26px;font-weight:800" class="gt">50%+</div><div style="font-size:11px;color:var(--tm)">마진 보장</div></div>
-    <div class="st"><div style="font-size:26px;font-weight:800" class="gt">100%</div><div style="font-size:11px;color:var(--tm)">안전 보장</div></div>
+    <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat1Num">10K+</div><div style="font-size:11px;color:var(--tm)" id="stat1Label">서비스 종류</div></div>
+    <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat2Num">24H</div><div style="font-size:11px;color:var(--tm)" id="stat2Label">빠른 처리</div></div>
+    <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat3Num">50%+</div><div style="font-size:11px;color:var(--tm)" id="stat3Label">마진 보장</div></div>
+    <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat4Num">100%</div><div style="font-size:11px;color:var(--tm)" id="stat4Label">안전 보장</div></div>
   </div>
   <div style="padding:48px 16px;text-align:center;background:linear-gradient(160deg,#faf5ff,#fdf2ff)">
     <h2 style="font-size:clamp(20px,5vw,30px);font-weight:800;margin-bottom:8px">소셜 성장, 오늘부터 <span class="gt">자동으로</span></h2>
@@ -160,7 +160,7 @@ tr:last-child td{border-bottom:none}
   </div>
   <footer style="background:#1a1030;padding:20px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
     <div style="font-size:16px;font-weight:800;color:#fff" id="footerName">✨ GLOW</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.3)">소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3)" id="footerText">소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.</div>
   </footer>
 </div>
 
@@ -391,7 +391,7 @@ tr:last-child td{border-bottom:none}
               </div>
             </div>
             <div class="card">
-              <div style="font-size:15px;font-weight:800;margin-bottom:12px">🎨 사이트 설정</div>
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">🎨 기본 설정</div>
               <div class="fg"><label>사이트 이름</label><input type="text" id="st사이트Name" placeholder="GLOW"/></div>
               <div class="fg"><label>카카오톡 링크</label><input type="text" id="stKakao" placeholder="https://open.kakao.com/..."/></div>
               <div class="fg"><label>입금 계좌 안내</label><textarea id="stBank" rows="2" placeholder="우리은행 1002-160-164625"></textarea></div>
@@ -399,7 +399,38 @@ tr:last-child td{border-bottom:none}
                 <div class="fg"><label>마진율 (%)</label><input type="number" id="stMg" placeholder="50" inputmode="numeric"/></div>
                 <div class="fg"><label>환율 (USD→KRW)</label><input type="number" id="stEx" placeholder="1380" inputmode="numeric"/></div>
               </div>
-              <button class="bp bsm" style="padding:9px 16px" onclick="saveSiteSettings()">저장</button>
+              <button class="bp bsm" style="padding:9px 16px;margin-bottom:16px" onclick="saveSiteSettings()">저장</button>
+
+              <div style="height:1px;background:var(--bd);margin:8px 0 16px"></div>
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">🏠 메인 페이지 커스텀</div>
+              <div class="fg"><label>상단 배지 텍스트</label><input type="text" id="stHeroBadge" placeholder="소셜 성장 자동화 플랫폼"/></div>
+              <div class="fg"><label>메인 슬로건 (강조 부분)</label><input type="text" id="stSlogan" placeholder="빛나도록"/></div>
+              <div class="fg"><label>메인 슬로건 (두 번째 줄)</label><input type="text" id="stSloganSub" placeholder="우리가 성장시킵니다"/></div>
+              <div class="fg"><label>부제목 설명</label><textarea id="stDesc" rows="2" placeholder="유튜브·인스타·틱톡·X까지..."></textarea></div>
+              <div class="fg"><label>공지사항 (비워두면 미표시)</label><input type="text" id="stNotice" placeholder="현재 이벤트 진행 중!"/></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="fg"><label>통계1 숫자</label><input type="text" id="stStat1Num" placeholder="10K+"/></div>
+                <div class="fg"><label>통계1 설명</label><input type="text" id="stStat1Label" placeholder="서비스 종류"/></div>
+                <div class="fg"><label>통계2 숫자</label><input type="text" id="stStat2Num" placeholder="24H"/></div>
+                <div class="fg"><label>통계2 설명</label><input type="text" id="stStat2Label" placeholder="빠른 처리"/></div>
+                <div class="fg"><label>통계3 숫자</label><input type="text" id="stStat3Num" placeholder="50%+"/></div>
+                <div class="fg"><label>통계3 설명</label><input type="text" id="stStat3Label" placeholder="마진 보장"/></div>
+                <div class="fg"><label>통계4 숫자</label><input type="text" id="stStat4Num" placeholder="100%"/></div>
+                <div class="fg"><label>통계4 설명</label><input type="text" id="stStat4Label" placeholder="안전 보장"/></div>
+              </div>
+              <button class="bp bsm" style="padding:9px 16px;margin-bottom:16px" onclick="saveCustomTexts()">메인 페이지 저장</button>
+
+              <div style="height:1px;background:var(--bd);margin:8px 0 16px"></div>
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">💬 문구 커스텀</div>
+              <div class="fg"><label>로그인 환영 문구</label><input type="text" id="stLoginWelcome" placeholder="다시 만나서 반가워요"/></div>
+              <div class="fg"><label>로그인 부제목</label><input type="text" id="stLoginSub" placeholder="계정에 로그인하세요"/></div>
+              <div class="fg"><label>회원가입 환영 문구</label><input type="text" id="stRegWelcome" placeholder="지금 시작하세요"/></div>
+              <div class="fg"><label>회원가입 부제목</label><input type="text" id="stRegSub" placeholder="무료로 계정을 만들어보세요"/></div>
+              <div class="fg"><label>카카오톡 버튼 텍스트</label><input type="text" id="stKakaoBtnText" placeholder="카카오톡 문의"/></div>
+              <div class="fg"><label>충전 안내 문구</label><textarea id="stChargeGuide" rows="2" placeholder="입금 후 아래 양식을 작성해주세요."></textarea></div>
+              <div class="fg"><label>주문 안내 문구</label><textarea id="stOrderGuide" rows="2" placeholder="주문 후 취소가 어려울 수 있습니다."></textarea></div>
+              <div class="fg"><label>푸터 텍스트</label><input type="text" id="stFooterText" placeholder="소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다."/></div>
+              <button class="bp bsm" style="padding:9px 16px" onclick="saveCustomTexts()">문구 저장</button>
             </div>
           </div>
         </div>
@@ -746,6 +777,47 @@ async function loadSiteConfig(){
   ['navLogo','authLogo','sbLogo','tbLogo'].forEach(function(id){var el=ge(id);if(el)el.textContent=logo});
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
+
+  // 커스텀 텍스트 적용
+  var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'소셜 성장 자동화 플랫폼';
+  var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'빛나도록';
+  var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'우리가 성장시킵니다';
+  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다';
+  var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.';
+
+  // 통계 숫자
+  var s1n=ge('stat1Num');if(s1n)s1n.textContent=d.stat1Num||'10K+';
+  var s1l=ge('stat1Label');if(s1l)s1l.textContent=d.stat1Label||'서비스 종류';
+  var s2n=ge('stat2Num');if(s2n)s2n.textContent=d.stat2Num||'24H';
+  var s2l=ge('stat2Label');if(s2l)s2l.textContent=d.stat2Label||'빠른 처리';
+  var s3n=ge('stat3Num');if(s3n)s3n.textContent=d.stat3Num||'50%+';
+  var s3l=ge('stat3Label');if(s3l)s3l.textContent=d.stat3Label||'마진 보장';
+  var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
+  var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
+
+  // 공지사항
+  if(d.notice){
+    var nb=ge('noticeBanner');
+    if(!nb){
+      nb=document.createElement('div');nb.id='noticeBanner';
+      nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:200';
+      var pg=ge('pg-land');if(pg)pg.insertBefore(nb,pg.firstChild);
+    }
+    nb.textContent='📢 '+d.notice;
+    nb.style.display='block';
+  }
+
+  // 로그인/회원가입 문구 저장 (switchAuth에서 사용)
+  window._siteLoginWelcome=d.loginWelcome||'다시 만나서 반가워요';
+  window._siteLoginSub=d.loginSub||'계정에 로그인하세요';
+  window._siteRegisterWelcome=d.registerWelcome||'지금 시작하세요';
+  window._siteRegisterSub=d.registerSub||'무료로 계정을 만들어보세요';
+  window._siteChargeGuide=d.chargeGuide||'입금 후 아래 양식을 작성해주세요.';
+  window._siteOrderGuide=d.orderGuide||'주문 후 취소가 어려울 수 있습니다.';
+  window._siteKakaoBtnText=d.kakaoBtnText||'카카오톡 문의';
+
+  // 카카오 버튼 텍스트
+  document.querySelectorAll('.kakao-btn-text').forEach(function(el){el.textContent=d.kakaoBtnText||'카카오톡 문의'});
 }
 
 function goAuth(m){showPg('pg-auth');switchAuth(m)}
@@ -755,11 +827,11 @@ function switchAuth(m){
   if(m==='login'){
     ge('tabL').style.cssText=on;ge('tabR').style.cssText=off;
     ge('f로그인').style.display='block';ge('fReg').style.display='none';
-    ge('aTitle').textContent='다시 만나서 반가워요 ✨';ge('aSub').textContent='계정에 로그인하세요';
+    ge('aTitle').textContent=(window._siteLoginWelcome||'다시 만나서 반가워요')+' ✨';ge('aSub').textContent=window._siteLoginSub||'계정에 로그인하세요';
   }else{
     ge('tabR').style.cssText=on;ge('tabL').style.cssText=off;
     ge('f로그인').style.display='none';ge('fReg').style.display='block';
-    ge('aTitle').textContent='오신걸 환영해요 ✨';ge('aSub').textContent='무료로 가입하고 채널 성장을 시작하세요';
+    ge('aTitle').textContent=(window._siteRegisterWelcome||'오신걸 환영해요')+' ✨';ge('aSub').textContent=window._siteRegisterSub||'무료로 가입하고 채널 성장을 시작하세요';
   }
 }
 async function doLogin(){
@@ -1140,6 +1212,38 @@ async function changeRole(uid,role){
 }
 
 // 설정 저장
+
+async function saveCustomTexts(){
+  var fields={
+    hero_badge:ge('stHeroBadge')?.value,
+    slogan:ge('stSlogan')?.value,
+    slogan_sub:ge('stSloganSub')?.value,
+    description:ge('stDesc')?.value,
+    notice:ge('stNotice')?.value,
+    stat1_num:ge('stStat1Num')?.value,stat1_label:ge('stStat1Label')?.value,
+    stat2_num:ge('stStat2Num')?.value,stat2_label:ge('stStat2Label')?.value,
+    stat3_num:ge('stStat3Num')?.value,stat3_label:ge('stStat3Label')?.value,
+    stat4_num:ge('stStat4Num')?.value,stat4_label:ge('stStat4Label')?.value,
+    login_welcome:ge('stLoginWelcome')?.value,
+    login_sub:ge('stLoginSub')?.value,
+    register_welcome:ge('stRegWelcome')?.value,
+    register_sub:ge('stRegSub')?.value,
+    kakao_btn_text:ge('stKakaoBtnText')?.value,
+    charge_guide:ge('stChargeGuide')?.value,
+    order_guide:ge('stOrderGuide')?.value,
+    footer_text:ge('stFooterText')?.value
+  };
+  var errors=[];
+  for(var key in fields){
+    if(fields[key]===undefined||fields[key]===null)continue;
+    var d=await api('/api/admin/settings/save','POST',{key,value:fields[key]});
+    if(d.error)errors.push(d.error);
+  }
+  if(errors.length){toast('일부 저장 실패: '+errors[0],'err');return;}
+  toast('저장 완료! 페이지를 새로고침하면 적용됩니다 ✨','ok');
+  await loadSiteConfig();
+}
+
 async function saveSiteSettings(){
   var sn=ge('st사이트Name'),sk=ge('stKakao'),sb=ge('stBank'),sm=ge('stMg'),se=ge('stEx');
   try {
@@ -1257,7 +1361,7 @@ function renderSiteList(sites){
       +'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
       +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\')">💰 크레딧 충전</button>'
-      +'<button class="btn binf bxs" onclick="editSite('+JSON.stringify(s).replace(/"/g,"'").replace(/'/g,"&apos;")+')">' + '수정</button>'
+      +'<button class="btn binf bxs" onclick="openEditSite(\''+s.id+'\')">' + '수정</button>'
       +'<button class="btn bpu bxs" onclick="manageAdmin(\''+s.id+'\')">👤 관리자</button>'
       +(s.id!=='default'?'<button class="btn ber bxs" onclick="deleteSite(\''+s.id+'\',\''+s.name+'\')">🗑 삭제</button>':'')
       +(s.pending충전하기>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pending충전하기+'건</button>':'')
@@ -1375,6 +1479,16 @@ async function addCredit(){
   closeM('mCredit');loadSuperDash();
 }
 
+var _sitesCache = [];
+async function openEditSite(id){
+  if(!_sitesCache.length){
+    var d=await api('/api/super/sites');
+    _sitesCache=Array.isArray(d)?d:[];
+  }
+  var s=_sitesCache.find(function(x){return x.id===id});
+  if(!s){toast('사이트 정보를 찾을 수 없습니다','err');return}
+  editSite(s);
+}
 function editSite(s){
   var domain=prompt('도메인',s.domain);if(domain===null)return;
   var name=prompt('사이트 이름',s.name);if(name===null)return;
@@ -1551,8 +1665,8 @@ async function loadSuperServices(){
       +'<td style="font-size:12px">'+(s.max||0).toLocaleString()+'</td>'
       +'<td><span class="bdg" style="'+(s.active?'background:#D1FAE5;color:#10B981':'background:#FEE2E2;color:#EF4444')+'">'+(s.active?'활성':'비활성')+'</span></td>'
       +'<td style="display:flex;gap:4px">'
-      +'<button class="btn binf bxs" onclick="editService('+JSON.stringify(s).replace(/"/g,"'")+')" >수정</button>'
-      +'<button class="btn ber bxs" onclick="deleteService(''+s.id+'',''+s.name.replace(/'/g,'')+'')">삭제</button>'
+      +'<button class="btn binf bxs" onclick="openEditService(\''+s.id+'\')">' + '수정</button>'
+      +'<button class="btn ber bxs" onclick="deleteService(\''+s.id+'\',\'서비스\')">삭제</button>'
       +'</td></tr>';
   });
   tb.innerHTML=h;
@@ -1568,6 +1682,18 @@ function openAddService(){
   ge('mService').classList.add('on');
 }
 
+var _svcCache = [];
+async function openEditService(id){
+  // 캐시에서 찾기
+  var s = _svcCache.find(function(x){return x.id===id});
+  if(!s){
+    var d=await api('/api/services');
+    _svcCache=d;
+    s=d.find(function(x){return x.id===id});
+  }
+  if(!s){toast('서비스를 찾을 수 없습니다','err');return}
+  editService(s);
+}
 function editService(s){
   ge('mServiceTitle').textContent='서비스 수정';
   ge('svcEditId').value=s.id;
@@ -1596,7 +1722,7 @@ async function saveService(){
 }
 
 async function deleteService(id, name){
-  if(!confirm('⚠️ ['+name+'] 서비스를 삭제하시겠습니까?')) return;
+  if(!confirm('⚠️ 이 서비스를 삭제하시겠습니까?')) return;
   var d=await api('/api/super/services/delete','POST',{id});
   if(d.error){toast(d.error,'err');return}
   toast('삭제 완료','ok');loadSuperServices();
