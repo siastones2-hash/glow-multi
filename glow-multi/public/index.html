@@ -338,14 +338,14 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="admtabs">
           <button class="admtab on" onclick="goAdm('orders',this)">📦 주문</button>
-          <button class="admtab" onclick="goAdm('일반회원s',this)">👥 회원</button>
+          <button class="admtab" onclick="goAdm('users',this)">👥 회원</button>
           <button class="admtab" onclick="goAdm('charges',this)">💳 충전</button>
           <button class="admtab" onclick="goAdm('settings',this)">⚙️ 설정</button>
         </div>
         <div class="apanel on" id="ap-orders">
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="ap-일반회원s">
+        <div class="apanel" id="ap-users">
           <div class="tw"><table><thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead><tbody id="aUTb"></tbody></table></div>
         </div>
         <div class="apanel" id="ap-charges">
@@ -883,7 +883,7 @@ async function loadChargeHis(){
 // ── 일반 관리자 ──
 async function loadAdmDash(){
   var d=await api('/api/admin/stats');
-  ge('aSU').textContent=d.일반회원s||0;ge('aSO').textContent=d.orders||0;
+  ge('aSU').textContent=d.users||0;ge('aSO').textContent=d.orders||0;
   ge('aSR').textContent=gf(d.revenue||0);ge('aSC').textContent=d.pendingCharges||0;
 
   // 크레딧 표시 (일반 어드민만)
@@ -920,7 +920,7 @@ function goAdm(tab,el){
   document.querySelectorAll('.apanel').forEach(function(p){p.classList.remove('on')});
   el.classList.add('on');ge('ap-'+tab).classList.add('on');
   if(tab==='orders')loadOrders();
-  if(tab==='일반회원s')loadAdmOrders();
+  if(tab==='users')loadAdmOrders();
   if(tab==='charges')loadAdmCharges();
 }
 async function loadAdmOrders(){
@@ -941,7 +941,7 @@ async function loadAdmOrders(){
 }
 async function chgOSt(id,st){await api('/api/admin/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
 async function loadAdmOrders(){
-  var d=await api('/api/admin/일반회원s');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
+  var d=await api('/api/admin/users');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
   d.forEach(function(u){
     var is정지=u.status==='banned';
     var isAdmin=['admin','superadmin'].includes(u.role);
@@ -991,28 +991,28 @@ function openBalM(el){
 }
 async function applyBal(){
   var d=parseFloat(ge('balDelta').value);if(isNaN(d)){toast('금액을 입력하세요','err');return}
-  var r=await api('/api/admin/일반회원s/balance','POST',{uid:ge('balUid').value,delta:d});
+  var r=await api('/api/admin/users/balance','POST',{uid:ge('balUid').value,delta:d});
   if(r.error){toast(r.error,'err');return}
   closeM('mBal');loadAdmOrders();toast('잔액 수정 완료 ✨','ok');
 }
 async function banUser(uid,uname){
   if(!confirm(uname+'님을 정지/해제하시겠습니까?'))return;
-  var d=await api('/api/admin/일반회원s/ban','POST',{uid:uid});
+  var d=await api('/api/admin/users/ban','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(d.status==='banned'?uname+'님 정지됨':uname+'님 정지 해제','ok');
   loadAdmOrders();
 }
 async function deleteUser(uid,uname){
   if(!confirm(uname+'님을 강제 탈퇴시키겠습니까?\n모든 주문/충전 내역이 삭제됩니다!'))return;
-  var d=await api('/api/admin/일반회원s/delete','POST',{uid:uid});
+  var d=await api('/api/admin/users/delete','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(uname+'님 탈퇴 처리 완료','ok');
   loadAdmOrders();loadAdmDash();
 }
 async function openUserDetail(uid){
-  var d=await api('/api/admin/일반회원s/'+uid+'/detail');
+  var d=await api('/api/admin/users/'+uid+'/detail');
   if(d.error){toast(d.error,'err');return}
-  var u=d.일반회원,orders=d.orders||[];
+  var u=d.user,orders=d.orders||[];
   var html='<div style="padding:20px">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
     +'<div style="font-size:16px;font-weight:800">👤 '+u.name+'</div>'
@@ -1051,13 +1051,13 @@ async function openUserDetail(uid){
 async function resetPw(uid){
   var pw=ge('newPwInput').value.trim();
   if(!pw||pw.length<6){toast('6자 이상 입력하세요','err');return}
-  var d=await api('/api/admin/일반회원s/resetpw','POST',{uid:uid,newpw:pw});
+  var d=await api('/api/admin/users/resetpw','POST',{uid:uid,newpw:pw});
   if(d.error){toast(d.error,'err');return}
   toast('비밀번호 초기화 완료','ok');ge('newPwInput').value='';
 }
 async function changeRole(uid,role){
   if(!confirm(role==='admin'?'관리자로 변경?':'일반회원으로 변경?'))return;
-  var d=await api('/api/admin/일반회원s/role','POST',{uid:uid,role:role});
+  var d=await api('/api/admin/users/role','POST',{uid:uid,role:role});
   if(d.error){toast(d.error,'err');return}
   toast('등급 변경 완료','ok');closeM('mDetail');loadAdmOrders();
 }
@@ -1159,7 +1159,7 @@ function renderSiteList(sites){
       +'<span class="bdg" style="'+(s.active?'background:#D1FAE5;color:#10B981':'background:#FEE2E2;color:#EF4444')+'">'+(s.active?'활성':'비활성')+'</span>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">'
-      +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.일반회원Count||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
+      +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.userCount||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.orderCount||0)+'</div><div style="font-size:10px;color:var(--tl)">주문</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:var(--p2)">'+gf(s.revenue||0)+'</div><div style="font-size:10px;color:var(--tl)">매출</div></div>'
       +'<div style="text-align:center;background:'+(parseFloat(s.credit||0)<1?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(parseFloat(s.credit||0)<1?'#EF4444':'#10B981')+'">$'+parseFloat(s.credit||0).toFixed(2)+'</div><div style="font-size:10px;color:var(--tl)">크레딧</div></div>'
