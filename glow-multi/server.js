@@ -187,76 +187,76 @@ async function initDB() {
   const svcCount = await query(`SELECT COUNT(*) as c FROM services WHERE id NOT LIKE 'api_%'`);
   if (parseInt(svcCount.rows[0].c) === 0) {
     const svcs = [
-      {id:'yt1',name:'YouTube 조회수 — 일반 (빠른 처리)',pl:'youtube',rate:0.50,min:1000,max:1000000,description:'실제 사용자 기반의 자연스러운 조회수입니다.'},
-      {id:'yt2',name:'YouTube 조회수 — 고유지율 (30초+)',pl:'youtube',rate:1.20,min:500,max:500000,description:'평균 시청 시간 30초 이상의 고품질 조회수입니다.'},
-      {id:'yt3',name:'YouTube 조회수 — 미국/영어권',pl:'youtube',rate:2.50,min:500,max:100000,description:'미국, 캐나다, 영국 등 영어권 시청자 조회수입니다.'},
-      {id:'yt4',name:'YouTube 구독자 — 실계정',pl:'youtube',rate:3.00,min:100,max:50000,description:'실제 활성 계정의 구독자를 늘려드립니다.'},
-      {id:'yt5',name:'YouTube 좋아요',pl:'youtube',rate:0.80,min:50,max:100000,description:'영상의 좋아요 수를 빠르게 증가시켜 드립니다.'},
-      {id:'yt6',name:'YouTube 시청시간 (시간)',pl:'youtube',rate:5.00,min:100,max:10000,description:'유튜브 수익화 필수 조건인 4,000시간 달성을 도와드립니다.'},
-      {id:'yt7',name:'YouTube 댓글 (커스텀)',pl:'youtube',rate:8.00,min:10,max:500,description:'원하는 내용의 댓글을 달아드립니다.'},
-      {id:'yt8',name:'YouTube 라이브 시청자',pl:'youtube',rate:10.00,min:100,max:10000,description:'유튜브 라이브 방송의 동시 시청자 수를 늘려드립니다.'},
-      {id:'yt9',name:'YouTube 쇼츠 조회수',pl:'youtube',rate:0.15,min:1000,max:5000000,description:'유튜브 쇼츠 영상의 조회수를 빠르게 증가시켜 드립니다.'},
-      {id:'yt10',name:'YouTube 저장 (플레이리스트)',pl:'youtube',rate:1.50,min:100,max:50000,description:'영상 저장 및 플레이리스트 추가 수를 늘려드립니다.'},
-      {id:'ig1',name:'Instagram 팔로워 — 글로벌 실계정',pl:'instagram',rate:1.50,min:100,max:100000,description:'전 세계 실제 활성 계정의 팔로워를 늘려드립니다.'},
-      {id:'ig2',name:'Instagram 팔로워 — 한국인',pl:'instagram',rate:5.00,min:50,max:10000,description:'국내 타겟 마케팅에 최적화된 한국인 팔로워입니다.'},
-      {id:'ig3',name:'Instagram 팔로워 — 미국/영어권',pl:'instagram',rate:4.50,min:50,max:20000,description:'미국, 영국 등 영어권 실계정 팔로워입니다.'},
-      {id:'ig4',name:'Instagram 좋아요 — 빠른 처리',pl:'instagram',rate:0.30,min:50,max:500000,description:'게시물 좋아요 수를 빠르게 높여드립니다.'},
-      {id:'ig5',name:'Instagram 릴스 조회수',pl:'instagram',rate:0.25,min:1000,max:10000000,description:'릴스 영상의 조회수를 대량으로 증가시켜 드립니다.'},
-      {id:'ig6',name:'Instagram 스토리 조회수',pl:'instagram',rate:0.35,min:100,max:1000000,description:'인스타그램 스토리 조회수를 높여드립니다.'},
-      {id:'ig7',name:'Instagram 게시물 저장',pl:'instagram',rate:0.50,min:100,max:100000,description:'게시물 저장 수를 증가시켜 드립니다.'},
-      {id:'ig8',name:'Instagram 댓글 (커스텀)',pl:'instagram',rate:10.00,min:5,max:300,description:'원하는 내용의 댓글을 달아드립니다.'},
-      {id:'ig9',name:'Instagram 팔로워 — 여성 타겟',pl:'instagram',rate:3.50,min:50,max:20000,description:'여성 계정 위주의 팔로워입니다.'},
-      {id:'ig10',name:'Instagram 라이브 시청자',pl:'instagram',rate:8.00,min:100,max:5000,description:'인스타그램 라이브의 실시간 시청자 수를 늘려드립니다.'},
-      {id:'ig11',name:'Instagram 인상 수 (Impressions)',pl:'instagram',rate:0.20,min:1000,max:5000000,description:'게시물 인상 수를 증가시켜 드립니다.'},
-      {id:'ig12',name:'Instagram 팔로우 + 언팔',pl:'instagram',rate:2.00,min:100,max:10000,description:'팔로우 후 일정 시간 뒤 언팔하는 자연스러운 방식입니다.'},
-      {id:'tt1',name:'TikTok 팔로워 — 실계정',pl:'tiktok',rate:1.80,min:100,max:100000,description:'실제 틱톡 사용자 팔로워를 늘려드립니다.'},
-      {id:'tt2',name:'TikTok 조회수 — 초고속',pl:'tiktok',rate:0.15,min:1000,max:10000000,description:'틱톡 영상의 조회수를 매우 빠르게 대량으로 증가시켜 드립니다.'},
-      {id:'tt3',name:'TikTok 조회수 — 고유지율',pl:'tiktok',rate:0.80,min:500,max:1000000,description:'평균 시청 완료율이 높은 고품질 조회수입니다.'},
-      {id:'tt4',name:'TikTok 좋아요',pl:'tiktok',rate:0.40,min:100,max:500000,description:'틱톡 영상의 좋아요 수를 빠르게 증가시켜 드립니다.'},
-      {id:'tt5',name:'TikTok 공유 수',pl:'tiktok',rate:1.20,min:100,max:50000,description:'영상 공유 수를 증가시켜 드립니다.'},
-      {id:'tt6',name:'TikTok 저장 수',pl:'tiktok',rate:1.00,min:100,max:50000,description:'영상 저장 수를 늘려드립니다.'},
-      {id:'tt7',name:'TikTok 댓글 (커스텀)',pl:'tiktok',rate:12.00,min:5,max:200,description:'원하는 내용의 댓글을 달아드립니다.'},
-      {id:'tt8',name:'TikTok 라이브 시청자',pl:'tiktok',rate:9.00,min:100,max:5000,description:'틱톡 라이브 방송의 동시 시청자 수를 늘려드립니다.'},
-      {id:'tt9',name:'TikTok 팔로워 — 미국 타겟',pl:'tiktok',rate:4.00,min:50,max:10000,description:'미국 기반 틱톡 사용자 팔로워입니다.'},
-      {id:'tt10',name:'TikTok 프로필 방문 수',pl:'tiktok',rate:0.30,min:1000,max:500000,description:'프로필 방문 수를 증가시켜 드립니다.'},
-      {id:'tw1',name:'Twitter/X 팔로워 — 글로벌',pl:'twitter',rate:2.00,min:100,max:100000,description:'X(트위터) 글로벌 팔로워를 늘려드립니다.'},
-      {id:'tw2',name:'Twitter/X 팔로워 — 미국 타겟',pl:'twitter',rate:5.00,min:50,max:20000,description:'미국 기반 X 팔로워입니다.'},
-      {id:'tw3',name:'Twitter/X 좋아요',pl:'twitter',rate:0.80,min:50,max:100000,description:'X 게시물의 좋아요 수를 증가시켜 드립니다.'},
-      {id:'tw4',name:'Twitter/X 리트윗',pl:'twitter',rate:1.50,min:50,max:50000,description:'게시물 리트윗 수를 늘려드립니다.'},
-      {id:'tw5',name:'Twitter/X 조회수',pl:'twitter',rate:0.30,min:1000,max:5000000,description:'X 수익화는 조회수 기반입니다.'},
-      {id:'tw6',name:'Twitter/X 북마크',pl:'twitter',rate:1.00,min:100,max:50000,description:'게시물 북마크 수를 증가시켜 드립니다.'},
-      {id:'tw7',name:'Twitter/X 댓글',pl:'twitter',rate:10.00,min:10,max:300,description:'X 게시물에 댓글을 달아드립니다.'},
-      {id:'tw8',name:'Twitter/X 인용 트윗',pl:'twitter',rate:2.00,min:20,max:5000,description:'게시물 인용 트윗 수를 늘려드립니다.'},
-      {id:'th1',name:'Threads 팔로워',pl:'threads',rate:3.00,min:100,max:50000,description:'메타의 Threads 팔로워를 늘려드립니다.'},
-      {id:'th2',name:'Threads 좋아요',pl:'threads',rate:0.80,min:50,max:100000,description:'Threads 게시물 좋아요 수를 증가시켜 드립니다.'},
-      {id:'th3',name:'Threads 리포스트',pl:'threads',rate:1.50,min:50,max:20000,description:'Threads 게시물 리포스트 수를 늘려드립니다.'},
-      {id:'th4',name:'Threads 조회수',pl:'threads',rate:0.20,min:1000,max:1000000,description:'Threads 게시물 조회수를 빠르게 증가시켜 드립니다.'},
-      {id:'tg1',name:'Telegram 채널 멤버 — 글로벌',pl:'telegram',rate:1.50,min:100,max:100000,description:'텔레그램 채널의 멤버 수를 늘려드립니다.'},
-      {id:'tg2',name:'Telegram 채널 멤버 — 한국어권',pl:'telegram',rate:4.00,min:50,max:10000,description:'한국어 사용자 위주의 텔레그램 멤버입니다.'},
-      {id:'tg3',name:'Telegram 포스트 조회수',pl:'telegram',rate:0.25,min:1000,max:5000000,description:'텔레그램 채널 게시물의 조회수를 증가시켜 드립니다.'},
-      {id:'tg4',name:'Telegram 리액션',pl:'telegram',rate:0.80,min:100,max:50000,description:'게시물에 이모지 리액션을 달아드립니다.'},
-      {id:'tg5',name:'Telegram 그룹 멤버',pl:'telegram',rate:2.00,min:100,max:50000,description:'텔레그램 그룹의 멤버 수를 늘려드립니다.'},
-      {id:'tg6',name:'Telegram 봇 사용자',pl:'telegram',rate:3.00,min:100,max:10000,description:'텔레그램 봇의 사용자 수를 늘려드립니다.'},
-      {id:'fb1',name:'Facebook 페이지 좋아요',pl:'facebook',rate:1.20,min:100,max:100000,description:'페이스북 페이지 좋아요 수를 늘려드립니다.'},
-      {id:'fb2',name:'Facebook 팔로워',pl:'facebook',rate:1.00,min:100,max:100000,description:'페이스북 계정 팔로워를 늘려드립니다.'},
-      {id:'fb3',name:'Facebook 게시물 좋아요',pl:'facebook',rate:0.50,min:50,max:200000,description:'페이스북 게시물 좋아요 수를 빠르게 증가시켜 드립니다.'},
-      {id:'fb4',name:'Facebook 동영상 조회수',pl:'facebook',rate:0.20,min:1000,max:5000000,description:'페이스북 동영상 조회수를 늘려드립니다.'},
-      {id:'fb5',name:'Facebook 공유 수',pl:'facebook',rate:2.00,min:50,max:20000,description:'게시물 공유 수를 증가시켜 드립니다.'},
-      {id:'fb6',name:'Facebook 리뷰 (별점 5점)',pl:'facebook',rate:15.00,min:5,max:200,description:'페이스북 비즈니스 페이지에 긍정적인 리뷰를 달아드립니다.'},
-      {id:'sp1',name:'Spotify 재생수 — 글로벌',pl:'spotify',rate:0.40,min:1000,max:1000000,description:'스포티파이 트랙의 재생수를 늘려드립니다.'},
-      {id:'sp2',name:'Spotify 팔로워',pl:'spotify',rate:2.00,min:100,max:20000,description:'스포티파이 아티스트 팔로워를 늘려드립니다.'},
-      {id:'sp3',name:'Spotify 월간 리스너',pl:'spotify',rate:3.00,min:100,max:10000,description:'월간 리스너 수를 증가시켜 드립니다.'},
-      {id:'sp4',name:'Spotify 플레이리스트 추가',pl:'spotify',rate:5.00,min:50,max:5000,description:'트랙을 플레이리스트에 추가해드립니다.'},
-      {id:'sp5',name:'Spotify 저장 수',pl:'spotify',rate:2.50,min:100,max:10000,description:'트랙 저장 수를 늘려드립니다.'},
-      {id:'nv1',name:'네이버 블로그 방문자',pl:'naver',rate:1.00,min:100,max:10000,description:'네이버 블로그 일일 방문자 수를 늘려드립니다.'},
-      {id:'nv2',name:'네이버 블로그 좋아요',pl:'naver',rate:0.80,min:50,max:5000,description:'블로그 게시물 좋아요 수를 증가시켜 드립니다.'},
-      {id:'nv3',name:'네이버 플레이스 저장',pl:'naver',rate:5.00,min:10,max:1000,description:'네이버 지도/플레이스 저장 수를 늘려드립니다.'},
-      {id:'nv4',name:'네이버 카페 회원',pl:'naver',rate:3.00,min:50,max:5000,description:'네이버 카페 회원 수를 늘려드립니다.'},
-      {id:'etc1',name:'Discord 서버 멤버',pl:'other',rate:2.00,min:100,max:50000,description:'디스코드 서버 멤버를 늘려드립니다.'},
-      {id:'etc2',name:'YouTube Music 재생수',pl:'youtube',rate:0.50,min:1000,max:500000,description:'유튜브 뮤직 트랙의 재생수를 늘려드립니다.'},
-      {id:'etc3',name:'LinkedIn 팔로워',pl:'other',rate:3.00,min:50,max:10000,description:'링크드인 프로필 팔로워를 늘려드립니다.'},
-      {id:'etc4',name:'Pinterest 팔로워',pl:'other',rate:1.50,min:100,max:20000,description:'핀터레스트 팔로워를 늘려드립니다.'},
-      {id:'etc5',name:'Google 지도 리뷰 (별점 5점)',pl:'other',rate:20.00,min:5,max:100,description:'구글 지도 비즈니스에 긍정적인 리뷰를 달아드립니다.'},
+      {id:'yt1',name:'YouTube 조회수 — 일반 (빠른 처리)',pl:'youtube',rate:0.50,min:1000,max:1000000,description:'조회수는 유튜브 알고리즘의 핵심 지표입니다. 조회수가 높을수록 추천 영상에 노출되는 빈도가 높아지고, 신규 시청자 유입이 자연스럽게 증가합니다. 실제 사용자 패턴 기반으로 처리되어 안전하며, 빠른 시작으로 초기 채널 성장에 최적화되어 있습니다. 영상 업로드 직후 적용하면 알고리즘 부스트 효과를 극대화할 수 있습니다.'},
+      {id:'yt2',name:'YouTube 조회수 — 고유지율 (30초+)',pl:'youtube',rate:1.20,min:500,max:500000,description:'단순 조회수보다 훨씬 강력한 효과를 제공합니다. 평균 시청 시간 30초 이상으로 처리되어 유튜브 알고리즘이 "좋은 영상"으로 인식하게 만듭니다. 시청 지속 시간은 추천 알고리즘 가중치가 가장 높은 지표로, 홈 화면과 추천 탭 노출 가능성을 크게 높여줍니다. 수익화 채널이나 브랜드 영상에 특히 효과적입니다.'},
+      {id:'yt3',name:'YouTube 조회수 — 미국/영어권',pl:'youtube',rate:2.50,min:500,max:100000,description:'RPM(광고 1,000회 노출당 수익)이 가장 높은 미국, 캐나다, 영국, 호주 시청자 기반의 조회수입니다. 같은 조회수라도 영어권 시청자 비율이 높으면 광고 수익이 3~5배 이상 차이납니다. 글로벌 진출을 목표로 하는 크리에이터나 영어 콘텐츠 채널의 수익 극대화에 필수입니다.'},
+      {id:'yt4',name:'YouTube 구독자 — 실계정',pl:'youtube',rate:3.00,min:100,max:50000,description:'수익화의 첫 번째 관문인 구독자 1,000명 달성을 도와드립니다. 실제 활성 계정 기반으로 구독자 수가 증가하여 채널 신뢰도와 사회적 증거(Social Proof)를 높여줍니다. 구독자가 많은 채널은 브랜드 협찬 제안도 더 많이 받게 되며, 신규 방문자의 구독 전환율도 자연스럽게 높아집니다. 드롭 발생 시 자동 보충됩니다.'},
+      {id:'yt5',name:'YouTube 좋아요',pl:'youtube',rate:0.80,min:50,max:100000,description:'좋아요 수는 알고리즘이 영상 품질을 판단하는 중요한 신호입니다. 조회수 대비 좋아요 비율(좋아요율)이 높을수록 추천 탭과 검색 결과 상위에 노출될 확률이 높아집니다. 새 영상 업로드 시 빠르게 좋아요를 늘리면 초기 알고리즘 부스트를 받을 수 있으며, 시청자에게 신뢰감을 주어 추가 구독과 공유를 유도합니다.'},
+      {id:'yt6',name:'YouTube 시청시간 (시간)',pl:'youtube',rate:5.00,min:100,max:10000,description:'유튜브 수익화 조건인 연간 4,000시간을 빠르게 달성하세요. 신규 채널이나 재활성화 채널의 수익화 신청 조건을 충족하는 데 필요한 시간을 단축해드립니다. 실제 시청 패턴으로 안전하게 처리되며, 시청 시간이 쌓일수록 채널 전체의 알고리즘 신뢰도도 함께 상승합니다.'},
+      {id:'yt7',name:'YouTube 댓글 (커스텀)',pl:'youtube',rate:8.00,min:10,max:500,description:'원하는 내용의 댓글로 영상 활성도를 높여드립니다. 댓글이 많은 영상은 알고리즘이 "시청자 참여도가 높은 영상"으로 판단하여 더 많이 노출시킵니다. 긍정적인 댓글은 신규 방문자에게 신뢰감을 주고, 질문 형태의 댓글은 다른 시청자들의 추가 댓글 참여를 유도하는 효과가 있습니다.'},
+      {id:'yt8',name:'YouTube 라이브 시청자',pl:'youtube',rate:10.00,min:100,max:10000,description:'라이브 방송 동시 시청자 수를 늘려 방송의 인기도를 높여드립니다. 시청자가 많은 라이브는 유튜브 라이브 탭에 상위 노출되어 신규 유입을 자연스럽게 만들어냅니다. 슈퍼챗, 멤버십 유도, 브랜드 라이브 이벤트 등에서 높은 동시 접속자 수는 참여율과 수익에 직접적인 영향을 줍니다.'},
+      {id:'yt9',name:'YouTube 쇼츠 조회수',pl:'youtube',rate:0.15,min:1000,max:5000000,description:'유튜브 쇼츠는 지금 가장 빠르게 성장하는 포맷입니다. 조회수를 빠르게 늘려 쇼츠 피드 알고리즘의 바이럴 루프에 진입시켜 드립니다. 한 번 알고리즘이 영상을 밀기 시작하면 수백만 조회수까지 자연 성장이 가능합니다. 채널 성장의 가장 빠른 진입로로, 신규 채널에 특히 강력히 추천합니다.'},
+      {id:'yt10',name:'YouTube 저장 (플레이리스트)',pl:'youtube',rate:1.50,min:100,max:50000,description:'영상 저장 수는 유튜브 알고리즘에서 "나중에 다시 보고 싶은 영상"으로 분류되는 강력한 신호입니다. 저장이 많은 영상은 구독자 홈 피드와 추천 영상에 장기적으로 지속 노출됩니다. 조회수나 좋아요보다 알고리즘 가중치가 높으며, 튜토리얼, 레시피, 정보성 콘텐츠에 특히 효과적입니다.'},
+      {id:'ig1',name:'Instagram 팔로워 — 글로벌 실계정',pl:'instagram',rate:1.50,min:100,max:100000,description:'팔로워 수는 인스타그램에서 신뢰도와 인지도를 나타내는 핵심 지표입니다. 팔로워가 많을수록 브랜드 협찬 제안을 받을 가능성이 높아지고, 탐색 탭 노출 빈도도 증가합니다. 전 세계 실계정 기반으로 제공되며, 자연스러운 성장 패턴을 유지합니다. 드롭 발생 시 자동 보충 서비스가 포함되어 있습니다.'},
+      {id:'ig2',name:'Instagram 팔로워 — 한국인',pl:'instagram',rate:5.00,min:50,max:10000,description:'국내 마케팅에 특화된 한국인 실계정 팔로워입니다. 한국 소비자를 타겟으로 하는 쇼핑몰, 맛집, 뷰티, 패션 계정에 가장 효과적입니다. 국내 팔로워 비율이 높으면 인스타그램 알고리즘이 국내 사용자에게 더 많이 노출시켜 실제 고객 유입으로 이어질 확률이 높습니다. 협찬 제안 시 국내 팔로워 비율은 브랜드사에서 중요하게 봅니다.'},
+      {id:'ig3',name:'Instagram 팔로워 — 미국/영어권',pl:'instagram',rate:4.50,min:50,max:20000,description:'글로벌 브랜드 마케팅과 영어권 시장 공략에 최적화된 팔로워입니다. 미국, 영국, 캐나다, 호주 등 구매력이 높은 영어권 실계정으로 구성됩니다. 글로벌 진출을 목표로 하는 K-브랜드나 영어 콘텐츠 크리에이터에게 필수이며, 해외 브랜드 협찬 단가를 높이는 데 효과적입니다.'},
+      {id:'ig4',name:'Instagram 좋아요 — 빠른 처리',pl:'instagram',rate:0.30,min:50,max:500000,description:'게시물 좋아요 수는 인스타그램 탐색 탭 노출의 핵심 요소입니다. 업로드 직후 빠르게 좋아요를 늘리면 인스타그램 알고리즘이 "인기 게시물"로 분류하여 팔로워가 아닌 사용자에게도 노출됩니다. 신제품 출시, 이벤트 게시물, 브랜드 캠페인에 적용하면 유기적 도달 범위를 극대화할 수 있습니다.'},
+      {id:'ig5',name:'Instagram 릴스 조회수',pl:'instagram',rate:0.25,min:1000,max:10000000,description:'릴스는 현재 인스타그램에서 가장 강력한 성장 도구입니다. 조회수를 빠르게 늘려 알고리즘의 바이럴 루프에 진입시켜 드립니다. 조회수가 높은 릴스는 팔로워가 아닌 사람들에게도 대규모로 노출되어, 팔로워 급증과 계정 성장으로 이어집니다. 한 편의 릴스가 계정을 완전히 바꿀 수 있습니다.'},
+      {id:'ig6',name:'Instagram 스토리 조회수',pl:'instagram',rate:0.35,min:100,max:1000000,description:'스토리 조회수는 계정 활성도와 팔로워 인게이지먼트를 나타냅니다. 조회수가 높은 스토리는 팔로워 피드 상단에 우선 표시되어 더 많은 노출을 확보합니다. 스토리 링크, 제품 태그, 설문 기능과 결합하면 실제 전환율을 높이는 효과적인 마케팅 도구가 됩니다.'},
+      {id:'ig7',name:'Instagram 게시물 저장',pl:'instagram',rate:0.50,min:100,max:100000,description:'저장 수는 인스타그램 알고리즘에서 가장 높은 가중치를 부여받는 참여 지표입니다. "나중에 다시 보고 싶은 게시물"로 분류된 콘텐츠는 탐색 탭과 추천 피드에 장기간 지속적으로 노출됩니다. 인포그래픽, 레시피, 팁 콘텐츠 등 정보성 게시물에 특히 강력한 효과를 발휘합니다.'},
+      {id:'ig8',name:'Instagram 댓글 (커스텀)',pl:'instagram',rate:10.00,min:5,max:300,description:'원하는 내용의 댓글로 게시물 활성도를 높여드립니다. 댓글이 많은 게시물은 알고리즘이 높은 참여도를 인식하여 더 많은 사람에게 노출시킵니다. 브랜드 이미지에 맞는 긍정적 댓글, 제품 질문 형태의 댓글 등을 원하는 내용으로 작성해드립니다.'},
+      {id:'ig9',name:'Instagram 팔로워 — 여성 타겟',pl:'instagram',rate:3.50,min:50,max:20000,description:'여성 계정 중심의 팔로워로 뷰티, 패션, 육아, 라이프스타일 계정에 최적화되어 있습니다. 타겟 고객층과 일치하는 팔로워 구성은 브랜드 신뢰도를 높이고, 실제 구매로 이어지는 전환율을 높여줍니다. 여성 타겟 브랜드의 협찬 단가 협상에도 유리하게 작용합니다.'},
+      {id:'ig10',name:'Instagram 라이브 시청자',pl:'instagram',rate:8.00,min:100,max:5000,description:'인스타그램 라이브 동시 시청자를 늘려드립니다. 시청자가 많은 라이브는 팔로워 알림에서 상위 노출되고, 라이브 탭에서도 우선 표시됩니다. 제품 라이브 판매, 브랜드 이벤트, 인플루언서 협업 라이브에서 높은 시청자 수는 신뢰도와 구매 전환율을 크게 높여줍니다.'},
+      {id:'ig11',name:'Instagram 인상 수 (Impressions)',pl:'instagram',rate:0.20,min:1000,max:5000000,description:'게시물이 노출된 총 횟수를 늘려드립니다. 인상 수가 높으면 광고 효율 리포트에서 브랜드 인지도 지표가 개선되어, 브랜드 마케팅 제안 시 설득력 있는 데이터를 제시할 수 있습니다. 캠페인 성과 보고서를 위한 노출 수 확보에 효과적입니다.'},
+      {id:'ig12',name:'Instagram 팔로우 + 언팔',pl:'instagram',rate:2.00,min:100,max:10000,description:'팔로우 후 일정 시간 뒤 언팔하는 방식으로 계정 노출을 높이는 전략입니다. 상대방의 알림에 계정이 노출되어 프로필 방문과 맞팔로워 유도 효과가 있습니다. 특정 타겟층에게 계정을 알리는 자연스러운 초기 마케팅 방법입니다.'},
+      {id:'tt1',name:'TikTok 팔로워 — 실계정',pl:'tiktok',rate:1.80,min:100,max:100000,description:'틱톡 팔로워는 포유(For You) 탭 노출의 기본 신뢰도 지표입니다. 팔로워가 많을수록 알고리즘이 새 영상을 더 넓은 범위에 먼저 배포합니다. 실계정 기반으로 처리되어 계정 안전성을 유지하면서 인플루언서 레벨로 성장할 수 있는 기반을 만들어드립니다.'},
+      {id:'tt2',name:'TikTok 조회수 — 초고속',pl:'tiktok',rate:0.15,min:1000,max:10000000,description:'틱톡에서 바이럴을 만드는 가장 빠른 방법입니다. 초기 조회수가 빠르게 쌓이면 틱톡 알고리즘이 영상을 더 넓은 포유 탭에 배포합니다. 이 바이럴 루프에 진입하면 수백만 조회수까지 자연 성장이 가능합니다. 트렌드에 맞는 영상 업로드 직후 적용하면 효과가 극대화됩니다.'},
+      {id:'tt3',name:'TikTok 조회수 — 고유지율',pl:'tiktok',rate:0.80,min:500,max:1000000,description:'틱톡 알고리즘은 영상 완시청률을 가장 중요하게 봅니다. 고유지율 조회수는 시청자가 끝까지 본 것처럼 처리되어 알고리즘이 영상을 "좋은 콘텐츠"로 판단합니다. 단순 조회수보다 포유 탭 노출에 훨씬 강력한 효과를 발휘하며, 광고나 브랜드 영상에 특히 추천합니다.'},
+      {id:'tt4',name:'TikTok 좋아요',pl:'tiktok',rate:0.40,min:100,max:500000,description:'좋아요는 틱톡 알고리즘의 중요한 참여 신호입니다. 조회수 대비 좋아요 비율이 높은 영상은 알고리즘이 더 많은 사람에게 배포합니다. 빠른 좋아요 증가로 영상의 초기 알고리즘 점수를 높여 포유 탭 진입을 도와드립니다.'},
+      {id:'tt5',name:'TikTok 공유 수',pl:'tiktok',rate:1.20,min:100,max:50000,description:'공유는 틱톡에서 가장 강력한 바이럴 신호입니다. 다른 플랫폼으로 공유된 영상은 외부 트래픽을 유입시키고, 틱톡 알고리즘은 공유가 많은 영상을 바이럴 콘텐츠로 판단하여 대규모 배포합니다. 캠페인 영상이나 챌린지 영상의 바이럴 효과를 극대화하고 싶을 때 가장 효과적인 서비스입니다.'},
+      {id:'tt6',name:'TikTok 저장 수',pl:'tiktok',rate:1.00,min:100,max:50000,description:'저장 수는 틱톡 알고리즘에서 "나중에 다시 보고 싶은 영상"으로 분류되는 강력한 신호입니다. 저장이 많은 영상은 포유 탭에 장기간 지속적으로 노출됩니다. 튜토리얼, 레시피, 정보성 콘텐츠에 적용하면 지속적인 유기적 노출 효과를 누릴 수 있습니다.'},
+      {id:'tt7',name:'TikTok 댓글 (커스텀)',pl:'tiktok',rate:12.00,min:5,max:200,description:'원하는 내용의 댓글로 영상 참여도를 높여드립니다. 댓글이 많은 영상은 틱톡 알고리즘이 높은 인게이지먼트로 인식하여 포유 탭 노출을 늘립니다. 질문 형태의 댓글은 다른 시청자들의 댓글 참여를 유발하는 연쇄 효과가 있습니다.'},
+      {id:'tt8',name:'TikTok 라이브 시청자',pl:'tiktok',rate:9.00,min:100,max:5000,description:'틱톡 라이브 동시 시청자를 늘려드립니다. 시청자가 많은 라이브는 라이브 탐색 탭 상단에 노출되어 신규 유입을 만들어냅니다. 라이브 선물, 제품 판매, 브랜드 이벤트에서 높은 시청자 수는 수익과 신뢰도를 동시에 높여줍니다.'},
+      {id:'tt9',name:'TikTok 팔로워 — 미국 타겟',pl:'tiktok',rate:4.00,min:50,max:10000,description:'미국 기반 틱톡 사용자 팔로워입니다. 틱톡 크리에이터 펀드와 브랜드 협찬 시 미국 팔로워 비율은 수익에 직접적인 영향을 줍니다. 영어권 시장을 타겟으로 하는 크리에이터나 글로벌 브랜드에게 필수적인 서비스입니다.'},
+      {id:'tt10',name:'TikTok 프로필 방문 수',pl:'tiktok',rate:0.30,min:1000,max:500000,description:'프로필 방문 수를 증가시켜 계정 노출도를 높여드립니다. 프로필 방문이 많으면 팔로워로 자연 전환될 확률이 높아지며, 틱톡 알고리즘이 계정의 인기도를 높게 평가합니다. 신규 계정의 초기 노출 확보에 효과적입니다.'},
+      {id:'tw1',name:'Twitter/X 팔로워 — 글로벌',pl:'twitter',rate:2.00,min:100,max:100000,description:'X(트위터) 팔로워는 계정 영향력의 핵심 지표입니다. 팔로워가 많을수록 트윗의 도달 범위가 넓어지고, X 수익화 프로그램(광고 수익 공유) 조건 달성에 필수입니다. 글로벌 팔로워로 계정 신뢰도를 높여 인플루언서 협업 제안을 더 많이 받을 수 있습니다.'},
+      {id:'tw2',name:'Twitter/X 팔로워 — 미국 타겟',pl:'twitter',rate:5.00,min:50,max:20000,description:'X 수익화에서 RPM이 가장 높은 미국 팔로워입니다. 같은 조회수라도 미국 팔로워 비율이 높으면 광고 수익이 수배 차이납니다. X 프리미엄 크리에이터로 성장하기 위한 핵심 자산입니다.'},
+      {id:'tw3',name:'Twitter/X 좋아요',pl:'twitter',rate:0.80,min:50,max:100000,description:'좋아요가 많은 트윗은 X 알고리즘의 추천 탭과 탐색 탭에 우선 노출됩니다. 중요한 공지, 신제품 출시, 캠페인 트윗에 적용하면 유기적 도달 범위를 크게 확장할 수 있습니다.'},
+      {id:'tw4',name:'Twitter/X 리트윗',pl:'twitter',rate:1.50,min:50,max:50000,description:'리트윗은 X에서 가장 강력한 바이럴 신호입니다. 리트윗이 많은 트윗은 팔로워가 아닌 사람들에게도 노출되어 계정 성장과 브랜드 인지도 향상에 직접적으로 기여합니다. 중요한 메시지가 빠르게 퍼질 수 있도록 도와드립니다.'},
+      {id:'tw5',name:'Twitter/X 조회수',pl:'twitter',rate:0.30,min:1000,max:5000000,description:'X 수익화는 조회수 기반입니다. 조회수가 많을수록 광고 수익이 직접 증가합니다. 바이럴 가능성이 있는 트윗에 초기 조회수를 채워주면 알고리즘이 더 많은 사람에게 배포하는 선순환이 만들어집니다.'},
+      {id:'tw6',name:'Twitter/X 북마크',pl:'twitter',rate:1.00,min:100,max:50000,description:'북마크는 X 알고리즘에서 높은 가중치를 가진 참여 지표입니다. "나중에 읽고 싶은 트윗"으로 분류되어 알고리즘 추천에 강력한 신호를 보냅니다. 정보성 트윗이나 중요한 발표에 적용하면 장기적인 노출 효과를 누릴 수 있습니다.'},
+      {id:'tw7',name:'Twitter/X 댓글',pl:'twitter',rate:10.00,min:10,max:300,description:'트윗에 댓글을 달아드립니다. 댓글이 많은 트윗은 X 알고리즘이 높은 참여도로 인식하여 더 많이 노출시킵니다. 토론이나 질문 형태의 댓글은 다른 사용자들의 참여를 유도하는 연쇄 효과를 만들어냅니다.'},
+      {id:'tw8',name:'Twitter/X 인용 트윗',pl:'twitter',rate:2.00,min:20,max:5000,description:'인용 트윗은 원본 트윗에 새로운 맥락을 더해 바이럴을 만드는 강력한 도구입니다. 인용이 많은 트윗은 X 알고리즘에서 "화제의 트윗"으로 분류되어 탐색 탭에 노출될 가능성이 높아집니다.'},
+      {id:'th1',name:'Threads 팔로워',pl:'threads',rate:3.00,min:100,max:50000,description:'메타의 Threads 팔로워를 늘려드립니다. Threads는 인스타그램과 연동되어 팔로워가 늘어날수록 인스타그램 계정 노출에도 시너지 효과를 줍니다. 빠르게 성장하는 플랫폼에서 초기에 팔로워를 확보하면 유기적 성장 속도가 훨씬 빨라집니다.'},
+      {id:'th2',name:'Threads 좋아요',pl:'threads',rate:0.80,min:50,max:100000,description:'Threads 게시물 좋아요로 참여도를 높여드립니다. 좋아요가 많은 게시물은 Threads 피드 상단에 노출되어 더 많은 팔로워와 인게이지먼트를 유도합니다.'},
+      {id:'th3',name:'Threads 리포스트',pl:'threads',rate:1.50,min:50,max:20000,description:'Threads 게시물 리포스트로 콘텐츠 확산을 도와드립니다. 리포스트가 많을수록 팔로워가 아닌 사용자에게도 노출되어 빠른 팔로워 성장이 가능합니다.'},
+      {id:'th4',name:'Threads 조회수',pl:'threads',rate:0.20,min:1000,max:1000000,description:'Threads 게시물 조회수를 빠르게 늘려드립니다. 높은 조회수는 알고리즘 추천을 유도하고 계정의 신뢰도를 높여줍니다.'},
+      {id:'tg1',name:'Telegram 채널 멤버 — 글로벌',pl:'telegram',rate:1.50,min:100,max:100000,description:'텔레그램 채널 멤버 수는 채널의 신뢰도와 광고 수익에 직접적인 영향을 줍니다. 멤버가 많은 채널은 광고주로부터 더 높은 단가의 광고 제안을 받습니다. 전 세계 사용자 기반으로 빠르게 채널 규모를 키워 수익화와 영향력을 동시에 높여드립니다.'},
+      {id:'tg2',name:'Telegram 채널 멤버 — 한국어권',pl:'telegram',rate:4.00,min:50,max:10000,description:'한국어 사용자 중심의 텔레그램 멤버입니다. 국내 커뮤니티, 정보 채널, 코인/주식 분석 채널 등 한국 타겟 채널 운영자에게 필수입니다. 한국인 멤버는 채널 광고 단가와 실제 반응률이 높아 수익화에 유리합니다.'},
+      {id:'tg3',name:'Telegram 포스트 조회수',pl:'telegram',rate:0.25,min:1000,max:5000000,description:'채널 게시물 조회수는 채널 활성도의 핵심 지표입니다. 광고주들은 멤버 수보다 게시물 조회수를 더 중요하게 봅니다. 조회수가 높은 채널은 광고 단가 협상에서 훨씬 유리한 위치를 점할 수 있습니다.'},
+      {id:'tg4',name:'Telegram 리액션',pl:'telegram',rate:0.80,min:100,max:50000,description:'게시물 이모지 리액션으로 채널 활성도와 참여율을 높여드립니다. 리액션이 많은 게시물은 채널의 인게이지먼트 지표를 개선하여 광고주에게 더 매력적인 채널로 보이게 합니다.'},
+      {id:'tg5',name:'Telegram 그룹 멤버',pl:'telegram',rate:2.00,min:100,max:50000,description:'텔레그램 그룹 멤버를 늘려드립니다. 활성화된 커뮤니티는 비즈니스 협업, 제품 판매, 정보 공유에 강력한 도구가 됩니다. 초기 멤버 확보로 신규 참여자들의 자연 유입을 가속화하세요.'},
+      {id:'tg6',name:'Telegram 봇 사용자',pl:'telegram',rate:3.00,min:100,max:10000,description:'텔레그램 봇의 사용자 수를 늘려드립니다. 봇 사용자가 많을수록 서비스 신뢰도가 높아지고, 실제 사용자 유입도 증가합니다.'},
+      {id:'fb1',name:'Facebook 페이지 좋아요',pl:'facebook',rate:1.20,min:100,max:100000,description:'페이스북 페이지 좋아요는 비즈니스 페이지의 신뢰도를 나타내는 핵심 지표입니다. 좋아요가 많은 페이지는 페이스북 광고 집행 시 클릭률과 전환율이 더 높으며, 방문자에게 신뢰감을 주어 실제 고객 전환으로 이어집니다.'},
+      {id:'fb2',name:'Facebook 팔로워',pl:'facebook',rate:1.00,min:100,max:100000,description:'페이스북 계정 팔로워를 늘려드립니다. 팔로워가 많을수록 게시물 도달 범위가 넓어지고, 알고리즘이 콘텐츠를 더 많은 사람에게 노출시킵니다.'},
+      {id:'fb3',name:'Facebook 게시물 좋아요',pl:'facebook',rate:0.50,min:50,max:200000,description:'게시물 좋아요로 페이스북 알고리즘 노출을 높여드립니다. 좋아요가 많은 게시물은 팔로워의 뉴스피드 상단에 우선 표시되고, 친구들에게도 노출되어 유기적 도달이 증가합니다.'},
+      {id:'fb4',name:'Facebook 동영상 조회수',pl:'facebook',rate:0.20,min:1000,max:5000000,description:'페이스북 동영상 조회수를 늘려드립니다. 조회수가 높은 영상은 인스트림 광고 수익이 발생하며, 알고리즘이 더 많은 사용자에게 배포합니다. 페이스북 릴스 성장에도 효과적입니다.'},
+      {id:'fb5',name:'Facebook 공유 수',pl:'facebook',rate:2.00,min:50,max:20000,description:'게시물 공유로 바이럴 효과를 만들어드립니다. 공유가 많은 게시물은 페이스북 알고리즘에서 "화제 콘텐츠"로 분류되어 뉴스피드와 탐색 탭에 대규모 노출됩니다.'},
+      {id:'fb6',name:'Facebook 리뷰 (별점 5점)',pl:'facebook',rate:15.00,min:5,max:200,description:'페이스북 비즈니스 페이지에 긍정적인 5점 리뷰를 달아드립니다. 리뷰가 많고 평점이 높은 비즈니스는 구글 검색 결과에도 긍정적인 영향을 주며, 신규 고객의 신뢰와 구매 결정에 직접적인 영향을 미칩니다.'},
+      {id:'sp1',name:'Spotify 재생수 — 글로벌',pl:'spotify',rate:0.40,min:1000,max:1000000,description:'스포티파이 재생수를 늘려 차트 진입과 알고리즘 추천 확률을 높여드립니다. 재생수가 일정 기준을 넘으면 Discover Weekly, Release Radar 등 개인화 추천 플레이리스트에 포함될 가능성이 높아집니다. 신곡 발매 초기에 적용하면 알고리즘 부스트 효과를 극대화할 수 있습니다.'},
+      {id:'sp2',name:'Spotify 팔로워',pl:'spotify',rate:2.00,min:100,max:20000,description:'스포티파이 아티스트 팔로워가 많을수록 신곡 발매 시 팔로워에게 자동 알림이 가고, 스포티파이 편집팀의 플레이리스트 선정 가능성도 높아집니다. 아티스트 인지도와 스트리밍 수익을 동시에 높이는 핵심 지표입니다.'},
+      {id:'sp3',name:'Spotify 월간 리스너',pl:'spotify',rate:3.00,min:100,max:10000,description:'월간 리스너 수는 스포티파이 차트 진입의 핵심 지표이며, 아티스트 페이지에 공개적으로 표시되어 신뢰도에 직접 영향을 줍니다. 높은 월간 리스너는 레이블, 에이전시, 브랜드 협업 제안 시 강력한 증거 자료가 됩니다.'},
+      {id:'sp4',name:'Spotify 플레이리스트 추가',pl:'spotify',rate:5.00,min:50,max:5000,description:'트랙을 플레이리스트에 추가해드립니다. 플레이리스트 등록은 지속적인 재생수 증가와 신규 리스너 유입의 원천입니다. 스포티파이 알고리즘은 플레이리스트 포함 트랙을 더 적극적으로 추천합니다.'},
+      {id:'sp5',name:'Spotify 저장 수',pl:'spotify',rate:2.50,min:100,max:10000,description:'트랙 저장 수를 늘려드립니다. 저장이 많은 트랙은 스포티파이 개인화 추천 알고리즘에서 높은 점수를 받아 Discover Weekly 등 추천 플레이리스트에 포함될 가능성이 높아집니다.'},
+      {id:'nv1',name:'네이버 블로그 방문자',pl:'naver',rate:1.00,min:100,max:10000,description:'네이버 블로그 일일 방문자를 늘려 블로그 지수를 높여드립니다. 방문자 수가 많을수록 네이버 검색 결과 상위 노출 가능성이 높아지며, 블로그 광고 수익도 증가합니다. 체험단, 원고료 제안을 받기 위한 기본 지표 확보에 효과적입니다.'},
+      {id:'nv2',name:'네이버 블로그 좋아요',pl:'naver',rate:0.80,min:50,max:5000,description:'블로그 게시물 좋아요 수를 늘려드립니다. 좋아요가 많은 포스팅은 네이버 검색 알고리즘에서 좋은 콘텐츠로 평가받아 상위 노출 가능성이 높아집니다.'},
+      {id:'nv3',name:'네이버 플레이스 저장',pl:'naver',rate:5.00,min:10,max:1000,description:'네이버 지도에서 플레이스 저장 수를 늘려드립니다. 저장이 많은 장소는 네이버 지도 검색 결과 상위에 노출되고, "저장 많은 맛집/카페" 추천 리스트에 포함될 가능성이 높아집니다. 로컬 비즈니스의 신규 고객 유입에 가장 직접적인 효과를 줍니다.'},
+      {id:'nv4',name:'네이버 카페 회원',pl:'naver',rate:3.00,min:50,max:5000,description:'네이버 카페 회원 수를 늘려드립니다. 회원이 많은 카페는 네이버 검색 결과에서 더 잘 노출되며, 카페 활성도 지표가 올라가 기존 회원들의 참여도도 높아집니다.'},
+      {id:'etc1',name:'Discord 서버 멤버',pl:'other',rate:2.00,min:100,max:50000,description:'디스코드 서버 멤버를 늘려 커뮤니티 규모와 신뢰도를 높여드립니다. 멤버가 많은 서버는 신규 참여자에게 활성화된 커뮤니티로 인식되어 자연 유입이 증가합니다. 게임, NFT, 크립토, 브랜드 커뮤니티 운영에 필수입니다.'},
+      {id:'etc2',name:'YouTube Music 재생수',pl:'youtube',rate:0.50,min:1000,max:500000,description:'유튜브 뮤직 트랙의 재생수를 늘려드립니다. 유튜브 뮤직 차트 진입과 알고리즘 추천 플레이리스트 포함 가능성을 높여 아티스트 노출을 극대화합니다.'},
+      {id:'etc3',name:'LinkedIn 팔로워',pl:'other',rate:3.00,min:50,max:10000,description:'링크드인 프로필 팔로워를 늘려 비즈니스 네트워크와 전문성을 강화해드립니다. 팔로워가 많은 프로필은 게시물 도달 범위가 넓어지고, 헤드헌터와 기업의 협업 제안을 더 많이 받게 됩니다. B2B 마케팅과 채용 브랜딩에 필수입니다.'},
+      {id:'etc4',name:'Pinterest 팔로워',pl:'other',rate:1.50,min:100,max:20000,description:'핀터레스트 팔로워를 늘려드립니다. 팔로워가 많을수록 핀 노출 범위가 넓어지고, 쇼핑 기능과 연동하면 실제 구매 전환으로 이어집니다. 인테리어, 패션, 푸드, DIY 브랜드에 특히 효과적입니다.'},
+      {id:'etc5',name:'Google 지도 리뷰 (별점 5점)',pl:'other',rate:20.00,min:5,max:100,description:'구글 지도 비즈니스에 긍정적인 5점 리뷰를 달아드립니다. 리뷰 수와 평점은 구글 로컬 검색 순위에 직접적인 영향을 주는 핵심 요소입니다. 리뷰가 많고 평점이 높은 비즈니스는 구글 맵 상단 노출과 함께 신규 고객의 신뢰와 방문을 유도합니다.'},
     ];
     for (const s of svcs) {
       await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO NOTHING`,
@@ -927,6 +927,37 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
         });
       }
     }
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ── 서비스 CRUD (슈퍼어드민) ──
+app.post('/api/super/services/create', requireSuperAdmin, async (req, res) => {
+  try {
+    const { name, pl, rate, min, max, description, active } = req.body;
+    if (!name) return res.json({ error: '서비스명을 입력하세요' });
+    const id = 'svc_' + Date.now();
+    await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [id, name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0]);
+    res.json({ ok: true, id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/super/services/update', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id, name, pl, rate, min, max, description, active } = req.body;
+    if (!id) return res.json({ error: 'ID가 없습니다' });
+    await query(`UPDATE services SET name=$1,pl=$2,rate=$3,min=$4,max=$5,description=$6,active=$7 WHERE id=$8`,
+      [name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/super/services/delete', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.body;
+    await query(`DELETE FROM services WHERE id=$1`, [id]);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
