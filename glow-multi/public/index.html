@@ -340,6 +340,7 @@ tr:last-child td{border-bottom:none}
           <button class="admtab on" onclick="goAdm('orders',this)">📦 주문</button>
           <button class="admtab" onclick="goAdm('users',this)">👥 회원</button>
           <button class="admtab" onclick="goAdm('charges',this)">💳 충전</button>
+          <button class="admtab" onclick="goAdm('creditreq',this)">💰 크레딧 요청</button>
           <button class="admtab" onclick="goAdm('settings',this)">⚙️ 설정</button>
         </div>
         <div class="apanel on" id="ap-orders">
@@ -351,6 +352,17 @@ tr:last-child td{border-bottom:none}
         <div class="apanel" id="ap-charges">
           <div class="ibox" style="margin-bottom:10px">✦ 입금 확인 후 <strong>승인</strong>을 누르면 잔액에 자동 추가됩니다.</div>
           <div class="tw"><table><thead><tr><th>회원</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="aCTb"></tbody></table></div>
+        </div>
+        <div class="apanel" id="ap-creditreq">
+          <div class="card" style="margin-bottom:12px">
+            <div style="font-size:15px;font-weight:800;margin-bottom:8px">💰 슈퍼관리자에게 크레딧 요청</div>
+            <div style="font-size:12px;color:var(--tm);margin-bottom:12px">크레딧이 부족하면 슈퍼관리자에게 충전 요청하세요. 입금 후 요청하시면 됩니다.</div>
+            <div class="fg"><label>요청 금액 ($)</label><input type="number" id="crAmount" placeholder="예: 10" min="1" step="1"/></div>
+            <div class="fg"><label>메모 (입금 정보 등)</label><input type="text" id="crNote" placeholder="예: 우리은행 입금 완료"/></div>
+            <button class="bp bpf" onclick="requestCredit()">요청하기</button>
+          </div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">요청 내역</div>
+          <div class="tw"><table><thead><tr><th>금액</th><th>메모</th><th>상태</th><th>날짜</th></tr></thead><tbody id="crTb"></tbody></table></div>
         </div>
         <div class="apanel" id="ap-settings">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
@@ -412,6 +424,7 @@ tr:last-child td{border-bottom:none}
           <button class="admtab on" onclick="goSuperTab('sites',this)">🌐 사이트 관리</button>
           <button class="admtab" onclick="goSuperTab('allorders',this)">📦 전체 주문</button>
           <button class="admtab" onclick="goSuperTab('allcharges',this)">💳 전체 충전</button>
+          <button class="admtab" onclick="goSuperTab('creditreqs',this)">💰 크레딧 요청</button>
           <button class="admtab" onclick="goSuperTab('globalapi',this)">🔑 API/텔레그램</button>
         </div>
 
@@ -436,6 +449,10 @@ tr:last-child td{border-bottom:none}
         </div>
 
         <!-- 글로벌 API/텔레그램 설정 -->
+        <div class="apanel" id="sp-creditreqs">
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">💰 사이트 크레딧 요청 내역</div>
+          <div class="tw"><table><thead><tr><th>사이트</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="spCRTb"></tbody></table></div>
+        </div>
         <div class="apanel" id="sp-globalapi">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
             <div class="card">
@@ -447,6 +464,13 @@ tr:last-child td{border-bottom:none}
                 <button class="bo bsm" onclick="syncSvcs()">🔄 서비스 동기화</button>
               </div>
               <div id="spApiRes" style="font-size:12px;color:var(--tm)"></div>
+            </div>
+            <div class="card">
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">💰 슈퍼관리자 마진율</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:10px">원가 → 사이트 판매가 마진 (각 사이트 마진과 별도로 적용됩니다)</div>
+              <div class="fg"><label>슈퍼 마진율 (%)</label><input type="number" id="spSuperMargin" placeholder="50" min="0" max="500"/></div>
+              <div style="font-size:11px;color:var(--tl);margin-bottom:10px">예: 원가 $1 → 슈퍼마진 50% → $1.5 → 사이트마진 50% → 고객가 $2.25</div>
+              <button class="bp bsm" style="padding:9px 16px" onclick="saveSuperMargin()">저장</button>
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">📱 텔레그램 알림</div>
@@ -897,9 +921,9 @@ async function loadAdmDash(){
     // API 설정 - 슈퍼어드민만
     var apiCard=ge('apiCard');
     if(apiCard)apiCard.style.display=isSuperAdmin?'block':'none';
-    // 텔레그램 - 슈퍼어드민만
-    var tgBadge=ge('tgBadge');if(tgBadge)tgBadge.style.display=isSuperAdmin?'inline-flex':'none';
-    var tgSec=ge('tgSection');if(tgSec)tgSec.style.display=isSuperAdmin?'block':'none';
+    // 텔레그램 - 모든 관리자 가능 (슈퍼어드민은 글로벌, 일반어드민은 사이트별)
+    var tgBadge=ge('tgBadge');if(tgBadge)tgBadge.style.display='none';
+    var tgSec=ge('tgSection');if(tgSec)tgSec.style.display='block';
     // 마진/환율 - 슈퍼어드민만
     var priceSec=ge('priceSection');if(priceSec)priceSec.style.display=isSuperAdmin?'block':'none';
 
@@ -910,7 +934,9 @@ async function loadAdmDash(){
     if(sm)sm.value=s.margin;if(se)se.value=s.exrate;
     var ak=ge('stApiKey');if(ak)ak.value=s.apikey||'';
     var tt=ge('stTgToken'),tc=ge('stTgChat');
-    if(tt)tt.value=s.tg_token||'';if(tc)tc.value=s.tg_chat||'';
+    // 슈퍼어드민은 글로벌, 일반어드민은 사이트별
+    if(tt)tt.value=(isSuperAdmin?s.tg_token:s.site_tg_token)||'';
+    if(tc)tc.value=(isSuperAdmin?s.tg_chat:s.site_tg_chat)||'';
   }
 }
 function goAdm(tab,el){
@@ -918,6 +944,7 @@ function goAdm(tab,el){
   document.querySelectorAll('.apanel').forEach(function(p){p.classList.remove('on')});
   el.classList.add('on');ge('ap-'+tab).classList.add('on');
   if(tab==='orders')loadOrders();
+  if(tab==='creditreq')loadCreditRequests();
   if(tab==='users')loadAdmOrders();
   if(tab==='charges')loadAdmCharges();
 }
@@ -1094,6 +1121,13 @@ async function saveGlobalSetting(key,inputId){
   if(d.error){toast(d.error,'err');return}
   ge(inputId).value='••••(설정됨)';toast('저장 완료 ✨','ok');
 }
+async function saveSuperMargin(){
+  var val=ge('spSuperMargin').value;
+  if(!val||isNaN(val)){toast('올바른 마진율을 입력하세요','err');return}
+  var d=await api('/api/super/settings/save','POST',{key:'super_margin',value:String(parseFloat(val))});
+  if(d.error){toast(d.error,'err');return}
+  toast('슈퍼 마진율 저장 완료 ✨','ok');
+}
 async function saveGlobalTg(){
   var tt=ge('spTgToken'),tc=ge('spTgChat');
   if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
@@ -1135,10 +1169,11 @@ async function loadSuperDash(){
   // 글로벌 설정 로드
   var s=await api('/api/admin/settings');
   if(s){
-    var sk=ge('spApiKey'),st=ge('spTgToken'),sc=ge('spTgChat');
+    var sk=ge('spApiKey'),st=ge('spTgToken'),sc=ge('spTgChat'),sm=ge('spSuperMargin');
     if(sk)sk.value=s.apikey||'';
     if(st)st.value=s.tg_token||'';
     if(sc)sc.value=s.tg_chat||'';
+    if(sm)sm.value=s.super_margin||'50';
   }
 }
 function goSuperTab(tab,el){
@@ -1147,6 +1182,7 @@ function goSuperTab(tab,el){
   el.classList.add('on');ge('sp-'+tab).classList.add('on');
   if(tab==='allorders')loadSuperOrders();
   if(tab==='allcharges')loadSuperCharges();
+  if(tab==='creditreqs')loadSuperCreditReqs();
 }
 function renderSiteList(sites){
   var el=ge('siteList');if(!el)return;
@@ -1391,6 +1427,60 @@ async function loadAdmUsers(){
 function closeM(id){ge(id).classList.remove('on')}
 
 // ── 초기화 ──
+
+// 어드민 크레딧 요청
+async function requestCredit(){
+  var amount=ge('crAmount').value,note=ge('crNote').value;
+  if(!amount||parseFloat(amount)<=0){toast('금액을 입력하세요','err');return}
+  var d=await api('/api/admin/credit-request','POST',{amount:parseFloat(amount),note});
+  if(d.error){toast(d.error,'err');return}
+  toast('크레딧 요청 완료! 슈퍼관리자 승인 후 충전됩니다 ✨','ok');
+  ge('crAmount').value='';ge('crNote').value='';
+  loadCreditRequests();
+}
+async function loadCreditRequests(){
+  var d=await api('/api/admin/credit-requests');
+  var tb=ge('crTb'),h='';
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:#9A8AB0">요청 내역이 없습니다</td></tr>';return}
+  d.forEach(function(r){
+    var sb={pending:'background:#FEF3C7;color:#F59E0B',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444'};
+    var sl={pending:'대기중',approved:'승인됨',rejected:'거절됨'};
+    h+='<tr><td style="font-weight:700">$'+parseFloat(r.amount).toFixed(2)+'</td>'
+      +'<td style="font-size:12px">'+( r.note||'-')+'</td>'
+      +'<td><span class="bdg" style="'+sb[r.status]+'">'+sl[r.status]+'</span></td>'
+      +'<td style="font-size:11px;color:var(--tl)">'+fd(r.created)+'</td></tr>';
+  });
+  tb.innerHTML=h;
+}
+
+// 슈퍼관리자 크레딧 요청 관리
+async function loadSuperCreditReqs(){
+  var d=await api('/api/super/credit-requests');
+  var tb=ge('spCRTb'),h='';
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:16px;color:#9A8AB0">요청 내역이 없습니다</td></tr>';return}
+  d.forEach(function(r){
+    var sb={pending:'background:#FEF3C7;color:#F59E0B',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444'};
+    var sl={pending:'대기중',approved:'승인됨',rejected:'거절됨'};
+    h+='<tr><td style="font-weight:700;color:var(--p2)">'+r.site_name+'</td>'
+      +'<td style="font-weight:700">$'+parseFloat(r.amount).toFixed(2)+'</td>'
+      +'<td style="font-size:12px">'+(r.note||'-')+'</td>'
+      +'<td><span class="bdg" style="'+sb[r.status]+'">'+sl[r.status]+'</span></td>'
+      +'<td style="font-size:11px;color:var(--tl)">'+fd(r.created)+'</td>'
+      +'<td>'+(r.status==='pending'
+        ?'<button class="btn bok bxs" onclick="processCR(\''+r.id+'\',\'approve\')">✅ 승인</button> '
+         +'<button class="btn ber bxs" onclick="processCR(\''+r.id+'\',\'reject\')">❌ 거절</button>'
+        :'-')+'</td></tr>';
+  });
+  tb.innerHTML=h;
+}
+async function processCR(id,action){
+  var d=await api('/api/super/credit-requests/process','POST',{id,action});
+  if(d.error){toast(d.error,'err');return}
+  toast(action==='approve'?'크레딧 승인 완료 ✨':'거절 완료','ok');
+  loadSuperCreditReqs();
+  loadSuperDash();
+}
+
 window.addEventListener('DOMContentLoaded',function(){
   loadSiteConfig();
   var token=localStorage.getItem('glow_token');
