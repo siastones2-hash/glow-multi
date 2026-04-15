@@ -211,7 +211,7 @@ tr:last-child td{border-bottom:none}
       <button class="si" id="si-orders" onclick="goTab('orders')">◎ 주문 내역</button>
       <button class="si" id="si-charge" onclick="goTab('charge')">◇ 잔액 충전</button>
       <div style="height:1px;background:var(--bd);margin:6px 2px"></div>
-      <button class="si" id="si-관리자" style="display:none" onclick="goTab('관리자')">⚙ 관리자</button>
+      <button class="si" id="si-admin" style="display:none" onclick="goTab('admin')">⚙ 관리자</button>
       <button class="si" id="si-super" style="display:none" onclick="goTab('super')">👑 슈퍼관리자</button>
       <button class="si" onclick="doLogout()">→ 로그아웃</button>
     </div>
@@ -467,7 +467,7 @@ tr:last-child td{border-bottom:none}
     <button class="bni" id="bni-order" onclick="goTab('order')"><div class="bni-ico">✦</div>주문</button>
     <button class="bni" id="bni-orders" onclick="goTab('orders')"><div class="bni-ico">◎</div>내역</button>
     <button class="bni" id="bni-charge" onclick="goTab('charge')"><div class="bni-ico">◇</div>충전</button>
-    <button class="bni" id="bni-관리자" style="display:none" onclick="goTab('관리자')"><div class="bni-ico">⚙</div>관리자</button>
+    <button class="bni" id="bni-admin" style="display:none" onclick="goTab('admin')"><div class="bni-ico">⚙</div>관리자</button>
     <button class="bni" id="bni-super" style="display:none" onclick="goTab('super')"><div class="bni-ico">👑</div>슈퍼</button>
   </div>
 </div>
@@ -714,8 +714,8 @@ async function enterDash(){
   // 메뉴 권한
   var isAdmin=['admin','superadmin'].includes(CUR.role);
   var isSuper=CUR.role==='superadmin';
-  ge('si-관리자').style.display=isAdmin?'flex':'none';
-  ge('bni-관리자').style.display=isAdmin?'flex':'none';
+  ge('si-admin').style.display=isAdmin?'flex':'none';
+  ge('bni-admin').style.display=isAdmin?'flex':'none';
   ge('si-super').style.display=isSuper?'flex':'none';
   ge('bni-super').style.display=isSuper?'flex':'none';
 
