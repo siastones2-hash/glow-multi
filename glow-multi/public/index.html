@@ -450,7 +450,7 @@ tr:last-child td{border-bottom:none}
         <div class="sg" style="margin-bottom:16px">
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 회원</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalUsers">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalOrders">0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800 amount-mask" id="sTotalRevenue">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800" class="gt amount-mask" id="sTotalRevenue">₩0</div></div>
           <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 내 순수익 (예상)</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sMyProfit" class="amount-mask">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">충전 대기</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="sTotalPending">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">🔑 API 잔액</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sApiBalance">-</div></div>
@@ -1943,12 +1943,12 @@ async function calcPriceTable(){
         + '</tr>';
     } else {
       // 슈퍼관리자 뷰: 전체 표시 (보안모드 마스킹 가능)
-      h += '<tr style="border-bottom:1px solid var(--bd);transition:background .15s" onmouseover="this.style.background='#f5f0ff'" onmouseout="this.style.background=''">'
+      h += '<tr style="border-bottom:1px solid var(--bd);transition:background .15s" onmouseover="this.style.background=\'#f5f0ff\'" onmouseout="this.style.background=\'\'">'
         + '<td style="padding:7px 8px;font-weight:600;font-size:12px">' + r.s.name + '</td>'
         + '<td style="padding:7px 8px;text-align:center"><span style="font-size:10px;background:#f5f0ff;padding:2px 6px;border-radius:20px;color:var(--p2)">' + (PLKlocal[r.s.pl]||r.s.pl) + '</span></td>'
-        + '<td style="padding:7px 8px;text-align:right;color:var(--tl);font-size:11px amount-mask">$' + r.s.rate.toFixed(3) + '</td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2) amount-mask">₩' + r.myPrice.toLocaleString() + '</td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#10B981 amount-mask">₩' + r.myProfit.toLocaleString() + ' <span style="font-size:10px">(+' + profitRate + '%)</span></td>'
+        + '<td style="padding:7px 8px;text-align:right;color:var(--tl);font-size:11px" class="amount-mask">$' + r.s.rate.toFixed(3) + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2)" class="amount-mask">₩' + r.myPrice.toLocaleString() + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#10B981" class="amount-mask">₩' + r.myProfit.toLocaleString() + ' <span style="font-size:10px">(+' + profitRate + '%)</span></td>'
         + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#F59E0B">₩' + r.custPrice.toLocaleString() + '</td>'
         + '</tr>';
     }
