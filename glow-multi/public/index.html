@@ -396,8 +396,32 @@ tr:last-child td{border-bottom:none}
               <div class="fg"><label>카카오톡 링크</label><input type="text" id="stKakao" placeholder="https://open.kakao.com/..."/></div>
               <div class="fg"><label>입금 계좌 안내</label><textarea id="stBank" rows="2" placeholder="우리은행 1002-160-164625"></textarea></div>
               <div id="priceSection">
-                <div class="fg"><label>마진율 (%)</label><input type="number" id="stMg" placeholder="50" inputmode="numeric"/></div>
-                <div class="fg"><label>환율 (USD→KRW)</label><input type="number" id="stEx" placeholder="1380" inputmode="numeric"/></div>
+                <div class="fg">
+                  <label>💰 내 수익 마진율 (%)</label>
+                  <input type="number" id="stMg" placeholder="50" inputmode="numeric" oninput="previewMargin()"/>
+                  <div style="font-size:11px;color:var(--tl);margin-top:4px">공급가에 이 마진을 얹어 고객에게 판매합니다</div>
+                </div>
+                <!-- 마진 미리보기 (관리자용) -->
+                <div id="marginPreview" style="display:none;background:rgba(114,9,183,.06);border:1px solid var(--bd2);border-radius:12px;padding:14px;margin-bottom:14px">
+                  <div style="font-size:11px;font-weight:700;color:var(--p2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">📊 서비스 가격 미리보기 (1000개 기준)</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+                    <div style="display:flex;justify-content:space-between;color:var(--tm)">
+                      <span>내 공급가</span><span id="mpSupply" style="font-weight:600">-</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;color:var(--tm)">
+                      <span>내 마진 (<span id="mpMgPct">0</span>%)</span><span id="mpMarginAmt" style="font-weight:600;color:#10B981">+₩0</span>
+                    </div>
+                    <div style="height:1px;background:var(--bd)"></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px">
+                      <span>고객 판매가</span><span id="mpFinal" style="color:var(--p1)">-</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;color:#10B981;font-size:12px">
+                      <span>내 순수익 (1000개당)</span><span id="mpProfit" style="font-weight:700">₩0</span>
+                    </div>
+                  </div>
+                  <div class="mp-note" style="font-size:11px;color:var(--tl);margin-top:8px">* 가장 저렴한 서비스 기준 예시입니다</div>
+                </div>
+                <div class="fg" id="exrateSection" style="display:none"><label>환율 (USD→KRW)</label><input type="number" id="stEx" placeholder="1380" inputmode="numeric"/></div>
               </div>
               <button class="bp bsm" style="padding:9px 16px;margin-bottom:16px" onclick="saveSiteSettings()">저장</button>
 
@@ -685,8 +709,8 @@ tr:last-child td{border-bottom:none}
     <div class="fg"><label>어드민 비밀번호 *</label><input type="password" id="nsAdminPw" placeholder="6자 이상"/></div>
     <div style="height:1px;background:var(--bd);margin:8px 0"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="fg"><label>슈퍼마진율 (%)</label><input type="number" id="nsSuperMargin" value="50" inputmode="numeric"/></div>
-      <div class="fg"><label>사이트 마진율 (%)</label><input type="number" id="ns마진" value="50" inputmode="numeric"/></div>
+      <div class="fg"><label>슈퍼마진율 (%)</label><input type="number" id="nsSuperMargin" value="50" inputmode="numeric"/><div style="font-size:10px;color:var(--tl);margin-top:3px">내(슈퍼) 수익</div></div>
+      <div class="fg"><label>관리자 마진율 (%)</label><input type="number" id="ns마진" value="50" inputmode="numeric"/><div style="font-size:10px;color:var(--tl);margin-top:3px">관리자 수익 (변경 가능)</div></div>
       <div class="fg"><label>환율 (USD→KRW)</label><input type="number" id="nsExrate" value="1380" inputmode="numeric"/></div>
       <div class="fg"><label>초기 크레딧 ($)</label><input type="number" id="nsCredit" value="0" step="0.01" inputmode="decimal"/></div>
     </div>
@@ -975,7 +999,7 @@ function goTab(tab){
 // ── 서비스 ──
 async function loadSvcs(){
   var d=await api('/api/services');
-  if(Array.isArray(d)){SVCS=d;renderSvcList();renderQCards()}
+  if(Array.isArray(d)){SVCS=d;window._svcs=d;renderSvcList();renderQCards()}
 }
 function renderSfBar(){
   var plats=['all','youtube','instagram','tiktok','threads','twitter','telegram','facebook','spotify','naver','other'];
@@ -1118,8 +1142,12 @@ async function loadAdmDash(){
     // 텔레그램 - 모든 관리자 가능 (슈퍼어드민은 글로벌, 일반어드민은 사이트별)
     var tgBadge=ge('tgBadge');if(tgBadge)tgBadge.style.display='none';
     var tgSec=ge('tgSection');if(tgSec)tgSec.style.display='block';
-    // 마진/환율 - 슈퍼어드민만
-    var priceSec=ge('priceSection');if(priceSec)priceSec.style.display=isSuperAdmin?'block':'none';
+    // 마진 - 모든 관리자 가능 / 환율 - 슈퍼어드민만
+    var priceSec=ge('priceSection');if(priceSec)priceSec.style.display='block';
+    var exSec=ge('exrateSection');if(exSec)exSec.style.display=isSuperAdmin?'block':'none';
+    // 관리자용 마진 미리보기 초기화
+    window._adminSupplyData={exrate:s.exrate||1500,isSuperAdmin:isSuperAdmin,supplyExamples:s.supplyExamples||[]};
+    setTimeout(previewMargin,100);
 
     var sm=ge('stMg'),se=ge('stEx'),sk=ge('stKakao'),sb=ge('stBank');
     var sn=ge('st사이트Name');
@@ -1312,6 +1340,46 @@ async function saveCustomTexts(){
   if(errors.length){toast('일부 저장 실패: '+errors[0],'err');return;}
   toast('저장 완료! 페이지를 새로고침하면 적용됩니다 ✨','ok');
   await loadSiteConfig();
+}
+
+function previewMargin(){
+  var preview=ge('marginPreview');
+  var smEl=ge('stMg');
+  if(!smEl||!preview)return;
+  var mg=parseFloat(smEl.value)||0;
+  var d=window._adminSupplyData||{};
+
+  // 서버에서 받은 실제 공급가 우선 사용
+  var supplyPer1000=0;
+  var svcName='서비스';
+  if(d.supplyExamples&&d.supplyExamples.length>0){
+    // 가장 저렴한 공급가 서비스
+    var cheapest=d.supplyExamples.reduce(function(a,b){return a.supplyPer1000<b.supplyPer1000?a:b;});
+    supplyPer1000=cheapest.supplyPer1000;
+    svcName=cheapest.name;
+  } else {
+    // fallback: 로컬 계산
+    var exrate=d.exrate||1500;
+    var minRate=0.15;
+    if(window._svcs&&window._svcs.length>0){
+      var rates=window._svcs.map(function(s){return parseFloat(s.rate)||9999;}).filter(function(r){return r>0;});
+      if(rates.length)minRate=Math.min.apply(null,rates);
+    }
+    supplyPer1000=Math.round(minRate*exrate);
+  }
+
+  var finalPer1000=Math.round(supplyPer1000*(1+mg/100));
+  var profitPer1000=finalPer1000-supplyPer1000;
+
+  var mpS=ge('mpSupply'),mpM=ge('mpMarginAmt'),mpF=ge('mpFinal'),mpP=ge('mpProfit'),mpPct=ge('mpMgPct');
+  var mpNote=preview.querySelector('.mp-note');
+  if(mpS)mpS.textContent='₩'+supplyPer1000.toLocaleString();
+  if(mpM)mpM.textContent='+₩'+profitPer1000.toLocaleString();
+  if(mpF)mpF.textContent='₩'+finalPer1000.toLocaleString();
+  if(mpP)mpP.textContent='₩'+profitPer1000.toLocaleString();
+  if(mpPct)mpPct.textContent=mg;
+  if(mpNote)mpNote.textContent='* '+svcName+' 기준 (1000개)';
+  preview.style.display=mg>0?'block':'none';
 }
 
 async function saveSiteSettings(){
