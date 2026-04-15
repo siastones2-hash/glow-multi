@@ -1167,7 +1167,8 @@ function renderSiteList(sites){
       +'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
       +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\')">💰 크레딧 충전</button>'
-      +'<button class="btn binf bxs" onclick="editSite('+JSON.stringify(s).replace(/"/g,"'").replace(/'/g,"&apos;")+')">수정</button>'
+      +'<button class="btn binf bxs" onclick="editSite('+JSON.stringify(s).replace(/"/g,"'").replace(/'/g,"&apos;")+')"}>수정</button>'
+      +'<button class="btn bpu bxs" onclick="manageAdmin(\''+s.id+'\')">👤 관리자</button>'
       +(s.pending충전하기>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pending충전하기+'건</button>':'')
       +'</div>'
       +'</div>';
@@ -1223,6 +1224,32 @@ async function createSite(){
   loadSuperDash();
   // 입력 초기화
   ['nsDomain','nsName','nsLogo','nsAdminEmail','nsAdminPw'].forEach(function(id){var el=ge(id);if(el)el.value=''});
+}
+
+// 관리자 관리
+async function manageAdmin(siteId){
+  var d=await api('/api/super/users');
+  var admin=d.find(u=>u.site_id===siteId&&u.role==='admin');
+  if(!admin){toast('관리자 계정이 없습니다','err');return}
+  var action=prompt('관리자: '+admin.email+'\n\n1. 비밀번호 재설정\n2. 정지/해제\n3. 삭제\n\n번호 입력:');
+  if(action==='1'){
+    var pw=prompt('새 비밀번호 (6자 이상):');
+    if(!pw||pw.length<6){toast('6자 이상 입력하세요','err');return}
+    var r=await api('/api/super/admin/resetpw','POST',{uid:admin.id,newpw:pw});
+    if(r.error){toast(r.error,'err');return}
+    toast('비밀번호 재설정 완료 ✨','ok');
+  } else if(action==='2'){
+    var r=await api('/api/super/admin/ban','POST',{uid:admin.id});
+    if(r.error){toast(r.error,'err');return}
+    toast(r.status==='banned'?'관리자 정지됨':'관리자 정지 해제','ok');
+    loadSuperDash();
+  } else if(action==='3'){
+    if(!confirm('정말 삭제하시겠습니까?'))return;
+    var r=await api('/api/super/admin/delete','POST',{uid:admin.id});
+    if(r.error){toast(r.error,'err');return}
+    toast('관리자 삭제 완료','ok');
+    loadSuperDash();
+  }
 }
 
 // 크레딧 충전
