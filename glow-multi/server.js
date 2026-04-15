@@ -148,7 +148,8 @@ if (!superAdmin) {
 }
 
 // 기본 서비스 데이터
-const svcCount = db.prepare('SELECT COUNT(*) as c FROM services').get().c;
+// 항상 기본 서비스 데이터 동기화
+const svcCount = db.prepare('SELECT COUNT(*) as c FROM services WHERE id LIKE \'yt%\' OR id LIKE \'ig%\' OR id LIKE \'tt%\'').get().c;
 if (svcCount === 0) {
   const svcs = [
     // ── YouTube (10개) ──
