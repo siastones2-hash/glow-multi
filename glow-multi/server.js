@@ -633,7 +633,7 @@ app.get('/api/me', requireAuth, async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const site = req.site;
-    const siteMg = site ? (site.margin || 0) : 0;
+    const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
     // 환율: 사이트별 → 글로벌 순으로 적용
     const globalExrate = await getGlobalSetting('global_exrate');
     const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate || '1500');
@@ -670,7 +670,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (qtyNum < svc.min || qtyNum > svc.max)
       return res.json({ error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다` });
     const site = req.site;
-    const siteMg = site ? (site.margin || 0) : 0;
+    const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
     const globalExrate2 = await getGlobalSetting('global_exrate');
     const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate2 || '1500');
     let superMg2;
@@ -1215,8 +1215,9 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     function generateUniqueTheme(seed) {
       let s = seed;
       const rnd = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return Math.abs(s) / 0xffffffff; };
-      const bgTypes = ['dark','light','mid'];
-      const bgType = bgTypes[Math.floor(rnd() * bgTypes.length)];
+      // 라이트 계열 비중 높임 (dark 25%, mid 25%, light 50%)
+      const bgTypeRnd = rnd();
+      const bgType = bgTypeRnd < 0.5 ? 'light' : (bgTypeRnd < 0.75 ? 'mid' : 'dark');
       const palettes = [
         {p:'#FF0080',a:'#7928CA'},{p:'#00F5FF',a:'#0050FF'},{p:'#39FF14',a:'#00CC44'},
         {p:'#FFD700',a:'#FF8C00'},{p:'#FF6B35',a:'#FF0A54'},{p:'#00E5CC',a:'#0066FF'},
