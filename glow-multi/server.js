@@ -71,6 +71,27 @@ async function initDB() {
       active INTEGER DEFAULT 1,
       tg_token TEXT DEFAULT '',
       tg_chat TEXT DEFAULT '',
+      slogan TEXT DEFAULT '콘텐츠가 빛나도록',
+      slogan_sub TEXT DEFAULT '우리가 성장시킵니다',
+      description TEXT DEFAULT '유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다',
+      stat1_num TEXT DEFAULT '10K+',
+      stat1_label TEXT DEFAULT '서비스 종류',
+      stat2_num TEXT DEFAULT '24H',
+      stat2_label TEXT DEFAULT '빠른 처리',
+      stat3_num TEXT DEFAULT '50%+',
+      stat3_label TEXT DEFAULT '마진 보장',
+      stat4_num TEXT DEFAULT '100%',
+      stat4_label TEXT DEFAULT '안전 보장',
+      notice TEXT DEFAULT '',
+      footer_text TEXT DEFAULT '소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.',
+      login_welcome TEXT DEFAULT '다시 만나서 반가워요',
+      login_sub TEXT DEFAULT '계정에 로그인하세요',
+      register_welcome TEXT DEFAULT '지금 시작하세요',
+      register_sub TEXT DEFAULT '무료로 계정을 만들어보세요',
+      kakao_btn_text TEXT DEFAULT '카카오톡 문의',
+      charge_guide TEXT DEFAULT '입금 후 아래 양식을 작성해주세요. 확인 후 빠르게 처리해드립니다.',
+      order_guide TEXT DEFAULT '주문 후 취소가 어려울 수 있습니다. 신중하게 주문해주세요.',
+      hero_badge TEXT DEFAULT '소셜 성장 자동화 플랫폼',
       created TIMESTAMP DEFAULT NOW()
     )
   `);
@@ -182,10 +203,11 @@ async function initDB() {
       ['superadmin', 'default', '슈퍼관리자', 'leestones@naver.com', hash, 'superadmin', 0]);
   }
 
-  // 기본 서비스
+  // 기본 서비스 (항상 설명 업데이트)
   await query(`DELETE FROM services WHERE id LIKE 'api_%'`);
   const svcCount = await query(`SELECT COUNT(*) as c FROM services WHERE id NOT LIKE 'api_%'`);
-  if (parseInt(svcCount.rows[0].c) === 0) {
+  const forceUpdate = true; // 항상 설명 업데이트
+  if (parseInt(svcCount.rows[0].c) === 0 || forceUpdate) {
     const svcs = [
       {id:'yt1',name:'YouTube 조회수 — 일반 (빠른 처리)',pl:'youtube',rate:0.50,min:1000,max:1000000,description:'조회수는 유튜브 알고리즘의 핵심 지표입니다. 조회수가 높을수록 추천 영상에 노출되는 빈도가 높아지고, 신규 시청자 유입이 자연스럽게 증가합니다. 실제 사용자 패턴 기반으로 처리되어 안전하며, 빠른 시작으로 초기 채널 성장에 최적화되어 있습니다. 영상 업로드 직후 적용하면 알고리즘 부스트 효과를 극대화할 수 있습니다.'},
       {id:'yt2',name:'YouTube 조회수 — 고유지율 (30초+)',pl:'youtube',rate:1.20,min:500,max:500000,description:'단순 조회수보다 훨씬 강력한 효과를 제공합니다. 평균 시청 시간 30초 이상으로 처리되어 유튜브 알고리즘이 "좋은 영상"으로 인식하게 만듭니다. 시청 지속 시간은 추천 알고리즘 가중치가 가장 높은 지표로, 홈 화면과 추천 탭 노출 가능성을 크게 높여줍니다. 수익화 채널이나 브랜드 영상에 특히 효과적입니다.'},
@@ -259,7 +281,7 @@ async function initDB() {
       {id:'etc5',name:'Google 지도 리뷰 (별점 5점)',pl:'other',rate:20.00,min:5,max:100,description:'구글 지도 비즈니스에 긍정적인 5점 리뷰를 달아드립니다. 리뷰 수와 평점은 구글 로컬 검색 순위에 직접적인 영향을 주는 핵심 요소입니다. 리뷰가 많고 평점이 높은 비즈니스는 구글 맵 상단 노출과 함께 신규 고객의 신뢰와 방문을 유도합니다.'},
     ];
     for (const s of svcs) {
-      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO NOTHING`,
+      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max`,
         [s.id, s.name, s.pl, s.rate, s.min, s.max, s.desc, 1]);
     }
   }
@@ -267,6 +289,27 @@ async function initDB() {
   // 마이그레이션
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS tg_token TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS tg_chat TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS slogan TEXT DEFAULT '콘텐츠가 빛나도록'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS slogan_sub TEXT DEFAULT '우리가 성장시킵니다'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat1_num TEXT DEFAULT '10K+'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat1_label TEXT DEFAULT '서비스 종류'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat2_num TEXT DEFAULT '24H'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat2_label TEXT DEFAULT '빠른 처리'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat3_num TEXT DEFAULT '50%+'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat3_label TEXT DEFAULT '마진 보장'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat4_num TEXT DEFAULT '100%'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat4_label TEXT DEFAULT '안전 보장'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS notice TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS footer_text TEXT DEFAULT '소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_welcome TEXT DEFAULT '다시 만나서 반가워요'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_sub TEXT DEFAULT '계정에 로그인하세요'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS register_welcome TEXT DEFAULT '지금 시작하세요'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS register_sub TEXT DEFAULT '무료로 계정을 만들어보세요'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS kakao_btn_text TEXT DEFAULT '카카오톡 문의'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS charge_guide TEXT DEFAULT '입금 후 아래 양식을 작성해주세요. 확인 후 빠르게 처리해드립니다.'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS order_guide TEXT DEFAULT '주문 후 취소가 어려울 수 있습니다. 신중하게 주문해주세요.'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS hero_badge TEXT DEFAULT '소셜 성장 자동화 플랫폼'`); } catch(e) {}
   try { await query(`CREATE TABLE IF NOT EXISTS credit_requests (id TEXT PRIMARY KEY, site_id TEXT NOT NULL, site_name TEXT NOT NULL, amount REAL NOT NULL, note TEXT DEFAULT '', status TEXT DEFAULT 'pending', created TIMESTAMP DEFAULT NOW())`); } catch(e) {}
   console.log('✅ DB 초기화 완료');
 }
@@ -388,7 +431,24 @@ app.get('/api/site-config', (req, res) => {
     name: site.name, logo: site.logo,
     primaryColor: site.primary_color, accentColor: site.accent_color,
     kakao: site.kakao, bank: site.bank,
-    margin: site.margin, exrate: site.exrate
+    margin: site.margin, exrate: site.exrate,
+    slogan: site.slogan || '콘텐츠가 빛나도록',
+    sloganSub: site.slogan_sub || '우리가 성장시킵니다',
+    description: site.description || '유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다',
+    stat1Num: site.stat1_num || '10K+', stat1Label: site.stat1_label || '서비스 종류',
+    stat2Num: site.stat2_num || '24H', stat2Label: site.stat2_label || '빠른 처리',
+    stat3Num: site.stat3_num || '50%+', stat3Label: site.stat3_label || '마진 보장',
+    stat4Num: site.stat4_num || '100%', stat4Label: site.stat4_label || '안전 보장',
+    notice: site.notice || '',
+    footerText: site.footer_text || '소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.',
+    loginWelcome: site.login_welcome || '다시 만나서 반가워요',
+    loginSub: site.login_sub || '계정에 로그인하세요',
+    registerWelcome: site.register_welcome || '지금 시작하세요',
+    registerSub: site.register_sub || '무료로 계정을 만들어보세요',
+    kakaoBtnText: site.kakao_btn_text || '카카오톡 문의',
+    chargeGuide: site.charge_guide || '입금 후 아래 양식을 작성해주세요.',
+    orderGuide: site.order_guide || '주문 후 취소가 어려울 수 있습니다.',
+    heroBadge: site.hero_badge || '소셜 성장 자동화 플랫폼'
   });
 });
 
@@ -729,7 +789,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
       }
       return res.json({ error: '슈퍼관리자 전용 설정입니다' });
     }
-    const siteFields = ['name','kakao','bank','margin','exrate','primary_color','accent_color','logo'];
+    const siteFields = ['name','kakao','bank','margin','exrate','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge'];
     if (siteFields.includes(key)) {
       await query(`UPDATE sites SET ${key}=$1 WHERE id=$2`, [value, req.siteId]);
       return res.json({ ok: true });
