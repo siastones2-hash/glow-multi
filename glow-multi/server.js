@@ -1210,8 +1210,60 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
       return res.json({ error: '필수 항목을 입력하세요' });
     const siteId = 'site_' + Date.now();
     const superMarginVal = req.body.superMargin !== undefined ? parseFloat(req.body.superMargin) : -1;
-    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [siteId, domain, name, logo||'✨', primaryColor||'#7209B7', accentColor||'#F72585',
+
+    // 자동 테마 생성 - 사이트마다 고유한 조합
+    function generateUniqueTheme(seed) {
+      let s = seed;
+      const rnd = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return Math.abs(s) / 0xffffffff; };
+      const bgTypes = ['dark','light','mid'];
+      const bgType = bgTypes[Math.floor(rnd() * bgTypes.length)];
+      const palettes = [
+        {p:'#FF0080',a:'#7928CA'},{p:'#00F5FF',a:'#0050FF'},{p:'#39FF14',a:'#00CC44'},
+        {p:'#FFD700',a:'#FF8C00'},{p:'#FF6B35',a:'#FF0A54'},{p:'#00E5CC',a:'#0066FF'},
+        {p:'#FF85A1',a:'#C9184A'},{p:'#A855F7',a:'#6D28D9'},{p:'#F97316',a:'#DC2626'},
+        {p:'#10B981',a:'#059669'},{p:'#3B82F6',a:'#1D4ED8'},{p:'#EC4899',a:'#9333EA'},
+        {p:'#EAB308',a:'#D97706'},{p:'#14B8A6',a:'#0891B2'},{p:'#F43F5E',a:'#E11D48'},
+        {p:'#8B5CF6',a:'#7C3AED'},{p:'#06B6D4',a:'#0284C7'},{p:'#84CC16',a:'#65A30D'},
+        {p:'#FB923C',a:'#EA580C'},{p:'#E879F9',a:'#A21CAF'},
+      ];
+      const palette = palettes[Math.floor(rnd() * palettes.length)];
+      const fonts = [
+        "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+        "'Courier New',monospace","Georgia,serif",
+        "'Helvetica Neue',Helvetica,Arial,sans-serif",
+        "Verdana,Geneva,sans-serif","'Trebuchet MS',sans-serif",
+      ];
+      const font = fonts[Math.floor(rnd() * fonts.length)];
+      const radii = ['4px','8px','12px','20px','100px'];
+      const radius = radii[Math.floor(rnd() * radii.length)];
+      const cardStyles = ['flat','shadow','glow','border'];
+      const cardStyle = cardStyles[Math.floor(rnd() * cardStyles.length)];
+      const hue = Math.floor(rnd() * 360);
+      let bg, w, tx, tm, tl, bd, bd2;
+      if (bgType === 'dark') {
+        bg=`hsl(${hue},20%,6%)`;w=`hsl(${hue},20%,10%)`;tx=`hsl(${hue},10%,90%)`;
+        tm=`hsl(${hue},10%,60%)`;tl=`hsl(${hue},10%,40%)`;
+        bd=`hsla(${hue},50%,60%,.15)`;bd2=`hsla(${hue},50%,60%,.35)`;
+      } else if (bgType === 'light') {
+        bg=`hsl(${hue},30%,97%)`;w=`#ffffff`;tx=`hsl(${hue},40%,10%)`;
+        tm=`hsl(${hue},20%,40%)`;tl=`hsl(${hue},15%,60%)`;
+        bd=`hsla(${hue},40%,40%,.12)`;bd2=`hsla(${hue},40%,40%,.28)`;
+      } else {
+        bg=`hsl(${hue},25%,18%)`;w=`hsl(${hue},20%,24%)`;tx=`hsl(${hue},10%,92%)`;
+        tm=`hsl(${hue},15%,65%)`;tl=`hsl(${hue},10%,45%)`;
+        bd=`hsla(${hue},40%,70%,.18)`;bd2=`hsla(${hue},40%,70%,.38)`;
+      }
+      return { p1:palette.p, p2:palette.a, p3:palette.a, bg, w, tx, tm, tl, bd, bd2, font, radius, cardStyle, bgType };
+    }
+    const siteCountR = await query(`SELECT COUNT(*) as cnt FROM sites WHERE id != 'default'`);
+    const siteCount = parseInt(siteCountR.rows[0].cnt) || 0;
+    const themeData = generateUniqueTheme(siteCount * 999983 + 12345);
+    const autoTheme = JSON.stringify(themeData);
+    const finalPrimary = primaryColor || themeData.p1;
+    const finalAccent  = accentColor  || themeData.p2;
+
+    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin,theme) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [siteId, domain, name, logo||'✨', finalPrimary, finalAccent,
         parseFloat(margin||50), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal, autoTheme]);
     const hash = bcrypt.hashSync(adminPw, 10);
     const adminRole = req.body.adminRole || 'admin';
