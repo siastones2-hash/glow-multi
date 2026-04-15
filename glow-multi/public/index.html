@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
-<title>GLOW — 소셜 성장 플랫폼</title>
+<title>GLOW — 채널 성장 플랫폼</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 /* 3. 동적 UI 변수 - CSS 변수로 테마 적용 */
@@ -135,9 +135,9 @@ tr:last-child td{border-bottom:none}
     </div>
   </nav>
   <div class="hero">
-    <div class="htag"><div class="tdot"></div><span id="heroBadge">소셜 성장 자동화 플랫폼</span></div>
+    <div class="htag"><div class="tdot"></div><span id="heroBadge">채널 성장 · 마케팅 플랫폼</span></div>
     <h1 id="heroSlogan">콘텐츠가 <span class="gt" id="heroSloganSpan">빛나도록</span><br><span id="heroSloganSub">우리가 성장시킵니다</span></h1>
-    <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:460px;margin:0 auto 28px;font-weight:300" id="heroDesc">유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다</p>
+    <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:460px;margin:0 auto 28px;font-weight:300" id="heroDesc">유튜브·인스타·틱톡부터 아마존·쿠팡까지, 모든 채널의 성장을 지원합니다</p>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:32px">
       <button class="bp bplg" onclick="goAuth('register')">✨ 지금 무료로 시작하기</button>
       <button class="bo" style="padding:15px 28px;font-size:14px;border-radius:14px" onclick="goAuth('login')">기존 계정 로그인</button>
@@ -154,13 +154,13 @@ tr:last-child td{border-bottom:none}
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat4Num">100%</div><div style="font-size:11px;color:var(--tm)" id="stat4Label">안전 보장</div></div>
   </div>
   <div style="padding:48px 16px;text-align:center;background:linear-gradient(160deg,#faf5ff,#fdf2ff)">
-    <h2 style="font-size:clamp(20px,5vw,30px);font-weight:800;margin-bottom:8px">소셜 성장, 오늘부터 <span class="gt">자동으로</span></h2>
+    <h2 style="font-size:clamp(20px,5vw,30px);font-weight:800;margin-bottom:8px">채널 성장, 오늘부터 <span class="gt">시작하세요</span></h2>
     <p style="font-size:13px;color:var(--tl);margin:0 auto 22px">가입은 무료입니다.</p>
     <button class="bp bplg" onclick="goAuth('register')">✨ 무료로 시작하기 →</button>
   </div>
   <footer style="background:#1a1030;padding:20px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
     <div style="font-size:16px;font-weight:800;color:#fff" id="footerName">✨ GLOW</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.3)" id="footerText">소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3)" id="footerText">각 플랫폼과 공식 제휴된 서비스가 아닙니다.</div>
   </footer>
 </div>
 
@@ -403,7 +403,7 @@ tr:last-child td{border-bottom:none}
 
               <div style="height:1px;background:var(--bd);margin:8px 0 16px"></div>
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🏠 메인 페이지 커스텀</div>
-              <div class="fg"><label>상단 배지 텍스트</label><input type="text" id="stHeroBadge" placeholder="소셜 성장 자동화 플랫폼"/></div>
+              <div class="fg"><label>상단 배지 텍스트</label><input type="text" id="stHeroBadge" placeholder="채널 성장 · 마케팅 플랫폼"/></div>
               <div class="fg"><label>메인 슬로건 (강조 부분)</label><input type="text" id="stSlogan" placeholder="빛나도록"/></div>
               <div class="fg"><label>메인 슬로건 (두 번째 줄)</label><input type="text" id="stSloganSub" placeholder="우리가 성장시킵니다"/></div>
               <div class="fg"><label>부제목 설명</label><textarea id="stDesc" rows="2" placeholder="유튜브·인스타·틱톡·X까지..."></textarea></div>
@@ -429,7 +429,7 @@ tr:last-child td{border-bottom:none}
               <div class="fg"><label>카카오톡 버튼 텍스트</label><input type="text" id="stKakaoBtnText" placeholder="카카오톡 문의"/></div>
               <div class="fg"><label>충전 안내 문구</label><textarea id="stChargeGuide" rows="2" placeholder="입금 후 아래 양식을 작성해주세요."></textarea></div>
               <div class="fg"><label>주문 안내 문구</label><textarea id="stOrderGuide" rows="2" placeholder="주문 후 취소가 어려울 수 있습니다."></textarea></div>
-              <div class="fg"><label>푸터 텍스트</label><input type="text" id="stFooterText" placeholder="소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다."/></div>
+              <div class="fg"><label>푸터 텍스트</label><input type="text" id="stFooterText" placeholder="각 플랫폼과 공식 제휴된 서비스가 아닙니다."/></div>
               <button class="bp bsm" style="padding:9px 16px" onclick="saveCustomTexts()">문구 저장</button>
             </div>
           </div>
@@ -562,6 +562,16 @@ tr:last-child td{border-bottom:none}
           <option value="facebook">페이스북</option>
           <option value="spotify">Spotify</option>
           <option value="naver">네이버</option>
+          <option value="kakao">카카오</option>
+          <option value="twitch">트위치</option>
+          <option value="amazon">아마존</option>
+          <option value="ecommerce">해외쇼핑 (쇼피/라자다/알리)</option>
+          <option value="coupang">쿠팡</option>
+          <option value="traffic">웹트래픽/SEO</option>
+          <option value="appstore">앱스토어</option>
+          <option value="travel">여행/숙박</option>
+          <option value="delivery">배달앱</option>
+          <option value="gaming">게임</option>
           <option value="other">기타</option>
         </select>
       </div>
@@ -619,7 +629,9 @@ tr:last-child td{border-bottom:none}
     <div class="fg"><label>어드민 비밀번호 *</label><input type="password" id="nsAdminPw" placeholder="6자 이상"/></div>
     <div style="height:1px;background:var(--bd);margin:8px 0"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="fg"><label>마진율 (%)</label><input type="number" id="ns마진" value="50" inputmode="numeric"/></div>
+      <div class="fg"><label>슈퍼마진율 (%)</label><input type="number" id="nsSuperMargin" value="50" inputmode="numeric"/></div>
+      <div class="fg"><label>사이트 마진율 (%)</label><input type="number" id="ns마진" value="50" inputmode="numeric"/></div>
+      <div class="fg"><label>환율 (USD→KRW)</label><input type="number" id="nsExrate" value="1380" inputmode="numeric"/></div>
       <div class="fg"><label>초기 크레딧 ($)</label><input type="number" id="nsCredit" value="0" step="0.01" inputmode="decimal"/></div>
     </div>
     <div class="ibox" style="margin-bottom:14px">크레딧은 사이트가 API 주문을 처리할 수 있는 달러 잔액입니다. 나중에 충전 가능합니다.</div>
@@ -719,10 +731,10 @@ async function loadChargeHis(){
   tb.innerHTML=h;
 }
 
-var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',other:'📡'};
-var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',other:'#5865F2'};
-var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',other:'기타'};
-var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',other:'서비스 대상 URL'};
+var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',kakao:'💬',twitch:'🎮',amazon:'🛒',ecommerce:'🛍',coupang:'🚀',traffic:'🌐',appstore:'📱',travel:'✈',delivery:'🍔',gaming:'🎮',other:'📡'};
+var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
+var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',kakao:'카카오',twitch:'트위치',amazon:'아마존',ecommerce:'해외쇼핑',coupang:'쿠팡',traffic:'웹트래픽',appstore:'앱스토어',travel:'여행/숙박',delivery:'배달앱',gaming:'게임',other:'기타'};
+var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
 
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 
@@ -773,17 +785,17 @@ async function loadSiteConfig(){
 
   // 브랜드 이름/로고 업데이트
   var logo=d.logo||'✨',name=d.name||'GLOW';
-  document.title=name+' — 소셜 성장 플랫폼';
+  document.title=name+' — 채널 성장 플랫폼';
   ['navLogo','authLogo','sbLogo','tbLogo'].forEach(function(id){var el=ge(id);if(el)el.textContent=logo});
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
 
   // 커스텀 텍스트 적용
-  var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'소셜 성장 자동화 플랫폼';
+  var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'채널 성장 · 마케팅 플랫폼';
   var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'빛나도록';
   var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'우리가 성장시킵니다';
-  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다';
-  var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.';
+  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'유튜브·인스타·틱톡부터 아마존·쿠팡까지, 모든 채널의 성장을 지원합니다';
+  var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
 
   // 통계 숫자
   var s1n=ge('stat1Num');if(s1n)s1n.textContent=d.stat1Num||'10K+';
@@ -1408,10 +1420,13 @@ async function createSite(){
   var email=ge('nsAdminEmail').value.trim(),pw=ge('nsAdminPw').value;
   var margin=ge('ns마진').value,credit=ge('nsCredit').value;
   if(!domain||!name||!email||!pw){toast('필수 항목을 입력하세요','err');return}
+  var superMargin=ge('nsSuperMargin')?.value||50;
+  var exrate=ge('nsExrate')?.value||1380;
   var d=await api('/api/super/sites/create','POST',{
     domain,name,logo,primaryColor:primary,accentColor:accent,
     adminEmail:email,adminPw:pw,margin:parseFloat(margin),
-    exrate:1380,credit:parseFloat(credit||0)
+    exrate:parseFloat(exrate),credit:parseFloat(credit||0),
+    superMargin:parseFloat(superMargin)
   });
   if(d.error){toast(d.error,'err');return}
   toast('사이트 생성 완료! ✨','ok');
@@ -1492,13 +1507,17 @@ async function openEditSite(id){
 function editSite(s){
   var domain=prompt('도메인',s.domain);if(domain===null)return;
   var name=prompt('사이트 이름',s.name);if(name===null)return;
-  var margin=prompt('마진율 (%)',s.margin);if(margin===null)return;
+  var superMargin=prompt('슈퍼마진율 (%) - 이 사이트에 적용할 슈퍼마진 (-1이면 글로벌 사용)',s.super_margin>=0?s.super_margin:50);if(superMargin===null)return;
+  var margin=prompt('사이트 마진율 (%) - 관리자가 고객에게 붙이는 마진',s.margin);if(margin===null)return;
+  var exrate=prompt('환율 (USD→KRW)',s.exrate||1380);if(exrate===null)return;
   api('/api/super/sites/update','POST',{
     siteId:s.id,domain:domain,name:name,logo:s.logo,
     primaryColor:s.primary_color,accentColor:s.accent_color,
-    margin:parseFloat(margin),exrate:s.exrate,active:1
+    margin:parseFloat(margin),exrate:parseFloat(exrate),active:1,
+    superMargin:parseFloat(superMargin)
   }).then(function(d){
     if(d.error){toast(d.error,'err');return}
+    _sitesCache=[];
     toast('수정 완료! ✨','ok');loadSuperDash();
   });
 }
@@ -1650,7 +1669,7 @@ async function processCR(id,action){
 
 
 // ── 서비스 관리 ──
-var PLK2={youtube:'유튜브',instagram:'인스타그램',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',other:'기타'};
+var PLK2={youtube:'유튜브',instagram:'인스타그램',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',kakao:'카카오',twitch:'트위치',amazon:'아마존',ecommerce:'해외쇼핑',coupang:'쿠팡',traffic:'웹트래픽',appstore:'앱스토어',travel:'여행/숙박',delivery:'배달앱',gaming:'게임',other:'기타'};
 
 async function loadSuperServices(){
   var d=await api('/api/services');
