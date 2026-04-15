@@ -436,6 +436,7 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS charge_guide TEXT DEFAULT '입금 후 아래 양식을 작성해주세요. 확인 후 빠르게 처리해드립니다.'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS order_guide TEXT DEFAULT '주문 후 취소가 어려울 수 있습니다. 신중하게 주문해주세요.'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS hero_badge TEXT DEFAULT '소셜 성장 자동화 플랫폼'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'glow'`); } catch(e) {}
   try { await query(`CREATE TABLE IF NOT EXISTS credit_requests (id TEXT PRIMARY KEY, site_id TEXT NOT NULL, site_name TEXT NOT NULL, amount REAL NOT NULL, note TEXT DEFAULT '', status TEXT DEFAULT 'pending', created TIMESTAMP DEFAULT NOW())`); } catch(e) {}
   console.log('✅ DB 초기화 완료');
 }
@@ -459,11 +460,17 @@ app.use(async (req, res, next) => {
     let r = await query(`SELECT * FROM sites WHERE domain=$1 AND active=1`, [host]);
     let site = r.rows[0];
     if (!site) {
+      // www 제거 후 재시도 (예: www.no9story.com → no9story.com)
+      const bareHost = host.replace(/^www\./, '');
+      if (bareHost !== host) {
+        r = await query(`SELECT * FROM sites WHERE domain=$1 AND active=1`, [bareHost]);
+        site = r.rows[0];
+      }
+    }
+    if (!site) {
+      // 매칭 실패 시 default 사이트 사용 (도메인 덮어쓰기 제거)
       r = await query(`SELECT * FROM sites WHERE id='default'`);
       site = r.rows[0];
-      if (site && host !== 'localhost' && !host.includes('127.0.0.1')) {
-        await query(`UPDATE sites SET domain=$1 WHERE id='default'`, [host]);
-      }
     }
     req.site = site;
     req.siteId = site ? site.id : 'default';
@@ -575,7 +582,8 @@ app.get('/api/site-config', (req, res) => {
     kakaoBtnText: site.kakao_btn_text || '카카오톡 문의',
     chargeGuide: site.charge_guide || '입금 후 아래 양식을 작성해주세요.',
     orderGuide: site.order_guide || '주문 후 취소가 어려울 수 있습니다.',
-    heroBadge: site.hero_badge || '소셜 성장 자동화 플랫폼'
+    heroBadge: site.hero_badge || '소셜 성장 자동화 플랫폼',
+    theme: site.theme || 'glow'
   });
 });
 
@@ -1204,7 +1212,7 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     const superMarginVal = req.body.superMargin !== undefined ? parseFloat(req.body.superMargin) : -1;
     await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
       [siteId, domain, name, logo||'✨', primaryColor||'#7209B7', accentColor||'#F72585',
-        parseFloat(margin||50), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal]);
+        parseFloat(margin||50), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal, autoTheme]);
     const hash = bcrypt.hashSync(adminPw, 10);
     const adminRole = req.body.adminRole || 'admin';
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
