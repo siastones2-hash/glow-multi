@@ -684,14 +684,14 @@ async function doLogin(){
   if(!e||!p){toast('이메일과 비밀번호를 입력하세요','err');return}
   var d=await api('/api/login','POST',{email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
-  CUR=d.일반회원;enterDash();
+  CUR=d.user;enterDash();
 }
 async function doRegister(){
   var n=ge('rName').value.trim(),e=ge('r이메일').value.trim(),p=ge('rPw').value;
   if(!n||!e||!p){toast('모든 항목을 입력하세요','err');return}
   var d=await api('/api/register','POST',{name:n,email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
-  CUR=d.일반회원;enterDash();toast('가입 완료! 환영합니다 ✨','ok');
+  CUR=d.user;enterDash();toast('가입 완료! 환영합니다 ✨','ok');
 }
 async function doLogout(){await api('/api/logout','POST');CUR=null;showPg('pg-land')}
 
