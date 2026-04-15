@@ -617,9 +617,13 @@ var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL'
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 
 async function api(url,method,body){
-  var opts={method:method||'GET',headers:{'Content-Type':'application/json'},credentials:'include'};
+  var opts={method:method||'GET',headers:{'Content-Type':'application/json'}};
+  var token=localStorage.getItem('glow_token');
+  if(token)opts.headers['Authorization']='Bearer '+token;
   if(body)opts.body=JSON.stringify(body);
-  var res=await fetch(url,opts);return res.json();
+  var res=await fetch(url,opts);
+  if(res.status===401){localStorage.removeItem('glow_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
+  return res.json();
 }
 function gf(v){return'₩'+Math.round(v||0).toLocaleString()}
 function fd(s){return s?String(s).slice(0,16).replace('T',' '):'-'}
@@ -684,6 +688,7 @@ async function doLogin(){
   if(!e||!p){toast('이메일과 비밀번호를 입력하세요','err');return}
   var d=await api('/api/login','POST',{email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
+  if(d.token)localStorage.setItem('glow_token',d.token);
   CUR=d.user;enterDash();
 }
 async function doRegister(){
@@ -691,9 +696,11 @@ async function doRegister(){
   if(!n||!e||!p){toast('모든 항목을 입력하세요','err');return}
   var d=await api('/api/register','POST',{name:n,email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
+  if(d.token)localStorage.setItem('glow_token',d.token);
+  if(d.token)localStorage.setItem('glow_token',d.token);
   CUR=d.user;enterDash();toast('가입 완료! 환영합니다 ✨','ok');
 }
-async function doLogout(){await api('/api/logout','POST');CUR=null;showPg('pg-land')}
+async function doLogout(){await api('/api/logout','POST');localStorage.removeItem('glow_token');CUR=null;showPg('pg-land')}
 
 async function enterDash(){
   showPg('pg-dash');
@@ -1381,9 +1388,12 @@ function closeM(id){ge(id).classList.remove('on')}
 // ── 초기화 ──
 window.addEventListener('DOMContentLoaded',function(){
   loadSiteConfig();
-  api('/api/me').then(function(d){
-    if(d&&d.id){CUR=d;enterDash()}
-  }).catch(function(){});
+  var token=localStorage.getItem('glow_token');
+  if(token){
+    api('/api/me').then(function(d){
+      if(d&&d.id){CUR=d;enterDash()}
+    }).catch(function(){});
+  }
 });
 </script>
 </body>
