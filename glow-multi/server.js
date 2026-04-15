@@ -148,9 +148,9 @@ if (!superAdmin) {
 }
 
 // 기본 서비스 데이터
-// 기본 70개 서비스만 유지 (API 동기화 서비스 제거)
+// 기본 70개 서비스만 유지
 db.prepare("DELETE FROM services WHERE id LIKE 'api_%'").run();
-const svcCount = db.prepare('SELECT COUNT(*) as c FROM services').get().c;
+const svcCount = db.prepare("SELECT COUNT(*) as c FROM services WHERE id NOT LIKE 'api_%'").get().c;
 if (svcCount === 0) {
   const svcs = [
     // ── YouTube (10개) ──
