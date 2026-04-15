@@ -514,12 +514,18 @@ app.post('/api/charges/cancel', requireAuth, async (req, res) => {
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
-    const p = siteId ? [siteId] : [];
-    const w = siteId ? `AND site_id=$1` : '';
-    const users = await query(`SELECT COUNT(*) as c FROM users WHERE role='user' ${w}`, p);
-    const orders = await query(`SELECT COUNT(*) as c FROM orders WHERE 1=1 ${w}`, p);
-    const revenue = await query(`SELECT SUM(charge) as s FROM orders WHERE 1=1 ${w}`, p);
-    const pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status='pending' ${w}`, p);
+    let users, orders, revenue, pending;
+    if (siteId) {
+      users   = await query(`SELECT COUNT(*) as c FROM users WHERE role=$1 AND site_id=$2`, ['user', siteId]);
+      orders  = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1`, [siteId]);
+      revenue = await query(`SELECT SUM(charge) as s FROM orders WHERE site_id=$1`, [siteId]);
+      pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status=$1 AND site_id=$2`, ['pending', siteId]);
+    } else {
+      users   = await query(`SELECT COUNT(*) as c FROM users WHERE role=$1`, ['user']);
+      orders  = await query(`SELECT COUNT(*) as c FROM orders`);
+      revenue = await query(`SELECT SUM(charge) as s FROM orders`);
+      pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status=$1`, ['pending']);
+    }
     const credit = req.session.role === 'superadmin' ? null : (req.site?.credit || 0);
     res.json({
       users: parseInt(users.rows[0].c),
