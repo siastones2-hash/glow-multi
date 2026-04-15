@@ -1,8 +1,19 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'glow-jwt-secret-2024';
+// 간단한 토큰 시스템 (외부 모듈 불필요)
+const TOKENS = new Map();
+function createToken(payload) {
+  const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  TOKENS.set(token, { ...payload, exp: Date.now() + 7*24*60*60*1000 });
+  return token;
+}
+function verifyToken(token) {
+  const p = TOKENS.get(token);
+  if (!p) return null;
+  if (Date.now() > p.exp) { TOKENS.delete(token); return null; }
+  return p;
+}
 const fetch = require('node-fetch');
 const path = require('path');
 
@@ -227,7 +238,7 @@ function getToken(req) {
   return null;
 }
 function verifyToken(token) {
-  try { return jwt.verify(token, JWT_SECRET); } catch(e) { return null; }
+  const p = TOKENS.get(token); if (!p) return null; if (Date.now() > p.exp) { TOKENS.delete(token); return null; } return p;
 }
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -361,10 +372,7 @@ app.post('/api/login', (req, res) => {
   if (targetUser.status === 'banned')
     return res.json({ error: '정지된 계정입니다. 관리자에게 문의하세요.' });
 
-  const token = jwt.sign(
-    { userId: targetUser.id, role: targetUser.role, siteId: req.siteId },
-    JWT_SECRET, { expiresIn: '7d' }
-  );
+  const token = createToken({ userId: targetUser.id, role: targetUser.role, siteId: req.siteId });
   res.json({ ok: true, token, user: {
     id: targetUser.id, name: targetUser.name,
     email: targetUser.email, role: targetUser.role,
@@ -383,10 +391,7 @@ app.post('/api/register', (req, res) => {
   db.prepare('INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES(?,?,?,?,?,?,?)')
     .run(id, req.siteId, name, email, hash, 'user', 0);
   const newUser = db.prepare('SELECT * FROM users WHERE id=?').get(id);
-  const token = jwt.sign(
-    { userId: newUser.id, role: newUser.role, siteId: req.siteId },
-    JWT_SECRET, { expiresIn: '7d' }
-  );
+  const token = createToken({ userId: newUser.id, role: newUser.role, siteId: req.siteId });
   res.json({ ok: true, token, user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, balance: newUser.balance }});
 });
 
