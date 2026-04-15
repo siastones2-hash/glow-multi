@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // ══════════════════════════════
 //  DB 초기화
 // ══════════════════════════════
-const db = new Database('glow.db');
+const db = new Database(process.env.DB_PATH || '/tmp/glow.db');
 db.pragma('journal_mode = WAL');
 
 db.exec(`
@@ -237,9 +237,13 @@ app.use((req, res, next) => {
   // 도메인으로 사이트 찾기
   let site = db.prepare('SELECT * FROM sites WHERE domain=? AND active=1').get(host);
 
-  // 못 찾으면 localhost/default로 폴백
+  // 못 찾으면 default로 폴백
   if (!site) {
     site = db.prepare("SELECT * FROM sites WHERE id='default'").get();
+    // render 도메인이면 default 사이트 도메인 업데이트
+    if (site && host !== 'localhost' && !host.includes('127.0.0.1')) {
+      db.prepare("UPDATE sites SET domain=? WHERE id='default'").run(host);
+    }
   }
 
   req.site = site;
