@@ -899,6 +899,23 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
     const global_tg_chat = await getGlobalSetting('tg_chat');
     const super_margin = await getGlobalSetting('super_margin');
     const global_exrate = await getGlobalSetting('global_exrate');
+
+    // 관리자용: 공급가 샘플 계산 (가장 저렴한 서비스 기준)
+    let supplyExamples = [];
+    if (!isSuperAdmin) {
+      try {
+        const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(global_exrate || '1500');
+        const superMgStr = super_margin || '50';
+        const superMg = (site && site.super_margin >= 0) ? site.super_margin : parseFloat(superMgStr);
+        const svcs = await query(`SELECT id, name, rate, pl FROM services WHERE active=1 ORDER BY rate ASC LIMIT 5`);
+        supplyExamples = svcs.rows.map(s => ({
+          name: s.name,
+          pl: s.pl,
+          supplyPer1000: Math.round(s.rate / 1000 * ex * (1 + superMg / 100) * 1000), // ₩/1000개
+        }));
+      } catch(e) {}
+    }
+
     res.json({
       name: site?.name || '', kakao: site?.kakao || '',
       bank: site?.bank || '', margin: site?.margin || 50,
@@ -910,7 +927,8 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       site_tg_chat: site?.tg_chat || '',
       super_margin: isSuperAdmin ? (super_margin || '50') : undefined,
       global_exrate: isSuperAdmin ? (global_exrate || '1500') : undefined,
-      isSuperAdmin
+      isSuperAdmin,
+      supplyExamples  // 관리자용 공급가 샘플
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
