@@ -896,6 +896,36 @@ function detectPlat(n) {
   return 'other';
 }
 
+// 슈퍼관리자 - 관리자 비번 재설정
+app.post('/api/super/admin/resetpw', requireSuperAdmin, (req, res) => {
+  const { uid, newpw } = req.body;
+  if (!newpw || newpw.length < 6) return res.json({ error: '6자 이상 입력하세요' });
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(uid);
+  if (!user || user.role !== 'admin') return res.json({ error: '관리자만 변경 가능합니다' });
+  const hash = bcrypt.hashSync(newpw, 10);
+  db.prepare('UPDATE users SET pw=? WHERE id=?').run(hash, uid);
+  res.json({ ok: true });
+});
+
+// 슈퍼관리자 - 관리자 정지/해제
+app.post('/api/super/admin/ban', requireSuperAdmin, (req, res) => {
+  const { uid } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(uid);
+  if (!user || user.role !== 'admin') return res.json({ error: '관리자만 변경 가능합니다' });
+  const newStatus = user.status === 'banned' ? 'active' : 'banned';
+  db.prepare('UPDATE users SET status=? WHERE id=?').run(newStatus, uid);
+  res.json({ ok: true, status: newStatus });
+});
+
+// 슈퍼관리자 - 관리자 삭제
+app.post('/api/super/admin/delete', requireSuperAdmin, (req, res) => {
+  const { uid } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(uid);
+  if (!user || user.role !== 'admin') return res.json({ error: '관리자만 삭제 가능합니다' });
+  db.prepare('DELETE FROM users WHERE id=?').run(uid);
+  res.json({ ok: true });
+});
+
 // 슈퍼관리자 전체 주문 조회
 app.get('/api/super/orders', requireSuperAdmin, (req, res) => {
   const orders = db.prepare('SELECT * FROM orders ORDER BY created DESC LIMIT 200').all();
