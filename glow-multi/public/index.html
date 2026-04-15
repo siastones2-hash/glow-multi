@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
-<title>SMM Panel</title>
+<title>GLOW — 소셜 성장 플랫폼</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 /* 3. 동적 UI 변수 - CSS 변수로 테마 적용 */
@@ -1112,6 +1112,7 @@ async function testApi(){
   if(res)res.innerHTML=msg;
 }
 async function syncSvcs(){
+  if(!confirm('⚠️ 서비스 동기화 시 외부 API 서비스로 교체됩니다.\n현재 70개 서비스를 유지하려면 취소하세요.\n\n계속하시겠습니까?'))return;
   var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 중...';
   var d=await api('/api/admin/api-sync');
   var msg=d.ok?'<span style="color:#10B981">✅ '+d.count+'개 동기화 완료!</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
