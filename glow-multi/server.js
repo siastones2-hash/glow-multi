@@ -896,6 +896,12 @@ function detectPlat(n) {
   return 'other';
 }
 
+// api_ 서비스 삭제 (관리자용)
+app.post('/api/admin/services/clean', requireSuperAdmin, (req, res) => {
+  const result = db.prepare("DELETE FROM services WHERE id LIKE 'api_%'").run();
+  res.json({ ok: true, deleted: result.changes });
+});
+
 // SPA 라우팅
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
