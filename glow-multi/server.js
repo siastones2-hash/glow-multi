@@ -203,11 +203,10 @@ async function initDB() {
       ['superadmin', 'default', '슈퍼관리자', 'leestones@naver.com', hash, 'superadmin', 0]);
   }
 
-  // 기본 서비스 (항상 설명 업데이트)
+  // 기본 서비스 강제 최신화 (매 시작시 기본 서비스 삭제 후 재삽입)
   await query(`DELETE FROM services WHERE id LIKE 'api_%'`);
-  const svcCount = await query(`SELECT COUNT(*) as c FROM services WHERE id NOT LIKE 'api_%'`);
-  const forceUpdate = true; // 항상 설명 업데이트
-  if (parseInt(svcCount.rows[0].c) === 0 || forceUpdate) {
+  await query(`DELETE FROM services WHERE id NOT LIKE 'api_%'`);
+  if (true) {
     const svcs = [
       {id:'yt1',name:'YouTube 조회수 — 일반 (빠른 처리)',pl:'youtube',rate:0.50,min:1000,max:1000000,description:'조회수는 유튜브 알고리즘의 핵심 지표입니다. 조회수가 높을수록 추천 영상에 노출되는 빈도가 높아지고, 신규 시청자 유입이 자연스럽게 증가합니다. 실제 사용자 패턴 기반으로 처리되어 안전하며, 빠른 시작으로 초기 채널 성장에 최적화되어 있습니다. 영상 업로드 직후 적용하면 알고리즘 부스트 효과를 극대화할 수 있습니다.'},
       {id:'yt2',name:'YouTube 조회수 — 고유지율 (30초+)',pl:'youtube',rate:1.20,min:500,max:500000,description:'단순 조회수보다 훨씬 강력한 효과를 제공합니다. 평균 시청 시간 30초 이상으로 처리되어 유튜브 알고리즘이 "좋은 영상"으로 인식하게 만듭니다. 시청 지속 시간은 추천 알고리즘 가중치가 가장 높은 지표로, 홈 화면과 추천 탭 노출 가능성을 크게 높여줍니다. 수익화 채널이나 브랜드 영상에 특히 효과적입니다.'},
