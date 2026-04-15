@@ -838,6 +838,19 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+app.post('/api/super/sites/delete', requireSuperAdmin, async (req, res) => {
+  try {
+    const { siteId } = req.body;
+    if (!siteId || siteId === 'default') return res.json({ error: '기본 사이트는 삭제할 수 없습니다' });
+    await query(`DELETE FROM orders WHERE site_id=$1`, [siteId]);
+    await query(`DELETE FROM charges WHERE site_id=$1`, [siteId]);
+    await query(`DELETE FROM users WHERE site_id=$1`, [siteId]);
+    await query(`DELETE FROM sites WHERE id=$1`, [siteId]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
   try {
     const sites = await query(`SELECT * FROM sites ORDER BY created DESC`);
