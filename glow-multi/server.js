@@ -1,19 +1,35 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
-// DB 기반 토큰 시스템
+const crypto = require('crypto');
+
+// ── HMAC 자체서명 토큰 시스템 (재배포/DB초기화 후에도 유효) ──
+const TOKEN_SECRET = process.env.TOKEN_SECRET || 'glow-multi-secret-key-2024';
+
 function createToken(payload) {
-  const token = Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
-  const exp = Date.now() + 7*24*60*60*1000;
-  db.prepare('INSERT OR REPLACE INTO tokens(token, userId, role, siteId, exp) VALUES(?,?,?,?,?)').run(token, payload.userId, payload.role, payload.siteId, exp);
-  return token;
+  const data = {
+    userId: payload.userId,
+    role: payload.role,
+    siteId: payload.siteId,
+    exp: Date.now() + 7*24*60*60*1000
+  };
+  const encoded = Buffer.from(JSON.stringify(data)).toString('base64url');
+  const sig = crypto.createHmac('sha256', TOKEN_SECRET).update(encoded).digest('base64url');
+  return encoded + '.' + sig;
 }
+
 function verifyToken(token) {
   if (!token) return null;
-  const row = db.prepare('SELECT * FROM tokens WHERE token=?').get(token);
-  if (!row) return null;
-  if (Date.now() > row.exp) { db.prepare('DELETE FROM tokens WHERE token=?').run(token); return null; }
-  return { userId: row.userId, role: row.role, siteId: row.siteId };
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+    const [encoded, sig] = parts;
+    const expected = crypto.createHmac('sha256', TOKEN_SECRET).update(encoded).digest('base64url');
+    if (sig !== expected) return null;
+    const data = JSON.parse(Buffer.from(encoded, 'base64url').toString());
+    if (Date.now() > data.exp) return null;
+    return { userId: data.userId, role: data.role, siteId: data.siteId };
+  } catch(e) { return null; }
 }
 const fetch = require('node-fetch');
 const path = require('path');
@@ -99,15 +115,6 @@ db.exec(`
     note TEXT DEFAULT '',
     status TEXT DEFAULT 'pending',
     created TEXT DEFAULT (datetime('now'))
-  );
-
-  -- 토큰 테이블
-  CREATE TABLE IF NOT EXISTS tokens (
-    token TEXT PRIMARY KEY,
-    userId TEXT NOT NULL,
-    role TEXT NOT NULL,
-    siteId TEXT DEFAULT 'default',
-    exp INTEGER NOT NULL
   );
 
   -- 글로벌 설정 (슈퍼어드민 전용)
