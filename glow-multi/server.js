@@ -494,7 +494,7 @@ function requireAdmin(req, res, next) {
   const token = getToken(req);
   const payload = token ? verifyToken(token) : null;
   if (!payload) return res.status(401).json({ error: '로그인 필요' });
-  if (!['admin','superadmin'].includes(payload.role)) return res.status(403).json({ error: '관리자 권한 필요' });
+  if (!['admin','partner','superadmin'].includes(payload.role)) return res.status(403).json({ error: '관리자 권한 필요' });
   req.session = payload;
   next();
 }
@@ -638,10 +638,17 @@ app.get('/api/services', async (req, res) => {
       superMg = parseFloat(superMgStr || '50');
     }
     const r = await query(`SELECT * FROM services WHERE active=1 ORDER BY id`);
-    res.json(r.rows.map(s => ({
-      ...s,
-      sell: Math.round(s.rate / 1000 * ex * (1 + superMg / 100) * (1 + siteMg / 100))
-    })));
+    const isPartner = req.session && req.session.role === 'partner';
+    res.json(r.rows.map(s => {
+      const originalCost = Math.round(s.rate / 1000 * ex); // 원가(₩/1개)
+      const supplyCost = Math.round(s.rate / 1000 * ex * (1 + superMg / 100)); // 공급가
+      const sellPrice = Math.round(supplyCost * (1 + siteMg / 100)); // 고객가
+      if (isPartner) {
+        // partner에게는 공급가를 원가처럼 보여줌 (실제 원가 숨김)
+        return { ...s, sell: sellPrice, baseCost: supplyCost, isPartnerView: true };
+      }
+      return { ...s, sell: sellPrice, originalCost, supplyCost, myProfit: supplyCost - originalCost };
+    }));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1181,8 +1188,9 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
       [siteId, domain, name, logo||'✨', primaryColor||'#7209B7', accentColor||'#F72585',
         parseFloat(margin||50), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal]);
     const hash = bcrypt.hashSync(adminPw, 10);
+    const adminRole = req.body.adminRole || 'admin';
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
-      ['admin_'+siteId, siteId, '관리자', adminEmail, hash, 'admin', 0]);
+      ['admin_'+siteId, siteId, '관리자', adminEmail, hash, adminRole, 0]);
     res.json({ ok: true, siteId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1238,6 +1246,8 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
     const totalOrders = await query(`SELECT COUNT(*) as c FROM orders`);
     const totalRevenue = await query(`SELECT SUM(charge) as s FROM orders`);
     const pendingCharges = await query(`SELECT COUNT(*) as c FROM charges WHERE status='pending'`);
+    // 순수익 계산: 총매출 - API 원가 합계
+    const totalApiCost = await query(`SELECT SUM(qty * rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id`);
     let apiBalance = null;
     try {
       const apiKey = await getGlobalSetting('peakerr_api_key');
@@ -1257,13 +1267,22 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       const pc = await query(`SELECT COUNT(*) as c FROM charges WHERE site_id=$1 AND status='pending'`, [s.id]);
       return { ...s, userCount: parseInt(uc.rows[0].c), orderCount: parseInt(oc.rows[0].c), revenue: rv.rows[0].v || 0, pendingCharge: parseInt(pc.rows[0].c) };
     }));
+    const superMgForProfit = await getGlobalSetting('super_margin');
+    const superMgPct = parseFloat(superMgForProfit || '50') / 100;
+    const globalEx = await getGlobalSetting('global_exrate');
+    const exRate = parseFloat(globalEx || '1500');
+    const totalApiCostUsd = totalApiCost.rows[0].s || 0;
+    const totalApiCostKrw = totalApiCostUsd * exRate;
+    const myProfitKrw = totalApiCostKrw * superMgPct; // 순수익 = API원가 × 슈퍼마진율
+
     res.json({
       sites: siteStats,
       totalUsers: parseInt(totalUsers.rows[0].c),
       totalOrders: parseInt(totalOrders.rows[0].c),
       totalRevenue: totalRevenue.rows[0].s || 0,
       pendingCharges: parseInt(pendingCharges.rows[0].c),
-      apiBalance
+      apiBalance,
+      myProfit: Math.round(myProfitKrw)
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
