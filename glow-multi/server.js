@@ -180,7 +180,8 @@ async function initDB() {
     peakerr_api_key: process.env.PEAKERR_API_KEY || '',
     tg_token: process.env.TG_TOKEN || '',
     tg_chat: process.env.TG_CHAT || '',
-    super_margin: '50'  // 슈퍼관리자 마진율 (%)
+    super_margin: '50',  // 슈퍼관리자 마진율 (%)
+    global_exrate: '1500'  // 글로벌 기본 환율
   };
   for (const [k, v] of Object.entries(defaults)) {
     await query(`INSERT INTO global_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO NOTHING`, [k, v]);
@@ -625,8 +626,10 @@ app.get('/api/services', async (req, res) => {
   try {
     const site = req.site;
     const siteMg = site ? site.margin : 50;
-    const ex = site ? site.exrate : 1380;
-    // 사이트별 슈퍼마진 우선, 없으면(-1) 글로벌 슈퍼마진 사용
+    // 환율: 사이트별 → 글로벌 순으로 적용
+    const globalExrate = await getGlobalSetting('global_exrate');
+    const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate || '1500');
+    // 슈퍼마진: 사이트별 → 글로벌 순으로 적용
     let superMg;
     if (site && site.super_margin >= 0) {
       superMg = site.super_margin;
@@ -653,7 +656,8 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       return res.json({ error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다` });
     const site = req.site;
     const siteMg = site ? site.margin : 50;
-    const ex = site ? site.exrate : 1380;
+    const globalExrate2 = await getGlobalSetting('global_exrate');
+    const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate2 || '1500');
     let superMg2;
     if (site && site.super_margin >= 0) {
       superMg2 = site.super_margin;
@@ -887,6 +891,7 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
     const global_tg_token = await getGlobalSetting('tg_token');
     const global_tg_chat = await getGlobalSetting('tg_chat');
     const super_margin = await getGlobalSetting('super_margin');
+    const global_exrate = await getGlobalSetting('global_exrate');
     res.json({
       name: site?.name || '', kakao: site?.kakao || '',
       bank: site?.bank || '', margin: site?.margin || 50,
@@ -897,6 +902,7 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       site_tg_token: site?.tg_token || '',
       site_tg_chat: site?.tg_chat || '',
       super_margin: isSuperAdmin ? (super_margin || '50') : undefined,
+      global_exrate: isSuperAdmin ? (global_exrate || '1500') : undefined,
       isSuperAdmin
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1218,7 +1224,7 @@ app.post('/api/super/sites/delete', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
-    const allowed = ['super_margin', 'peakerr_api_key', 'tg_token', 'tg_chat'];
+    const allowed = ['super_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
     await setGlobalSetting(key, value);
     res.json({ ok: true });
