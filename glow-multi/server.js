@@ -1,18 +1,19 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
-// 간단한 토큰 시스템 (외부 모듈 불필요)
-const TOKENS = new Map();
+// DB 기반 토큰 시스템
 function createToken(payload) {
-  const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  TOKENS.set(token, { ...payload, exp: Date.now() + 7*24*60*60*1000 });
+  const token = Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
+  const exp = Date.now() + 7*24*60*60*1000;
+  db.prepare('INSERT OR REPLACE INTO tokens(token, userId, role, siteId, exp) VALUES(?,?,?,?,?)').run(token, payload.userId, payload.role, payload.siteId, exp);
   return token;
 }
 function verifyToken(token) {
-  const p = TOKENS.get(token);
-  if (!p) return null;
-  if (Date.now() > p.exp) { TOKENS.delete(token); return null; }
-  return p;
+  if (!token) return null;
+  const row = db.prepare('SELECT * FROM tokens WHERE token=?').get(token);
+  if (!row) return null;
+  if (Date.now() > row.exp) { db.prepare('DELETE FROM tokens WHERE token=?').run(token); return null; }
+  return { userId: row.userId, role: row.role, siteId: row.siteId };
 }
 const fetch = require('node-fetch');
 const path = require('path');
@@ -98,6 +99,15 @@ db.exec(`
     note TEXT DEFAULT '',
     status TEXT DEFAULT 'pending',
     created TEXT DEFAULT (datetime('now'))
+  );
+
+  -- 토큰 테이블
+  CREATE TABLE IF NOT EXISTS tokens (
+    token TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    role TEXT NOT NULL,
+    siteId TEXT DEFAULT 'default',
+    exp INTEGER NOT NULL
   );
 
   -- 글로벌 설정 (슈퍼어드민 전용)
@@ -236,9 +246,6 @@ function getToken(req) {
   const auth = req.headers['authorization'];
   if (auth && auth.startsWith('Bearer ')) return auth.slice(7);
   return null;
-}
-function verifyToken(token) {
-  const p = TOKENS.get(token); if (!p) return null; if (Date.now() > p.exp) { TOKENS.delete(token); return null; } return p;
 }
 app.use(express.static(path.join(__dirname, 'public')));
 
