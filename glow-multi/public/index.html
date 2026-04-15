@@ -425,6 +425,7 @@ tr:last-child td{border-bottom:none}
           <button class="admtab" onclick="goSuperTab('allorders',this)">📦 전체 주문</button>
           <button class="admtab" onclick="goSuperTab('allcharges',this)">💳 전체 충전</button>
           <button class="admtab" onclick="goSuperTab('creditreqs',this)">💰 크레딧 요청</button>
+          <button class="admtab" onclick="goSuperTab('services',this)">⚙ 서비스 관리</button>
           <button class="admtab" onclick="goSuperTab('globalapi',this)">🔑 API/텔레그램</button>
         </div>
 
@@ -452,6 +453,16 @@ tr:last-child td{border-bottom:none}
         <div class="apanel" id="sp-creditreqs">
           <div style="font-size:14px;font-weight:700;margin-bottom:8px">💰 사이트 크레딧 요청 내역</div>
           <div class="tw"><table><thead><tr><th>사이트</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="spCRTb"></tbody></table></div>
+        </div>
+        <div class="apanel" id="sp-services">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:14px;font-weight:700">⚙ 서비스 관리</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn bok bxs" onclick="openAddService()">+ 서비스 추가</button>
+              <button class="btn binf bxs" onclick="syncSvcs()">🔄 API 동기화</button>
+            </div>
+          </div>
+          <div class="tw"><table><thead><tr><th>플랫폼</th><th>서비스명</th><th>원가($)/1000</th><th>최소</th><th>최대</th><th>상태</th><th>관리</th></tr></thead><tbody id="spSvcTb"></tbody></table></div>
         </div>
         <div class="apanel" id="sp-globalapi">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
@@ -499,6 +510,47 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 모달들 -->
+<!-- 서비스 추가/수정 모달 -->
+<div class="mbg" id="mService">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:800" id="mServiceTitle">서비스 추가</div>
+      <button onclick="closeM('mService')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>
+    </div>
+    <input type="hidden" id="svcEditId"/>
+    <div class="fg"><label>서비스명</label><input type="text" id="svcName" placeholder="YouTube 조회수"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg"><label>플랫폼</label>
+        <select id="svcPl" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;font-size:13px">
+          <option value="youtube">유튜브</option>
+          <option value="instagram">인스타그램</option>
+          <option value="tiktok">틱톡</option>
+          <option value="twitter">트위터/X</option>
+          <option value="threads">스레드</option>
+          <option value="telegram">텔레그램</option>
+          <option value="facebook">페이스북</option>
+          <option value="spotify">Spotify</option>
+          <option value="naver">네이버</option>
+          <option value="other">기타</option>
+        </select>
+      </div>
+      <div class="fg"><label>원가 ($/1000개)</label><input type="number" id="svcRate" placeholder="0.50" step="0.01"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg"><label>최소 수량</label><input type="number" id="svcMin" placeholder="100"/></div>
+      <div class="fg"><label>최대 수량</label><input type="number" id="svcMax" placeholder="1000000"/></div>
+    </div>
+    <div class="fg"><label>설명</label><textarea id="svcDesc" rows="3" placeholder="서비스 설명"></textarea></div>
+    <div class="fg"><label>활성</label>
+      <select id="svcActive" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;font-size:13px">
+        <option value="1">활성</option>
+        <option value="0">비활성</option>
+      </select>
+    </div>
+    <button class="bp bpf" onclick="saveService()">저장하기</button>
+  </div>
+</div>
+
 <!-- 잔액 수정 -->
 <div class="mbg" id="mBal">
   <div class="modal">
@@ -796,7 +848,7 @@ function renderSvcList(){
   var q=(ge('svcSearch')&&ge('svcSearch').value||'').toLowerCase();
   var svcs=SVCS.filter(function(s){
     var matchPl=FLT==='all'||s.pl===FLT;
-    var matchQ=!q||s.name.toLowerCase().includes(q)||(s.desc&&s.desc.toLowerCase().includes(q));
+    var matchQ=!q||s.name.toLowerCase().includes(q)||(s.description&&s.description.toLowerCase().includes(q));
     return matchPl&&matchQ;
   });
   var el=ge('svcList');if(!el)return;
@@ -807,7 +859,7 @@ function renderSvcList(){
       +'<div class="spi" style="background:'+PLC[s.pl]+'">'+PLI[s.pl]+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;font-weight:700;color:#1A1030;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.name+'</div>'
-      +'<div style="font-size:12px;color:#5A4A7A;line-height:1.6;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px">'+s.desc+'</div>'
+      +'<div style="font-size:12px;color:#5A4A7A;line-height:1.6;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px">'+s.description+'</div>'
       +'<div style="font-size:11px;color:#9A8AB0">최소 '+(s.min||0).toLocaleString()+' ~ 최대 '+(s.max||0).toLocaleString()+'개</div>'
       +'</div>'
       +'<div style="flex-shrink:0;text-align:right;padding-left:10px">'
@@ -820,7 +872,7 @@ function selSvc(id){
   SEL=null;for(var i=0;i<SVCS.length;i++){if(SVCS[i].id===id){SEL=SVCS[i];break}}
   if(!SEL)return;
   ge('selName').innerHTML='<strong style="font-size:14px">'+PLI[SEL.pl]+' '+SEL.name+'</strong>'
-    +'<div style="font-size:12px;color:#5A4A7A;font-weight:300;margin-top:5px;line-height:1.6">'+SEL.desc+'</div>';
+    +'<div style="font-size:12px;color:#5A4A7A;font-weight:300;margin-top:5px;line-height:1.6">'+SEL.description+'</div>';
   ge('qHint').textContent='최소 '+(SEL.min||0).toLocaleString()+' / 최대 '+(SEL.max||0).toLocaleString()+'개';
   ge('linkHint').textContent=HINTS[SEL.pl]||'서비스 대상 URL';
   ge('o수량').min=SEL.min||1;
@@ -841,7 +893,7 @@ function renderQCards(){
     return'<div class="card" style="cursor:pointer" onclick="goTab(\'order\');setTimeout(function(){selSvc(\''+s.id+'\')},50)">'
       +'<div style="font-size:22px;margin-bottom:8px">'+PLI[s.pl]+'</div>'
       +'<div style="font-size:13px;font-weight:700;margin-bottom:3px;color:#1A1030">'+s.name+'</div>'
-      +'<div style="font-size:11px;color:#9A8AB0;margin-bottom:8px;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+s.desc+'</div>'
+      +'<div style="font-size:11px;color:#9A8AB0;margin-bottom:8px;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+s.description+'</div>'
       +'<div class="gt" style="font-size:13px;font-weight:800">'+gf(s.sell)+'/1K</div></div>';
   }).join('');
 }
@@ -1183,6 +1235,7 @@ function goSuperTab(tab,el){
   if(tab==='allorders')loadSuperOrders();
   if(tab==='allcharges')loadSuperCharges();
   if(tab==='creditreqs')loadSuperCreditReqs();
+  if(tab==='services')loadSuperServices();
 }
 function renderSiteList(sites){
   var el=ge('siteList');if(!el)return;
@@ -1479,6 +1532,74 @@ async function processCR(id,action){
   toast(action==='approve'?'크레딧 승인 완료 ✨':'거절 완료','ok');
   loadSuperCreditReqs();
   loadSuperDash();
+}
+
+
+// ── 서비스 관리 ──
+var PLK2={youtube:'유튜브',instagram:'인스타그램',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',other:'기타'};
+
+async function loadSuperServices(){
+  var d=await api('/api/services');
+  var tb=ge('spSvcTb'),h='';
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:#9A8AB0">서비스가 없습니다</td></tr>';return}
+  d.forEach(function(s){
+    h+='<tr>'
+      +'<td><span style="font-size:11px;background:#f5f0ff;padding:2px 7px;border-radius:20px;color:var(--p2)">'+(PLK2[s.pl]||s.pl)+'</span></td>'
+      +'<td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.name+'</td>'
+      +'<td style="font-weight:700;color:var(--p2)">$'+parseFloat(s.rate||0).toFixed(3)+'</td>'
+      +'<td style="font-size:12px">'+(s.min||0).toLocaleString()+'</td>'
+      +'<td style="font-size:12px">'+(s.max||0).toLocaleString()+'</td>'
+      +'<td><span class="bdg" style="'+(s.active?'background:#D1FAE5;color:#10B981':'background:#FEE2E2;color:#EF4444')+'">'+(s.active?'활성':'비활성')+'</span></td>'
+      +'<td style="display:flex;gap:4px">'
+      +'<button class="btn binf bxs" onclick="editService('+JSON.stringify(s).replace(/"/g,"'")+')" >수정</button>'
+      +'<button class="btn ber bxs" onclick="deleteService(''+s.id+'',''+s.name.replace(/'/g,'')+'')">삭제</button>'
+      +'</td></tr>';
+  });
+  tb.innerHTML=h;
+}
+
+function openAddService(){
+  ge('mServiceTitle').textContent='서비스 추가';
+  ge('svcEditId').value='';
+  ge('svcName').value='';ge('svcPl').value='youtube';
+  ge('svcRate').value='';ge('svcMin').value='100';
+  ge('svcMax').value='1000000';ge('svcDesc').value='';
+  ge('svcActive').value='1';
+  ge('mService').classList.add('on');
+}
+
+function editService(s){
+  ge('mServiceTitle').textContent='서비스 수정';
+  ge('svcEditId').value=s.id;
+  ge('svcName').value=s.name;ge('svcPl').value=s.pl;
+  ge('svcRate').value=s.rate;ge('svcMin').value=s.min;
+  ge('svcMax').value=s.max;ge('svcDesc').value=s.description||'';
+  ge('svcActive').value=s.active?'1':'0';
+  ge('mService').classList.add('on');
+}
+
+async function saveService(){
+  var id=ge('svcEditId').value;
+  var name=ge('svcName').value.trim();
+  var pl=ge('svcPl').value;
+  var rate=parseFloat(ge('svcRate').value);
+  var min=parseInt(ge('svcMin').value);
+  var max=parseInt(ge('svcMax').value);
+  var description=ge('svcDesc').value.trim();
+  var active=parseInt(ge('svcActive').value);
+  if(!name||isNaN(rate)){toast('서비스명과 원가를 입력하세요','err');return}
+  var url=id?'/api/super/services/update':'/api/super/services/create';
+  var d=await api(url,'POST',{id,name,pl,rate,min,max,description,active});
+  if(d.error){toast(d.error,'err');return}
+  toast('저장 완료 ✨','ok');
+  closeM('mService');loadSuperServices();
+}
+
+async function deleteService(id, name){
+  if(!confirm('⚠️ ['+name+'] 서비스를 삭제하시겠습니까?')) return;
+  var d=await api('/api/super/services/delete','POST',{id});
+  if(d.error){toast(d.error,'err');return}
+  toast('삭제 완료','ok');loadSuperServices();
 }
 
 window.addEventListener('DOMContentLoaded',function(){
