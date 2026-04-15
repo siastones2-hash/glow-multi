@@ -954,7 +954,7 @@ function renderSvcList(){
       +'<div style="font-size:11px;color:#9A8AB0">최소 '+(s.min||0).toLocaleString()+' ~ 최대 '+(s.max||0).toLocaleString()+'개</div>'
       +'</div>'
       +'<div style="flex-shrink:0;text-align:right;padding-left:10px">'
-      +'<div class="gt" style="font-size:14px;font-weight:800;white-space:nowrap">'+gf(s.sell)+'</div>'
+      +'<div class="gt" style="font-size:14px;font-weight:800;white-space:nowrap">'+gf(Math.round(s.sell*1000))+'</div>'
       +'<div style="font-size:10px;color:#9A8AB0">/ 1,000개</div>'
       +'</div></div>';
   }).join('');
@@ -975,7 +975,7 @@ function calcPrice(){
   if(!SEL||!CUR)return;
   var qty=parseInt(ge('o수량').value)||0;
   ge('oBal').textContent=gf(CUR.balance||0);
-  ge('oTotal').textContent=qty?gf(SEL.sell/1000*qty):'₩0';
+  ge('oTotal').textContent=qty?gf(SEL.sell*qty):'₩0';
 }
 function renderQCards(){
   var el=ge('qCards');if(!el)return;
@@ -985,7 +985,7 @@ function renderQCards(){
       +'<div style="font-size:22px;margin-bottom:8px">'+PLI[s.pl]+'</div>'
       +'<div style="font-size:13px;font-weight:700;margin-bottom:3px;color:#1A1030">'+s.name+'</div>'
       +'<div style="font-size:11px;color:#9A8AB0;margin-bottom:8px;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+s.description+'</div>'
-      +'<div class="gt" style="font-size:13px;font-weight:800">'+gf(s.sell)+'/1K</div></div>';
+      +'<div class="gt" style="font-size:13px;font-weight:800">'+gf(Math.round(s.sell*1000))+'/1K</div></div>';
   }).join('');
 }
 
