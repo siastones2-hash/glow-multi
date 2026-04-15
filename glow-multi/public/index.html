@@ -1304,7 +1304,7 @@ async function createSite(){
   var logo=ge('nsLogo').value||'✨';
   var primary=ge('nsPrimary').value,accent=ge('nsAccent').value;
   var email=ge('nsAdminEmail').value.trim(),pw=ge('nsAdminPw').value;
-  var margin=ge('nsMargin').value,credit=ge('nsCredit').value;
+  var margin=ge('ns마진').value,credit=ge('nsCredit').value;
   if(!domain||!name||!email||!pw){toast('필수 항목을 입력하세요','err');return}
   var d=await api('/api/super/sites/create','POST',{
     domain:domain,name:name,logo:logo,primaryColor:primary,accentColor:accent,
