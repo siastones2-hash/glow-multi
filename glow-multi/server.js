@@ -65,7 +65,7 @@ async function initDB() {
       accent_color TEXT DEFAULT '#F72585',
       kakao TEXT DEFAULT '',
       bank TEXT DEFAULT '',
-      margin REAL DEFAULT 50,
+      margin REAL DEFAULT 0,
       exrate REAL DEFAULT 1380,
       credit REAL DEFAULT 0,
       active INTEGER DEFAULT 1,
@@ -633,7 +633,7 @@ app.get('/api/me', requireAuth, async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const site = req.site;
-    const siteMg = site ? site.margin : 50;
+    const siteMg = site ? (site.margin || 0) : 0;
     // 환율: 사이트별 → 글로벌 순으로 적용
     const globalExrate = await getGlobalSetting('global_exrate');
     const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate || '1500');
@@ -670,7 +670,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (qtyNum < svc.min || qtyNum > svc.max)
       return res.json({ error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다` });
     const site = req.site;
-    const siteMg = site ? site.margin : 50;
+    const siteMg = site ? (site.margin || 0) : 0;
     const globalExrate2 = await getGlobalSetting('global_exrate');
     const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate2 || '1500');
     let superMg2;
@@ -926,7 +926,7 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
 
     res.json({
       name: site?.name || '', kakao: site?.kakao || '',
-      bank: site?.bank || '', margin: site?.margin || 50,
+      bank: site?.bank || '', margin: site?.margin ?? 0,
       exrate: site?.exrate || 1380, credit: site?.credit || 0,
       apikey: isSuperAdmin ? (apikey ? '••••(설정됨)' : '') : '(슈퍼관리자 전용)',
       tg_token: isSuperAdmin ? (global_tg_token ? '••••(설정됨)' : '') : (site?.tg_token ? '••••(설정됨)' : ''),
@@ -1264,7 +1264,7 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
 
     await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin,theme) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [siteId, domain, name, logo||'✨', finalPrimary, finalAccent,
-        parseFloat(margin||50), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal, autoTheme]);
+        parseFloat(margin||0), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal, autoTheme]);
     const hash = bcrypt.hashSync(adminPw, 10);
     const adminRole = req.body.adminRole || 'admin';
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
