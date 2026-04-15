@@ -129,24 +129,86 @@ if (!superAdmin) {
 const svcCount = db.prepare('SELECT COUNT(*) as c FROM services').get().c;
 if (svcCount === 0) {
   const svcs = [
-    {id:'yt1',name:'YouTube 조회수 — 일반',pl:'youtube',rate:0.50,min:1000,max:1000000,desc:'실제 사용자 기반 자연스러운 조회수. 빠른 시작과 안전한 처리.',active:1},
-    {id:'yt2',name:'YouTube 조회수 — 고유지율',pl:'youtube',rate:1.20,min:500,max:500000,desc:'평균 시청 시간 30초 이상 고품질 조회수.',active:1},
-    {id:'yt4',name:'YouTube 좋아요',pl:'youtube',rate:0.80,min:50,max:100000,desc:'영상 좋아요 수 빠르게 증가.',active:1},
-    {id:'yt5',name:'YouTube 시청시간 (시간)',pl:'youtube',rate:5.00,min:100,max:10000,desc:'수익화 4,000시간 달성.',active:1},
-    {id:'ig1',name:'Instagram 팔로워 — 실계정',pl:'instagram',rate:1.50,min:100,max:100000,desc:'실제 활성 계정 팔로워. 드롭 보충 제공.',active:1},
-    {id:'ig2',name:'Instagram 팔로워 — 한국인',pl:'instagram',rate:5.00,min:50,max:10000,desc:'국내 타겟 한국인 팔로워.',active:1},
-    {id:'ig3',name:'Instagram 좋아요',pl:'instagram',rate:0.30,min:50,max:500000,desc:'게시물 좋아요 빠르게 증가.',active:1},
-    {id:'ig4',name:'Instagram 릴스 조회수',pl:'instagram',rate:0.25,min:1000,max:10000000,desc:'릴스 조회수 대량 증가.',active:1},
-    {id:'ig5',name:'Instagram 스토리 조회수',pl:'instagram',rate:0.35,min:100,max:1000000,desc:'스토리 조회수 증가.',active:1},
-    {id:'tt1',name:'TikTok 팔로워 — 실계정',pl:'tiktok',rate:1.80,min:100,max:100000,desc:'실제 틱톡 사용자 팔로워.',active:1},
-    {id:'tt2',name:'TikTok 조회수 — 빠른',pl:'tiktok',rate:0.20,min:1000,max:5000000,desc:'틱톡 조회수 빠르게 대량 증가.',active:1},
-    {id:'tt3',name:'TikTok 좋아요',pl:'tiktok',rate:0.40,min:100,max:500000,desc:'영상 좋아요 빠르게 증가.',active:1},
-    {id:'tw1',name:'Twitter/X 팔로워',pl:'twitter',rate:2.00,min:100,max:100000,desc:'X 계정 팔로워 증가.',active:1},
-    {id:'tw2',name:'Twitter/X 좋아요',pl:'twitter',rate:0.80,min:50,max:100000,desc:'X 게시물 좋아요 증가.',active:1},
-    {id:'tw4',name:'Twitter/X 조회수',pl:'twitter',rate:0.30,min:1000,max:1000000,desc:'X 조회수 수익화.',active:1},
-    {id:'tg1',name:'Telegram 채널 멤버',pl:'telegram',rate:1.50,min:100,max:100000,desc:'텔레그램 채널 멤버 증가.',active:1},
-    {id:'tg2',name:'Telegram 포스트 뷰',pl:'telegram',rate:0.30,min:1000,max:5000000,desc:'채널 게시물 조회수 증가.',active:1},
-    {id:'sp1',name:'Spotify 재생수',pl:'spotify',rate:0.40,min:1000,max:1000000,desc:'트랙 재생수 증가.',active:1},
+    // ── YouTube (10개) ──
+    {id:'yt1',name:'YouTube 조회수 — 일반 (빠른 처리)',pl:'youtube',rate:0.50,min:1000,max:1000000,desc:'실제 사용자 기반의 자연스러운 조회수입니다. 빠른 시작과 안전한 처리로 영상 노출을 높여드립니다. 전 세계 글로벌 시청자 기반으로 처리됩니다.',active:1},
+    {id:'yt2',name:'YouTube 조회수 — 고유지율 (30초+)',pl:'youtube',rate:1.20,min:500,max:500000,desc:'평균 시청 시간 30초 이상의 고품질 조회수입니다. 유튜브 알고리즘이 가장 선호하는 시청 패턴으로 추천 노출 가능성을 크게 높여드립니다.',active:1},
+    {id:'yt3',name:'YouTube 조회수 — 미국/영어권',pl:'youtube',rate:2.50,min:500,max:100000,desc:'미국, 캐나다, 영국 등 영어권 시청자 조회수입니다. RPM(광고 수익)이 높은 국가 타겟으로 수익 극대화에 효과적입니다.',active:1},
+    {id:'yt4',name:'YouTube 구독자 — 실계정',pl:'youtube',rate:3.00,min:100,max:50000,desc:'실제 활성 계정의 구독자를 늘려드립니다. 수익화 조건인 1,000 구독자 달성과 채널 신뢰도 향상에 도움이 됩니다.',active:1},
+    {id:'yt5',name:'YouTube 좋아요',pl:'youtube',rate:0.80,min:50,max:100000,desc:'영상의 좋아요 수를 빠르게 증가시켜 드립니다. 좋아요가 많을수록 유튜브 추천 알고리즘에 유리하게 작용합니다.',active:1},
+    {id:'yt6',name:'YouTube 시청시간 (시간)',pl:'youtube',rate:5.00,min:100,max:10000,desc:'유튜브 수익화 필수 조건인 4,000시간 달성을 도와드립니다. 실제 시청 패턴으로 안전하게 처리됩니다.',active:1},
+    {id:'yt7',name:'YouTube 댓글 (커스텀)',pl:'youtube',rate:8.00,min:10,max:500,desc:'원하는 내용의 댓글을 달아드립니다. 영상 활성도를 높이고 커뮤니티 참여도를 향상시킵니다.',active:1},
+    {id:'yt8',name:'YouTube 라이브 시청자',pl:'youtube',rate:10.00,min:100,max:10000,desc:'유튜브 라이브 방송의 동시 시청자 수를 늘려드립니다. 라이브 노출과 알림 발송에 효과적입니다.',active:1},
+    {id:'yt9',name:'YouTube 쇼츠 조회수',pl:'youtube',rate:0.15,min:1000,max:5000000,desc:'유튜브 쇼츠 영상의 조회수를 빠르게 증가시켜 드립니다. 쇼츠 알고리즘 노출 극대화에 최적화되어 있습니다.',active:1},
+    {id:'yt10',name:'YouTube 저장 (플레이리스트)',pl:'youtube',rate:1.50,min:100,max:50000,desc:'영상 저장 및 플레이리스트 추가 수를 늘려드립니다. 장기적인 영상 노출과 알고리즘 신호 향상에 도움이 됩니다.',active:1},
+    // ── Instagram (12개) ──
+    {id:'ig1',name:'Instagram 팔로워 — 글로벌 실계정',pl:'instagram',rate:1.50,min:100,max:100000,desc:'전 세계 실제 활성 계정의 팔로워를 늘려드립니다. 팔로워 감소(드롭) 발생 시 자동으로 보충해 드립니다.',active:1},
+    {id:'ig2',name:'Instagram 팔로워 — 한국인',pl:'instagram',rate:5.00,min:50,max:10000,desc:'국내 타겟 마케팅에 최적화된 한국인 팔로워입니다. 국내 브랜드·쇼핑몰·인플루언서에게 특히 효과적입니다.',active:1},
+    {id:'ig3',name:'Instagram 팔로워 — 미국/영어권',pl:'instagram',rate:4.50,min:50,max:20000,desc:'미국, 영국 등 영어권 실계정 팔로워입니다. 글로벌 브랜드 마케팅과 영어권 시장 공략에 효과적입니다.',active:1},
+    {id:'ig4',name:'Instagram 좋아요 — 빠른 처리',pl:'instagram',rate:0.30,min:50,max:500000,desc:'게시물 좋아요 수를 빠르게 높여드립니다. 탐색 탭 노출과 알고리즘 상위 노출에 도움이 됩니다.',active:1},
+    {id:'ig5',name:'Instagram 릴스 조회수',pl:'instagram',rate:0.25,min:1000,max:10000000,desc:'릴스 영상의 조회수를 대량으로 증가시켜 드립니다. 알고리즘 노출을 극대화하여 더 많은 팔로워 유입을 유도합니다.',active:1},
+    {id:'ig6',name:'Instagram 스토리 조회수',pl:'instagram',rate:0.35,min:100,max:1000000,desc:'인스타그램 스토리 조회수를 높여드립니다. 스토리 활성도와 계정 신뢰도 향상에 도움이 됩니다.',active:1},
+    {id:'ig7',name:'Instagram 게시물 저장',pl:'instagram',rate:0.50,min:100,max:100000,desc:'게시물 저장 수를 증가시켜 드립니다. 저장이 많은 게시물은 탐색 탭에 더 자주 노출됩니다.',active:1},
+    {id:'ig8',name:'Instagram 댓글 (커스텀)',pl:'instagram',rate:10.00,min:5,max:300,desc:'원하는 내용의 댓글을 달아드립니다. 게시물 활성도를 높이고 자연스러운 참여도를 만들어드립니다.',active:1},
+    {id:'ig9',name:'Instagram 팔로워 — 여성 타겟',pl:'instagram',rate:3.50,min:50,max:20000,desc:'여성 계정 위주의 팔로워입니다. 여성 타겟 브랜드·뷰티·패션·라이프스타일 계정에 효과적입니다.',active:1},
+    {id:'ig10',name:'Instagram 라이브 시청자',pl:'instagram',rate:8.00,min:100,max:5000,desc:'인스타그램 라이브의 실시간 시청자 수를 늘려드립니다. 라이브 노출도와 참여도를 높여드립니다.',active:1},
+    {id:'ig11',name:'Instagram 인상 수 (Impressions)',pl:'instagram',rate:0.20,min:1000,max:5000000,desc:'게시물 인상 수(노출 수)를 증가시켜 드립니다. 브랜드 인지도 향상과 도달 범위 확대에 효과적입니다.',active:1},
+    {id:'ig12',name:'Instagram 팔로우 + 언팔 (자연스러운 성장)',pl:'instagram',rate:2.00,min:100,max:10000,desc:'팔로우 후 일정 시간 뒤 언팔하는 자연스러운 방식입니다. 계정 노출을 높이는 안전한 방법입니다.',active:1},
+    // ── TikTok (10개) ──
+    {id:'tt1',name:'TikTok 팔로워 — 실계정',pl:'tiktok',rate:1.80,min:100,max:100000,desc:'실제 틱톡 사용자 팔로워를 늘려드립니다. 포유(For You) 탭 노출 가능성을 높이고 채널 신뢰도를 향상시킵니다.',active:1},
+    {id:'tt2',name:'TikTok 조회수 — 초고속',pl:'tiktok',rate:0.15,min:1000,max:10000000,desc:'틱톡 영상의 조회수를 매우 빠르게 대량으로 증가시켜 드립니다. 바이럴 트리거에 최적화되어 있습니다.',active:1},
+    {id:'tt3',name:'TikTok 조회수 — 고유지율',pl:'tiktok',rate:0.80,min:500,max:1000000,desc:'평균 시청 완료율이 높은 고품질 조회수입니다. 틱톡 알고리즘이 선호하는 패턴으로 처리됩니다.',active:1},
+    {id:'tt4',name:'TikTok 좋아요',pl:'tiktok',rate:0.40,min:100,max:500000,desc:'틱톡 영상의 좋아요 수를 빠르게 증가시켜 드립니다. 알고리즘 상위 노출에 직접적으로 도움이 됩니다.',active:1},
+    {id:'tt5',name:'TikTok 공유 수',pl:'tiktok',rate:1.20,min:100,max:50000,desc:'영상 공유 수를 증가시켜 드립니다. 공유는 틱톡 알고리즘에서 가장 강력한 바이럴 신호입니다.',active:1},
+    {id:'tt6',name:'TikTok 저장 수',pl:'tiktok',rate:1.00,min:100,max:50000,desc:'영상 저장 수를 늘려드립니다. 저장이 많은 영상은 포유 탭에 더 자주 추천됩니다.',active:1},
+    {id:'tt7',name:'TikTok 댓글 (커스텀)',pl:'tiktok',rate:12.00,min:5,max:200,desc:'원하는 내용의 댓글을 달아드립니다. 자연스러운 참여도를 만들어 알고리즘 신호를 높여드립니다.',active:1},
+    {id:'tt8',name:'TikTok 라이브 시청자',pl:'tiktok',rate:9.00,min:100,max:5000,desc:'틱톡 라이브 방송의 동시 시청자 수를 늘려드립니다. 라이브 선물과 수익화에 도움이 됩니다.',active:1},
+    {id:'tt9',name:'TikTok 팔로워 — 미국 타겟',pl:'tiktok',rate:4.00,min:50,max:10000,desc:'미국 기반 틱톡 사용자 팔로워입니다. 영어권 시장과 글로벌 인플루언서를 목표로 하는 분께 추천합니다.',active:1},
+    {id:'tt10',name:'TikTok 프로필 방문 수',pl:'tiktok',rate:0.30,min:1000,max:500000,desc:'프로필 방문 수를 증가시켜 드립니다. 자연스러운 팔로워 유입 효과가 있습니다.',active:1},
+    // ── Twitter/X (8개) ──
+    {id:'tw1',name:'Twitter/X 팔로워 — 글로벌',pl:'twitter',rate:2.00,min:100,max:100000,desc:'X(트위터) 글로벌 팔로워를 늘려드립니다. X 수익화 프로그램 조건 달성과 계정 신뢰도 향상에 도움이 됩니다.',active:1},
+    {id:'tw2',name:'Twitter/X 팔로워 — 미국 타겟',pl:'twitter',rate:5.00,min:50,max:20000,desc:'미국 기반 X 팔로워입니다. X 수익화 RPM이 가장 높은 미국 팔로워로 수익 극대화에 효과적입니다.',active:1},
+    {id:'tw3',name:'Twitter/X 좋아요',pl:'twitter',rate:0.80,min:50,max:100000,desc:'X 게시물의 좋아요 수를 증가시켜 드립니다. 게시물 노출과 영향력 향상에 효과적입니다.',active:1},
+    {id:'tw4',name:'Twitter/X 리트윗',pl:'twitter',rate:1.50,min:50,max:50000,desc:'게시물 리트윗 수를 늘려드립니다. 리트윗은 X에서 가장 강력한 바이럴 신호입니다.',active:1},
+    {id:'tw5',name:'Twitter/X 조회수',pl:'twitter',rate:0.30,min:1000,max:5000000,desc:'X 수익화는 조회수 기반입니다. 조회수를 높여 직접적인 광고 수익 창출을 도와드립니다.',active:1},
+    {id:'tw6',name:'Twitter/X 북마크',pl:'twitter',rate:1.00,min:100,max:50000,desc:'게시물 북마크 수를 증가시켜 드립니다. 북마크는 X 알고리즘에서 강력한 참여도 신호입니다.',active:1},
+    {id:'tw7',name:'Twitter/X 댓글',pl:'twitter',rate:10.00,min:10,max:300,desc:'X 게시물에 댓글을 달아드립니다. 토론과 참여도를 높여 게시물 노출을 극대화합니다.',active:1},
+    {id:'tw8',name:'Twitter/X 인용 트윗',pl:'twitter',rate:2.00,min:20,max:5000,desc:'게시물 인용 트윗 수를 늘려드립니다. 자연스러운 바이럴 효과를 만들어드립니다.',active:1},
+    // ── Threads (4개) ──
+    {id:'th1',name:'Threads 팔로워',pl:'threads',rate:3.00,min:100,max:50000,desc:'메타의 Threads 팔로워를 늘려드립니다. 인스타그램과 연동되어 두 채널 성장에 시너지 효과가 있습니다.',active:1},
+    {id:'th2',name:'Threads 좋아요',pl:'threads',rate:0.80,min:50,max:100000,desc:'Threads 게시물 좋아요 수를 증가시켜 드립니다.',active:1},
+    {id:'th3',name:'Threads 리포스트',pl:'threads',rate:1.50,min:50,max:20000,desc:'Threads 게시물 리포스트 수를 늘려드립니다. 바이럴 확산에 효과적입니다.',active:1},
+    {id:'th4',name:'Threads 조회수',pl:'threads',rate:0.20,min:1000,max:1000000,desc:'Threads 게시물 조회수를 빠르게 증가시켜 드립니다.',active:1},
+    // ── Telegram (6개) ──
+    {id:'tg1',name:'Telegram 채널 멤버 — 글로벌',pl:'telegram',rate:1.50,min:100,max:100000,desc:'텔레그램 채널의 멤버 수를 늘려드립니다. 채널 신뢰도 향상과 광고 수익 증대에 도움이 됩니다.',active:1},
+    {id:'tg2',name:'Telegram 채널 멤버 — 한국어권',pl:'telegram',rate:4.00,min:50,max:10000,desc:'한국어 사용자 위주의 텔레그램 멤버입니다. 국내 채널 운영자에게 추천합니다.',active:1},
+    {id:'tg3',name:'Telegram 포스트 조회수',pl:'telegram',rate:0.25,min:1000,max:5000000,desc:'텔레그램 채널 게시물의 조회수를 증가시켜 드립니다. 채널 활성도의 핵심 지표입니다.',active:1},
+    {id:'tg4',name:'Telegram 리액션',pl:'telegram',rate:0.80,min:100,max:50000,desc:'게시물에 이모지 리액션을 달아드립니다. 채널 참여도와 활성도를 높여드립니다.',active:1},
+    {id:'tg5',name:'Telegram 그룹 멤버',pl:'telegram',rate:2.00,min:100,max:50000,desc:'텔레그램 그룹의 멤버 수를 늘려드립니다. 커뮤니티 신뢰도와 활성도 향상에 효과적입니다.',active:1},
+    {id:'tg6',name:'Telegram 봇 사용자',pl:'telegram',rate:3.00,min:100,max:10000,desc:'텔레그램 봇의 사용자 수를 늘려드립니다.',active:1},
+    // ── Facebook (6개) ──
+    {id:'fb1',name:'Facebook 페이지 좋아요',pl:'facebook',rate:1.20,min:100,max:100000,desc:'페이스북 페이지 좋아요 수를 늘려드립니다. 페이지 신뢰도와 광고 효율 향상에 도움이 됩니다.',active:1},
+    {id:'fb2',name:'Facebook 팔로워',pl:'facebook',rate:1.00,min:100,max:100000,desc:'페이스북 계정 팔로워를 늘려드립니다.',active:1},
+    {id:'fb3',name:'Facebook 게시물 좋아요',pl:'facebook',rate:0.50,min:50,max:200000,desc:'페이스북 게시물 좋아요 수를 빠르게 증가시켜 드립니다.',active:1},
+    {id:'fb4',name:'Facebook 동영상 조회수',pl:'facebook',rate:0.20,min:1000,max:5000000,desc:'페이스북 동영상 조회수를 늘려드립니다. 릴스 노출과 광고 수익에 도움이 됩니다.',active:1},
+    {id:'fb5',name:'Facebook 공유 수',pl:'facebook',rate:2.00,min:50,max:20000,desc:'게시물 공유 수를 증가시켜 드립니다. 자연스러운 바이럴 효과를 만들어드립니다.',active:1},
+    {id:'fb6',name:'Facebook 리뷰 (별점 5점)',pl:'facebook',rate:15.00,min:5,max:200,desc:'페이스북 비즈니스 페이지에 긍정적인 리뷰를 달아드립니다. 비즈니스 신뢰도 향상에 효과적입니다.',active:1},
+    // ── Spotify (5개) ──
+    {id:'sp1',name:'Spotify 재생수 — 글로벌',pl:'spotify',rate:0.40,min:1000,max:1000000,desc:'스포티파이 트랙의 재생수를 늘려드립니다. 추천 플레이리스트 포함 확률이 높아지고 아티스트 노출이 증가합니다.',active:1},
+    {id:'sp2',name:'Spotify 팔로워',pl:'spotify',rate:2.00,min:100,max:20000,desc:'스포티파이 아티스트 팔로워를 늘려드립니다. 아티스트 신뢰도와 월간 리스너 향상에 도움이 됩니다.',active:1},
+    {id:'sp3',name:'Spotify 월간 리스너',pl:'spotify',rate:3.00,min:100,max:10000,desc:'월간 리스너 수를 증가시켜 드립니다. 스포티파이 차트 진입과 알고리즘 추천에 핵심 지표입니다.',active:1},
+    {id:'sp4',name:'Spotify 플레이리스트 추가',pl:'spotify',rate:5.00,min:50,max:5000,desc:'트랙을 플레이리스트에 추가해드립니다. 자연스러운 재생수 증가와 노출 향상에 효과적입니다.',active:1},
+    {id:'sp5',name:'Spotify 저장 수',pl:'spotify',rate:2.50,min:100,max:10000,desc:'트랙 저장 수를 늘려드립니다. 저장이 많은 트랙은 스포티파이 추천 알고리즘에 유리합니다.',active:1},
+    // ── 네이버 (4개) ──
+    {id:'nv1',name:'네이버 블로그 방문자',pl:'naver',rate:1.00,min:100,max:10000,desc:'네이버 블로그 일일 방문자 수를 늘려드립니다. 블로그 지수 향상과 검색 노출에 도움이 됩니다.',active:1},
+    {id:'nv2',name:'네이버 블로그 좋아요',pl:'naver',rate:0.80,min:50,max:5000,desc:'블로그 게시물 좋아요 수를 증가시켜 드립니다.',active:1},
+    {id:'nv3',name:'네이버 플레이스 저장',pl:'naver',rate:5.00,min:10,max:1000,desc:'네이버 지도/플레이스 저장 수를 늘려드립니다. 로컬 비즈니스 노출 향상에 효과적입니다.',active:1},
+    {id:'nv4',name:'네이버 카페 회원',pl:'naver',rate:3.00,min:50,max:5000,desc:'네이버 카페 회원 수를 늘려드립니다. 카페 활성도와 검색 노출에 도움이 됩니다.',active:1},
+    // ── 기타 (5개) ──
+    {id:'etc1',name:'Discord 서버 멤버',pl:'other',rate:2.00,min:100,max:50000,desc:'디스코드 서버 멤버를 늘려드립니다. 커뮤니티 신뢰도와 활성도 향상에 효과적입니다.',active:1},
+    {id:'etc2',name:'YouTube Music 재생수',pl:'youtube',rate:0.50,min:1000,max:500000,desc:'유튜브 뮤직 트랙의 재생수를 늘려드립니다.',active:1},
+    {id:'etc3',name:'LinkedIn 팔로워',pl:'other',rate:3.00,min:50,max:10000,desc:'링크드인 프로필 팔로워를 늘려드립니다. 비즈니스 네트워크와 채용 신뢰도 향상에 도움이 됩니다.',active:1},
+    {id:'etc4',name:'Pinterest 팔로워',pl:'other',rate:1.50,min:100,max:20000,desc:'핀터레스트 팔로워를 늘려드립니다. 쇼핑·인테리어·패션 브랜드에 특히 효과적입니다.',active:1},
+    {id:'etc5',name:'Google 지도 리뷰 (별점 5점)',pl:'other',rate:20.00,min:5,max:100,desc:'구글 지도 비즈니스에 긍정적인 리뷰를 달아드립니다. 로컬 SEO와 비즈니스 신뢰도 향상에 매우 효과적입니다.',active:1},
   ];
   const ins = db.prepare('INSERT INTO services(id,name,pl,rate,min,max,desc,active) VALUES(?,?,?,?,?,?,?,?)');
   for (const s of svcs) ins.run(s.id, s.name, s.pl, s.rate, s.min, s.max, s.desc, s.active);
@@ -217,6 +279,35 @@ async function tgAlert(msg) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chat, text: msg, parse_mode: 'HTML' })
+    });
+  } catch (e) { console.log('TG 오류:', e.message); }
+}
+
+// 텔레그램 인라인 버튼 메시지 (충전 승인/거절)
+async function tgChargeAlert(chargeId, userName, amount, note, siteName) {
+  const token = getGlobalSetting('tg_token');
+  const chat = getGlobalSetting('tg_chat');
+  if (!token || !chat) return;
+  const msg = `💳 <b>충전 요청</b> [${siteName}]
+👤 ${userName}
+💰 ₩${Math.round(amount).toLocaleString()}
+📝 ${note || '-'}
+⏰ ${new Date().toLocaleString('ko-KR')}`;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chat,
+        text: msg,
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ 승인', callback_data: `approve_${chargeId}` },
+            { text: '❌ 거절', callback_data: `reject_${chargeId}` }
+          ]]
+        }
+      })
     });
   } catch (e) { console.log('TG 오류:', e.message); }
 }
@@ -380,13 +471,23 @@ app.post('/api/charges', requireAuth, async (req, res) => {
   const id = 'C' + Date.now();
   db.prepare('INSERT INTO charges(id,site_id,uid,uname,amount,note,status) VALUES(?,?,?,?,?,?,?)')
     .run(id, req.siteId, user.id, user.name, amt, note || '', 'pending');
-  tgAlert(`💳 <b>충전요청</b> [${req.site?.name || 'GLOW'}]\n👤 ${user.name}\n💰 ₩${Math.round(amt).toLocaleString()}\n📝 ${note || '-'}`);
+  tgChargeAlert(id, user.name, amt, note, req.site?.name || 'GLOW');
   res.json({ ok: true });
 });
 
 app.get('/api/charges/my', requireAuth, (req, res) => {
   const charges = db.prepare('SELECT * FROM charges WHERE uid=? ORDER BY created DESC').all(req.session.userId);
   res.json(charges);
+});
+
+// 고객 충전 취소 (대기 중만 가능)
+app.post('/api/charges/cancel', requireAuth, (req, res) => {
+  const { id } = req.body;
+  const charge = db.prepare('SELECT * FROM charges WHERE id=? AND uid=?').get(id, req.session.userId);
+  if (!charge) return res.json({ error: '충전 요청을 찾을 수 없습니다' });
+  if (charge.status !== 'pending') return res.json({ error: '대기 중인 요청만 취소할 수 있습니다' });
+  db.prepare('UPDATE charges SET status=? WHERE id=?').run('cancelled', id);
+  res.json({ ok: true });
 });
 
 // ══════════════════════════════
@@ -578,6 +679,78 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
   } catch (e) { res.json({ error: e.message }); }
 });
 
+// 텔레그램 웹훅 - 인라인 버튼 승인/거절 처리
+app.post('/api/tg-webhook', async (req, res) => {
+  const data = req.body;
+  if (!data.callback_query) return res.json({ ok: true });
+
+  const cbData = data.callback_query.data;
+  const msgId = data.callback_query.message.message_id;
+  const chatId = data.callback_query.message.chat.id;
+  const token = getGlobalSetting('tg_token');
+
+  if (!token) return res.json({ ok: true });
+
+  const [action, chargeId] = cbData.split('_');
+  const charge = db.prepare('SELECT * FROM charges WHERE id=?').get(chargeId);
+
+  if (!charge || charge.status !== 'pending') {
+    // 이미 처리된 경우
+    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '이미 처리된 요청입니다' })
+    });
+    return res.json({ ok: true });
+  }
+
+  if (action === 'approve') {
+    db.prepare('UPDATE charges SET status=? WHERE id=?').run('approved', chargeId);
+    db.prepare('UPDATE users SET balance=balance+? WHERE id=?').run(charge.amount, charge.uid);
+
+    // 버튼 메시지 업데이트
+    await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
+    });
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: `✅ 승인 완료!
+👤 ${charge.uname}
+💰 ₩${Math.round(charge.amount).toLocaleString()} 충전됨`, parse_mode: 'HTML' })
+    });
+    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '✅ 승인 완료!' })
+    });
+  } else if (action === 'reject') {
+    db.prepare('UPDATE charges SET status=? WHERE id=?').run('rejected', chargeId);
+
+    await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
+    });
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: `❌ 거절 완료!
+👤 ${charge.uname}
+💰 ₩${Math.round(charge.amount).toLocaleString()}`, parse_mode: 'HTML' })
+    });
+    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '❌ 거절 완료!' })
+    });
+  }
+
+  res.json({ ok: true });
+});
+
 // 텔레그램 테스트
 app.post('/api/admin/tg-test', requireSuperAdmin, async (req, res) => {
   const token = getGlobalSetting('tg_token');
@@ -685,6 +858,20 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`✨ GLOW Multi-Tenant 서버 실행 중: http://localhost:${PORT}`);
+
+  // 텔레그램 웹훅 자동 등록
+  const token = getGlobalSetting('tg_token');
+  const renderUrl = process.env.RENDER_EXTERNAL_URL;
+  if (token && renderUrl) {
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: `${renderUrl}/api/tg-webhook` })
+      });
+      console.log('✅ 텔레그램 웹훅 등록 완료');
+    } catch (e) { console.log('웹훅 등록 실패:', e.message); }
+  }
 });
