@@ -71,6 +71,7 @@ async function initDB() {
       active INTEGER DEFAULT 1,
       tg_token TEXT DEFAULT '',
       tg_chat TEXT DEFAULT '',
+      super_margin REAL DEFAULT -1,
       slogan TEXT DEFAULT '콘텐츠가 빛나도록',
       slogan_sub TEXT DEFAULT '우리가 성장시킵니다',
       description TEXT DEFAULT '유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다',
@@ -278,16 +279,140 @@ async function initDB() {
       {id:'etc3',name:'LinkedIn 팔로워',pl:'other',rate:3.00,min:50,max:10000,description:'링크드인 프로필 팔로워를 늘려 비즈니스 네트워크와 전문성을 강화해드립니다. 팔로워가 많은 프로필은 게시물 도달 범위가 넓어지고, 헤드헌터와 기업의 협업 제안을 더 많이 받게 됩니다. B2B 마케팅과 채용 브랜딩에 필수입니다.'},
       {id:'etc4',name:'Pinterest 팔로워',pl:'other',rate:1.50,min:100,max:20000,description:'핀터레스트 팔로워를 늘려드립니다. 팔로워가 많을수록 핀 노출 범위가 넓어지고, 쇼핑 기능과 연동하면 실제 구매 전환으로 이어집니다. 인테리어, 패션, 푸드, DIY 브랜드에 특히 효과적입니다.'},
       {id:'etc5',name:'Google 지도 리뷰 (별점 5점)',pl:'other',rate:20.00,min:5,max:100,description:'구글 지도 비즈니스에 긍정적인 5점 리뷰를 달아드립니다. 리뷰 수와 평점은 구글 로컬 검색 순위에 직접적인 영향을 주는 핵심 요소입니다. 리뷰가 많고 평점이 높은 비즈니스는 구글 맵 상단 노출과 함께 신규 고객의 신뢰와 방문을 유도합니다.'},
+      // ── YouTube 추가 ──
+      {id:'yt11',name:'YouTube 구독자 — 여성 타겟',pl:'youtube',rate:4.00,min:100,max:20000,description:'여성 시청자 비율이 높은 구독자입니다. 뷰티, 패션, 육아, 라이프스타일 채널에 최적화되어 있으며, 타겟 광고 수익과 협찬 단가를 높이는 데 효과적입니다.'},
+      {id:'yt12',name:'YouTube 구독자 — 한국인',pl:'youtube',rate:6.00,min:50,max:10000,description:'국내 광고주와 협찬을 목표로 하는 채널에 필수인 한국인 구독자입니다. 국내 타겟 광고 RPM이 높으며 브랜드 협찬 단가 협상에 유리합니다.'},
+      {id:'yt13',name:'YouTube 쇼츠 좋아요',pl:'youtube',rate:0.50,min:100,max:200000,description:'유튜브 쇼츠 영상의 좋아요를 늘려드립니다. 좋아요가 많은 쇼츠는 알고리즘이 더 많은 사람에게 배포하여 바이럴 가능성을 높입니다.'},
+      {id:'yt14',name:'YouTube 멤버십 가입',pl:'youtube',rate:15.00,min:10,max:500,description:'유튜브 채널 멤버십 가입자를 늘려드립니다. 멤버십은 안정적인 월정액 수익원으로, 가입자가 많을수록 채널의 수익 안정성이 높아집니다.'},
+      {id:'yt15',name:'YouTube 재생목록 조회수',pl:'youtube',rate:0.30,min:1000,max:2000000,description:'재생목록 전체 조회수를 늘려드립니다. 재생목록 조회수가 높으면 유튜브가 관련 영상들을 연속으로 추천하여 채널 전체 시청 시간이 증가합니다.'},
+      {id:'yt16',name:'YouTube 공유 수',pl:'youtube',rate:2.00,min:50,max:20000,description:'영상 공유 수를 늘려드립니다. 공유는 유튜브 알고리즘에서 강력한 외부 트래픽 신호로 작용하여 추천 노출 가능성을 높입니다.'},
+      {id:'yt17',name:'YouTube 채널 누적 조회수',pl:'youtube',rate:1.00,min:500,max:500000,description:'채널 전체 누적 조회수를 늘려드립니다. 총 조회수가 많은 채널은 광고주와 브랜드에게 신뢰감을 주어 협찬 제안을 더 많이 받습니다.'},
+      // ── Instagram 추가 ──
+      {id:'ig13',name:'Instagram 팔로워 — 남성 타겟',pl:'instagram',rate:3.50,min:50,max:20000,description:'남성 계정 중심의 팔로워로 스포츠, 자동차, 테크, 게임 계정에 최적화되어 있습니다. 남성 타겟 브랜드의 협찬 단가를 높이는 데 효과적입니다.'},
+      {id:'ig14',name:'Instagram 팔로워 — 일본',pl:'instagram',rate:5.50,min:50,max:10000,description:'일본 기반 인스타그램 팔로워입니다. 일본 시장 진출이나 일본 브랜드 협찬을 목표로 하는 계정에 효과적이며, 일본 RPM은 아시아 최고 수준입니다.'},
+      {id:'ig15',name:'Instagram 팔로워 — 유럽',pl:'instagram',rate:5.00,min:50,max:10000,description:'유럽(독일, 프랑스, 영국 등) 기반 팔로워입니다. 유럽 시장을 타겟으로 하는 브랜드와 협찬을 원하는 크리에이터에게 적합합니다.'},
+      {id:'ig16',name:'Instagram 릴스 좋아요',pl:'instagram',rate:0.40,min:100,max:200000,description:'릴스 좋아요를 빠르게 늘려드립니다. 좋아요가 많은 릴스는 탐색 탭과 릴스 피드 상단에 노출되어 팔로워 급증 효과를 만들어냅니다.'},
+      {id:'ig17',name:'Instagram 릴스 저장',pl:'instagram',rate:0.80,min:100,max:50000,description:'릴스 저장 수를 늘려드립니다. 저장이 많은 릴스는 인스타그램 알고리즘에서 가장 높은 가중치를 받아 장기적으로 지속 노출됩니다.'},
+      {id:'ig18',name:'Instagram 프로필 방문',pl:'instagram',rate:0.30,min:500,max:500000,description:'프로필 방문 수를 늘려드립니다. 방문자가 많은 계정은 인스타그램 알고리즘이 더 많은 사람에게 추천합니다.'},
+      // ── TikTok 추가 ──
+      {id:'tt11',name:'TikTok 팔로워 — 한국인',pl:'tiktok',rate:5.00,min:50,max:10000,description:'한국인 틱톡 팔로워입니다. 국내 브랜드 협찬과 국내 마케팅을 목표로 하는 크리에이터에게 최적화되어 있습니다.'},
+      {id:'tt12',name:'TikTok 팔로워 — 여성',pl:'tiktok',rate:4.00,min:50,max:20000,description:'여성 사용자 중심의 팔로워입니다. 뷰티, 패션, 댄스, 라이프스타일 콘텐츠에 특히 효과적이며 협찬 단가를 높여줍니다.'},
+      {id:'tt13',name:'TikTok 즐겨찾기',pl:'tiktok',rate:1.20,min:100,max:50000,description:'틱톡 영상 즐겨찾기 수를 늘려드립니다. 즐겨찾기는 저장과 유사한 강력한 알고리즘 신호로 포유 탭 지속 노출에 도움이 됩니다.'},
+      {id:'tt14',name:'TikTok 계정 방문 수',pl:'tiktok',rate:0.40,min:500,max:300000,description:'틱톡 계정 방문 수를 늘려드립니다. 방문이 많은 계정은 팔로워로 자연 전환되며, 알고리즘이 인기 계정으로 인식합니다.'},
+      // ── 카카오 ──
+      {id:'kk1',name:'카카오톡 채널 친구',pl:'kakao',rate:8.00,min:50,max:5000,description:'카카오톡 채널 친구(구독자)를 늘려드립니다. 친구가 많을수록 메시지 도달 범위가 넓어지고 카카오 광고 효율이 높아집니다. 국내 마케팅의 핵심 채널입니다.'},
+      {id:'kk2',name:'카카오스토리 좋아요',pl:'kakao',rate:1.50,min:50,max:10000,description:'카카오스토리 게시물 좋아요를 늘려드립니다. 30~50대 주요 사용자층에게 효과적인 마케팅 채널로, 좋아요가 많은 게시물은 더 많이 노출됩니다.'},
+      {id:'kk3',name:'카카오스토리 팔로워',pl:'kakao',rate:5.00,min:50,max:5000,description:'카카오스토리 팔로워를 늘려드립니다. 국내 30~50대 타겟 마케팅에 효과적인 플랫폼으로, 팔로워가 많을수록 콘텐츠 도달 범위가 넓어집니다.'},
+      {id:'kk4',name:'카카오톡 오픈채팅 멤버',pl:'kakao',rate:6.00,min:50,max:3000,description:'카카오톡 오픈채팅방 멤버를 늘려드립니다. 멤버가 많은 채팅방은 카카오 검색에서 상위 노출되어 자연 유입이 증가합니다.'},
+      {id:'kk5',name:'카카오맵 저장',pl:'kakao',rate:6.00,min:10,max:1000,description:'카카오맵 장소 저장 수를 늘려드립니다. 저장이 많은 장소는 카카오맵 검색 상위에 노출되며 로컬 비즈니스 신규 고객 유입에 효과적입니다.'},
+      // ── 네이버 추가 ──
+      {id:'nv5',name:'네이버 스마트스토어 찜',pl:'naver',rate:4.00,min:10,max:2000,description:'네이버 스마트스토어 찜(즐겨찾기) 수를 늘려드립니다. 찜이 많은 스토어는 네이버 쇼핑 검색 상위에 노출되며 구매 전환율이 높아집니다.'},
+      {id:'nv6',name:'네이버 스마트스토어 리뷰 (5점)',pl:'naver',rate:20.00,min:5,max:200,description:'네이버 스마트스토어 구매 후기를 달아드립니다. 리뷰가 많고 평점이 높은 상품은 네이버 쇼핑 검색 상위에 노출되어 매출 증가로 이어집니다.'},
+      {id:'nv7',name:'네이버 블로그 이웃 추가',pl:'naver',rate:3.00,min:50,max:3000,description:'네이버 블로그 이웃을 늘려드립니다. 이웃이 많으면 포스팅이 이웃 피드에 노출되어 방문자 수와 블로그 지수 향상에 도움이 됩니다.'},
+      {id:'nv8',name:'네이버 카페 게시글 좋아요',pl:'naver',rate:1.00,min:50,max:3000,description:'네이버 카페 게시글 좋아요 수를 늘려드립니다. 인기 게시물은 카페 메인에 노출되어 추가 댓글과 조회수 증가로 이어집니다.'},
+      {id:'nv9',name:'네이버 밴드 멤버',pl:'naver',rate:4.00,min:50,max:3000,description:'네이버 밴드 멤버를 늘려드립니다. 멤버가 많은 밴드는 네이버 검색에서 더 잘 노출되며 커뮤니티 활성도와 신뢰도가 높아집니다.'},
+      // ── 트위치 ──
+      {id:'tv1',name:'Twitch 팔로워',pl:'twitch',rate:2.50,min:100,max:50000,description:'트위치 채널 팔로워를 늘려드립니다. 팔로워가 많을수록 라이브 시작 시 더 많은 알림이 발송되고 트위치 파트너/어필리에이트 조건 달성에 도움이 됩니다.'},
+      {id:'tv2',name:'Twitch 동시 시청자',pl:'twitch',rate:12.00,min:50,max:3000,description:'트위치 라이브 동시 시청자 수를 늘려드립니다. 시청자가 많은 채널은 트위치 디렉토리 상위에 노출되어 신규 시청자 유입이 증가합니다.'},
+      {id:'tv3',name:'Twitch 클립 조회수',pl:'twitch',rate:0.50,min:500,max:100000,description:'트위치 클립 조회수를 늘려드립니다. 인기 클립은 트위치와 소셜미디어에서 바이럴되어 채널 홍보 효과를 만들어냅니다.'},
+      // ── 구글/앱스토어 ──
+      {id:'gg1',name:'Google 플레이스토어 다운로드',pl:'other',rate:5.00,min:100,max:10000,description:'구글 플레이스토어 앱 다운로드 수를 늘려드립니다. 다운로드가 많은 앱은 스토어 검색 상위에 노출되어 자연 다운로드가 증가합니다.'},
+      {id:'gg2',name:'Google 플레이스토어 리뷰 (5점)',pl:'other',rate:20.00,min:5,max:200,description:'구글 플레이스토어 앱 리뷰를 달아드립니다. 좋은 리뷰와 높은 평점은 앱 스토어 검색 순위와 다운로드 전환율에 직접적인 영향을 줍니다.'},
+      {id:'gg3',name:'App Store 리뷰 (5점)',pl:'other',rate:25.00,min:5,max:200,description:'애플 앱스토어 앱 리뷰를 달아드립니다. 앱스토어 평점은 다운로드 결정에 가장 큰 영향을 미치는 요소입니다.'},
+      // ── SoundCloud ──
+      {id:'sc1',name:'SoundCloud 재생수',pl:'other',rate:0.30,min:1000,max:500000,description:'사운드클라우드 트랙 재생수를 늘려드립니다. 재생수가 높은 트랙은 사운드클라우드 차트에 진입하여 신규 팬 유입이 증가합니다.'},
+      {id:'sc2',name:'SoundCloud 팔로워',pl:'other',rate:2.00,min:100,max:10000,description:'사운드클라우드 팔로워를 늘려드립니다. 팔로워가 많은 아티스트는 신곡 발매 시 더 많은 초기 청취자를 확보할 수 있습니다.'},
+
+      // ── 나라별 특화 팔로워 ──
+      {id:'ct1',name:'Instagram 팔로워 — 인도',pl:'instagram',rate:1.00,min:100,max:100000,description:'인도 기반 인스타그램 팔로워입니다. 13억 인구의 인도 시장은 빠르게 성장하는 소셜미디어 시장으로, 저렴한 비용으로 대규모 팔로워 확보가 가능합니다.'},
+      {id:'ct2',name:'Instagram 팔로워 — 중동/아랍',pl:'instagram',rate:3.00,min:100,max:50000,description:'사우디아라비아, UAE, 쿠웨이트 등 중동 아랍권 팔로워입니다. 구매력이 높은 중동 시장을 타겟으로 하는 브랜드와 럭셔리 제품 홍보에 효과적입니다.'},
+      {id:'ct3',name:'Instagram 팔로워 — 동남아',pl:'instagram',rate:1.50,min:100,max:100000,description:'인도네시아, 태국, 베트남, 필리핀 등 동남아시아 팔로워입니다. 빠르게 성장하는 동남아 시장 진출과 쇼피, 라자다 등 이커머스 마케팅에 효과적입니다.'},
+      {id:'ct4',name:'TikTok 팔로워 — 동남아',pl:'tiktok',rate:1.20,min:100,max:100000,description:'동남아시아 기반 틱톡 팔로워입니다. 틱톡 사용자 수 세계 최다인 동남아 시장을 공략할 수 있으며, 틱톡샵 연동 판매에도 효과적입니다.'},
+      {id:'ct5',name:'YouTube 구독자 — 인도',pl:'youtube',rate:0.80,min:100,max:100000,description:'인도 기반 유튜브 구독자입니다. 인도는 유튜브 사용자 수 세계 1위 국가로, 저렴한 비용으로 빠르게 구독자를 늘릴 수 있습니다.'},
+      {id:'ct6',name:'YouTube 구독자 — 중동',pl:'youtube',rate:3.00,min:100,max:20000,description:'중동 아랍권 유튜브 구독자입니다. 중동 광고 RPM은 세계 최고 수준으로, 중동 구독자 비율이 높으면 광고 수익이 크게 증가합니다.'},
+      {id:'ct7',name:'Facebook 팔로워 — 동남아',pl:'facebook',rate:0.80,min:100,max:100000,description:'동남아시아 기반 페이스북 팔로워입니다. 페이스북 사용자가 가장 많은 동남아 시장을 공략하여 이커머스와 브랜드 마케팅에 활용하세요.'},
+      {id:'ct8',name:'Twitter/X 팔로워 — 일본',pl:'twitter',rate:4.00,min:50,max:20000,description:'일본 기반 X(트위터) 팔로워입니다. 일본은 X 사용자 비율이 세계에서 가장 높은 국가 중 하나로, 일본 시장 마케팅에 필수적입니다.'},
+      {id:'ct9',name:'Instagram 팔로워 — 터키',pl:'instagram',rate:2.00,min:100,max:50000,description:'터키 기반 인스타그램 팔로워입니다. 터키는 인스타그램 사용자 수 세계 상위권 국가로, 중동과 유럽을 잇는 교두보 시장입니다.'},
+      {id:'ct10',name:'YouTube 조회수 — 아랍어권',pl:'youtube',rate:1.50,min:500,max:200000,description:'아랍어권 유튜브 조회수입니다. 아랍어 콘텐츠의 광고 RPM은 매우 높으며, 중동 시장을 타겟으로 하는 채널의 수익 극대화에 효과적입니다.'},
+
+      // ── 아마존 ──
+      {id:'az1',name:'Amazon 상품 리뷰 (별점 5점)',pl:'amazon',rate:30.00,min:3,max:100,description:'아마존 상품 페이지에 긍정적인 5점 리뷰를 달아드립니다. 아마존 알고리즘은 리뷰 수와 평점을 상품 검색 순위의 핵심 요소로 봅니다. 리뷰가 많고 평점이 높은 상품은 아마존 베스트셀러에 진입할 가능성이 높아집니다.'},
+      {id:'az2',name:'Amazon 상품 찜 (Wishlist)',pl:'amazon',rate:5.00,min:10,max:1000,description:'아마존 상품 위시리스트 추가 수를 늘려드립니다. 위시리스트 추가가 많은 상품은 아마존 알고리즘이 인기 상품으로 인식하여 검색 노출을 높여줍니다.'},
+      {id:'az3',name:'Amazon 상품 클릭 (트래픽)',pl:'amazon',rate:3.00,min:100,max:5000,description:'아마존 상품 페이지 방문 트래픽을 늘려드립니다. 클릭률이 높은 상품은 아마존 검색 알고리즘에서 높은 점수를 받아 자연 검색 상위 노출로 이어집니다.'},
+      {id:'az4',name:'Amazon 셀러 피드백 (5점)',pl:'amazon',rate:25.00,min:3,max:100,description:'아마존 셀러 피드백 평점을 높여드립니다. 셀러 평점은 바이박스 경쟁과 상품 신뢰도에 직접적인 영향을 주는 핵심 지표입니다.'},
+
+      // ── 알리익스프레스/중국 이커머스 ──
+      {id:'ali1',name:'AliExpress 상품 리뷰',pl:'ecommerce',rate:15.00,min:5,max:200,description:'알리익스프레스 상품 리뷰를 달아드립니다. 리뷰가 많은 상품은 알리익스프레스 검색 상위에 노출되어 글로벌 구매자들의 신뢰를 얻습니다.'},
+      {id:'ali2',name:'AliExpress 상품 주문 수',pl:'ecommerce',rate:8.00,min:10,max:500,description:'알리익스프레스 상품 주문 횟수를 늘려드립니다. 주문이 많은 상품은 알고리즘이 인기 상품으로 분류하여 검색 상위와 추천 섹션에 노출시킵니다.'},
+      {id:'ali3',name:'Shopee 상품 좋아요',pl:'ecommerce',rate:3.00,min:50,max:5000,description:'쇼피 상품 좋아요 수를 늘려드립니다. 동남아 최대 이커머스 플랫폼인 쇼피에서 좋아요가 많은 상품은 검색 상위에 노출되어 판매량이 증가합니다.'},
+      {id:'ali4',name:'Lazada 상품 리뷰',pl:'ecommerce',rate:15.00,min:5,max:200,description:'라자다 상품 리뷰를 달아드립니다. 동남아 주요 이커머스 라자다에서 리뷰가 많은 상품은 검색 상위 노출과 구매 전환율 향상에 효과적입니다.'},
+      {id:'ali5',name:'Etsy 상품 리뷰 (5점)',pl:'ecommerce',rate:25.00,min:3,max:100,description:'엣시 상품 리뷰를 달아드립니다. 핸드메이드/빈티지 상품 전문 플랫폼 엣시에서 리뷰가 많은 상품은 검색 상위에 노출되어 글로벌 구매자 유입이 증가합니다.'},
+
+      // ── 쿠팡/국내 이커머스 ──
+      {id:'cp1',name:'쿠팡 상품 리뷰 (별점 5점)',pl:'coupang',rate:20.00,min:5,max:200,description:'쿠팡 상품 리뷰를 달아드립니다. 쿠팡 알고리즘은 리뷰 수와 평점을 검색 순위의 핵심 요소로 봅니다. 리뷰가 많은 상품은 쿠팡 로켓배송 섹션과 검색 상위에 노출될 가능성이 높아집니다.'},
+      {id:'cp2',name:'쿠팡 상품 찜',pl:'coupang',rate:5.00,min:10,max:2000,description:'쿠팡 상품 찜 수를 늘려드립니다. 찜이 많은 상품은 쿠팡 알고리즘이 인기 상품으로 분류하여 메인 페이지와 추천 섹션에 노출시킵니다.'},
+      {id:'cp3',name:'쿠팡 검색 클릭',pl:'coupang',rate:4.00,min:50,max:3000,description:'쿠팡 검색 결과에서 상품 클릭 수를 늘려드립니다. 클릭률이 높은 상품은 쿠팡 검색 알고리즘에서 상위 노출되어 자연 판매가 증가합니다.'},
+
+      // ── 해외 플랫폼 추가 ──
+      {id:'gl1',name:'Glassdoor 회사 리뷰 (5점)',pl:'other',rate:30.00,min:3,max:50,description:'글래스도어 회사 리뷰를 달아드립니다. 좋은 리뷰가 많은 회사는 우수 인재 채용에 유리하며, 기업 이미지와 브랜드 신뢰도가 향상됩니다.'},
+      {id:'gl2',name:'Trustpilot 리뷰 (5점)',pl:'other',rate:25.00,min:3,max:100,description:'트러스트파일럿 비즈니스 리뷰를 달아드립니다. 글로벌 신뢰도 플랫폼인 트러스트파일럿 평점은 해외 고객의 구매 결정에 큰 영향을 줍니다.'},
+      {id:'gl3',name:'Yelp 비즈니스 리뷰 (5점)',pl:'other',rate:25.00,min:3,max:100,description:'옐프 비즈니스 리뷰를 달아드립니다. 미국, 캐나다 로컬 비즈니스에 필수적인 플랫폼으로, 높은 평점은 신규 고객 유입을 크게 증가시킵니다.'},
+      {id:'gl4',name:'Reddit 업보트',pl:'other',rate:2.00,min:50,max:10000,description:'레딧 게시물 업보트를 늘려드립니다. 업보트가 많은 게시물은 레딧 인기 탭에 노출되어 대규모 트래픽 유입 효과를 만들어냅니다.'},
+      {id:'gl5',name:'Reddit 팔로워 (서브레딧)',pl:'other',rate:3.00,min:50,max:5000,description:'레딧 서브레딧 멤버를 늘려드립니다. 멤버가 많은 서브레딧은 레딧 검색에서 상위에 노출되어 커뮤니티 신뢰도가 높아집니다.'},
+
+      // ── 구글/웹 트래픽 ──
+      {id:'tr1',name:'구글 검색 트래픽 (SEO)',pl:'traffic',rate:5.00,min:100,max:10000,description:'특정 키워드로 구글 검색 후 웹사이트를 방문하는 트래픽입니다. 클릭률이 높아지면 구글이 해당 페이지를 인기 페이지로 인식하여 자연 검색 순위가 상승합니다. SEO 강화에 가장 효과적인 방법입니다.'},
+      {id:'tr2',name:'웹사이트 직접 방문 트래픽',pl:'traffic',rate:2.00,min:500,max:50000,description:'웹사이트에 직접 방문 트래픽을 늘려드립니다. 방문자 수가 많을수록 구글 애널리틱스 지표가 개선되고, 광고 수익과 브랜드 신뢰도가 함께 향상됩니다.'},
+      {id:'tr3',name:'구글 검색 순위 향상 (키워드)',pl:'traffic',rate:8.00,min:100,max:5000,description:'특정 키워드에 대한 구글 검색 클릭을 늘려 순위를 높여드립니다. 검색 상위 노출은 광고 없이도 지속적인 무료 트래픽을 가져다주는 가장 가치 있는 마케팅입니다.'},
+      {id:'tr4',name:'유튜브 검색 트래픽',pl:'traffic',rate:3.00,min:200,max:10000,description:'유튜브 검색을 통한 영상 유입 트래픽을 늘려드립니다. 검색 유입이 많은 영상은 유튜브 SEO 점수가 높아져 장기적으로 상위 노출이 유지됩니다.'},
+      {id:'tr5',name:'네이버 검색 트래픽',pl:'traffic',rate:4.00,min:100,max:5000,description:'네이버 검색을 통한 웹사이트/블로그 방문 트래픽입니다. 네이버 검색 유입이 많을수록 네이버 SEO 점수가 향상되어 블로그와 웹사이트의 자연 노출이 증가합니다.'},
+      {id:'tr6',name:'인스타그램 프로필 트래픽',pl:'traffic',rate:2.00,min:500,max:20000,description:'인스타그램 프로필 방문 트래픽을 늘려드립니다. 프로필 방문이 많을수록 팔로워 전환율이 높아지고 인스타그램 알고리즘이 계정을 더 많이 추천합니다.'},
+
+      // ── 앱스토어/모바일 ──
+      {id:'app1',name:'iOS 앱스토어 다운로드',pl:'appstore',rate:8.00,min:50,max:5000,description:'애플 앱스토어 앱 다운로드 수를 늘려드립니다. 다운로드가 많은 앱은 앱스토어 검색 순위와 추천 섹션에 노출되어 자연 다운로드가 크게 증가합니다.'},
+      {id:'app2',name:'iOS 앱스토어 리뷰 (5점)',pl:'appstore',rate:25.00,min:5,max:200,description:'애플 앱스토어 앱 리뷰를 달아드립니다. iOS 앱 평점은 다운로드 전환율에 가장 큰 영향을 미치며, 평점 4.5 이상 앱은 추천 섹션 진입 가능성이 높아집니다.'},
+      {id:'app3',name:'Google Play 다운로드',pl:'appstore',rate:5.00,min:100,max:10000,description:'구글 플레이스토어 앱 다운로드 수를 늘려드립니다. 다운로드가 많은 앱은 플레이스토어 검색 상위에 노출되어 자연 다운로드와 수익이 증가합니다.'},
+      {id:'app4',name:'Google Play 리뷰 (5점)',pl:'appstore',rate:20.00,min:5,max:200,description:'구글 플레이스토어 앱 리뷰를 달아드립니다. 좋은 리뷰와 높은 평점은 앱 검색 순위와 다운로드 전환율에 직접적인 영향을 줍니다.'},
+
+      // ── 여행/숙박 ──
+      {id:'tv4',name:'TripAdvisor 리뷰 (5점)',pl:'travel',rate:30.00,min:3,max:100,description:'트립어드바이저 비즈니스 리뷰를 달아드립니다. 글로벌 여행객들이 가장 많이 참고하는 플랫폼으로, 리뷰가 많고 평점이 높은 비즈니스는 트립어드바이저 검색 상위에 노출됩니다.'},
+      {id:'tv5',name:'Airbnb 리뷰 (5점)',pl:'travel',rate:35.00,min:3,max:50,description:'에어비앤비 숙소 리뷰를 달아드립니다. 리뷰가 많고 평점이 높은 숙소는 에어비앤비 검색 상위에 노출되어 예약률과 수익이 크게 증가합니다.'},
+      {id:'tv6',name:'Booking.com 리뷰',pl:'travel',rate:30.00,min:3,max:100,description:'부킹닷컴 숙소/호텔 리뷰를 달아드립니다. 글로벌 최대 숙박 예약 플랫폼에서 높은 평점은 노출 순위와 예약 전환율에 직접적인 영향을 줍니다.'},
+
+      // ── 배달/음식 ──
+      {id:'fd1',name:'배달의민족 리뷰 (5점)',pl:'delivery',rate:15.00,min:5,max:200,description:'배달의민족 가게 리뷰를 달아드립니다. 배민 알고리즘은 리뷰 수와 평점을 검색 순위의 핵심 요소로 봅니다. 리뷰가 많은 가게는 배민 검색 상위에 노출되어 주문이 증가합니다.'},
+      {id:'fd2',name:'요기요 리뷰 (5점)',pl:'delivery',rate:15.00,min:5,max:200,description:'요기요 가게 리뷰를 달아드립니다. 리뷰가 많고 평점이 높은 가게는 요기요 검색 상위와 추천 섹션에 노출되어 자연 주문이 증가합니다.'},
+      {id:'fd3',name:'쿠팡이츠 리뷰 (5점)',pl:'delivery',rate:15.00,min:5,max:200,description:'쿠팡이츠 가게 리뷰를 달아드립니다. 쿠팡이츠 알고리즘은 리뷰 수와 평점을 중요하게 반영하여 높은 평점 가게를 우선 노출합니다.'},
+      {id:'fd4',name:'Uber Eats 리뷰 (5점)',pl:'delivery',rate:20.00,min:3,max:100,description:'우버이츠 가게 리뷰를 달아드립니다. 글로벌 배달 앱 우버이츠에서 높은 평점은 앱 내 검색 순위와 추천에 직접적인 영향을 줍니다.'},
+
+      // ── 스팀/게임 ──
+      {id:'gm1',name:'Steam 게임 리뷰 (긍정)',pl:'gaming',rate:20.00,min:5,max:200,description:'스팀 게임 긍정적 리뷰를 달아드립니다. 스팀 리뷰 점수는 게임 구매 전환율에 가장 큰 영향을 미칩니다. 긍정 리뷰가 많은 게임은 스팀 추천 알고리즘의 우선 노출을 받습니다.'},
+      {id:'gm2',name:'Steam 위시리스트 추가',pl:'gaming',rate:3.00,min:50,max:5000,description:'스팀 게임 위시리스트 추가 수를 늘려드립니다. 위시리스트가 많은 게임은 스팀 알고리즘이 출시 시 더 많은 사람에게 알림을 보내 초기 판매량 극대화에 도움이 됩니다.'},
+      {id:'gm3',name:'Twitch 팔로워',pl:'twitch',rate:2.50,min:100,max:50000,description:'트위치 채널 팔로워를 늘려드립니다. 팔로워가 많을수록 라이브 시작 시 더 많은 알림이 발송되고 트위치 파트너/어필리에이트 조건 달성에 도움이 됩니다.'},
+
+      // ── 팟캐스트 ──
+      {id:'pc1',name:'Spotify 팟캐스트 팔로워',pl:'spotify',rate:3.00,min:50,max:5000,description:'스포티파이 팟캐스트 팔로워를 늘려드립니다. 팔로워가 많은 팟캐스트는 스포티파이 추천 섹션에 노출되어 새 에피소드마다 더 많은 청취자를 확보합니다.'},
+      {id:'pc2',name:'Apple Podcasts 리뷰 (5점)',pl:'appstore',rate:20.00,min:5,max:100,description:'애플 팟캐스트 리뷰를 달아드립니다. 리뷰가 많고 평점이 높은 팟캐스트는 애플 팟캐스트 차트 진입 가능성이 높아지고 신규 청취자 유입이 증가합니다.'},
+
+      // ── LinkedIn 추가 ──
+      {id:'li1',name:'LinkedIn 게시물 좋아요',pl:'other',rate:1.50,min:50,max:10000,description:'링크드인 게시물 좋아요를 늘려드립니다. 좋아요가 많은 게시물은 링크드인 피드 상단에 노출되어 더 많은 비즈니스 관계자에게 도달합니다.'},
+      {id:'li2',name:'LinkedIn 게시물 댓글',pl:'other',rate:8.00,min:10,max:300,description:'링크드인 게시물 댓글을 달아드립니다. 댓글이 많은 게시물은 링크드인 알고리즘이 높은 참여도로 인식하여 더 많이 노출합니다. B2B 마케팅과 채용 브랜딩에 효과적입니다.'},
+      {id:'li3',name:'LinkedIn 연결 (1촌)',pl:'other',rate:5.00,min:50,max:1000,description:'링크드인 1촌 연결을 늘려드립니다. 연결이 많을수록 게시물 도달 범위가 넓어지고 헤드헌터와 비즈니스 파트너에게 노출될 기회가 증가합니다.'},
+
+      // ── Pinterest 추가 ──
+      {id:'pt1',name:'Pinterest 핀 저장 (리핀)',pl:'other',rate:1.00,min:100,max:50000,description:'핀터레스트 핀 저장 수를 늘려드립니다. 저장이 많은 핀은 핀터레스트 검색 상위에 노출되고 스마트 피드에서 더 많이 추천됩니다. 쇼핑 연동 시 실제 구매로 이어집니다.'},
+      {id:'pt2',name:'Pinterest 보드 팔로워',pl:'other',rate:2.00,min:50,max:10000,description:'핀터레스트 보드 팔로워를 늘려드립니다. 보드 팔로워가 많을수록 새 핀이 더 많은 사람에게 노출되어 자연적인 저장과 트래픽이 증가합니다.'},
     ];
     for (const s of svcs) {
       await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max`,
-        [s.id, s.name, s.pl, s.rate, s.min, s.max, s.desc, 1]);
+        [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description||'', 1]);
     }
   }
 
   // 마이그레이션
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS tg_token TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS super_margin REAL DEFAULT -1`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS tg_chat TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS slogan TEXT DEFAULT '콘텐츠가 빛나도록'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS slogan_sub TEXT DEFAULT '우리가 성장시킵니다'`); } catch(e) {}
@@ -432,6 +557,7 @@ app.get('/api/site-config', (req, res) => {
     primaryColor: site.primary_color, accentColor: site.accent_color,
     kakao: site.kakao, bank: site.bank,
     margin: site.margin, exrate: site.exrate,
+    superMargin: site.super_margin >= 0 ? site.super_margin : null,
     slogan: site.slogan || '콘텐츠가 빛나도록',
     sloganSub: site.slogan_sub || '우리가 성장시킵니다',
     description: site.description || '유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다',
@@ -500,13 +626,17 @@ app.get('/api/services', async (req, res) => {
     const site = req.site;
     const siteMg = site ? site.margin : 50;
     const ex = site ? site.exrate : 1380;
-    const superMgStr = await getGlobalSetting('super_margin');
-    const superMg = parseFloat(superMgStr || '50');
+    // 사이트별 슈퍼마진 우선, 없으면(-1) 글로벌 슈퍼마진 사용
+    let superMg;
+    if (site && site.super_margin >= 0) {
+      superMg = site.super_margin;
+    } else {
+      const superMgStr = await getGlobalSetting('super_margin');
+      superMg = parseFloat(superMgStr || '50');
+    }
     const r = await query(`SELECT * FROM services WHERE active=1 ORDER BY id`);
     res.json(r.rows.map(s => ({
       ...s,
-      // 1단계: 원가 * (1 + 슈퍼마진) = 슈퍼가
-      // 2단계: 슈퍼가 * (1 + 사이트마진) = 최종 고객가
       sell: Math.round(s.rate / 1000 * ex * (1 + superMg / 100) * (1 + siteMg / 100))
     })));
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -524,9 +654,13 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const site = req.site;
     const siteMg = site ? site.margin : 50;
     const ex = site ? site.exrate : 1380;
-    const superMgStr2 = await getGlobalSetting('super_margin');
-    const superMg2 = parseFloat(superMgStr2 || '50');
-    // 고객이 내는 금액 = 원가 * (1+슈퍼마진) * (1+사이트마진)
+    let superMg2;
+    if (site && site.super_margin >= 0) {
+      superMg2 = site.super_margin;
+    } else {
+      const superMgStr2 = await getGlobalSetting('super_margin');
+      superMg2 = parseFloat(superMgStr2 || '50');
+    }
     const charge = svc.rate / 1000 * qtyNum * ex * (1 + superMg2 / 100) * (1 + siteMg / 100);
     const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
     const user = userR.rows[0];
@@ -789,7 +923,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
       }
       return res.json({ error: '슈퍼관리자 전용 설정입니다' });
     }
-    const siteFields = ['name','kakao','bank','margin','exrate','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge'];
+    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge'];
     if (siteFields.includes(key)) {
       await query(`UPDATE sites SET ${key}=$1 WHERE id=$2`, [value, req.siteId]);
       return res.json({ ok: true });
@@ -1036,9 +1170,10 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     if (!domain || !name || !adminEmail || !adminPw)
       return res.json({ error: '필수 항목을 입력하세요' });
     const siteId = 'site_' + Date.now();
-    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,margin,exrate,credit) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    const superMarginVal = req.body.superMargin !== undefined ? parseFloat(req.body.superMargin) : -1;
+    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
       [siteId, domain, name, logo||'✨', primaryColor||'#7209B7', accentColor||'#F72585',
-        parseFloat(margin||50), parseFloat(exrate||1380), parseFloat(credit||0)]);
+        parseFloat(margin||50), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal]);
     const hash = bcrypt.hashSync(adminPw, 10);
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       ['admin_'+siteId, siteId, '관리자', adminEmail, hash, 'admin', 0]);
@@ -1060,8 +1195,9 @@ app.post('/api/super/sites/credit', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
   try {
     const { siteId, name, domain, logo, primaryColor, accentColor, margin, exrate, active } = req.body;
-    await query(`UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8 WHERE id=$9`,
-      [name, domain, logo, primaryColor, accentColor, parseFloat(margin), parseFloat(exrate), active?1:0, siteId]);
+    const superMarginUpd = req.body.superMargin !== undefined ? parseFloat(req.body.superMargin) : -1;
+    await query(`UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9 WHERE id=$10`,
+      [name, domain, logo, primaryColor, accentColor, parseFloat(margin), parseFloat(exrate), active?1:0, superMarginUpd, siteId]);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1137,6 +1273,16 @@ function detectPlat(n) {
   if (n.includes('facebook')) return 'facebook';
   if (n.includes('spotify')) return 'spotify';
   if (n.includes('naver')) return 'naver';
+  if (n.includes('kakao')) return 'kakao';
+  if (n.includes('twitch')) return 'twitch';
+  if (n.includes('amazon')) return 'amazon';
+  if (n.includes('shopee') || n.includes('lazada') || n.includes('aliexpress') || n.includes('etsy')) return 'ecommerce';
+  if (n.includes('coupang') || n.includes('쿠팡')) return 'coupang';
+  if (n.includes('트래픽') || n.includes('traffic') || n.includes('seo') || n.includes('검색 트래픽')) return 'traffic';
+  if (n.includes('앱스토어') || n.includes('appstore') || n.includes('play') || n.includes('ios') || n.includes('팟캐스트')) return 'appstore';
+  if (n.includes('tripadvisor') || n.includes('airbnb') || n.includes('booking') || n.includes('여행') || n.includes('숙박')) return 'travel';
+  if (n.includes('배달') || n.includes('요기요') || n.includes('uber eats')) return 'delivery';
+  if (n.includes('steam') || n.includes('스팀') || n.includes('게임')) return 'gaming';
   return 'other';
 }
 
