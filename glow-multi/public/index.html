@@ -470,6 +470,7 @@ tr:last-child td{border-bottom:none}
     <button class="bni" id="bni-charge" onclick="goTab('charge')"><div class="bni-ico">◇</div>충전</button>
     <button class="bni" id="bni-admin" style="display:none" onclick="goTab('admin')"><div class="bni-ico">⚙</div>관리자</button>
     <button class="bni" id="bni-super" style="display:none" onclick="goTab('super')"><div class="bni-ico">👑</div>슈퍼</button>
+    <button class="bni" onclick="doLogout()" style="color:#EF4444"><div class="bni-ico">→</div>로그아웃</button>
   </div>
 </div>
 
@@ -1169,6 +1170,7 @@ function renderSiteList(sites){
       +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\')">💰 크레딧 충전</button>'
       +'<button class="btn binf bxs" onclick="editSite('+JSON.stringify(s).replace(/"/g,"'").replace(/'/g,"&apos;")+')"}>수정</button>'
       +'<button class="btn bpu bxs" onclick="manageAdmin(\''+s.id+'\')">👤 관리자</button>'
+      +(s.id!=='default'?'<button class="btn ber bxs" onclick="deleteSite(\''+s.id+'\',\''+s.name+'\')">🗑 삭제</button>':'')
       +(s.pending충전하기>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pending충전하기+'건</button>':'')
       +'</div>'
       +'</div>';
@@ -1227,6 +1229,15 @@ async function createSite(){
 }
 
 // 관리자 관리
+async function deleteSite(siteId, siteName){
+  if(!confirm('⚠️ 정말로 [' + siteName + '] 사이트를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다!\n회원, 주문, 충전 데이터가 모두 삭제됩니다.')) return;
+  var confirm2 = prompt('삭제하려면 사이트 이름을 정확히 입력하세요:\n' + siteName);
+  if(confirm2 !== siteName){toast('사이트 이름이 일치하지 않습니다','err');return}
+  var d=await api('/api/super/sites/delete','POST',{siteId});
+  if(d.error){toast(d.error,'err');return}
+  toast('사이트가 삭제되었습니다','ok');
+  loadSuperDash();
+}
 async function manageAdmin(siteId){
   var d=await api('/api/super/users');
   var admin=d.find(u=>u.site_id===siteId&&u.role==='admin');
