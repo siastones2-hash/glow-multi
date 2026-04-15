@@ -575,6 +575,7 @@ function submitCharge(){
   ge('confirmNote').textContent=note;
   ge('mChargeConfirm').classList.add('on');
 }
+// (아래 submitCharge는 직접 요청용)
 async function doSubmitCharge(){
   var a=parseInt(ge('chAmt').value);
   var note=ge('chNote').value.trim();
@@ -865,14 +866,6 @@ async function loadBankInfo(){
 function pickCharge(a,el){
   document.querySelectorAll('.ci').forEach(function(c){c.classList.remove('on')});
   el.classList.add('on');ge('chAmt').value=a||'';if(!a)ge('chAmt').focus();
-}
-async function submitCharge(){
-  var a=parseInt(ge('chAmt').value);if(!a||a<5000){toast('최소 ₩5,000 이상','err');return}
-  var d=await api('/api/charges','POST',{amount:a,note:ge('chNote').value});
-  if(d.error){toast(d.error,'err');return}
-  toast('충전 요청 접수! ✨','ok');
-  ge('chAmt').value='';ge('chNote').value='';loadChargeHis();
-  if(window._kakao)window.open(window._kakao,'_blank');
 }
 async function loadChargeHis(){
   var d=await api('/api/charges/my');var tb=ge('chHisTb'),h='';
@@ -1181,7 +1174,7 @@ function renderSiteList(sites){
   }).join('');
 }
 async function loadSuperOrders(){
-  var d=await api('/api/admin/orders');var tb=ge('spOTb'),h='';
+  var d=await api('/api/super/orders');var tb=ge('spOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   d.forEach(function(o){
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_id||'-')+'</td>'
@@ -1195,7 +1188,7 @@ async function loadSuperOrders(){
   tb.innerHTML=h;
 }
 async function loadSuperCharges(){
-  var d=await api('/api/admin/charges');var tb=ge('spCTb'),h='';
+  var d=await api('/api/super/charges');var tb=ge('spCTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_id||'-')+'</td>'
@@ -1299,45 +1292,7 @@ async function openUserDetail(uid){
   ge('mDetailContent').innerHTML=html;
   ge('mDetail').classList.add('on');
 }
-async function banUser(uid,uname){
-  if(!confirm(uname+'님을 정지/해제하시겠습니까?'))return;
-  var d=await api('/api/admin/users/ban','POST',{uid:uid});
-  if(d.error){toast(d.error,'err');return}
-  toast(d.status==='banned'?uname+'님 정지됨':uname+'님 정지 해제','ok');
-  loadAdmUsers();
-}
-async function deleteUser(uid,uname){
-  if(!confirm(uname+'님을 강제 탈퇴시키겠습니까?\n모든 주문/충전 내역이 삭제됩니다!'))return;
-  var d=await api('/api/admin/users/delete','POST',{uid:uid});
-  if(d.error){toast(d.error,'err');return}
-  toast(uname+'님 탈퇴 처리 완료','ok');
-  loadAdmUsers();loadAdmDash();
-}
-async function resetPw(uid){
-  var pw=ge('newPwInput').value.trim();
-  if(!pw||pw.length<6){toast('6자 이상 입력하세요','err');return}
-  var d=await api('/api/admin/users/resetpw','POST',{uid:uid,newpw:pw});
-  if(d.error){toast(d.error,'err');return}
-  toast('비밀번호 초기화 완료','ok');ge('newPwInput').value='';
-}
 
-async function createSite(){
-  var domain=ge('nsDomain').value.trim(),name=ge('nsName').value.trim();
-  var logo=ge('nsLogo').value||'✨';
-  var primary=ge('nsPrimary').value,accent=ge('nsAccent').value;
-  var email=ge('nsAdminEmail').value.trim(),pw=ge('nsAdminPw').value;
-  var margin=ge('ns마진').value,credit=ge('nsCredit').value;
-  if(!domain||!name||!email||!pw){toast('필수 항목을 입력하세요','err');return}
-  var d=await api('/api/super/sites/create','POST',{
-    domain:domain,name:name,logo:logo,primaryColor:primary,accentColor:accent,
-    adminEmail:email,adminPw:pw,margin:parseFloat(margin),
-    exrate:1380,credit:parseFloat(credit||0)
-  });
-  if(d.error){toast(d.error,'err');return}
-  toast('사이트 생성 완료! ✨','ok');
-  closeM('mNewSite');loadSuperDash();
-  ['nsDomain','nsName','nsLogo','nsAdminEmail','nsAdminPw'].forEach(function(id){var el=ge(id);if(el)el.value=''});
-}
 
 async function loadAdmUsers(){
   var d=await api('/api/admin/users');
