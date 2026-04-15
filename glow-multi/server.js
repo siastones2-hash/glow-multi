@@ -119,9 +119,9 @@ db.exec(`
 
 // ── 기본 데이터 ──
 const defaults = {
-  peakerr_api_key: '',
-  tg_token: '',
-  tg_chat: ''
+  peakerr_api_key: process.env.PEAKERR_API_KEY || '',
+  tg_token: process.env.TG_TOKEN || '',
+  tg_chat: process.env.TG_CHAT || ''
 };
 for (const [k, v] of Object.entries(defaults)) {
   const exists = db.prepare('SELECT key FROM global_settings WHERE key=?').get(k);
@@ -554,8 +554,8 @@ app.post('/api/admin/orders/status', requireAdmin, (req, res) => {
 app.get('/api/admin/users', requireAdmin, (req, res) => {
   const siteId = req.session.role === 'superadmin' ? null : req.siteId;
   const users = siteId
-    ? db.prepare("SELECT * FROM users WHERE site_id=? ORDER BY joined DESC").all(siteId)
-    : db.prepare("SELECT * FROM users ORDER BY joined DESC").all();
+    ? db.prepare("SELECT * FROM users WHERE site_id=? AND role!='superadmin' ORDER BY joined DESC").all(siteId)
+    : db.prepare("SELECT * FROM users WHERE role!='superadmin' ORDER BY joined DESC").all();
   res.json(users);
 });
 
@@ -895,6 +895,24 @@ function detectPlat(n) {
   if (n.includes('naver')) return 'naver';
   return 'other';
 }
+
+// 슈퍼관리자 전체 주문 조회
+app.get('/api/super/orders', requireSuperAdmin, (req, res) => {
+  const orders = db.prepare('SELECT * FROM orders ORDER BY created DESC LIMIT 200').all();
+  res.json(orders);
+});
+
+// 슈퍼관리자 전체 충전 조회
+app.get('/api/super/charges', requireSuperAdmin, (req, res) => {
+  const charges = db.prepare('SELECT * FROM charges ORDER BY created DESC LIMIT 200').all();
+  res.json(charges);
+});
+
+// 슈퍼관리자 전체 회원 조회
+app.get('/api/super/users', requireSuperAdmin, (req, res) => {
+  const users = db.prepare("SELECT id,site_id,name,email,role,balance,status,joined FROM users ORDER BY joined DESC").all();
+  res.json(users);
+});
 
 // api_ 서비스 삭제 (관리자용)
 app.post('/api/admin/services/clean', requireSuperAdmin, (req, res) => {
