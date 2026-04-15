@@ -1069,13 +1069,15 @@ async function changeRole(uid,role){
 // 설정 저장
 async function saveSiteSettings(){
   var sn=ge('st사이트Name'),sk=ge('stKakao'),sb=ge('stBank'),sm=ge('stMg'),se=ge('stEx');
-  if(sn&&sn.value)await api('/api/admin/settings/save','POST',{key:'name',value:sn.value});
-  if(sk)await api('/api/admin/settings/save','POST',{key:'kakao',value:sk.value});
-  if(sb)await api('/api/admin/settings/save','POST',{key:'bank',value:sb.value});
-  if(sm&&sm.value)await api('/api/admin/settings/save','POST',{key:'margin',value:sm.value});
-  if(se&&se.value)await api('/api/admin/settings/save','POST',{key:'exrate',value:se.value});
-  await loadSiteConfig();await loadSvcs();
-  toast('설정 저장 완료 ✨','ok');
+  try {
+    if(sn&&sn.value){var r=await api('/api/admin/settings/save','POST',{key:'name',value:sn.value});if(r.error){toast(r.error,'err');return;}}
+    if(sk){var r=await api('/api/admin/settings/save','POST',{key:'kakao',value:sk.value});if(r.error){toast(r.error,'err');return;}}
+    if(sb){var r=await api('/api/admin/settings/save','POST',{key:'bank',value:sb.value});if(r.error){toast(r.error,'err');return;}}
+    if(sm&&sm.value){var r=await api('/api/admin/settings/save','POST',{key:'margin',value:sm.value});if(r.error){toast(r.error,'err');return;}}
+    if(se&&se.value){var r=await api('/api/admin/settings/save','POST',{key:'exrate',value:se.value});if(r.error){toast(r.error,'err');return;}}
+    await loadSiteConfig();await loadSvcs();
+    toast('설정 저장 완료 ✨','ok');
+  } catch(e) { toast('저장 실패: '+e.message,'err'); }
 }
 async function saveTgSettings(){
   var tt=ge('stTgToken'),tc=ge('stTgChat');
