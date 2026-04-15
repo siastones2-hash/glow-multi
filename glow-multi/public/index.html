@@ -438,15 +438,20 @@ tr:last-child td{border-bottom:none}
 
       <!-- 슈퍼관리자 전용 탭 -->
       <div class="tab" id="tab-super">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
           <div style="font-size:18px;font-weight:800">👑 슈퍼관리자</div>
           <span class="super-badge">SUPER 관리자</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:#f5f0ff;border:1px solid var(--bd2);padding:6px 14px;border-radius:100px;cursor:pointer" onclick="toggleSecureMode()" id="secureModeBtn">
+            <span id="secureModeIcon">🔓</span>
+            <span style="font-size:12px;font-weight:700" id="secureModeText">보안 모드 OFF</span>
+          </div>
         </div>
         <!-- 전체 현황 -->
         <div class="sg" style="margin-bottom:16px">
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 회원</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalUsers">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalOrders">0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalRevenue">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800 amount-mask" id="sTotalRevenue">₩0</div></div>
+          <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 내 순수익 (예상)</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sMyProfit" class="amount-mask">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">충전 대기</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="sTotalPending">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">🔑 API 잔액</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sApiBalance">-</div></div>
         </div>
@@ -457,6 +462,7 @@ tr:last-child td{border-bottom:none}
           <button class="admtab" onclick="goSuperTab('allcharges',this)">💳 전체 충전</button>
           <button class="admtab" onclick="goSuperTab('creditreqs',this)">💰 크레딧 요청</button>
           <button class="admtab" onclick="goSuperTab('services',this)">⚙ 서비스 관리</button>
+          <button class="admtab" onclick="goSuperTab('pricecalc',this)">💹 단가표</button>
           <button class="admtab" onclick="goSuperTab('globalapi',this)">🔑 API/텔레그램</button>
         </div>
 
@@ -494,6 +500,49 @@ tr:last-child td{border-bottom:none}
             </div>
           </div>
           <div class="tw"><table><thead><tr><th>플랫폼</th><th>서비스명</th><th>원가($)/1000</th><th>최소</th><th>최대</th><th>상태</th><th>관리</th></tr></thead><tbody id="spSvcTb"></tbody></table></div>
+        </div>
+        <div class="apanel" id="sp-pricecalc">
+          <!-- 단가표 계산기 -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
+            <div class="fg" style="margin:0;flex:0 0 140px">
+              <label>환율 (USD→KRW)</label>
+              <input type="number" id="pcExrate" value="1500" min="100" max="5000" oninput="calcPriceTable()"/>
+            </div>
+            <div class="fg" style="margin:0;flex:0 0 120px">
+              <label>슈퍼마진 (%)</label>
+              <input type="number" id="pcSuperMg" value="50" min="0" max="500" oninput="calcPriceTable()"/>
+            </div>
+            <div class="fg" style="margin:0;flex:0 0 120px">
+              <label>사이트마진 (%)</label>
+              <input type="number" id="pcSiteMg" value="50" min="0" max="500" oninput="calcPriceTable()"/>
+            </div>
+            <button class="bp bsm" style="padding:9px 16px;margin-bottom:1px" onclick="calcPriceTable()">계산</button>
+            <button class="bo bsm" style="padding:9px 16px;margin-bottom:1px" onclick="copyPriceTable()">📋 복사</button>
+            <button class="bo bsm" style="padding:9px 16px;margin-bottom:1px" onclick="downloadPriceTable()">⬇ 다운로드</button>
+          </div>
+          <!-- 수익 요약 -->
+          <div class="sg" style="margin-bottom:16px" id="pcSummary">
+            <div class="sc"><div style="font-size:10px;color:var(--tl);font-weight:700;margin-bottom:5px">환율</div><div class="gt" style="font-size:18px;font-weight:800" id="pcExrateDisplay">₩1,500</div></div>
+            <div class="sc"><div style="font-size:10px;color:var(--tl);font-weight:700;margin-bottom:5px">내 마진</div><div class="gt" style="font-size:18px;font-weight:800" id="pcMyMargin">50%</div></div>
+            <div class="sc"><div style="font-size:10px;color:var(--tl);font-weight:700;margin-bottom:5px">최저가 서비스</div><div class="gt" style="font-size:18px;font-weight:800" id="pcMinPrice">-</div></div>
+            <div class="sc"><div style="font-size:10px;color:var(--tl);font-weight:700;margin-bottom:5px">최고가 서비스</div><div class="gt" style="font-size:18px;font-weight:800" id="pcMaxPrice">-</div></div>
+          </div>
+          <!-- 단가표 -->
+          <div id="pcTableWrap" style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px" id="pcTable">
+              <thead>
+                <tr style="background:#f5f0ff">
+                  <th style="padding:8px;text-align:left;border-bottom:2px solid var(--bd2);font-weight:700">서비스명</th>
+                  <th style="padding:8px;text-align:center;border-bottom:2px solid var(--bd2);font-weight:700">카테고리</th>
+                  <th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700">원가($/1K)</th>
+                  <th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:var(--p2)">내 판매가(₩/1K)</th>
+                  <th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:#10B981">내 순수익(₩/1K)</th>
+                  <th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:#F59E0B">고객가(₩/1K)</th>
+                </tr>
+              </thead>
+              <tbody id="pcTbody"></tbody>
+            </table>
+          </div>
         </div>
         <div class="apanel" id="sp-globalapi">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
@@ -882,8 +931,9 @@ async function enterDash(){
   ge('sbRole').textContent=roleMap[CUR.role]||'-';
 
   // 메뉴 권한
-  var isAdmin=['admin','superadmin'].includes(CUR.role);
+  var isAdmin=['admin','partner','superadmin'].includes(CUR.role);
   var isSuper=CUR.role==='superadmin';
+  var isPartner=CUR.role==='partner';
   ge('si-admin').style.display=isAdmin?'flex':'none';
   ge('bni-admin').style.display=isAdmin?'flex':'none';
   ge('si-super').style.display=isSuper?'flex':'none';
@@ -905,7 +955,7 @@ async function refreshMe(){
 }
 
 function goTab(tab){
-  if(tab==='admin'&&(!CUR||!['admin','superadmin'].includes(CUR.role))){toast('접근 권한이 없습니다','err');return}
+  if(tab==='admin'&&(!CUR||!['admin','partner','superadmin'].includes(CUR.role))){toast('접근 권한이 없습니다','err');return}
   if(tab==='super'&&(!CUR||CUR.role!=='superadmin')){toast('슈퍼관리자 전용입니다','err');return}
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
   document.querySelectorAll('.si').forEach(function(s){s.classList.remove('on')});
@@ -939,6 +989,7 @@ function renderSvcList(){
   var q=(ge('svcSearch')&&ge('svcSearch').value||'').toLowerCase();
   var svcs=SVCS.filter(function(s){
     var matchPl=FLT==='all'||s.pl===FLT;
+    var isPartnerView = CUR && CUR.role === 'partner';
     var matchQ=!q||s.name.toLowerCase().includes(q)||(s.description&&s.description.toLowerCase().includes(q));
     return matchPl&&matchQ;
   });
@@ -1112,7 +1163,7 @@ async function loadAdmOrders(){
   var d=await api('/api/admin/users');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
   d.forEach(function(u){
     var is정지=u.status==='banned';
-    var isAdmin=['admin','superadmin'].includes(u.role);
+    var isAdmin=['admin','partner','superadmin'].includes(u.role);
     h+='<tr style="'+(is정지?'opacity:.5':'')+'">'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+(isAdmin?' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+u.role+'</span>':'')+'</td>'
       +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
@@ -1356,6 +1407,7 @@ async function loadSuperDash(){
   ge('sTotalRevenue').textContent=gf(d.totalRevenue||0);
   ge('sTotalPending').textContent=d.pendingCharges||0;
   if(ge('sApiBalance'))ge('sApiBalance').textContent=d.apiBalance?'$'+d.apiBalance:'-';
+  if(ge('sMyProfit'))ge('sMyProfit').textContent=gf(d.myProfit||0);
   renderSiteList(d.sites||[]);
 
   // 글로벌 설정 로드
@@ -1377,6 +1429,7 @@ function goSuperTab(tab,el){
   if(tab==='allcharges')loadSuperCharges();
   if(tab==='creditreqs')loadSuperCreditReqs();
   if(tab==='services')loadSuperServices();
+  if(tab==='pricecalc')calcPriceTable();
 }
 function renderSiteList(sites){
   var el=ge('siteList');if(!el)return;
@@ -1447,11 +1500,12 @@ async function createSite(){
   if(!domain||!name||!email||!pw){toast('필수 항목을 입력하세요','err');return}
   var superMargin=ge('nsSuperMargin')?.value||50;
   var exrate=ge('nsExrate')?.value||1380;
+  var adminRole=ge('nsAdminRole')?.value||'admin';
   var d=await api('/api/super/sites/create','POST',{
     domain,name,logo,primaryColor:primary,accentColor:accent,
     adminEmail:email,adminPw:pw,margin:parseFloat(margin),
     exrate:parseFloat(exrate),credit:parseFloat(credit||0),
-    superMargin:parseFloat(superMargin)
+    superMargin:parseFloat(superMargin),adminRole
   });
   if(d.error){toast(d.error,'err');return}
   toast('사이트 생성 완료! ✨','ok');
@@ -1595,7 +1649,7 @@ async function loadAdmUsers(){
   tb.innerHTML='';
   d.forEach(function(u){
     var isBanned=u.status==='banned';
-    var isAdmin=['admin','superadmin'].includes(u.role);
+    var isAdmin=['admin','partner','superadmin'].includes(u.role);
     var tr=document.createElement('tr');
     if(isBanned)tr.style.opacity='0.5';
     var roleBadge=isAdmin?(' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+u.role+'</span>'):'';
@@ -1770,6 +1824,181 @@ async function deleteService(id, name){
   var d=await api('/api/super/services/delete','POST',{id});
   if(d.error){toast(d.error,'err');return}
   toast('삭제 완료','ok');loadSuperServices();
+}
+
+
+
+// ── 보안 모드 ──
+var _secureMode = false;
+function toggleSecureMode(){
+  _secureMode = !_secureMode;
+  var btn = ge('secureModeBtn');
+  var icon = ge('secureModeIcon');
+  var text = ge('secureModeText');
+  if(_secureMode){
+    if(btn) btn.style.background='#fef2f2';
+    if(icon) icon.textContent='🔒';
+    if(text) text.textContent='보안 모드 ON';
+    // 모든 금액 마스킹
+    document.querySelectorAll('.amount-mask').forEach(function(el){
+      el.setAttribute('data-real', el.textContent);
+      el.textContent='₩ ****';
+    });
+    toast('🔒 보안 모드 ON - 금액이 가려졌습니다','warn');
+  } else {
+    if(btn) btn.style.background='#f5f0ff';
+    if(icon) icon.textContent='🔓';
+    if(text) text.textContent='보안 모드 OFF';
+    // 마스킹 해제
+    document.querySelectorAll('.amount-mask').forEach(function(el){
+      var real = el.getAttribute('data-real');
+      if(real) el.textContent = real;
+    });
+    toast('🔓 보안 모드 OFF','ok');
+  }
+}
+
+function maskAmount(val){
+  if(_secureMode) return '₩ ****';
+  return val;
+}
+
+// ── 단가표 Partner 뷰 처리 ──
+// ── 단가표 계산기 ──
+var _pcSvcs = [];
+async function calcPriceTable(){
+  if(!_pcSvcs.length){
+    var d = await api('/api/services');
+    if(Array.isArray(d)) _pcSvcs = d;
+  }
+
+  var isPartner = CUR && CUR.role === 'partner';
+  var ex = parseFloat(ge('pcExrate')?.value || 1500);
+  var superMg = parseFloat(ge('pcSuperMg')?.value || 50);
+  var siteMg = parseFloat(ge('pcSiteMg')?.value || 50);
+
+  var exDisplay = ge('pcExrateDisplay');
+  var myMgDisplay = ge('pcMyMargin');
+  if(exDisplay) exDisplay.textContent = '₩' + ex.toLocaleString();
+  if(myMgDisplay) myMgDisplay.textContent = isPartner ? '-' : superMg + '%';
+
+  var PLKlocal = {youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',
+    twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',
+    naver:'네이버',kakao:'카카오',twitch:'트위치',amazon:'아마존',ecommerce:'해외쇼핑',
+    coupang:'쿠팡',traffic:'웹트래픽',appstore:'앱스토어',travel:'여행',
+    delivery:'배달',gaming:'게임',other:'기타'};
+
+  var tbody = ge('pcTbody');
+  if(!tbody) return;
+
+  // 테이블 헤더 - partner는 원가/순수익 컬럼 숨김
+  var thead = ge('pcTable')?.querySelector('thead tr');
+  if(thead){
+    if(isPartner){
+      thead.innerHTML = '<tr style="background:#f5f0ff">'
+        + '<th style="padding:8px;text-align:left;border-bottom:2px solid var(--bd2);font-weight:700">서비스명</th>'
+        + '<th style="padding:8px;text-align:center;border-bottom:2px solid var(--bd2);font-weight:700">카테고리</th>'
+        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:var(--p2)">기준 원가(₩/1K)</th>'
+        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:#F59E0B">고객 판매가(₩/1K)</th>'
+        + '</tr>';
+    } else {
+      thead.innerHTML = '<tr style="background:#f5f0ff">'
+        + '<th style="padding:8px;text-align:left;border-bottom:2px solid var(--bd2);font-weight:700">서비스명</th>'
+        + '<th style="padding:8px;text-align:center;border-bottom:2px solid var(--bd2);font-weight:700">카테고리</th>'
+        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:var(--tl)">피커 원가($/1K)</th>'
+        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:var(--p2)">공급가(₩/1K)</th>'
+        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:#10B981">내 순수익(₩/1K)</th>'
+        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:#F59E0B">고객가(₩/1K)</th>'
+        + '</tr>';
+    }
+  }
+
+  var rows = [];
+  var minPrice = Infinity, maxPrice = 0;
+
+  _pcSvcs.forEach(function(s){
+    var costKrw = s.rate * ex;
+    var myPrice = Math.round(costKrw * (1 + superMg/100));
+    var myProfit = myPrice - Math.round(costKrw);
+    var custPrice = Math.round(myPrice * (1 + siteMg/100));
+    if(myPrice < minPrice) minPrice = myPrice;
+    if(myPrice > maxPrice) maxPrice = myPrice;
+    rows.push({s, costKrw, myPrice, myProfit, custPrice});
+  });
+
+  var minEl = ge('pcMinPrice'), maxEl = ge('pcMaxPrice');
+  if(minEl) minEl.textContent = isPartner ? (rows.length?'₩'+rows.reduce((a,r)=>Math.min(a,r.myPrice),Infinity).toLocaleString():'-') : '₩'+minPrice.toLocaleString();
+  if(maxEl) maxEl.textContent = isPartner ? (rows.length?'₩'+rows.reduce((a,r)=>Math.max(a,r.myPrice),0).toLocaleString():'-') : '₩'+maxPrice.toLocaleString();
+
+  var h = '';
+  rows.forEach(function(r){
+    var profitRate = Math.round(r.myProfit / (r.s.rate * ex) * 100);
+    if(isPartner){
+      // Partner 뷰: 기준원가(공급가) + 고객가만 표시
+      h += '<tr style="border-bottom:1px solid var(--bd)">'
+        + '<td style="padding:7px 8px;font-weight:600;font-size:12px">' + r.s.name + '</td>'
+        + '<td style="padding:7px 8px;text-align:center"><span style="font-size:10px;background:#f5f0ff;padding:2px 6px;border-radius:20px;color:var(--p2)">' + (PLKlocal[r.s.pl]||r.s.pl) + '</span></td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2)">₩' + r.myPrice.toLocaleString() + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#F59E0B">₩' + r.custPrice.toLocaleString() + '</td>'
+        + '</tr>';
+    } else {
+      // 슈퍼관리자 뷰: 전체 표시 (보안모드 마스킹 가능)
+      h += '<tr style="border-bottom:1px solid var(--bd);transition:background .15s" onmouseover="this.style.background='#f5f0ff'" onmouseout="this.style.background=''">'
+        + '<td style="padding:7px 8px;font-weight:600;font-size:12px">' + r.s.name + '</td>'
+        + '<td style="padding:7px 8px;text-align:center"><span style="font-size:10px;background:#f5f0ff;padding:2px 6px;border-radius:20px;color:var(--p2)">' + (PLKlocal[r.s.pl]||r.s.pl) + '</span></td>'
+        + '<td style="padding:7px 8px;text-align:right;color:var(--tl);font-size:11px amount-mask">$' + r.s.rate.toFixed(3) + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2) amount-mask">₩' + r.myPrice.toLocaleString() + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#10B981 amount-mask">₩' + r.myProfit.toLocaleString() + ' <span style="font-size:10px">(+' + profitRate + '%)</span></td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#F59E0B">₩' + r.custPrice.toLocaleString() + '</td>'
+        + '</tr>';
+    }
+  });
+  tbody.innerHTML = h;
+}
+
+function copyPriceTable(){
+  var ex = ge('pcExrate')?.value || 1500;
+  var superMg = ge('pcSuperMg')?.value || 50;
+  var siteMg = ge('pcSiteMg')?.value || 50;
+  var rows = ge('pcTbody')?.querySelectorAll('tr') || [];
+  var text = '=== 단가표 (환율 ₩' + parseInt(ex).toLocaleString() + ') ===\n';
+  text += '서비스명 | 내 판매가(/1K) | 내 순수익(/1K) | 고객가(/1K)\n';
+  text += '-'.repeat(60) + '\n';
+  rows.forEach(function(r){
+    var cells = r.querySelectorAll('td');
+    if(cells.length >= 6){
+      text += cells[0].textContent.trim() + ' | ';
+      text += cells[3].textContent.trim() + ' | ';
+      text += cells[4].textContent.trim() + ' | ';
+      text += cells[5].textContent.trim() + '\n';
+    }
+  });
+  navigator.clipboard.writeText(text).then(function(){
+    toast('단가표 복사 완료! 📋','ok');
+  });
+}
+
+function downloadPriceTable(){
+  var ex = ge('pcExrate')?.value || 1500;
+  var rows = ge('pcTbody')?.querySelectorAll('tr') || [];
+  var csv = '서비스명,카테고리,원가($/1K),내판매가(₩/1K),내순수익(₩/1K),고객가(₩/1K)\n';
+  rows.forEach(function(r){
+    var cells = r.querySelectorAll('td');
+    if(cells.length >= 6){
+      csv += '"' + cells[0].textContent.trim() + '",';
+      csv += '"' + cells[1].textContent.trim() + '",';
+      csv += '"' + cells[2].textContent.trim() + '",';
+      csv += '"' + cells[3].textContent.trim() + '",';
+      csv += '"' + cells[4].textContent.trim() + '",';
+      csv += '"' + cells[5].textContent.trim() + '"\n';
+    }
+  });
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = '단가표_환율' + ex + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('단가표 다운로드 완료! ⬇','ok');
 }
 
 window.addEventListener('DOMContentLoaded',function(){
