@@ -617,7 +617,7 @@ var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL'
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 
 async function api(url,method,body){
-  var opts={method:method||'GET',headers:{'Content-Type':'application/json'}};
+  var opts={method:method||'GET',headers:{'Content-Type':'application/json'},credentials:'include'};
   if(body)opts.body=JSON.stringify(body);
   var res=await fetch(url,opts);return res.json();
 }
@@ -1231,7 +1231,19 @@ async function addCredit(){
   closeM('mCredit');loadSuperDash();
 }
 
-function editSite(s){toast('사이트 수정 기능은 준비 중입니다','warn')}
+function editSite(s){
+  var domain=prompt('도메인',s.domain);if(domain===null)return;
+  var name=prompt('사이트 이름',s.name);if(name===null)return;
+  var margin=prompt('마진율 (%)',s.margin);if(margin===null)return;
+  api('/api/super/sites/update','POST',{
+    siteId:s.id,domain:domain,name:name,logo:s.logo,
+    primaryColor:s.primary_color,accentColor:s.accent_color,
+    margin:parseFloat(margin),exrate:s.exrate,active:1
+  }).then(function(d){
+    if(d.error){toast(d.error,'err');return}
+    toast('수정 완료! ✨','ok');loadSuperDash();
+  });
+}
 
 async function openUserDetail(uid){
   var d=await api('/api/admin/users/'+uid+'/detail');
