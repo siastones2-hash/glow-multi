@@ -1135,6 +1135,7 @@ async function loadSuperDash(){
   ge('sTotalOrders').textContent=d.totalOrders||0;
   ge('sTotalRevenue').textContent=gf(d.totalRevenue||0);
   ge('sTotalPending').textContent=d.pendingCharges||0;
+  if(ge('sApiBalance'))ge('sApiBalance').textContent=d.apiBalance?'$'+d.apiBalance:'-';
   renderSiteList(d.sites||[]);
 
   // 글로벌 설정 로드
