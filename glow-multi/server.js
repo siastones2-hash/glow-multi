@@ -849,7 +849,7 @@ app.post('/api/super/sites/update', requireSuperAdmin, (req, res) => {
 });
 
 // 슈퍼어드민 전체 현황
-app.get('/api/super/dashboard', requireSuperAdmin, (req, res) => {
+app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
   const sites = db.prepare('SELECT * FROM sites ORDER BY created DESC').all();
   const totalUsers = db.prepare("SELECT COUNT(*) as c FROM users WHERE role='user'").get().c;
   const totalOrders = db.prepare('SELECT COUNT(*) as c FROM orders').get().c;
