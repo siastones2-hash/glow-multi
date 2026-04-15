@@ -179,14 +179,14 @@ tr:last-child td{border-bottom:none}
       <button class="atab on" id="tabL" onclick="switchAuth('login')">로그인</button>
       <button class="atab" id="tabR" onclick="switchAuth('register')">회원가입</button>
     </div>
-    <div id="fLogin">
-      <div class="fg"><label>이메일</label><input type="email" id="lEmail" placeholder="이메일" autocomplete="email"/></div>
+    <div id="f로그인">
+      <div class="fg"><label>이메일</label><input type="email" id="l이메일" placeholder="이메일" autocomplete="email"/></div>
       <div class="fg"><label>비밀번호</label><input type="password" id="lPw" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
       <button class="bp bpf" onclick="doLogin()">로그인</button>
     </div>
     <div id="fReg" style="display:none">
       <div class="fg"><label>닉네임</label><input type="text" id="rName" placeholder="닉네임"/></div>
-      <div class="fg"><label>이메일</label><input type="email" id="rEmail" placeholder="이메일" autocomplete="email"/></div>
+      <div class="fg"><label>이메일</label><input type="email" id="r이메일" placeholder="이메일" autocomplete="email"/></div>
       <div class="fg"><label>비밀번호 (6자 이상)</label><input type="password" id="rPw" placeholder="비밀번호" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"/></div>
       <button class="bp bpf" onclick="doRegister()">가입하기 →</button>
     </div>
@@ -211,7 +211,7 @@ tr:last-child td{border-bottom:none}
       <button class="si" id="si-orders" onclick="goTab('orders')">◎ 주문 내역</button>
       <button class="si" id="si-charge" onclick="goTab('charge')">◇ 잔액 충전</button>
       <div style="height:1px;background:var(--bd);margin:6px 2px"></div>
-      <button class="si" id="si-admin" style="display:none" onclick="goTab('admin')">⚙ 관리자</button>
+      <button class="si" id="si-관리자" style="display:none" onclick="goTab('관리자')">⚙ 관리자</button>
       <button class="si" id="si-super" style="display:none" onclick="goTab('super')">👑 슈퍼관리자</button>
       <button class="si" onclick="doLogout()">→ 로그아웃</button>
     </div>
@@ -275,8 +275,8 @@ tr:last-child td{border-bottom:none}
           <div class="ofc">
             <div style="font-size:15px;font-weight:800;margin-bottom:14px">주문하기 ✨</div>
             <div class="fg"><label>선택된 서비스</label><div id="selName" style="padding:11px 13px;background:#f5f0ff;border:1.5px solid var(--bd);border-radius:10px;font-size:13px;color:var(--tm);min-height:42px;line-height:1.5">서비스를 선택하세요</div></div>
-            <div class="fg"><label>링크 (URL)</label><input type="url" id="oLink" placeholder="https://..." autocomplete="off"/><div style="font-size:11px;color:var(--tl);margin-top:4px" id="linkHint">서비스 대상 URL</div></div>
-            <div class="fg"><label>수량 <span id="qHint" style="color:var(--p2);font-size:10px;font-weight:500;letter-spacing:0;text-transform:none"></span></label><input type="number" id="oQty" placeholder="수량" min="1" inputmode="numeric" oninput="calcPrice()"/></div>
+            <div class="fg"><label>링크 (URL)</label><input type="url" id="o링크" placeholder="https://..." autocomplete="off"/><div style="font-size:11px;color:var(--tl);margin-top:4px" id="linkHint">서비스 대상 URL</div></div>
+            <div class="fg"><label>수량 <span id="qHint" style="color:var(--p2);font-size:10px;font-weight:500;letter-spacing:0;text-transform:none"></span></label><input type="number" id="o수량" placeholder="수량" min="1" inputmode="numeric" oninput="calcPrice()"/></div>
             <div class="osum">
               <div class="osr"><span style="color:var(--tm);font-weight:300">내 잔액</span><span id="oBal">-</span></div>
               <div class="osr"><span>총 결제</span><span class="gt" style="font-size:17px;font-weight:800" id="oTotal">₩0</span></div>
@@ -314,10 +314,14 @@ tr:last-child td{border-bottom:none}
             <div class="fg"><label>충전 금액 (원)</label><input type="number" id="chAmt" placeholder="최소 ₩5,000" min="5000" inputmode="numeric"/></div>
             <div class="fg"><label>메모 (선택)</label><input type="text" id="chNote" placeholder="입금자명 등"/></div>
             <div class="ibox" style="margin-bottom:13px" id="bankInfo">로딩 중...</div>
-            <button class="bp bpf" onclick="submitCharge()">충전 요청 보내기</button>
+            <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:#EF4444;line-height:1.7">
+⚠️ <strong>입금 먼저 하신 후</strong> 충전 요청해주세요!<br>
+메모에 <strong>입금자명</strong>을 꼭 입력해주세요.
+</div>
+<button class="bp bpf" onclick="submitCharge()">입금 완료 후 충전 요청하기</button>
           </div>
           <div style="font-size:14px;font-weight:800;margin-bottom:10px">충전 내역</div>
-          <div class="tw"><table><thead><tr><th>금액</th><th>상태</th><th>날짜</th></tr></thead><tbody id="chHisTb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>금액</th><th>메모</th><th>상태</th><th>날짜/취소</th></tr></thead><tbody id="chHisTb"></tbody></table></div>
         </div>
       </div>
       <!-- 일반 관리자 -->
@@ -334,14 +338,14 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="admtabs">
           <button class="admtab on" onclick="goAdm('orders',this)">📦 주문</button>
-          <button class="admtab" onclick="goAdm('users',this)">👥 회원</button>
+          <button class="admtab" onclick="goAdm('일반회원s',this)">👥 회원</button>
           <button class="admtab" onclick="goAdm('charges',this)">💳 충전</button>
           <button class="admtab" onclick="goAdm('settings',this)">⚙️ 설정</button>
         </div>
         <div class="apanel on" id="ap-orders">
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="ap-users">
+        <div class="apanel" id="ap-일반회원s">
           <div class="tw"><table><thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead><tbody id="aUTb"></tbody></table></div>
         </div>
         <div class="apanel" id="ap-charges">
@@ -356,7 +360,7 @@ tr:last-child td{border-bottom:none}
                 <div class="fg"><label>봇 토큰</label><input type="text" id="stTgToken" placeholder="123456789:ABCdef..."/></div>
                 <div class="fg"><label>Chat ID</label><input type="text" id="stTgChat" placeholder="숫자 Chat ID"/></div>
                 <div style="display:flex;gap:8px;margin-bottom:8px">
-                  <button class="bp bsm" style="padding:9px 16px" onclick="saveTgSettings()">저장</button>
+                  <button class="bp bsm" style="padding:9px 16px" onclick="saveTg⚙️ 설정()">저장</button>
                   <button class="bo bsm" onclick="testTg()">테스트</button>
                 </div>
                 <div id="tgRes" style="font-size:12px;color:var(--tm)"></div>
@@ -365,7 +369,7 @@ tr:last-child td{border-bottom:none}
             <div class="card" id="apiCard">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔑 API 설정 <span class="super-badge">슈퍼관리자 전용</span></div>
               <div id="apiSection">
-                <div class="fg"><label>Peakerr API 키</label><input type="password" id="stApiKey" placeholder="API 키 입력 (peakerr.com)"/></div>
+                <div class="fg"><label>API 키</label><input type="password" id="stApiKey" placeholder="API 키 입력"/></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
                   <button class="bp bsm" style="padding:9px 16px" onclick="saveApiKey()">저장</button>
                   <button class="bo bsm" onclick="testApi()">연결 테스트</button>
@@ -376,14 +380,14 @@ tr:last-child td{border-bottom:none}
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🎨 사이트 설정</div>
-              <div class="fg"><label>사이트 이름</label><input type="text" id="stSiteName" placeholder="GLOW"/></div>
+              <div class="fg"><label>사이트 이름</label><input type="text" id="st사이트Name" placeholder="GLOW"/></div>
               <div class="fg"><label>카카오톡 링크</label><input type="text" id="stKakao" placeholder="https://open.kakao.com/..."/></div>
               <div class="fg"><label>입금 계좌 안내</label><textarea id="stBank" rows="2" placeholder="우리은행 1002-160-164625"></textarea></div>
               <div id="priceSection">
                 <div class="fg"><label>마진율 (%)</label><input type="number" id="stMg" placeholder="50" inputmode="numeric"/></div>
                 <div class="fg"><label>환율 (USD→KRW)</label><input type="number" id="stEx" placeholder="1380" inputmode="numeric"/></div>
               </div>
-              <button class="bp bsm" style="padding:9px 16px" onclick="saveSiteSettings()">저장</button>
+              <button class="bp bsm" style="padding:9px 16px" onclick="save사이트⚙️ 설정()">저장</button>
             </div>
           </div>
         </div>
@@ -393,13 +397,13 @@ tr:last-child td{border-bottom:none}
       <div class="tab" id="tab-super">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
           <div style="font-size:18px;font-weight:800">👑 슈퍼관리자</div>
-          <span class="super-badge">SUPER ADMIN</span>
+          <span class="super-badge">SUPER 관리자</span>
         </div>
         <!-- 전체 현황 -->
         <div class="sg" style="margin-bottom:16px">
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 회원</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalUsers">0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalOrders">0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalRevenue">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 회원</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotal👥 회원">0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotal📦 주문">0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotal매출">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">충전 대기</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="sTotalPending">0</div></div>
         </div>
 
@@ -434,8 +438,8 @@ tr:last-child td{border-bottom:none}
         <div class="apanel" id="sp-globalapi">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
             <div class="card">
-              <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔑 Peakerr API 설정</div>
-              <div class="fg"><label>API 키</label><input type="password" id="spApiKey" placeholder="Peakerr API 키"/></div>
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔑 API 설정</div>
+              <div class="fg"><label>API 키</label><input type="password" id="spApiKey" placeholder="API 키 입력"/></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
                 <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalSetting('peakerr_api_key','spApiKey')">저장</button>
                 <button class="bo bsm" onclick="testApi()">연결 테스트</button>
@@ -463,7 +467,7 @@ tr:last-child td{border-bottom:none}
     <button class="bni" id="bni-order" onclick="goTab('order')"><div class="bni-ico">✦</div>주문</button>
     <button class="bni" id="bni-orders" onclick="goTab('orders')"><div class="bni-ico">◎</div>내역</button>
     <button class="bni" id="bni-charge" onclick="goTab('charge')"><div class="bni-ico">◇</div>충전</button>
-    <button class="bni" id="bni-admin" style="display:none" onclick="goTab('admin')"><div class="bni-ico">⚙</div>관리자</button>
+    <button class="bni" id="bni-관리자" style="display:none" onclick="goTab('관리자')"><div class="bni-ico">⚙</div>관리자</button>
     <button class="bni" id="bni-super" style="display:none" onclick="goTab('super')"><div class="bni-ico">👑</div>슈퍼</button>
   </div>
 </div>
@@ -502,20 +506,49 @@ tr:last-child td{border-bottom:none}
     </div>
     <div style="height:1px;background:var(--bd);margin:8px 0"></div>
     <div style="font-size:12px;font-weight:700;color:var(--p2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">어드민 계정</div>
-    <div class="fg"><label>어드민 이메일 *</label><input type="email" id="nsAdminEmail" placeholder="admin@example.com"/></div>
+    <div class="fg"><label>어드민 이메일 *</label><input type="email" id="nsAdmin이메일" placeholder="관리자@example.com"/></div>
     <div class="fg"><label>어드민 비밀번호 *</label><input type="password" id="nsAdminPw" placeholder="6자 이상"/></div>
     <div style="height:1px;background:var(--bd);margin:8px 0"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="fg"><label>마진율 (%)</label><input type="number" id="nsMargin" value="50" inputmode="numeric"/></div>
+      <div class="fg"><label>마진율 (%)</label><input type="number" id="ns마진" value="50" inputmode="numeric"/></div>
       <div class="fg"><label>초기 크레딧 ($)</label><input type="number" id="nsCredit" value="0" step="0.01" inputmode="decimal"/></div>
     </div>
     <div class="ibox" style="margin-bottom:14px">크레딧은 사이트가 API 주문을 처리할 수 있는 달러 잔액입니다. 나중에 충전 가능합니다.</div>
     <div style="display:flex;gap:8px">
-      <button class="bp bpf" onclick="createSite()">생성하기</button>
+      <button class="bp bpf" onclick="create사이트()">생성하기</button>
       <button class="bo bpf" onclick="closeM('mNewSite')">취소</button>
     </div>
   </div>
 </div>
+<!-- 충전 요청 확인 모달 -->
+<div class="mbg" id="mChargeConfirm">
+  <div class="modal" style="max-width:380px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:40px;margin-bottom:8px">💳</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:6px">충전 요청 확인</div>
+      <div style="font-size:13px;color:var(--tl)">입금 완료 후 요청해주세요</div>
+    </div>
+    <div style="background:rgba(114,9,183,.05);border:1px solid var(--bd2);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:14px">
+        <span style="color:var(--tl)">충전 금액</span>
+        <strong class="gt" id="confirmAmt">₩0</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:14px">
+        <span style="color:var(--tl)">입금자명</span>
+        <strong id="confirmNote">-</strong>
+      </div>
+    </div>
+    <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#EF4444;line-height:1.7">
+      ✅ 위 금액을 계좌로 입금하셨나요?<br>
+      입금 확인 후 관리자가 승인해드립니다.
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="bp bpf" onclick="doSubmitCharge()">✅ 입금 완료! 요청하기</button>
+      <button class="bo bpf" onclick="closeM('mChargeConfirm')">취소</button>
+    </div>
+  </div>
+</div>
+
 <!-- 사이트 크레딧 충전 -->
 <div class="mbg" id="mCredit">
   <div class="modal">
@@ -525,13 +558,57 @@ tr:last-child td{border-bottom:none}
     </div>
     <input type="hidden" id="creditSiteId"/>
     <div class="fg"><label>사이트</label><input id="creditSiteName" readonly style="background:#f5f0ff"/></div>
-    <div class="fg"><label>충전 금액 (달러 $)</label><input type="number" id="creditAmount" placeholder="10.00" step="0.01" inputmode="decimal"/></div>
+    <div class="fg"><label>충전 금액 (달러 $)</label><input type="number" id="credit금액" placeholder="10.00" step="0.01" inputmode="decimal"/></div>
     <div class="ibox" style="margin-bottom:14px">충전된 크레딧만큼 해당 사이트에서 API 주문이 가능합니다.</div>
     <button class="bp bpf" onclick="addCredit()">충전하기</button>
   </div>
 </div>
 
 <script>
+// 충전 관련 함수
+function submitCharge(){
+  var a=parseInt(ge('chAmt').value);if(!a||a<5000){toast('최소 ₩5,000 이상','err');return}
+  var note=ge('chNote').value.trim();
+  if(!note){toast('입금자명을 메모에 입력해주세요','err');ge('chNote').focus();return}
+  ge('confirmAmt').textContent=gf(a);
+  ge('confirmNote').textContent=note;
+  ge('mChargeConfirm').classList.add('on');
+}
+async function doSubmitCharge(){
+  var a=parseInt(ge('chAmt').value);
+  var note=ge('chNote').value.trim();
+  closeM('mChargeConfirm');
+  var d=await api('/api/charges','POST',{amount:a,note:note});
+  if(d.error){toast(d.error,'err');return}
+  toast('충전 요청 접수! ✨','ok');
+  ge('chAmt').value='';ge('chNote').value='';
+  document.querySelectorAll('.ci').forEach(function(ci){ci.classList.remove('on')});
+  loadChargeHis();
+  if(window._kakao)window.open(window._kakao,'_blank');
+}
+async function cancelCharge(id){
+  if(!confirm('충전 요청을 취소하시겠습니까?'))return;
+  var d=await api('/api/charges/cancel','POST',{id:id});
+  if(d.error){toast(d.error,'err');return}
+  toast('충전 요청이 취소되었습니다','ok');
+  loadChargeHis();
+}
+async function loadChargeHis(){
+  var d=await api('/api/charges/my');var tb=ge('chHisTb'),h='';
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:14px;color:#9A8AB0">내역 없음</td></tr>';return}
+  d.forEach(function(r){
+    h+='<tr>'
+      +'<td style="font-weight:700;color:#B5179E">'+gf(r.amount)+'</td>'
+      +'<td style="font-size:12px;color:#5A4A7A">'+(r.note||'-')+'</td>'
+      +'<td>'+badge(r.status)+'</td>'
+      +'<td>'+(r.status==='pending'
+        ?('<button class="btn ber bxs" onclick="cancelCharge(\'' + r.id + '\')">취소</button>')
+        :'<span style="font-size:11px;color:#9A8AB0">'+fd(r.created)+'</span>')
+      +'</td></tr>';
+  });
+  tb.innerHTML=h;
+}
+
 var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',other:'📡'};
 var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',other:'#5865F2'};
 var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',other:'기타'};
@@ -594,27 +671,27 @@ function switchAuth(m){
   var off='background:transparent;color:#9A8AB0;font-weight:500';
   if(m==='login'){
     ge('tabL').style.cssText=on;ge('tabR').style.cssText=off;
-    ge('fLogin').style.display='block';ge('fReg').style.display='none';
+    ge('f로그인').style.display='block';ge('fReg').style.display='none';
     ge('aTitle').textContent='다시 만나서 반가워요 ✨';ge('aSub').textContent='계정에 로그인하세요';
   }else{
     ge('tabR').style.cssText=on;ge('tabL').style.cssText=off;
-    ge('fLogin').style.display='none';ge('fReg').style.display='block';
+    ge('f로그인').style.display='none';ge('fReg').style.display='block';
     ge('aTitle').textContent='오신걸 환영해요 ✨';ge('aSub').textContent='무료로 가입하고 채널 성장을 시작하세요';
   }
 }
 async function doLogin(){
-  var e=ge('lEmail').value.trim(),p=ge('lPw').value;
+  var e=ge('l이메일').value.trim(),p=ge('lPw').value;
   if(!e||!p){toast('이메일과 비밀번호를 입력하세요','err');return}
   var d=await api('/api/login','POST',{email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
-  CUR=d.user;enterDash();
+  CUR=d.일반회원;enterDash();
 }
 async function doRegister(){
-  var n=ge('rName').value.trim(),e=ge('rEmail').value.trim(),p=ge('rPw').value;
+  var n=ge('rName').value.trim(),e=ge('r이메일').value.trim(),p=ge('rPw').value;
   if(!n||!e||!p){toast('모든 항목을 입력하세요','err');return}
   var d=await api('/api/register','POST',{name:n,email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
-  CUR=d.user;enterDash();toast('가입 완료! 환영합니다 ✨','ok');
+  CUR=d.일반회원;enterDash();toast('가입 완료! 환영합니다 ✨','ok');
 }
 async function doLogout(){await api('/api/logout','POST');CUR=null;showPg('pg-land')}
 
@@ -624,21 +701,21 @@ async function enterDash(){
   ge('sbName').textContent=CUR.name;
   ge('welName').textContent=CUR.name;
 
-  var roleMap={superadmin:'슈퍼관리자 👑',admin:'관리자',user:'일반 회원'};
+  var roleMap={superadmin:'슈퍼관리자 👑',관리자:'관리자',일반회원:'일반 회원'};
   ge('sbRole').textContent=roleMap[CUR.role]||'-';
 
   // 메뉴 권한
   var isAdmin=['admin','superadmin'].includes(CUR.role);
   var isSuper=CUR.role==='superadmin';
-  ge('si-admin').style.display=isAdmin?'flex':'none';
-  ge('bni-admin').style.display=isAdmin?'flex':'none';
+  ge('si-관리자').style.display=isAdmin?'flex':'none';
+  ge('bni-관리자').style.display=isAdmin?'flex':'none';
   ge('si-super').style.display=isSuper?'flex':'none';
   ge('bni-super').style.display=isSuper?'flex':'none';
 
   updBal();
   await loadSvcs();
   renderQCards();renderSfBar();
-  loadOrders();loadChargeHis();loadBankInfo();
+  loadOrders();loadChargeHis();loadOrders();loadChargeHis();loadBankInfo();
   goTab('home');
 }
 function updBal(){
@@ -659,7 +736,7 @@ function goTab(tab){
   var t=ge('tab-'+tab);if(t)t.classList.add('on');
   var s=ge('si-'+tab);if(s)s.classList.add('on');
   var b=ge('bni-'+tab);if(b)b.classList.add('on');
-  var ti={home:'대시보드',order:'서비스 주문',orders:'주문 내역',charge:'잔액 충전',admin:'관리자',super:'슈퍼관리자'};
+  var ti={home:'대시보드',order:'서비스 주문',orders:'주문 내역',charge:'잔액 충전',관리자:'관리자',super:'슈퍼관리자'};
   var dh=ge('dhTitle');if(dh)dh.textContent=ti[tab]||'';
   if(tab==='orders')loadOrders();
   if(tab==='charge'){refreshMe();loadChargeHis()}
@@ -712,14 +789,14 @@ function selSvc(id){
     +'<div style="font-size:12px;color:#5A4A7A;font-weight:300;margin-top:5px;line-height:1.6">'+SEL.desc+'</div>';
   ge('qHint').textContent='최소 '+(SEL.min||0).toLocaleString()+' / 최대 '+(SEL.max||0).toLocaleString()+'개';
   ge('linkHint').textContent=HINTS[SEL.pl]||'서비스 대상 URL';
-  ge('oQty').min=SEL.min||1;
+  ge('o수량').min=SEL.min||1;
   calcPrice();renderSvcList();
   var ofc=document.querySelector('.ofc');
   if(ofc&&window.innerWidth<900)ofc.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function calcPrice(){
   if(!SEL||!CUR)return;
-  var qty=parseInt(ge('oQty').value)||0;
+  var qty=parseInt(ge('o수량').value)||0;
   ge('oBal').textContent=gf(CUR.balance||0);
   ge('oTotal').textContent=qty?gf(SEL.sell/1000*qty):'₩0';
 }
@@ -738,14 +815,14 @@ function renderQCards(){
 // ── 주문 ──
 async function placeOrder(){
   if(!SEL){toast('서비스를 선택하세요','err');return}
-  var link=ge('oLink').value.trim(),qty=parseInt(ge('oQty').value);
+  var link=ge('o링크').value.trim(),qty=parseInt(ge('o수량').value);
   if(!link){toast('링크를 입력하세요','err');return}
   var btn=ge('orderBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>처리 중...';
   var d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});
   btn.disabled=false;btn.innerHTML='✨ 주문하기';
   if(d.error){toast(d.error,'err');return}
   toast(d.apiOrderId?'✨ 주문완료! #'+d.apiOrderId:'✨ 주문접수!','ok');
-  ge('oLink').value='';ge('oQty').value='';
+  ge('o링크').value='';ge('o수량').value='';
   CUR.balance=d.balance;updBal();loadOrderStats();
 }
 async function loadOrders(){
@@ -798,8 +875,8 @@ async function loadChargeHis(){
 
 // ── 일반 관리자 ──
 async function loadAdmDash(){
-  var d=await api('/api/admin/stats');
-  ge('aSU').textContent=d.users||0;ge('aSO').textContent=d.orders||0;
+  var d=await api('/api/관리자/stats');
+  ge('aSU').textContent=d.일반회원s||0;ge('aSO').textContent=d.orders||0;
   ge('aSR').textContent=gf(d.revenue||0);ge('aSC').textContent=d.pendingCharges||0;
 
   // 크레딧 표시 (일반 어드민만)
@@ -809,7 +886,7 @@ async function loadAdmDash(){
   }
 
   loadAdmOrders();
-  var s=await api('/api/admin/settings');
+  var s=await api('/api/관리자/settings');
   if(s){
     var isSuperAdmin=s.isSuperAdmin;
     // API 설정 - 슈퍼어드민만
@@ -822,7 +899,7 @@ async function loadAdmDash(){
     var priceSec=ge('priceSection');if(priceSec)priceSec.style.display=isSuperAdmin?'block':'none';
 
     var sm=ge('stMg'),se=ge('stEx'),sk=ge('stKakao'),sb=ge('stBank');
-    var sn=ge('stSiteName');
+    var sn=ge('st사이트Name');
     if(sn)sn.value=s.name||'';
     if(sk)sk.value=s.kakao||'';if(sb)sb.value=s.bank||'';
     if(sm)sm.value=s.margin;if(se)se.value=s.exrate;
@@ -835,12 +912,12 @@ function goAdm(tab,el){
   document.querySelectorAll('.admtab').forEach(function(t){t.classList.remove('on')});
   document.querySelectorAll('.apanel').forEach(function(p){p.classList.remove('on')});
   el.classList.add('on');ge('ap-'+tab).classList.add('on');
-  if(tab==='orders')loadAdmOrders();
-  if(tab==='users')loadAdmUsers();
+  if(tab==='orders')loadOrders();
+  if(tab==='일반회원s')loadAdmOrders();
   if(tab==='charges')loadAdmCharges();
 }
 async function loadAdmOrders(){
-  var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
+  var d=await api('/api/관리자/orders');var tb=ge('aOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   d.forEach(function(o){
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
@@ -855,22 +932,22 @@ async function loadAdmOrders(){
   });
   tb.innerHTML=h;
 }
-async function chgOSt(id,st){await api('/api/admin/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
-async function loadAdmUsers(){
-  var d=await api('/api/admin/users');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
+async function chgOSt(id,st){await api('/api/관리자/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
+async function loadAdmOrders(){
+  var d=await api('/api/관리자/일반회원s');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
   d.forEach(function(u){
-    var isBanned=u.status==='banned';
+    var is정지=u.status==='banned';
     var isAdmin=['admin','superadmin'].includes(u.role);
-    h+='<tr style="'+(isBanned?'opacity:.5':'')+'">'
+    h+='<tr style="'+(is정지?'opacity:.5':'')+'">'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+(isAdmin?' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+u.role+'</span>':'')+'</td>'
       +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
       +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
-      +'<td><span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span></td>'
+      +'<td><span class="bdg" style="'+(is정지?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(is정지?'정지':'정상')+'</span></td>'
       +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
       +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
       +'<button class="btn binf bxs" onclick="openBalM(this)" data-uid="'+u.id+'" data-uname="'+u.name+'" data-bal="'+(u.balance||0)+'">잔액</button>'
       +'<button class="btn binf bxs" onclick="openUserDetail(\''+u.id+'\')">상세</button>'
-      +(!isAdmin?(isBanned
+      +(!isAdmin?(is정지
         ?'<button class="btn bok bxs" onclick="banUser(\''+u.id+'\',\''+u.name+'\')">해제</button>'
         :'<button class="btn ber bxs" onclick="banUser(\''+u.id+'\',\''+u.name+'\')">정지</button>'
         )+'<button class="btn ber bxs" onclick="deleteUser(\''+u.id+'\',\''+u.name+'\')">탈퇴</button>':'')
@@ -879,7 +956,7 @@ async function loadAdmUsers(){
   ge('aUTb').innerHTML=h;
 }
 async function loadAdmCharges(){
-  var d=await api('/api/admin/charges');var tb=ge('aCTb'),h='';
+  var d=await api('/api/관리자/charges');var tb=ge('aCTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
@@ -894,7 +971,7 @@ async function loadAdmCharges(){
   tb.innerHTML=h;
 }
 async function procCharge(id,action){
-  var d=await api('/api/admin/charges/process','POST',{id:id,action:action});
+  var d=await api('/api/관리자/charges/process','POST',{id:id,action:action});
   if(d.error){toast(d.error,'err');return}
   toast(action==='approve'?'충전 승인 완료 ✨':'충전 거절','ok');
   loadAdmCharges();loadAdmDash();
@@ -907,28 +984,28 @@ function openBalM(el){
 }
 async function applyBal(){
   var d=parseFloat(ge('balDelta').value);if(isNaN(d)){toast('금액을 입력하세요','err');return}
-  var r=await api('/api/admin/users/balance','POST',{uid:ge('balUid').value,delta:d});
+  var r=await api('/api/관리자/일반회원s/balance','POST',{uid:ge('balUid').value,delta:d});
   if(r.error){toast(r.error,'err');return}
-  closeM('mBal');loadAdmUsers();toast('잔액 수정 완료 ✨','ok');
+  closeM('mBal');loadAdmOrders();toast('잔액 수정 완료 ✨','ok');
 }
 async function banUser(uid,uname){
   if(!confirm(uname+'님을 정지/해제하시겠습니까?'))return;
-  var d=await api('/api/admin/users/ban','POST',{uid:uid});
+  var d=await api('/api/관리자/일반회원s/ban','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(d.status==='banned'?uname+'님 정지됨':uname+'님 정지 해제','ok');
-  loadAdmUsers();
+  loadAdmOrders();
 }
 async function deleteUser(uid,uname){
   if(!confirm(uname+'님을 강제 탈퇴시키겠습니까?\n모든 주문/충전 내역이 삭제됩니다!'))return;
-  var d=await api('/api/admin/users/delete','POST',{uid:uid});
+  var d=await api('/api/관리자/일반회원s/delete','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(uname+'님 탈퇴 처리 완료','ok');
-  loadAdmUsers();loadAdmDash();
+  loadAdmOrders();loadAdmDash();
 }
 async function openUserDetail(uid){
-  var d=await api('/api/admin/users/'+uid+'/detail');
+  var d=await api('/api/관리자/일반회원s/'+uid+'/detail');
   if(d.error){toast(d.error,'err');return}
-  var u=d.user,orders=d.orders||[];
+  var u=d.일반회원,orders=d.orders||[];
   var html='<div style="padding:20px">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
     +'<div style="font-size:16px;font-weight:800">👤 '+u.name+'</div>'
@@ -949,8 +1026,8 @@ async function openUserDetail(uid){
     +'<div class="card" style="margin-bottom:12px">'
     +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">등급 변경</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button class="bp bsm" style="padding:9px 14px" onclick="changeRole(\''+u.id+'\',\'admin\')">관리자로</button>'
-    +'<button class="bo bsm" onclick="changeRole(\''+u.id+'\',\'user\')">일반회원으로</button>'
+    +'<button class="bp bsm" style="padding:9px 14px" onclick="changeRole(\''+u.id+'\',\'관리자\')">관리자로</button>'
+    +'<button class="bo bsm" onclick="changeRole(\''+u.id+'\',\'일반회원\')">일반회원으로</button>'
     +'</div></div>'
     +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">최근 주문 ('+orders.length+'건)</div>'
     +'<div class="tw"><table><thead><tr><th>서비스</th><th>수량</th><th>금액</th><th>상태</th></tr></thead><tbody>'
@@ -967,72 +1044,72 @@ async function openUserDetail(uid){
 async function resetPw(uid){
   var pw=ge('newPwInput').value.trim();
   if(!pw||pw.length<6){toast('6자 이상 입력하세요','err');return}
-  var d=await api('/api/admin/users/resetpw','POST',{uid:uid,newpw:pw});
+  var d=await api('/api/관리자/일반회원s/resetpw','POST',{uid:uid,newpw:pw});
   if(d.error){toast(d.error,'err');return}
   toast('비밀번호 초기화 완료','ok');ge('newPwInput').value='';
 }
 async function changeRole(uid,role){
   if(!confirm(role==='admin'?'관리자로 변경?':'일반회원으로 변경?'))return;
-  var d=await api('/api/admin/users/role','POST',{uid:uid,role:role});
+  var d=await api('/api/관리자/일반회원s/role','POST',{uid:uid,role:role});
   if(d.error){toast(d.error,'err');return}
-  toast('등급 변경 완료','ok');closeM('mDetail');loadAdmUsers();
+  toast('등급 변경 완료','ok');closeM('mDetail');loadAdmOrders();
 }
 
 // 설정 저장
 async function saveSiteSettings(){
-  var sn=ge('stSiteName'),sk=ge('stKakao'),sb=ge('stBank'),sm=ge('stMg'),se=ge('stEx');
-  if(sn&&sn.value)await api('/api/admin/settings/save','POST',{key:'name',value:sn.value});
-  if(sk)await api('/api/admin/settings/save','POST',{key:'kakao',value:sk.value});
-  if(sb)await api('/api/admin/settings/save','POST',{key:'bank',value:sb.value});
-  if(sm&&sm.value)await api('/api/admin/settings/save','POST',{key:'margin',value:sm.value});
-  if(se&&se.value)await api('/api/admin/settings/save','POST',{key:'exrate',value:se.value});
+  var sn=ge('st사이트Name'),sk=ge('stKakao'),sb=ge('stBank'),sm=ge('stMg'),se=ge('stEx');
+  if(sn&&sn.value)await api('/api/관리자/settings/save','POST',{key:'name',value:sn.value});
+  if(sk)await api('/api/관리자/settings/save','POST',{key:'kakao',value:sk.value});
+  if(sb)await api('/api/관리자/settings/save','POST',{key:'bank',value:sb.value});
+  if(sm&&sm.value)await api('/api/관리자/settings/save','POST',{key:'margin',value:sm.value});
+  if(se&&se.value)await api('/api/관리자/settings/save','POST',{key:'exrate',value:se.value});
   await loadSiteConfig();await loadSvcs();
   toast('설정 저장 완료 ✨','ok');
 }
 async function saveTgSettings(){
   var tt=ge('stTgToken'),tc=ge('stTgChat');
-  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
-  if(tc)await api('/api/admin/settings/save','POST',{key:'tg_chat',value:tc.value});
+  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/관리자/settings/save','POST',{key:'tg_token',value:tt.value});
+  if(tc)await api('/api/관리자/settings/save','POST',{key:'tg_chat',value:tc.value});
   if(tt)tt.value='••••(설정됨)';
   toast('텔레그램 저장 완료 ✨','ok');
 }
 async function saveApiKey(){
   var ak=ge('stApiKey');
   if(!ak||!ak.value||ak.value.includes('설정됨')){toast('API 키를 입력하세요','err');return}
-  var d=await api('/api/admin/settings/save','POST',{key:'peakerr_api_key',value:ak.value});
+  var d=await api('/api/관리자/settings/save','POST',{key:'peakerr_api_key',value:ak.value});
   if(d.error){toast(d.error,'err');return}
   ak.value='••••(설정됨)';toast('API 키 저장 완료 ✨','ok');
 }
 async function saveGlobalSetting(key,inputId){
   var v=ge(inputId).value.trim();
   if(!v||v.includes('설정됨')){toast('값을 입력하세요','err');return}
-  var d=await api('/api/admin/settings/save','POST',{key:key,value:v});
+  var d=await api('/api/관리자/settings/save','POST',{key:key,value:v});
   if(d.error){toast(d.error,'err');return}
   ge(inputId).value='••••(설정됨)';toast('저장 완료 ✨','ok');
 }
 async function saveGlobalTg(){
   var tt=ge('spTgToken'),tc=ge('spTgChat');
-  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
-  if(tc)await api('/api/admin/settings/save','POST',{key:'tg_chat',value:tc.value});
+  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/관리자/settings/save','POST',{key:'tg_token',value:tt.value});
+  if(tc)await api('/api/관리자/settings/save','POST',{key:'tg_chat',value:tc.value});
   if(tt)tt.value='••••(설정됨)';
   toast('텔레그램 저장 완료 ✨','ok');
 }
 async function testApi(){
   var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>확인 중...';
-  var d=await api('/api/admin/api-test');
+  var d=await api('/api/관리자/api-test');
   var msg=d.ok?'<span style="color:#10B981">✅ 연결 성공! 잔액: $'+parseFloat(d.balance).toFixed(4)+'</span>':'<span style="color:#EF4444">❌ 실패: '+d.error+'</span>';
   if(res)res.innerHTML=msg;
 }
 async function syncSvcs(){
   var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 중...';
-  var d=await api('/api/admin/api-sync');
+  var d=await api('/api/관리자/api-sync');
   var msg=d.ok?'<span style="color:#10B981">✅ '+d.count+'개 동기화 완료!</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
   if(res)res.innerHTML=msg;
   if(d.ok){loadSvcs();toast('서비스 '+d.count+'개 동기화 ✨','ok')}
 }
 async function testTg(){
   var res=ge('tgRes')||ge('spTgRes');if(res)res.innerHTML='<span class="spin spin2"></span>테스트 중...';
-  var d=await api('/api/admin/tg-test','POST');
+  var d=await api('/api/관리자/tg-test','POST');
   var msg=d.ok?'<span style="color:#10B981">✅ 성공! 텔레그램 확인해보세요</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
   if(res)res.innerHTML=msg;
 }
@@ -1047,7 +1124,7 @@ async function loadSuperDash(){
   renderSiteList(d.sites||[]);
 
   // 글로벌 설정 로드
-  var s=await api('/api/admin/settings');
+  var s=await api('/api/관리자/settings');
   if(s){
     var sk=ge('spApiKey'),st=ge('spTgToken'),sc=ge('spTgChat');
     if(sk)sk.value=s.apikey||'';
@@ -1075,7 +1152,7 @@ function renderSiteList(sites){
       +'<span class="bdg" style="'+(s.active?'background:#D1FAE5;color:#10B981':'background:#FEE2E2;color:#EF4444')+'">'+(s.active?'활성':'비활성')+'</span>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">'
-      +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.userCount||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
+      +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.일반회원Count||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.orderCount||0)+'</div><div style="font-size:10px;color:var(--tl)">주문</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:var(--p2)">'+gf(s.revenue||0)+'</div><div style="font-size:10px;color:var(--tl)">매출</div></div>'
       +'<div style="text-align:center;background:'+(parseFloat(s.credit||0)<1?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(parseFloat(s.credit||0)<1?'#EF4444':'#10B981')+'">$'+parseFloat(s.credit||0).toFixed(2)+'</div><div style="font-size:10px;color:var(--tl)">크레딧</div></div>'
@@ -1083,13 +1160,13 @@ function renderSiteList(sites){
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
       +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\')">💰 크레딧 충전</button>'
       +'<button class="btn binf bxs" onclick="editSite('+JSON.stringify(s).replace(/"/g,"'").replace(/'/g,"&apos;")+')">수정</button>'
-      +(s.pendingCharge>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pendingCharge+'건</button>':'')
+      +(s.pending충전하기>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pending충전하기+'건</button>':'')
       +'</div>'
       +'</div>';
   }).join('');
 }
 async function loadSuperOrders(){
-  var d=await api('/api/admin/orders');var tb=ge('spOTb'),h='';
+  var d=await api('/api/관리자/orders');var tb=ge('spOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   d.forEach(function(o){
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_id||'-')+'</td>'
@@ -1103,7 +1180,7 @@ async function loadSuperOrders(){
   tb.innerHTML=h;
 }
 async function loadSuperCharges(){
-  var d=await api('/api/admin/charges');var tb=ge('spCTb'),h='';
+  var d=await api('/api/관리자/charges');var tb=ge('spCTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_id||'-')+'</td>'
@@ -1124,12 +1201,12 @@ async function createSite(){
   var domain=ge('nsDomain').value.trim(),name=ge('nsName').value.trim();
   var logo=ge('nsLogo').value||'✨';
   var primary=ge('nsPrimary').value,accent=ge('nsAccent').value;
-  var email=ge('nsAdminEmail').value.trim(),pw=ge('nsAdminPw').value;
-  var margin=ge('nsMargin').value,credit=ge('nsCredit').value;
+  var email=ge('nsAdmin이메일').value.trim(),pw=ge('nsAdminPw').value;
+  var margin=ge('ns마진').value,credit=ge('nsCredit').value;
   if(!domain||!name||!email||!pw){toast('필수 항목을 입력하세요','err');return}
   var d=await api('/api/super/sites/create','POST',{
     domain,name,logo,primaryColor:primary,accentColor:accent,
-    adminEmail:email,adminPw:pw,margin:parseFloat(margin),
+    관리자이메일:email,관리자Pw:pw,margin:parseFloat(margin),
     exrate:1380,credit:parseFloat(credit||0)
   });
   if(d.error){toast(d.error,'err');return}
@@ -1137,16 +1214,16 @@ async function createSite(){
   closeM('mNewSite');
   loadSuperDash();
   // 입력 초기화
-  ['nsDomain','nsName','nsLogo','nsAdminEmail','nsAdminPw'].forEach(function(id){var el=ge(id);if(el)el.value=''});
+  ['nsDomain','nsName','nsLogo','nsAdmin이메일','nsAdminPw'].forEach(function(id){var el=ge(id);if(el)el.value=''});
 }
 
 // 크레딧 충전
 function openCreditModal(siteId,siteName){
-  ge('creditSiteId').value=siteId;ge('creditSiteName').value=siteName;ge('creditAmount').value='';
+  ge('creditSiteId').value=siteId;ge('creditSiteName').value=siteName;ge('credit금액').value='';
   ge('mCredit').classList.add('on');
 }
 async function addCredit(){
-  var siteId=ge('creditSiteId').value,amount=parseFloat(ge('creditAmount').value);
+  var siteId=ge('creditSiteId').value,amount=parseFloat(ge('credit금액').value);
   if(!amount||amount<=0){toast('금액을 입력하세요','err');return}
   var d=await api('/api/super/sites/credit','POST',{siteId,amount});
   if(d.error){toast(d.error,'err');return}
@@ -1155,6 +1232,138 @@ async function addCredit(){
 }
 
 function editSite(s){toast('사이트 수정 기능은 준비 중입니다','warn')}
+
+async function openUserDetail(uid){
+  var d=await api('/api/admin/users/'+uid+'/detail');
+  if(d.error){toast(d.error,'err');return}
+  var u=d.user,orders=d.orders||[];
+  var html='<div style="padding:20px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
+    +'<div style="font-size:16px;font-weight:800">👤 '+u.name+'</div>'
+    +'<button onclick="closeM(\'mDetail\')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>'
+    +'</div>'
+    +'<div class="card" style="margin-bottom:12px">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">'
+    +'<div><span style="color:var(--tl);font-size:11px">이메일</span><br><strong>'+u.email+'</strong></div>'
+    +'<div><span style="color:var(--tl);font-size:11px">잔액</span><br><strong style="color:var(--p2)">'+gf(u.balance||0)+'</strong></div>'
+    +'<div><span style="color:var(--tl);font-size:11px">상태</span><br><strong style="color:'+(u.status==='banned'?'#EF4444':'#10B981')+'">'+(u.status==='banned'?'정지':'정상')+'</strong></div>'
+    +'<div><span style="color:var(--tl);font-size:11px">총 주문</span><br><strong>'+orders.length+'건</strong></div>'
+    +'</div></div>'
+    +'<div class="card" style="margin-bottom:12px">'
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">비밀번호 초기화</div>'
+    +'<div style="display:flex;gap:8px"><input type="text" id="newPwInput" placeholder="새 비밀번호 (6자 이상)" style="flex:1"/>'
+    +'<button class="bp bsm" style="white-space:nowrap;padding:10px 14px" onclick="resetPw(\'\'+u.id+\'\')">초기화</button></div>'
+    +'</div>'
+    +'<div class="card" style="margin-bottom:12px">'
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">등급 변경</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="bp bsm" style="padding:9px 14px" onclick="changeRole(\'\'+u.id+\'\',\'admin\')">관리자로</button>'
+    +'<button class="bo bsm" onclick="changeRole(\'\'+u.id+\'\',\'user\')">일반회원으로</button>'
+    +'</div></div>'
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">최근 주문 ('+orders.length+'건)</div>'
+    +'<div class="tw"><table><thead><tr><th>서비스</th><th>수량</th><th>금액</th><th>상태</th></tr></thead><tbody>'
+    +orders.slice(0,5).map(function(o){
+      return'<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
+        +'<td style="font-size:12px">'+(o.qty||0).toLocaleString()+'</td>'
+        +'<td style="font-size:12px;font-weight:700">'+gf(o.charge)+'</td>'
+        +'<td>'+badge(o.status)+'</td></tr>';
+    }).join('')+(orders.length===0?'<tr><td colspan="4" style="text-align:center;padding:14px;color:#9A8AB0">주문 없음</td></tr>':'')
+    +'</tbody></table></div></div>';
+  ge('mDetailContent').innerHTML=html;
+  ge('mDetail').classList.add('on');
+}
+async function banUser(uid,uname){
+  if(!confirm(uname+'님을 정지/해제하시겠습니까?'))return;
+  var d=await api('/api/admin/users/ban','POST',{uid:uid});
+  if(d.error){toast(d.error,'err');return}
+  toast(d.status==='banned'?uname+'님 정지됨':uname+'님 정지 해제','ok');
+  loadAdmUsers();
+}
+async function deleteUser(uid,uname){
+  if(!confirm(uname+'님을 강제 탈퇴시키겠습니까?\n모든 주문/충전 내역이 삭제됩니다!'))return;
+  var d=await api('/api/admin/users/delete','POST',{uid:uid});
+  if(d.error){toast(d.error,'err');return}
+  toast(uname+'님 탈퇴 처리 완료','ok');
+  loadAdmUsers();loadAdmDash();
+}
+async function resetPw(uid){
+  var pw=ge('newPwInput').value.trim();
+  if(!pw||pw.length<6){toast('6자 이상 입력하세요','err');return}
+  var d=await api('/api/admin/users/resetpw','POST',{uid:uid,newpw:pw});
+  if(d.error){toast(d.error,'err');return}
+  toast('비밀번호 초기화 완료','ok');ge('newPwInput').value='';
+}
+async function changeRole(uid,role){
+  if(!confirm(role==='admin'?'관리자로 변경?':'일반회원으로 변경?'))return;
+  var d=await api('/api/admin/users/role','POST',{uid:uid,role:role});
+  if(d.error){toast(d.error,'err');return}
+  toast('등급 변경 완료','ok');closeM('mDetail');loadAdmUsers();
+}
+async function createSite(){
+  var domain=ge('nsDomain').value.trim(),name=ge('nsName').value.trim();
+  var logo=ge('nsLogo').value||'✨';
+  var primary=ge('nsPrimary').value,accent=ge('nsAccent').value;
+  var email=ge('nsAdminEmail').value.trim(),pw=ge('nsAdminPw').value;
+  var margin=ge('nsMargin').value,credit=ge('nsCredit').value;
+  if(!domain||!name||!email||!pw){toast('필수 항목을 입력하세요','err');return}
+  var d=await api('/api/super/sites/create','POST',{
+    domain:domain,name:name,logo:logo,primaryColor:primary,accentColor:accent,
+    adminEmail:email,adminPw:pw,margin:parseFloat(margin),
+    exrate:1380,credit:parseFloat(credit||0)
+  });
+  if(d.error){toast(d.error,'err');return}
+  toast('사이트 생성 완료! ✨','ok');
+  closeM('mNewSite');loadSuperDash();
+  ['nsDomain','nsName','nsLogo','nsAdminEmail','nsAdminPw'].forEach(function(id){var el=ge(id);if(el)el.value=''});
+}
+
+async function loadAdmUsers(){
+  var d=await api('/api/admin/users');
+  var tb=ge('aUTb');
+  if(!Array.isArray(d))return;
+  tb.innerHTML='';
+  d.forEach(function(u){
+    var isBanned=u.status==='banned';
+    var isAdmin=['admin','superadmin'].includes(u.role);
+    var tr=document.createElement('tr');
+    if(isBanned)tr.style.opacity='0.5';
+    var roleBadge=isAdmin?(' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+u.role+'</span>'):'';
+    var statusBadge='<span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span>';
+    tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+'</td>'
+      +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
+      +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
+      +'<td>'+statusBadge+'</td>'
+      +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
+      +'<td><div class="ubtn_wrap"></div></td>';
+    var btnDiv=tr.querySelector('.ubtn_wrap');
+    var balBtn=document.createElement('button');
+    balBtn.className='btn binf bxs';
+    balBtn.textContent='잔액';
+    balBtn.setAttribute('data-uid',u.id);
+    balBtn.setAttribute('data-uname',u.name);
+    balBtn.setAttribute('data-bal',u.balance||0);
+    balBtn.onclick=function(){openBalM(this)};
+    btnDiv.appendChild(balBtn);
+    var detBtn=document.createElement('button');
+    detBtn.className='btn binf bxs';
+    detBtn.textContent='상세';
+    detBtn.onclick=(function(uid){return function(){openUserDetail(uid)}})(u.id);
+    btnDiv.appendChild(detBtn);
+    if(!isAdmin){
+      var banBtn=document.createElement('button');
+      banBtn.className=isBanned?'btn bok bxs':'btn ber bxs';
+      banBtn.textContent=isBanned?'해제':'정지';
+      banBtn.onclick=(function(uid,uname){return function(){banUser(uid,uname)}})(u.id,u.name);
+      btnDiv.appendChild(banBtn);
+      var delBtn=document.createElement('button');
+      delBtn.className='btn ber bxs';
+      delBtn.textContent='탈퇴';
+      delBtn.onclick=(function(uid,uname){return function(){deleteUser(uid,uname)}})(u.id,u.name);
+      btnDiv.appendChild(delBtn);
+    }
+    tb.appendChild(tr);
+  });
+}
 function closeM(id){ge(id).classList.remove('on')}
 
 // ── 초기화 ──
