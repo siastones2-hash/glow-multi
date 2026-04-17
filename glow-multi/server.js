@@ -181,6 +181,7 @@ async function initDB() {
     tg_token: process.env.TG_TOKEN || '',
     tg_chat: process.env.TG_CHAT || '',
     super_margin: '50',  // 슈퍼관리자 마진율 (%)
+    global_site_margin: '50',  // 글로벌 기본 사이트 마진율 (GLOW 판매가 계산용)
     global_exrate: '1500'  // 글로벌 기본 환율
   };
   for (const [k, v] of Object.entries(defaults)) {
@@ -354,6 +355,17 @@ async function initDB() {
   )`); } catch(e) {}
 
   try { await query(`CREATE TABLE IF NOT EXISTS credit_requests (id TEXT PRIMARY KEY, site_id TEXT NOT NULL, site_name TEXT NOT NULL, amount REAL NOT NULL, note TEXT DEFAULT '', status TEXT DEFAULT 'pending', created TIMESTAMP DEFAULT NOW())`); } catch(e) {}
+  
+  // 🔐 비밀번호 재설정 토큰 테이블
+  try { await query(`CREATE TABLE IF NOT EXISTS password_resets (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    site_id TEXT NOT NULL,
+    email TEXT NOT NULL,
+    expires TIMESTAMP NOT NULL,
+    used INTEGER DEFAULT 0,
+    created TIMESTAMP DEFAULT NOW()
+  )`); } catch(e) {}
   console.log('✅ DB 초기화 완료');
 }
 
@@ -539,6 +551,127 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/logout', (req, res) => { res.json({ ok: true }); });
 
+// ═══════════════════════════════════════
+// 🔐 비밀번호 재설정 (이메일 기반)
+// ═══════════════════════════════════════
+
+// Resend를 통한 이메일 발송
+async function sendEmail(to, subject, html) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) { console.log('⚠️ RESEND_API_KEY 미설정 - 이메일 발송 스킵'); return false; }
+  try {
+    const from = process.env.EMAIL_FROM || 'noreply@glow-multi.onrender.com';
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, subject, html })
+    });
+    const data = await resp.json();
+    if (!resp.ok) { console.log('❌ 이메일 발송 실패:', data); return false; }
+    return true;
+  } catch(e) { console.log('❌ 이메일 오류:', e.message); return false; }
+}
+
+// Step 1: 비밀번호 재설정 요청 (이메일 입력)
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.json({ error: '이메일을 입력하세요' });
+    // 현재 사이트 기준 사용자 찾기
+    const siteId = req.siteId || 'default';
+    const userR = await query(`SELECT * FROM users WHERE site_id=$1 AND email=$2`, [siteId, email]);
+    const user = userR.rows[0];
+    
+    // 보안: 사용자 존재 여부와 상관없이 동일한 메시지 반환 (이메일 존재 유출 방지)
+    if (!user) {
+      return res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함을 확인해주세요.' });
+    }
+    
+    // 토큰 생성 (30분 유효)
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 30 * 60 * 1000); // 30분
+    await query(`INSERT INTO password_resets(token, user_id, site_id, email, expires) VALUES($1,$2,$3,$4,$5)`,
+      [token, user.id, siteId, email, expires]);
+    
+    // 사이트 정보 가져오기
+    const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+    const site = siteR.rows[0];
+    const siteName = site?.name || 'GLOW';
+    const siteDomain = site?.domain || 'glow-multi.onrender.com';
+    const resetUrl = `https://${siteDomain}/reset-password?token=${token}`;
+    
+    // HTML 이메일 템플릿
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><title>비밀번호 재설정</title></head>
+    <body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;margin:0">
+      <div style="max-width:560px;margin:0 auto;background:white;border-radius:12px;padding:40px 30px;box-shadow:0 2px 10px rgba(0,0,0,0.08)">
+        <h1 style="color:#7209B7;margin:0 0 24px 0;font-size:24px">🔐 ${siteName} 비밀번호 재설정</h1>
+        <p style="color:#333;font-size:15px;line-height:1.7">안녕하세요 <strong>${user.name || '고객'}</strong>님,</p>
+        <p style="color:#333;font-size:15px;line-height:1.7">비밀번호 재설정 요청을 받았습니다. 아래 버튼을 클릭하여 새 비밀번호를 설정해주세요.</p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${resetUrl}" style="background:linear-gradient(135deg,#7209B7,#F72585);color:white;padding:14px 32px;border-radius:100px;text-decoration:none;font-weight:700;display:inline-block">비밀번호 재설정하기</a>
+        </div>
+        <p style="color:#666;font-size:13px;line-height:1.6;background:#f9f9f9;padding:16px;border-radius:8px">
+          ⚠️ <strong>이 링크는 30분 동안만 유효</strong>합니다.<br>
+          만약 본인이 요청하지 않았다면 이 메일을 무시하셔도 안전합니다.
+        </p>
+        <p style="color:#999;font-size:12px;text-align:center;margin-top:32px;line-height:1.6">
+          링크가 열리지 않을 경우 아래 주소를 복사해서 브라우저에 붙여넣으세요:<br>
+          <span style="word-break:break-all;color:#7209B7">${resetUrl}</span>
+        </p>
+        <hr style="border:none;border-top:1px solid #eee;margin:32px 0"/>
+        <p style="color:#aaa;font-size:11px;text-align:center">이 메일은 ${siteName}에서 자동 발송되었습니다.</p>
+      </div>
+    </body>
+    </html>`;
+    
+    const sent = await sendEmail(email, `[${siteName}] 비밀번호 재설정 안내`, html);
+    if (!sent) {
+      return res.json({ error: '이메일 발송에 실패했습니다. 사이트 관리자에게 문의해주세요.' });
+    }
+    res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함을 확인해주세요.' });
+  } catch(e) { console.log('forgot-password 오류:', e); res.status(500).json({ error: e.message }); }
+});
+
+// Step 2: 토큰 검증 (리셋 페이지 접속 시)
+app.get('/api/reset-password/verify', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.json({ error: '유효하지 않은 링크입니다' });
+    const r = await query(`SELECT * FROM password_resets WHERE token=$1`, [token]);
+    const reset = r.rows[0];
+    if (!reset) return res.json({ error: '유효하지 않은 링크입니다' });
+    if (reset.used) return res.json({ error: '이미 사용된 링크입니다' });
+    if (new Date(reset.expires) < new Date()) return res.json({ error: '링크가 만료되었습니다 (30분 경과). 다시 요청해주세요.' });
+    res.json({ ok: true, email: reset.email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Step 3: 새 비밀번호 설정
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const { token, newpw } = req.body;
+    if (!token || !newpw) return res.json({ error: '모든 정보를 입력해주세요' });
+    if (newpw.length < 6) return res.json({ error: '비밀번호는 6자 이상이어야 합니다' });
+    
+    const r = await query(`SELECT * FROM password_resets WHERE token=$1`, [token]);
+    const reset = r.rows[0];
+    if (!reset) return res.json({ error: '유효하지 않은 링크입니다' });
+    if (reset.used) return res.json({ error: '이미 사용된 링크입니다' });
+    if (new Date(reset.expires) < new Date()) return res.json({ error: '링크가 만료되었습니다' });
+    
+    // 비밀번호 변경
+    const hash = bcrypt.hashSync(newpw, 10);
+    await query(`UPDATE users SET pw=$1 WHERE id=$2`, [hash, reset.user_id]);
+    // 토큰 사용 처리
+    await query(`UPDATE password_resets SET used=1 WHERE token=$1`, [token]);
+    
+    res.json({ ok: true, message: '비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해주세요.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/me', requireAuth, async (req, res) => {
   try {
     const r = await query(`SELECT id,name,email,role,balance,status FROM users WHERE id=$1`, [req.session.userId]);
@@ -581,19 +714,48 @@ app.get('/api/services', async (req, res) => {
       serviceRows = allR.rows;
     }
     const isPartner = req.session && req.session.role === 'partner';
+    const isDefaultSite = !site || site.id === 'default';
+    
+    // 글로벌 기본 사이트 마진 (GLOW의 사이트 마진)
+    const globalSiteMgStr = await getGlobalSetting('global_site_margin');
+    const globalSiteMg = parseFloat(globalSiteMgStr || '50');
+    
     res.json(serviceRows.map(s => {
-      // 🔧 가격 계산: 1000개 단위로 먼저 계산한 뒤 1개당으로 나눔 (반올림으로 ₩0 되는 것 방지)
-      const origPer1000 = s.rate * ex; // 1000개 기준 원가 (원화)
-      const supplyPer1000 = origPer1000 * (1 + superMg / 100); // 1000개 기준 공급가
-      const sellPer1000 = supplyPer1000 * (1 + siteMg / 100); // 1000개 기준 고객가
-      // 1개당 환산 (최소 1원 보장 - 손해 방지)
+      // 🔧 가격 계산 구조:
+      // - GLOW(default): 원가 × 슈퍼마진 × 사이트마진 = 판매가
+      // - 지인 사이트: GLOW 판매가 × (1 + 지인마진) = 지인 고객가
+      //   → 지인 입장에서는 GLOW 판매가가 "원가"처럼 보임
+      
+      const origPer1000 = s.rate * ex; // Peakerr 원가 (원화/1000)
+      const supplyPer1000 = origPer1000 * (1 + superMg / 100); // 공급가 (원가 + 슈퍼마진)
+      
+      // GLOW 판매가 = 공급가 × (1 + 글로벌 사이트마진) - 지인에게는 이게 "원가"
+      const glowPricePer1000 = supplyPer1000 * (1 + globalSiteMg / 100);
+      
+      let sellPer1000;
+      let baseCostPer1000; // 지인 입장의 "원가"
+      
+      if (isDefaultSite) {
+        // GLOW 본사: 원가 × 슈퍼 × 사이트마진
+        sellPer1000 = supplyPer1000 * (1 + siteMg / 100);
+        baseCostPer1000 = supplyPer1000; // 공급가
+      } else {
+        // 지인 사이트: GLOW 판매가 × (1 + 지인마진)
+        sellPer1000 = glowPricePer1000 * (1 + siteMg / 100);
+        baseCostPer1000 = glowPricePer1000; // 지인에게는 GLOW 판매가가 원가
+      }
+      
+      // 1개당 환산 (최소 1원 보장)
       const originalCost = Math.max(Math.round(origPer1000 / 1000), 1);
       const supplyCost = Math.max(Math.round(supplyPer1000 / 1000), 1);
       const sellPrice = Math.max(Math.round(sellPer1000 / 1000), 1);
-      if (isPartner) {
-        // partner에게는 공급가를 원가처럼 보여줌 (실제 원가 숨김)
-        return { ...s, sell: sellPrice, baseCost: supplyCost, isPartnerView: true };
+      const baseCost = Math.max(Math.round(baseCostPer1000 / 1000), 1);
+      
+      if (isPartner || !isDefaultSite) {
+        // 지인/파트너: GLOW 판매가를 원가로 보여줌 (실제 Peakerr 원가 숨김)
+        return { ...s, sell: sellPrice, baseCost, isPartnerView: true };
       }
+      // GLOW 본사(슈퍼관리자): 모든 정보 공개
       return { ...s, sell: sellPrice, originalCost, supplyCost, myProfit: supplyCost - originalCost };
     }));
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -619,12 +781,30 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       const superMgStr2 = await getGlobalSetting('super_margin');
       superMg2 = parseFloat(superMgStr2 || '50');
     }
-    const charge = svc.rate / 1000 * qtyNum * ex * (1 + superMg2 / 100) * (1 + siteMg / 100);
+    const isDefaultSite2 = !site || site.id === 'default';
+    const globalSiteMgStr2 = await getGlobalSetting('global_site_margin');
+    const globalSiteMg2 = parseFloat(globalSiteMgStr2 || '50');
+    
+    // 🔧 결제 금액 및 크레딧 차감 계산
+    // - GLOW(default): 고객 결제 = 원가 × 슈퍼 × 사이트마진
+    // - 지인 사이트: 고객 결제 = GLOW 판매가 × (1 + 지인마진)
+    //                크레딧 차감 = GLOW 판매가 (지인 입장의 "원가")
+    let charge, apiCost;
+    if (isDefaultSite2) {
+      charge = svc.rate / 1000 * qtyNum * ex * (1 + superMg2 / 100) * (1 + siteMg / 100);
+      apiCost = svc.rate / 1000 * qtyNum * (1 + superMg2 / 100); // 공급가($) - default는 크레딧 안 씀
+    } else {
+      // GLOW 판매가 = 원가 × 슈퍼마진 × 글로벌 사이트마진
+      const glowPrice = svc.rate / 1000 * qtyNum * (1 + superMg2 / 100) * (1 + globalSiteMg2 / 100); // $
+      // 지인 고객가 = GLOW 판매가 × (1 + 지인마진)
+      charge = glowPrice * ex * (1 + siteMg / 100);
+      // 지인 크레딧 차감 = GLOW 판매가 ($)
+      apiCost = glowPrice;
+    }
     const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
     const user = userR.rows[0];
     if ((user.balance || 0) < charge)
       return res.json({ error: `잔액 부족. 현재 ₩${Math.round(user.balance || 0).toLocaleString()}` });
-    const apiCost = svc.rate / 1000 * qtyNum;
     if (site && site.credit < apiCost && site.id !== 'default')
       return res.json({ error: '사이트 API 크레딧이 부족합니다.' });
     await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, user.id]);
@@ -1293,7 +1473,10 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     const siteCountR = await query(`SELECT COUNT(*) as cnt FROM sites WHERE id != 'default'`);
     const siteCount = parseInt(siteCountR.rows[0].cnt) || 0;
     const themeData = generateUniqueTheme(siteCount * 999983 + 12345);
-    const autoTheme = JSON.stringify(themeData);
+    // 🔧 사용자가 색상을 직접 지정했으면 그 색 사용 + theme 비워두기 (glow 기본 테마 사용)
+    // 색상 미지정 시에만 자동 랜덤 테마 JSON 사용
+    const userPickedColors = !!(primaryColor && accentColor);
+    const autoTheme = userPickedColors ? 'glow' : JSON.stringify(themeData);
     const finalPrimary = primaryColor || themeData.p1;
     const finalAccent  = accentColor  || themeData.p2;
 
@@ -1331,7 +1514,8 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
   try {
     const { siteId, name, domain, logo, primaryColor, accentColor, margin, exrate, active } = req.body;
     const superMarginUpd = req.body.superMargin !== undefined ? parseFloat(req.body.superMargin) : -1;
-    await query(`UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9 WHERE id=$10`,
+    // 🔧 색상을 지정해서 변경했다면 theme을 'glow'(기본)로 설정해 사용자 색상이 표시되게 함
+    await query(`UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9,theme='glow' WHERE id=$10`,
       [name, domain, logo, primaryColor, accentColor, parseFloat(margin), parseFloat(exrate), active?1:0, superMarginUpd, siteId]);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
