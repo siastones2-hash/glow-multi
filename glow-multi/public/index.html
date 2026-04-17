@@ -104,7 +104,7 @@
   --bd:rgba(255,10,84,.12);--bd2:rgba(255,10,84,.28);
 }
 [data-theme="candy"] body{font-family:'Comic Sans MS','Chalkboard SE',cursive}
-html,body{min-height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+html,body{min-height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
 .gt{background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 input,select,textarea{width:100%;padding:11px 13px;background:var(--w);border:1.5px solid var(--bd);border-radius:10px;font-size:14px;color:var(--tx);outline:none;font-family:inherit;-webkit-appearance:none}
 input:focus,select:focus{border-color:var(--p3)}
@@ -140,7 +140,7 @@ tr:last-child td{border-bottom:none}
 .modal{background:var(--w);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-height:90vh;overflow-y:auto}
 @media(min-width:600px){.mbg{align-items:center;padding:20px}.modal{border-radius:20px;max-width:500px}}
 .pg{display:none}.pg.on{display:block}
-#pg-dash.on{display:flex;flex-direction:column;min-height:100vh}
+#pg-dash.on{display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden}
 #pg-auth.on{display:flex;min-height:100vh;background:linear-gradient(160deg,#faf5ff,#fdf2ff);align-items:center;justify-content:center;padding:20px}
 .lnav{position:sticky;top:0;z-index:100;height:58px;padding:0 16px;display:flex;justify-content:space-between;align-items:center;background:rgba(250,250,250,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
 .brand{display:flex;align-items:center;gap:8px}
@@ -169,9 +169,9 @@ tr:last-child td{border-bottom:none}
   #pg-dash.on{flex-direction:row}
   .bnav{display:none}.topbar{display:none}
   .sb{width:220px;background:var(--w);border-right:1px solid var(--bd);display:flex!important;flex-direction:column;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:60}
-  .dm{margin-left:220px;flex:1;display:flex;flex-direction:column}
+  .dm{margin-left:220px;flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden}
   .dhdr{height:58px;padding:0 22px;display:flex!important;align-items:center;justify-content:space-between;background:rgba(250,250,250,.95);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50}
-  .dbody{padding:22px 22px 32px}
+  .dbody{padding:22px 22px 32px;overflow-x:hidden;min-width:0}
 }
 .sb{display:none}.dhdr{display:none}
 .si{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;font-size:13px;color:var(--tm);cursor:pointer;border:1px solid transparent;background:transparent;width:100%;text-align:left;font-family:inherit;font-weight:500}
@@ -188,7 +188,7 @@ tr:last-child td{border-bottom:none}
 .srow:active,.srow.sel{border-color:var(--p2);background:rgba(114,9,183,.04)}
 .spi{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;color:#fff;margin-top:2px}
 .ofc{background:var(--w);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-top:14px}
-@media(min-width:900px){.ol{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}.ofc{margin-top:0;position:sticky;top:76px}}
+@media(min-width:900px){.ol{display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start;min-width:0}.ofc{margin-top:0;position:sticky;top:76px;min-width:0}}
 .osum{background:rgba(114,9,183,.05);border:1px solid var(--bd2);border-radius:10px;padding:13px;margin:13px 0}
 .osr{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px}
 .osr:last-child{margin:0;padding-top:10px;border-top:1px solid var(--bd2);font-weight:700;font-size:15px}
@@ -358,7 +358,7 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="sfbar" id="sfBar"></div>
         <div class="ol">
-          <div>
+          <div style="min-width:0;overflow:hidden">
             <div class="ibox" style="margin-bottom:12px">✦ 서비스를 <strong>클릭</strong>해서 선택 후 아래에서 주문하세요.</div>
             <div id="svcList"></div>
           </div>
@@ -432,6 +432,7 @@ tr:last-child td{border-bottom:none}
           <button class="admtab" onclick="goAdm('charges',this)">💳 충전</button>
           <button class="admtab" onclick="goAdm('creditreq',this)">💰 크레딧 요청</button>
           <button class="admtab" onclick="goAdm('settings',this)">⚙️ 설정</button>
+          <button class="admtab" id="svcMgmtTab" onclick="goAdm('svcmgmt',this)">🛍 서비스 관리</button>
         </div>
         <div class="apanel on" id="ap-orders">
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
@@ -454,6 +455,20 @@ tr:last-child td{border-bottom:none}
           <div style="font-size:14px;font-weight:700;margin-bottom:8px">요청 내역</div>
           <div class="tw"><table><thead><tr><th>금액</th><th>메모</th><th>상태</th><th>날짜</th></tr></thead><tbody id="crTb"></tbody></table></div>
         </div>
+        <div class="apanel" id="ap-svcmgmt">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div style="font-size:15px;font-weight:800">🛍 내 사이트 서비스 관리</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="bp bsm" onclick="toggleAllSiteServices(1)">전체 활성화</button>
+              <button class="bo bsm" onclick="toggleAllSiteServices(0)">전체 비활성화</button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--tl);margin-bottom:12px">활성화한 서비스만 내 사이트 고객에게 보입니다.</div>
+          <!-- 플랫폼 필터 -->
+          <div id="svcMgmtFilter" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none"></div>
+          <div id="svcMgmtList" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
         <div class="apanel" id="ap-settings">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
             <div class="card">
@@ -723,25 +738,17 @@ tr:last-child td{border-bottom:none}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fg"><label>플랫폼</label>
         <select id="svcPl" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;font-size:13px">
-          <option value="youtube">유튜브</option>
-          <option value="instagram">인스타그램</option>
-          <option value="tiktok">틱톡</option>
-          <option value="twitter">트위터/X</option>
-          <option value="threads">스레드</option>
-          <option value="telegram">텔레그램</option>
-          <option value="facebook">페이스북</option>
+          <option value="youtube">YouTube</option>
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+          <option value="twitter">Twitter/X</option>
+          <option value="threads">Threads</option>
+          <option value="telegram">Telegram</option>
+          <option value="facebook">Facebook</option>
           <option value="spotify">Spotify</option>
-          <option value="naver">네이버</option>
-          <option value="kakao">카카오</option>
-          <option value="twitch">트위치</option>
-          <option value="amazon">아마존</option>
-          <option value="ecommerce">해외쇼핑 (쇼피/라자다/알리)</option>
-          <option value="coupang">쿠팡</option>
+          <option value="twitch">Twitch</option>
           <option value="traffic">웹트래픽/SEO</option>
           <option value="appstore">앱스토어</option>
-          <option value="travel">여행/숙박</option>
-          <option value="delivery">배달앱</option>
-          <option value="gaming">게임</option>
           <option value="other">기타</option>
         </select>
       </div>
@@ -763,11 +770,11 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 잔액 수정 -->
-<div class="mbg" id="mBal">
+<div class="mbg" id="mBalModal">
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div style="font-size:16px;font-weight:800">💰 잔액 수정</div>
-      <button onclick="closeM('mBal')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>
+      <button onclick="closeM('mBalModal')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>
     </div>
     <input type="hidden" id="balUid"/>
     <div class="fg"><label>회원</label><input id="balUname" readonly style="background:#f5f0ff"/></div>
@@ -903,7 +910,7 @@ async function loadChargeHis(){
 
 var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',kakao:'💬',twitch:'🎮',amazon:'🛒',ecommerce:'🛍',coupang:'🚀',traffic:'🌐',appstore:'📱',travel:'✈',delivery:'🍔',gaming:'🎮',other:'📡'};
 var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
-var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',kakao:'카카오',twitch:'트위치',amazon:'아마존',ecommerce:'해외쇼핑',coupang:'쿠팡',traffic:'웹트래픽',appstore:'앱스토어',travel:'여행/숙박',delivery:'배달앱',gaming:'게임',other:'기타'};
+var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
 
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
@@ -1133,8 +1140,8 @@ async function loadSvcs(){
   if(Array.isArray(d)){SVCS=d;window._svcs=d;renderSvcList();renderQCards()}
 }
 function renderSfBar(){
-  var plats=['all','youtube','instagram','tiktok','threads','twitter','telegram','facebook','spotify','naver','other'];
-  var lbl={all:'전체',youtube:'▶ YouTube',instagram:'📷 Instagram',tiktok:'🎵 TikTok',threads:'🧵 Threads',twitter:'𝕏 Twitter/X',telegram:'✈ Telegram',facebook:'f Facebook',spotify:'♫ Spotify',naver:'N Naver',other:'📡 기타'};
+  var plats=['all','youtube','instagram','tiktok','twitter','facebook','telegram','threads','spotify','twitch','traffic','other'];
+  var lbl={all:'전체',youtube:'▶ YouTube',instagram:'📷 Instagram',tiktok:'🎵 TikTok',twitter:'𝕏 Twitter/X',facebook:'f Facebook',telegram:'✈ Telegram',threads:'🧵 Threads',spotify:'♫ Spotify',twitch:'🎮 Twitch',traffic:'🌐 트래픽',other:'📡 기타'};
   ge('sfBar').innerHTML=plats.map(function(p){
     return'<button class="sf'+(FLT===p?' on':'')+'" onclick="setFlt(\''+p+'\',this)">'+lbl[p]+'</button>';
   }).join('');
@@ -1155,9 +1162,9 @@ function renderSvcList(){
     return'<div class="srow'+(isSel?' sel':'')+'" onclick="selSvc(\''+s.id+'\')">'
       +'<div class="spi" style="background:'+PLC[s.pl]+'">'+PLI[s.pl]+'</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:14px;font-weight:700;color:#1A1030;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.name+'</div>'
-      +'<div style="font-size:12px;color:#5A4A7A;line-height:1.6;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px">'+s.description+'</div>'
-      +'<div style="font-size:11px;color:#9A8AB0">최소 '+(s.min||0).toLocaleString()+' ~ 최대 '+(s.max||0).toLocaleString()+'개</div>'
+      +'<div style="font-size:14px;font-weight:700;color:var(--tx);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.name+'</div>'
+      +'<div style="font-size:12px;color:var(--tm);line-height:1.6;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px">'+s.description+'</div>'
+      +'<div style="font-size:11px;color:var(--tl)">최소 '+(s.min||0).toLocaleString()+' ~ 최대 '+(s.max||0).toLocaleString()+'개</div>'
       +'</div>'
       +'<div style="flex-shrink:0;text-align:right;padding-left:10px">'
       +'<div class="gt" style="font-size:14px;font-weight:800;white-space:nowrap">'+gf(Math.round(s.sell*1000))+'</div>'
@@ -1241,13 +1248,6 @@ function pickCharge(a,el){
   document.querySelectorAll('.ci').forEach(function(c){c.classList.remove('on')});
   el.classList.add('on');ge('chAmt').value=a||'';if(!a)ge('chAmt').focus();
 }
-async function loadChargeHis(){
-  var d=await api('/api/charges/my');var tb=ge('chHisTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="3" style="text-align:center;padding:14px;color:#9A8AB0">내역 없음</td></tr>';return}
-  d.forEach(function(r){h+='<tr><td style="font-weight:700;color:#B5179E">'+gf(r.amount)+'</td><td>'+badge(r.status)+'</td><td style="font-size:11px;color:#9A8AB0">'+fd(r.created)+'</td></tr>'});
-  tb.innerHTML=h;
-}
-
 // ── 일반 관리자 ──
 async function loadAdmDash(){
   var d=await api('/api/admin/stats');
@@ -1263,7 +1263,7 @@ async function loadAdmDash(){
     var cb=ge('creditBal');if(cb)cb.textContent='$'+parseFloat(d.credit||0).toFixed(2);
   }
 
-  loadAdmOrders();
+  loadAdmOrders(); loadAdmCharges();
   var s=await api('/api/admin/settings');
   if(s){
     var isSuperAdmin=s.isSuperAdmin;
@@ -1296,9 +1296,10 @@ function goAdm(tab,el){
   document.querySelectorAll('.admtab').forEach(function(t){t.classList.remove('on')});
   document.querySelectorAll('.apanel').forEach(function(p){p.classList.remove('on')});
   el.classList.add('on');ge('ap-'+tab).classList.add('on');
-  if(tab==='orders')loadOrders();
+  if(tab==='orders')loadAdmOrders();
+  if(tab==='users')loadAdmUsers();
   if(tab==='creditreq')loadCreditRequests();
-  if(tab==='users')loadAdmOrders();
+  if(tab==='svcmgmt')loadSvcMgmt();
   if(tab==='charges')loadAdmCharges();
 }
 async function loadAdmOrders(){
@@ -1318,7 +1319,7 @@ async function loadAdmOrders(){
   tb.innerHTML=h;
 }
 async function chgOSt(id,st){await api('/api/admin/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
-async function loadAdmOrders(){
+async function _loadAdmUsersInline(){
   var d=await api('/api/admin/users');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
   d.forEach(function(u){
     var is정지=u.status==='banned';
@@ -1365,27 +1366,27 @@ async function procCharge(id,action){
 // 회원 관리
 function openBalM(el){
   var uid=el.getAttribute('data-uid'),uname=el.getAttribute('data-uname'),bal=el.getAttribute('data-bal')||0;
-  ge('balUid').value=uid;ge('balUname').value=uname+' (현재: '+gf(parseFloat(bal))+')';ge('balDelta').value='';ge('mBal').classList.add('on');
+  ge('balUid').value=uid;ge('balUname').value=uname+' (현재: '+gf(parseFloat(bal))+')';ge('balDelta').value='';ge('mBalModal').classList.add('on');
 }
 async function applyBal(){
   var d=parseFloat(ge('balDelta').value);if(isNaN(d)){toast('금액을 입력하세요','err');return}
   var r=await api('/api/admin/users/balance','POST',{uid:ge('balUid').value,delta:d});
   if(r.error){toast(r.error,'err');return}
-  closeM('mBal');loadAdmOrders();toast('잔액 수정 완료 ✨','ok');
+  closeM('mBalModal');loadAdmUsers();toast('잔액 수정 완료 ✨','ok');
 }
 async function banUser(uid,uname){
   if(!confirm(uname+'님을 정지/해제하시겠습니까?'))return;
   var d=await api('/api/admin/users/ban','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(d.status==='banned'?uname+'님 정지됨':uname+'님 정지 해제','ok');
-  loadAdmOrders();
+  loadAdmUsers();
 }
 async function deleteUser(uid,uname){
   if(!confirm(uname+'님을 강제 탈퇴시키겠습니까?\n모든 주문/충전 내역이 삭제됩니다!'))return;
   var d=await api('/api/admin/users/delete','POST',{uid:uid});
   if(d.error){toast(d.error,'err');return}
   toast(uname+'님 탈퇴 처리 완료','ok');
-  loadAdmOrders();loadAdmDash();
+  loadAdmUsers();loadAdmDash();
 }
 async function openUserDetail(uid){
   var d=await api('/api/admin/users/'+uid+'/detail');
@@ -1437,7 +1438,7 @@ async function changeRole(uid,role){
   if(!confirm(role==='admin'?'관리자로 변경?':'일반회원으로 변경?'))return;
   var d=await api('/api/admin/users/role','POST',{uid:uid,role:role});
   if(d.error){toast(d.error,'err');return}
-  toast('등급 변경 완료','ok');closeM('mDetail');loadAdmOrders();
+  toast('등급 변경 완료','ok');closeM('mDetail');loadAdmUsers();
 }
 
 // 설정 저장
@@ -1471,6 +1472,84 @@ async function saveCustomTexts(){
   if(errors.length){toast('일부 저장 실패: '+errors[0],'err');return;}
   toast('저장 완료! 페이지를 새로고침하면 적용됩니다 ✨','ok');
   await loadSiteConfig();
+}
+
+// ── 관리자 서비스 관리 ──
+var SITE_SVCS=[];
+var SITE_SVC_FLT='all';
+
+async function loadSvcMgmt(){
+  var d=await api('/api/admin/site-services');
+  if(!Array.isArray(d)){toast(d.error||'오류','err');return;}
+  SITE_SVCS=d;
+  renderSvcMgmtFilter();
+  renderSvcMgmtList();
+}
+
+function renderSvcMgmtFilter(){
+  var pls=[...new Set(SITE_SVCS.map(function(s){return s.pl;}))];
+  pls.unshift('all');
+  var lbl={all:'전체',youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok',twitter:'Twitter/X',facebook:'Facebook',telegram:'Telegram',threads:'Threads',spotify:'Spotify',twitch:'Twitch',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
+  var el=ge('svcMgmtFilter');
+  if(!el)return;
+  el.innerHTML=pls.map(function(p){
+    return'<button class="sf'+(SITE_SVC_FLT===p?' on':'')+'" onclick="setSvcMgmtFlt(''+p+'')">'+( lbl[p]||p)+'</button>';
+  }).join('');
+}
+
+function setSvcMgmtFlt(f){
+  SITE_SVC_FLT=f;
+  renderSvcMgmtFilter();
+  renderSvcMgmtList();
+}
+
+function renderSvcMgmtList(){
+  var el=ge('svcMgmtList');if(!el)return;
+  var list=SITE_SVCS.filter(function(s){return SITE_SVC_FLT==='all'||s.pl===SITE_SVC_FLT;});
+  if(!list.length){el.innerHTML='<div style="text-align:center;color:var(--tl);padding:20px">서비스 없음</div>';return;}
+  el.innerHTML=list.map(function(s){
+    var on=s.site_active==1;
+    var ex=(window._adminSupplyData&&window._adminSupplyData.exrate)||1500;
+    var mg=SITE_CONFIG&&SITE_CONFIG.margin!=null?SITE_CONFIG.margin:0;
+    var supply=Math.round(s.rate*ex);
+    var sell=Math.round(supply*(1+mg/100));
+    return'<div style="display:flex;align-items:center;gap:10px;background:var(--w);border:1px solid var(--bd);border-radius:10px;padding:10px 12px">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.name+'</div>'
+      +'<div style="font-size:11px;color:var(--tl);margin-top:2px">공급가 ₩'+supply.toLocaleString()+'/1000 → 판매가 ₩'+sell.toLocaleString()+'</div>'
+      +'</div>'
+      +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">'
+      +'<input type="checkbox" '+(on?'checked':'')+' onchange="toggleSiteService(this.dataset.id,this.checked)" data-id="'+s.id+'" style="width:16px;height:16px;cursor:pointer"/>'
+      +'<span style="font-size:12px;color:'+(on?'var(--ok)':'var(--tl)')+'">'+( on?'판매중':'미판매')+'</span>'
+      +'</label>'
+      +'</div>';
+  }).join('');
+}
+
+async function toggleSiteService(svcId, active){
+  var d=await api('/api/admin/site-services/toggle','POST',{serviceId:svcId,active:active});
+  if(d.error){toast(d.error,'err');return;}
+  // 로컬 업데이트
+  var s=SITE_SVCS.find(function(x){return x.id===svcId;});
+  if(s)s.site_active=active?1:0;
+  renderSvcMgmtList();
+}
+
+async function toggleAllSiteServices(active){
+  var d=await api('/api/admin/site-services/toggle-all','POST',{active:active});
+  if(d.error){toast(d.error,'err');return;}
+  toast((active?'전체 활성화':'전체 비활성화')+' 완료 ✨','ok');
+  loadSvcMgmt();
+}
+
+// 슈퍼관리자 서비스 자동 정리
+async function autoCleanServices(){
+  if(!confirm('카테고리별 베스트 서비스만 남기고 나머지를 비활성화합니다. 계속하시겠습니까?'))return;
+  toast('정리 중...','ok');
+  var d=await api('/api/super/services/auto-clean','POST',{});
+  if(d.error){toast(d.error,'err');return;}
+  toast('완료! '+d.activated+'개 서비스 활성화됨 ✨','ok');
+  loadSuperSvcs&&loadSuperSvcs();
 }
 
 function previewMargin(){
@@ -1800,47 +1879,6 @@ function editSite(s){
   });
 }
 
-async function openUserDetail(uid){
-  var d=await api('/api/admin/users/'+uid+'/detail');
-  if(d.error){toast(d.error,'err');return}
-  var u=d.user,orders=d.orders||[];
-  var html='<div style="padding:20px">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-    +'<div style="font-size:16px;font-weight:800">👤 '+u.name+'</div>'
-    +'<button onclick="closeM(\'mDetail\')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>'
-    +'</div>'
-    +'<div class="card" style="margin-bottom:12px">'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">'
-    +'<div><span style="color:var(--tl);font-size:11px">이메일</span><br><strong>'+u.email+'</strong></div>'
-    +'<div><span style="color:var(--tl);font-size:11px">잔액</span><br><strong style="color:var(--p2)">'+gf(u.balance||0)+'</strong></div>'
-    +'<div><span style="color:var(--tl);font-size:11px">상태</span><br><strong style="color:'+(u.status==='banned'?'#EF4444':'#10B981')+'">'+(u.status==='banned'?'정지':'정상')+'</strong></div>'
-    +'<div><span style="color:var(--tl);font-size:11px">총 주문</span><br><strong>'+orders.length+'건</strong></div>'
-    +'</div></div>'
-    +'<div class="card" style="margin-bottom:12px">'
-    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">비밀번호 초기화</div>'
-    +'<div style="display:flex;gap:8px"><input type="text" id="newPwInput" placeholder="새 비밀번호 (6자 이상)" style="flex:1"/>'
-    +'<button class="bp bsm" style="white-space:nowrap;padding:10px 14px" onclick="resetPw(\'\'+u.id+\'\')">초기화</button></div>'
-    +'</div>'
-    +'<div class="card" style="margin-bottom:12px">'
-    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">등급 변경</div>'
-    +'<div style="display:flex;gap:8px">'
-    +'<button class="bp bsm" style="padding:9px 14px" onclick="changeRole(\'\'+u.id+\'\',\'admin\')">관리자로</button>'
-    +'<button class="bo bsm" onclick="changeRole(\'\'+u.id+\'\',\'user\')">일반회원으로</button>'
-    +'</div></div>'
-    +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">최근 주문 ('+orders.length+'건)</div>'
-    +'<div class="tw"><table><thead><tr><th>서비스</th><th>수량</th><th>금액</th><th>상태</th></tr></thead><tbody>'
-    +orders.slice(0,5).map(function(o){
-      return'<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
-        +'<td style="font-size:12px">'+(o.qty||0).toLocaleString()+'</td>'
-        +'<td style="font-size:12px;font-weight:700">'+gf(o.charge)+'</td>'
-        +'<td>'+badge(o.status)+'</td></tr>';
-    }).join('')+(orders.length===0?'<tr><td colspan="4" style="text-align:center;padding:14px;color:#9A8AB0">주문 없음</td></tr>':'')
-    +'</tbody></table></div></div>';
-  ge('mDetailContent').innerHTML=html;
-  ge('mDetail').classList.add('on');
-}
-
-
 async function loadAdmUsers(){
   var d=await api('/api/admin/users');
   var tb=ge('aUTb');
@@ -1947,7 +1985,7 @@ async function processCR(id,action){
 
 
 // ── 서비스 관리 ──
-var PLK2={youtube:'유튜브',instagram:'인스타그램',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',naver:'네이버',kakao:'카카오',twitch:'트위치',amazon:'아마존',ecommerce:'해외쇼핑',coupang:'쿠팡',traffic:'웹트래픽',appstore:'앱스토어',travel:'여행/숙박',delivery:'배달앱',gaming:'게임',other:'기타'};
+var PLK2={youtube:'유튜브',instagram:'인스타그램',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 
 async function loadSuperServices(){
   var d=await api('/api/services');
@@ -2083,9 +2121,7 @@ async function calcPriceTable(){
 
   var PLKlocal = {youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',
     twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',
-    naver:'네이버',kakao:'카카오',twitch:'트위치',amazon:'아마존',ecommerce:'해외쇼핑',
-    coupang:'쿠팡',traffic:'웹트래픽',appstore:'앱스토어',travel:'여행',
-    delivery:'배달',gaming:'게임',other:'기타'};
+    twitch:'트위치',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 
   var tbody = ge('pcTbody');
   if(!tbody) return;
