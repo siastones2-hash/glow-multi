@@ -555,14 +555,14 @@ tr:last-child td{border-bottom:none}
                 <div class="fg">
                   <label>💰 내 수익 마진율 (%)</label>
                   <input type="number" id="stMg" placeholder="50" inputmode="numeric" oninput="previewMargin()"/>
-                  <div style="font-size:11px;color:var(--tl);margin-top:4px">공급가에 이 마진을 얹어 고객에게 판매합니다</div>
+                  <div style="font-size:11px;color:var(--tl);margin-top:4px">원가에 이 마진을 얹어 고객에게 판매합니다</div>
                 </div>
                 <!-- 마진 미리보기 (관리자용) -->
                 <div id="marginPreview" style="display:none;background:rgba(114,9,183,.06);border:1px solid var(--bd2);border-radius:12px;padding:14px;margin-bottom:14px">
                   <div style="font-size:11px;font-weight:700;color:var(--p2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">📊 서비스 가격 미리보기 (1000개 기준)</div>
                   <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
                     <div style="display:flex;justify-content:space-between;color:var(--tm)">
-                      <span>내 공급가</span><span id="mpSupply" style="font-weight:600">-</span>
+                      <span>내 원가</span><span id="mpSupply" style="font-weight:600">-</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;color:var(--tm)">
                       <span>내 마진 (<span id="mpMgPct">0</span>%)</span><span id="mpMarginAmt" style="font-weight:600;color:#10B981">+₩0</span>
@@ -1616,14 +1616,13 @@ function renderSvcMgmtList(){
   if(!list.length){el.innerHTML='<div style="text-align:center;color:var(--tl);padding:20px">서비스 없음</div>';return;}
   el.innerHTML=list.map(function(s){
     var on=s.site_active==1;
-    var ex=(window._adminSupplyData&&window._adminSupplyData.exrate)||1500;
-    var mg=SITE_CONFIG&&SITE_CONFIG.margin!=null?SITE_CONFIG.margin:0;
-    var supply=Math.round(s.rate*ex);
-    var sell=Math.round(supply*(1+mg/100));
+    // 🔒 서버에서 내려준 baseCost(원가)/sellPrice(판매가) 사용 - Peakerr 원가 숨김
+    var baseCost=s.baseCost||0;
+    var sellPrice=s.sellPrice||baseCost;
     return'<div style="display:flex;align-items:center;gap:10px;background:var(--w);border:1px solid var(--bd);border-radius:10px;padding:10px 12px">'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.name+'</div>'
-      +'<div style="font-size:11px;color:var(--tl);margin-top:2px">공급가 ₩'+supply.toLocaleString()+'/1000 → 판매가 ₩'+sell.toLocaleString()+'</div>'
+      +'<div style="font-size:11px;color:var(--tl);margin-top:2px">원가 ₩'+baseCost.toLocaleString()+'/1000 → 판매가 ₩'+sellPrice.toLocaleString()+'</div>'
       +'</div>'
       +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">'
       +'<input type="checkbox" '+(on?'checked':'')+' onchange="toggleSiteService(this.dataset.id,this.checked)" data-id="'+s.id+'" style="width:16px;height:16px;cursor:pointer"/>'
