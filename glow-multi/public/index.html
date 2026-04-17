@@ -1493,7 +1493,7 @@ function renderSvcMgmtFilter(){
   var el=ge('svcMgmtFilter');
   if(!el)return;
   el.innerHTML=pls.map(function(p){
-    return'<button class="sf'+(SITE_SVC_FLT===p?' on':'')+'" onclick="setSvcMgmtFlt(''+p+'')">'+( lbl[p]||p)+'</button>';
+    return'<button class="sf'+(SITE_SVC_FLT===p?' on':'')+'" onclick="setSvcMgmtFlt(\''+p+'\')">'+(lbl[p]||p)+'</button>';
   }).join('');
 }
 
