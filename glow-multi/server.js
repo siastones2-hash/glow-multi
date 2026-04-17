@@ -551,9 +551,14 @@ app.get('/api/services', async (req, res) => {
     }
     const isPartner = req.session && req.session.role === 'partner';
     res.json(serviceRows.map(s => {
-      const originalCost = Math.round(s.rate / 1000 * ex); // 원가(₩/1개)
-      const supplyCost = Math.round(s.rate / 1000 * ex * (1 + superMg / 100)); // 공급가
-      const sellPrice = Math.round(supplyCost * (1 + siteMg / 100)); // 고객가
+      // 🔧 가격 계산: 1000개 단위로 먼저 계산한 뒤 1개당으로 나눔 (반올림으로 ₩0 되는 것 방지)
+      const origPer1000 = s.rate * ex; // 1000개 기준 원가 (원화)
+      const supplyPer1000 = origPer1000 * (1 + superMg / 100); // 1000개 기준 공급가
+      const sellPer1000 = supplyPer1000 * (1 + siteMg / 100); // 1000개 기준 고객가
+      // 1개당 환산 (최소 1원 보장 - 손해 방지)
+      const originalCost = Math.max(Math.round(origPer1000 / 1000), 1);
+      const supplyCost = Math.max(Math.round(supplyPer1000 / 1000), 1);
+      const sellPrice = Math.max(Math.round(sellPer1000 / 1000), 1);
       if (isPartner) {
         // partner에게는 공급가를 원가처럼 보여줌 (실제 원가 숨김)
         return { ...s, sell: sellPrice, baseCost: supplyCost, isPartnerView: true };
