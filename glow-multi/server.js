@@ -1268,6 +1268,14 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     const adminRole = req.body.adminRole || 'admin';
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       ['admin_'+siteId, siteId, '관리자', adminEmail, hash, adminRole, 0]);
+    // 🆕 새 사이트에 활성 서비스 전체 자동 연결 (ON 상태로 site_services 테이블에 INSERT)
+    try {
+      await query(`
+        INSERT INTO site_services(site_id, service_id, active)
+        SELECT $1, id, 1 FROM services WHERE active=1
+        ON CONFLICT(site_id, service_id) DO UPDATE SET active=1
+      `, [siteId]);
+    } catch(e) { console.error('site_services 자동 활성화 실패:', e.message); }
     res.json({ ok: true, siteId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
