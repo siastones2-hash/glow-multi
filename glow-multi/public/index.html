@@ -276,6 +276,19 @@ tr:last-child td{border-bottom:none}
       <div class="fg"><label>이메일</label><input type="email" id="l이메일" placeholder="이메일" autocomplete="email"/></div>
       <div class="fg"><label>비밀번호</label><input type="password" id="lPw" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
       <button class="bp bpf" onclick="doLogin()">로그인</button>
+      <div style="text-align:center;margin-top:12px">
+        <a href="javascript:void(0)" onclick="showForgotPassword()" style="color:var(--p2);font-size:12px;text-decoration:none;font-weight:600">🔐 비밀번호를 잊으셨나요?</a>
+      </div>
+    </div>
+    <div id="fForgot" style="display:none">
+      <div style="background:#f5f0ff;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--tm);line-height:1.5">
+        가입 시 사용한 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다.
+      </div>
+      <div class="fg"><label>이메일</label><input type="email" id="fpEmail" placeholder="가입 이메일" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()"/></div>
+      <button class="bp bpf" onclick="doForgotPassword()">재설정 링크 받기</button>
+      <div style="text-align:center;margin-top:12px">
+        <a href="javascript:void(0)" onclick="switchAuth('login')" style="color:var(--tl);font-size:12px;text-decoration:none">← 로그인으로 돌아가기</a>
+      </div>
     </div>
     <div id="fReg" style="display:none">
       <div class="fg"><label>닉네임</label><input type="text" id="rName" placeholder="닉네임"/></div>
@@ -285,6 +298,41 @@ tr:last-child td{border-bottom:none}
     </div>
     <div style="text-align:center;margin-top:16px">
       <button class="bo bsm" onclick="showPg('pg-land')" style="border-radius:100px">← 홈으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 재설정 페이지 (토큰 링크 클릭시) -->
+<div class="pg" id="pg-reset" style="display:none;min-height:100vh;background:linear-gradient(160deg,#faf5ff,#fdf2ff);align-items:center;justify-content:center;padding:20px">
+  <div class="abox" style="max-width:420px;width:100%">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="brand" style="justify-content:center;margin-bottom:12px">
+        <div class="bico">🔐</div>
+        <span class="bnm gt">비밀번호 재설정</span>
+      </div>
+    </div>
+    <div id="rstLoading" style="text-align:center;padding:20px">
+      <div class="spin spin2" style="width:40px;height:40px;margin:0 auto 12px"></div>
+      <div style="font-size:13px;color:var(--tm)">링크 확인 중...</div>
+    </div>
+    <div id="rstForm" style="display:none">
+      <div style="background:#f5f0ff;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--tm);line-height:1.5">
+        <strong id="rstEmail"></strong>의 비밀번호를 재설정합니다.
+      </div>
+      <div class="fg"><label>새 비밀번호 (6자 이상)</label><input type="password" id="rstPw" placeholder="새 비밀번호"/></div>
+      <div class="fg"><label>비밀번호 확인</label><input type="password" id="rstPw2" placeholder="비밀번호 확인" onkeydown="if(event.key==='Enter')doResetPassword()"/></div>
+      <button class="bp bpf" onclick="doResetPassword()">비밀번호 변경</button>
+    </div>
+    <div id="rstError" style="display:none;text-align:center;padding:20px">
+      <div style="font-size:40px;margin-bottom:12px">❌</div>
+      <div id="rstErrorMsg" style="font-size:14px;color:var(--er);margin-bottom:16px"></div>
+      <button class="bo bpf" onclick="location.href='/'">홈으로 돌아가기</button>
+    </div>
+    <div id="rstSuccess" style="display:none;text-align:center;padding:20px">
+      <div style="font-size:40px;margin-bottom:12px">✅</div>
+      <div style="font-size:15px;color:var(--ok);font-weight:700;margin-bottom:8px">비밀번호 변경 완료!</div>
+      <div style="font-size:13px;color:var(--tm);margin-bottom:20px">새 비밀번호로 로그인해주세요</div>
+      <button class="bp bpf" onclick="location.href='/'">로그인 페이지로</button>
     </div>
   </div>
 </div>
@@ -1057,15 +1105,71 @@ function goAuth(m){showPg('pg-auth');switchAuth(m)}
 function switchAuth(m){
   var on='background:#fff;color:#B5179E;font-weight:700;box-shadow:0 2px 8px rgba(114,9,183,.1)';
   var off='background:transparent;color:#9A8AB0;font-weight:500';
+  // 모든 폼 숨기기
+  ge('f로그인').style.display='none';
+  ge('fReg').style.display='none';
+  var forgotEl=ge('fForgot');if(forgotEl)forgotEl.style.display='none';
+  
   if(m==='login'){
     ge('tabL').style.cssText=on;ge('tabR').style.cssText=off;
-    ge('f로그인').style.display='block';ge('fReg').style.display='none';
+    ge('f로그인').style.display='block';
     ge('aTitle').textContent=(window._siteLoginWelcome||'다시 만나서 반가워요')+' ✨';ge('aSub').textContent=window._siteLoginSub||'계정에 로그인하세요';
+  }else if(m==='forgot'){
+    ge('tabL').style.cssText=on;ge('tabR').style.cssText=off;
+    if(forgotEl)forgotEl.style.display='block';
+    ge('aTitle').textContent='비밀번호 찾기 🔐';ge('aSub').textContent='이메일로 재설정 링크를 보내드립니다';
   }else{
     ge('tabR').style.cssText=on;ge('tabL').style.cssText=off;
-    ge('f로그인').style.display='none';ge('fReg').style.display='block';
+    ge('fReg').style.display='block';
     ge('aTitle').textContent=(window._siteRegisterWelcome||'오신걸 환영해요')+' ✨';ge('aSub').textContent=window._siteRegisterSub||'무료로 가입하고 채널 성장을 시작하세요';
   }
+}
+function showForgotPassword(){switchAuth('forgot');}
+async function doForgotPassword(){
+  var email=ge('fpEmail').value.trim();
+  if(!email){toast('이메일을 입력하세요','err');return}
+  var btn=event.target;var originalText=btn.textContent;btn.textContent='전송 중...';btn.disabled=true;
+  var d=await api('/api/forgot-password','POST',{email:email});
+  btn.textContent=originalText;btn.disabled=false;
+  if(d.error){toast(d.error,'err');return}
+  toast(d.message||'재설정 링크가 전송되었습니다','ok');
+  setTimeout(function(){switchAuth('login')},2000);
+}
+// 비밀번호 재설정 페이지 처리 (URL에 /reset-password?token=... 접속 시)
+async function handleResetPasswordPage(){
+  if(!location.pathname.startsWith('/reset-password'))return false;
+  // 다른 페이지 모두 숨기기
+  ['pg-land','pg-auth','pg-dash'].forEach(function(p){var el=ge(p);if(el){el.classList.remove('on');el.style.display='none'}});
+  var pg=ge('pg-reset');if(!pg)return false;
+  pg.style.display='flex';
+  var params=new URLSearchParams(location.search);
+  var token=params.get('token');
+  if(!token){showResetError('유효하지 않은 링크입니다');return true}
+  window._resetToken=token;
+  try{
+    var resp=await fetch('/api/reset-password/verify?token='+encodeURIComponent(token));
+    var d=await resp.json();
+    if(d.error){showResetError(d.error);return true}
+    ge('rstLoading').style.display='none';
+    ge('rstForm').style.display='block';
+    ge('rstEmail').textContent=d.email;
+  }catch(e){showResetError('링크 확인 중 오류 발생');}
+  return true;
+}
+function showResetError(msg){
+  ge('rstLoading').style.display='none';
+  ge('rstForm').style.display='none';
+  ge('rstError').style.display='block';
+  ge('rstErrorMsg').textContent=msg;
+}
+async function doResetPassword(){
+  var pw=ge('rstPw').value,pw2=ge('rstPw2').value;
+  if(!pw||pw.length<6){toast('비밀번호는 6자 이상이어야 합니다','err');return}
+  if(pw!==pw2){toast('비밀번호가 일치하지 않습니다','err');return}
+  var d=await api('/api/reset-password','POST',{token:window._resetToken,newpw:pw});
+  if(d.error){toast(d.error,'err');return}
+  ge('rstForm').style.display='none';
+  ge('rstSuccess').style.display='block';
 }
 async function doLogin(){
   var e=ge('l이메일').value.trim(),p=ge('lPw').value;
@@ -1865,20 +1969,52 @@ async function openEditSite(id){
   editSite(s);
 }
 function editSite(s){
-  var domain=prompt('도메인',s.domain);if(domain===null)return;
-  var name=prompt('사이트 이름',s.name);if(name===null)return;
-  var superMargin=prompt('슈퍼마진율 (%) - 이 사이트에 적용할 슈퍼마진 (-1이면 글로벌 사용)',s.super_margin>=0?s.super_margin:50);if(superMargin===null)return;
-  var margin=prompt('사이트 마진율 (%) - 관리자가 고객에게 붙이는 마진',s.margin);if(margin===null)return;
-  var exrate=prompt('환율 (USD→KRW)',s.exrate||1380);if(exrate===null)return;
-  api('/api/super/sites/update','POST',{
-    siteId:s.id,domain:domain,name:name,logo:s.logo,
-    primaryColor:s.primary_color,accentColor:s.accent_color,
-    margin:parseFloat(margin),exrate:parseFloat(exrate),active:1,
-    superMargin:parseFloat(superMargin)
-  }).then(function(d){
+  // 간단한 편집 모달 생성
+  var modalId='siteEditModal';
+  var old=document.getElementById(modalId);if(old)old.remove();
+  var m=document.createElement('div');
+  m.id=modalId;
+  m.className='mbg on';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = '<div style="background:var(--w);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto">' +
+    '<h3 style="margin-bottom:16px">✏️ 사이트 편집: '+s.name+'</h3>' +
+    '<div class="fg"><label>사이트 이름</label><input id="seName" value="'+(s.name||'').replace(/"/g,'&quot;')+'"/></div>' +
+    '<div class="fg"><label>도메인</label><input id="seDomain" value="'+(s.domain||'').replace(/"/g,'&quot;')+'"/></div>' +
+    '<div class="fg"><label>로고 이모지</label><input id="seLogo" value="'+(s.logo||'✨').replace(/"/g,'&quot;')+'" maxlength="4"/></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+    '<div class="fg"><label>메인 컬러</label><input type="color" id="sePrimary" value="'+(s.primary_color||'#7209B7')+'"/></div>' +
+    '<div class="fg"><label>포인트 컬러</label><input type="color" id="seAccent" value="'+(s.accent_color||'#F72585')+'"/></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+    '<div class="fg"><label>슈퍼마진 (%)</label><input type="number" id="seSuperMg" value="'+(s.super_margin>=0?s.super_margin:50)+'"/></div>' +
+    '<div class="fg"><label>사이트마진 (%)</label><input type="number" id="seMg" value="'+(s.margin||0)+'"/></div>' +
+    '</div>' +
+    '<div class="fg"><label>환율</label><input type="number" id="seEx" value="'+(s.exrate||1500)+'"/></div>' +
+    '<div style="display:flex;gap:10px;margin-top:16px">' +
+    '<button class="bo bpf" onclick="document.getElementById(\'siteEditModal\').remove()">취소</button>' +
+    '<button class="bp bpf" onclick="saveSiteEdit(\''+s.id+'\')">💾 저장</button>' +
+    '</div></div>';
+  document.body.appendChild(m);
+}
+function saveSiteEdit(siteId){
+  var body={
+    siteId:siteId,
+    name:ge('seName').value,
+    domain:ge('seDomain').value,
+    logo:ge('seLogo').value||'✨',
+    primaryColor:ge('sePrimary').value,
+    accentColor:ge('seAccent').value,
+    margin:parseFloat(ge('seMg').value)||0,
+    exrate:parseFloat(ge('seEx').value)||1500,
+    active:1,
+    superMargin:parseFloat(ge('seSuperMg').value)
+  };
+  api('/api/super/sites/update','POST',body).then(function(d){
     if(d.error){toast(d.error,'err');return}
+    document.getElementById('siteEditModal').remove();
     _sitesCache=[];
-    toast('수정 완료! ✨','ok');loadSuperDash();
+    toast('수정 완료! ✨','ok');
+    loadSuperDash();
   });
 }
 
@@ -2239,8 +2375,11 @@ function downloadPriceTable(){
   toast('단가표 다운로드 완료! ⬇','ok');
 }
 
-window.addEventListener('DOMContentLoaded',function(){
+window.addEventListener('DOMContentLoaded',async function(){
   loadSiteConfig();
+  // 🔐 비밀번호 재설정 링크 접속 처리
+  var isResetPage=await handleResetPasswordPage();
+  if(isResetPage)return;
   var token=localStorage.getItem('glow_token');
   if(token){
     api('/api/me').then(function(d){
