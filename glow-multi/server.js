@@ -1022,6 +1022,23 @@ app.get('/api/admin/site-services', requireAdmin, async (req, res) => {
   try {
     const siteId = req.siteId;
     if (siteId === 'default') return res.json({ error: '슈퍼관리자는 서비스 관리 탭을 이용하세요' });
+    // 사이트 정보 가져오기
+    const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+    const site = siteR.rows[0];
+    // 환율/슈퍼마진/글로벌 사이트마진
+    const globalExrate = await getGlobalSetting('global_exrate');
+    const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate || '1500');
+    let superMg;
+    if (site && site.super_margin >= 0) {
+      superMg = site.super_margin;
+    } else {
+      const superMgStr = await getGlobalSetting('super_margin');
+      superMg = parseFloat(superMgStr || '50');
+    }
+    const globalSiteMgStr = await getGlobalSetting('global_site_margin');
+    const globalSiteMg = parseFloat(globalSiteMgStr || '50');
+    const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
+    
     // 전체 서비스 + 이 사이트의 활성화 여부
     const r = await query(`
       SELECT s.id, s.name, s.pl, s.rate, s.min, s.max, s.active as global_active,
@@ -1031,7 +1048,23 @@ app.get('/api/admin/site-services', requireAdmin, async (req, res) => {
       WHERE s.active = 1
       ORDER BY s.pl, s.rate ASC
     `, [siteId]);
-    res.json(r.rows);
+    
+    // 🔒 지인 보호: Peakerr 원가(rate) 숨기고 GLOW 판매가를 "원가"로 노출
+    const hiddenServices = r.rows.map(s => {
+      // GLOW 판매가 = 원가 × 슈퍼마진 × 글로벌사이트마진 (= 지인 입장의 "원가")
+      const glowPricePer1000 = s.rate * ex * (1 + superMg / 100) * (1 + globalSiteMg / 100);
+      const sellPer1000 = glowPricePer1000 * (1 + siteMg / 100);
+      const baseCostPer1K = Math.max(Math.round(glowPricePer1000), 1);
+      const sellPricePer1K = Math.max(Math.round(sellPer1000), 1);
+      return {
+        id: s.id, name: s.name, pl: s.pl, min: s.min, max: s.max,
+        global_active: s.global_active, site_active: s.site_active,
+        baseCost: baseCostPer1K,  // GLOW 판매가 (지인 입장의 원가, ₩/1K)
+        sellPrice: sellPricePer1K  // 지인의 고객가 (₩/1K)
+        // ⚠️ s.rate (Peakerr 진짜 원가)는 절대 내보내지 않음
+      };
+    });
+    res.json(hiddenServices);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1122,18 +1155,21 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
     const super_margin = await getGlobalSetting('super_margin');
     const global_exrate = await getGlobalSetting('global_exrate');
 
-    // 관리자용: 공급가 샘플 계산 (가장 저렴한 서비스 기준)
+    // 관리자용: 원가 샘플 계산 (지인에게는 GLOW 판매가가 "원가"로 보임)
     let supplyExamples = [];
     if (!isSuperAdmin) {
       try {
         const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(global_exrate || '1500');
         const superMgStr = super_margin || '50';
         const superMg = (site && site.super_margin >= 0) ? site.super_margin : parseFloat(superMgStr);
+        const globalSiteMgStr = await getGlobalSetting('global_site_margin');
+        const globalSiteMg = parseFloat(globalSiteMgStr || '50');
         const svcs = await query(`SELECT id, name, rate, pl FROM services WHERE active=1 ORDER BY rate ASC LIMIT 5`);
         supplyExamples = svcs.rows.map(s => ({
           name: s.name,
           pl: s.pl,
-          supplyPer1000: Math.round(s.rate / 1000 * ex * (1 + superMg / 100) * 1000), // ₩/1000개
+          // 🔒 지인에게 노출되는 "원가" = GLOW 판매가 (진짜 원가 + 슈퍼마진 + 글로벌 사이트마진)
+          supplyPer1000: Math.round(s.rate * ex * (1 + superMg / 100) * (1 + globalSiteMg / 100)),
         }));
       } catch(e) {}
     }
