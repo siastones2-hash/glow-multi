@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -2425,9 +2426,87 @@ app.post('/api/admin/services/clean', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// SPA
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// SPA - 사이트별 브랜딩을 서버사이드에서 삽입 (FOUC 방지)
+let _cachedHtml = null;
+app.get('*', async (req, res) => {
+  try {
+    // HTML 파일 읽기 (캐시)
+    if (!_cachedHtml) {
+      _cachedHtml = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    }
+    let html = _cachedHtml;
+    
+    // 사이트 정보 가져오기 (도메인 기반)
+    const site = req.site;
+    if (site && site.id !== 'default') {
+      const siteName = (site.name || 'GLOW').replace(/[<>"']/g, '');
+      const siteLogo = (site.logo || '✨').replace(/[<>"']/g, '');
+      const primaryColor = site.primary_color || '#7209b7';
+      const accentColor = site.accent_color || '#b5179e';
+      
+      // 타이틀 교체
+      html = html.replace(
+        /<title>GLOW — 채널 성장 플랫폼<\/title>/,
+        `<title>${siteName} — 채널 성장 플랫폼</title>`
+      );
+      
+      // 메인 네비 로고/이름 교체
+      html = html.replace(
+        /<div class="bico" id="navLogo">✨<\/div>/,
+        `<div class="bico" id="navLogo">${siteLogo}</div>`
+      );
+      html = html.replace(
+        /<span class="bnm gt" id="navName">GLOW<\/span>/,
+        `<span class="bnm gt" id="navName">${siteName}</span>`
+      );
+      
+      // auth 페이지 로고/이름
+      html = html.replace(
+        /<div class="bico" id="authLogo">✨<\/div>/,
+        `<div class="bico" id="authLogo">${siteLogo}</div>`
+      );
+      html = html.replace(
+        /<span class="bnm gt" id="authName">GLOW<\/span>/,
+        `<span class="bnm gt" id="authName">${siteName}</span>`
+      );
+      
+      // 사이드바 로고/이름
+      html = html.replace(
+        /<div class="bico" style="width:30px;height:30px;font-size:14px;border-radius:8px" id="sbLogo">✨<\/div>/,
+        `<div class="bico" style="width:30px;height:30px;font-size:14px;border-radius:8px" id="sbLogo">${siteLogo}</div>`
+      );
+      html = html.replace(
+        /<span class="bnm gt" style="font-size:16px" id="sbName2">GLOW<\/span>/,
+        `<span class="bnm gt" style="font-size:16px" id="sbName2">${siteName}</span>`
+      );
+      
+      // 모바일 탑바 로고/이름
+      html = html.replace(
+        /<div class="bico" style="width:28px;height:28px;font-size:13px;border-radius:7px" id="tbLogo">✨<\/div>/,
+        `<div class="bico" style="width:28px;height:28px;font-size:13px;border-radius:7px" id="tbLogo">${siteLogo}</div>`
+      );
+      html = html.replace(
+        /<span class="bnm gt" style="font-size:15px" id="tbName">GLOW<\/span>/,
+        `<span class="bnm gt" style="font-size:15px" id="tbName">${siteName}</span>`
+      );
+      
+      // 푸터
+      html = html.replace(
+        /<div style="font-size:16px;font-weight:800;color:#fff" id="footerName">✨ GLOW<\/div>/,
+        `<div style="font-size:16px;font-weight:800;color:#fff" id="footerName">${siteLogo} ${siteName}</div>`
+      );
+      
+      // 색상 CSS 변수 주입 (head에 style 태그 추가)
+      const colorStyle = `<style id="site-theme">:root{--p1:${primaryColor};--p2:${accentColor};}</style>`;
+      html = html.replace('</head>', colorStyle + '</head>');
+    }
+    
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch(e) {
+    console.log('HTML 렌더 오류:', e.message);
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
 });
 
 // 서버 시작
