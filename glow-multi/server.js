@@ -408,7 +408,8 @@ async function initDB() {
 // ── 미들웨어 ──
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+// index.html은 제외하고 정적 파일만 서빙 (index.html은 동적 렌더링용)
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 function getToken(req) {
   const auth = req.headers['authorization'];
@@ -2426,86 +2427,51 @@ app.post('/api/admin/services/clean', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// SPA - 사이트별 브랜딩을 서버사이드에서 삽입 (FOUC 방지)
-let _cachedHtml = null;
+// SPA - 사이트별 브랜딩을 서버사이드에서 삽입 (FOUC 완전 방지)
 app.get('*', async (req, res) => {
   try {
-    // HTML 파일 읽기 (캐시)
-    if (!_cachedHtml) {
-      _cachedHtml = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
-    }
-    let html = _cachedHtml;
+    // HTML 파일 매번 새로 읽기 (사이트 설정 변경 시 즉시 반영)
+    const html_template = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    let html = html_template;
     
-    // 사이트 정보 가져오기 (도메인 기반)
+    // 현재 요청 도메인의 사이트 정보
     const site = req.site;
-    if (site && site.id !== 'default') {
-      const siteName = (site.name || 'GLOW').replace(/[<>"']/g, '');
-      const siteLogo = (site.logo || '✨').replace(/[<>"']/g, '');
-      const primaryColor = site.primary_color || '#7209b7';
-      const accentColor = site.accent_color || '#b5179e';
-      
-      // 타이틀 교체
-      html = html.replace(
-        /<title>GLOW — 채널 성장 플랫폼<\/title>/,
-        `<title>${siteName} — 채널 성장 플랫폼</title>`
-      );
-      
-      // 메인 네비 로고/이름 교체
-      html = html.replace(
-        /<div class="bico" id="navLogo">✨<\/div>/,
-        `<div class="bico" id="navLogo">${siteLogo}</div>`
-      );
-      html = html.replace(
-        /<span class="bnm gt" id="navName">GLOW<\/span>/,
-        `<span class="bnm gt" id="navName">${siteName}</span>`
-      );
-      
-      // auth 페이지 로고/이름
-      html = html.replace(
-        /<div class="bico" id="authLogo">✨<\/div>/,
-        `<div class="bico" id="authLogo">${siteLogo}</div>`
-      );
-      html = html.replace(
-        /<span class="bnm gt" id="authName">GLOW<\/span>/,
-        `<span class="bnm gt" id="authName">${siteName}</span>`
-      );
-      
-      // 사이드바 로고/이름
-      html = html.replace(
-        /<div class="bico" style="width:30px;height:30px;font-size:14px;border-radius:8px" id="sbLogo">✨<\/div>/,
-        `<div class="bico" style="width:30px;height:30px;font-size:14px;border-radius:8px" id="sbLogo">${siteLogo}</div>`
-      );
-      html = html.replace(
-        /<span class="bnm gt" style="font-size:16px" id="sbName2">GLOW<\/span>/,
-        `<span class="bnm gt" style="font-size:16px" id="sbName2">${siteName}</span>`
-      );
-      
-      // 모바일 탑바 로고/이름
-      html = html.replace(
-        /<div class="bico" style="width:28px;height:28px;font-size:13px;border-radius:7px" id="tbLogo">✨<\/div>/,
-        `<div class="bico" style="width:28px;height:28px;font-size:13px;border-radius:7px" id="tbLogo">${siteLogo}</div>`
-      );
-      html = html.replace(
-        /<span class="bnm gt" style="font-size:15px" id="tbName">GLOW<\/span>/,
-        `<span class="bnm gt" style="font-size:15px" id="tbName">${siteName}</span>`
-      );
-      
-      // 푸터
-      html = html.replace(
-        /<div style="font-size:16px;font-weight:800;color:#fff" id="footerName">✨ GLOW<\/div>/,
-        `<div style="font-size:16px;font-weight:800;color:#fff" id="footerName">${siteLogo} ${siteName}</div>`
-      );
-      
-      // 색상 CSS 변수 주입 (head에 style 태그 추가)
-      const colorStyle = `<style id="site-theme">:root{--p1:${primaryColor};--p2:${accentColor};}</style>`;
-      html = html.replace('</head>', colorStyle + '</head>');
+    
+    // 기본값 (default 사이트 또는 site 없을 경우)
+    let siteName = 'GLOW';
+    let siteLogo = '✨';
+    let primaryColor = '#F72585';
+    let accentColor = '#B5179E';
+    let p3Color = '#7209B7';
+    
+    if (site) {
+      siteName = (site.name || 'GLOW').replace(/[<>"']/g, '');
+      siteLogo = (site.logo || '✨').replace(/[<>"']/g, '');
+      if (site.primary_color) primaryColor = site.primary_color;
+      if (site.accent_color) accentColor = site.accent_color;
     }
+    
+    // HTML placeholder를 실제 값으로 치환 (모든 발생 위치)
+    html = html.split('__SITE_NAME__').join(siteName);
+    html = html.split('__SITE_LOGO__').join(siteLogo);
+    
+    // 커스텀 테마 색상 주입 (기본 CSS 변수를 덮어씀)
+    const customTheme = `<style id="dynamic-theme">
+:root{
+  --p1:${primaryColor} !important;
+  --p2:${accentColor} !important;
+  --p3:${p3Color} !important;
+  --g:linear-gradient(135deg,${primaryColor},${accentColor},${p3Color},#4361EE) !important;
+}
+</style>`;
+    html = html.replace('<!-- __CUSTOM_THEME__ -->', customTheme);
     
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(html);
   } catch(e) {
     console.log('HTML 렌더 오류:', e.message);
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.status(500).send('서버 오류');
   }
 });
 
