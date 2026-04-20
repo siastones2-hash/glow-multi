@@ -880,44 +880,76 @@ async function scanNewServices() {
 }
 
 async function tgAlert(msg, site) {
-  // 사이트별 텔레그램 우선, 없으면 글로벌
-  let token = site?.tg_token || '';
-  let chat = site?.tg_chat || '';
-  if (!token || !chat) {
-    token = await getGlobalSetting('tg_token');
-    chat = await getGlobalSetting('tg_chat');
+  // 슈퍼관리자(전역)에게 항상 알림 전송
+  const superToken = await getGlobalSetting('tg_token');
+  const superChat = await getGlobalSetting('tg_chat');
+  
+  // 사이트별 관리자 텔레그램 (설정된 경우)
+  const siteToken = site?.tg_token || '';
+  const siteChat = site?.tg_chat || '';
+  
+  // 중복 방지: 사이트 텔레그램이 슈퍼와 같으면 한 번만
+  const sendList = [];
+  if (superToken && superChat) {
+    sendList.push({ token: superToken, chat: superChat, label: 'super' });
   }
-  if (!token || !chat) return;
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: msg, parse_mode: 'HTML' })
-    });
-  } catch(e) { console.log('TG 오류:', e.message); }
+  if (siteToken && siteChat && 
+      (siteToken !== superToken || siteChat !== superChat)) {
+    sendList.push({ token: siteToken, chat: siteChat, label: 'site' });
+  }
+  
+  // 병렬 전송
+  await Promise.all(sendList.map(async ({ token, chat }) => {
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat, text: msg, parse_mode: 'HTML' })
+      });
+    } catch(e) { console.log('TG 오류:', e.message); }
+  }));
 }
 
 async function tgChargeAlert(chargeId, userName, amount, note, site) {
   const siteName = typeof site === 'object' ? site.name : site;
-  let token = (typeof site === 'object' ? site.tg_token : '') || await getGlobalSetting('tg_token');
-  let chat = (typeof site === 'object' ? site.tg_chat : '') || await getGlobalSetting('tg_chat');
-  if (!token || !chat) return;
   const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`;
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chat, text: msg, parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '✅ 승인', callback_data: `approve_${chargeId}` },
-            { text: '❌ 거절', callback_data: `reject_${chargeId}` }
-          ]]
-        }
-      })
-    });
-  } catch(e) { console.log('TG 오류:', e.message); }
+  
+  // 슈퍼관리자에게 항상 전송
+  const superToken = await getGlobalSetting('tg_token');
+  const superChat = await getGlobalSetting('tg_chat');
+  
+  // 사이트별 관리자 (설정된 경우)
+  const siteToken = (typeof site === 'object' ? site.tg_token : '') || '';
+  const siteChat = (typeof site === 'object' ? site.tg_chat : '') || '';
+  
+  const sendList = [];
+  if (superToken && superChat) {
+    sendList.push({ token: superToken, chat: superChat });
+  }
+  if (siteToken && siteChat && 
+      (siteToken !== superToken || siteChat !== superChat)) {
+    sendList.push({ token: siteToken, chat: siteChat });
+  }
+  
+  const body = {
+    text: msg, parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '✅ 승인', callback_data: `approve_${chargeId}` },
+        { text: '❌ 거절', callback_data: `reject_${chargeId}` }
+      ]]
+    }
+  };
+  
+  await Promise.all(sendList.map(async ({ token, chat }) => {
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat, ...body })
+      });
+    } catch(e) { console.log('TG 오류:', e.message); }
+  }));
 }
 
 // ── API 라우트 ──
