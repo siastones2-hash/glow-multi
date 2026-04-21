@@ -518,11 +518,11 @@ function validateUrl(url, platform) {
     const validDomains = {
       youtube: ['youtube.com', 'youtu.be', 'm.youtube.com'],
       instagram: ['instagram.com', 'instagr.am'],
-      tiktok: ['tiktok.com', 'vm.tiktok.com'],
+      tiktok: ['tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com'],
       twitter: ['twitter.com', 'x.com'],
       facebook: ['facebook.com', 'fb.com', 'fb.watch', 'm.facebook.com'],
       telegram: ['t.me', 'telegram.me'],
-      threads: ['threads.net'],
+      threads: ['threads.com', 'threads.net'],
       spotify: ['spotify.com', 'open.spotify.com'],
       twitch: ['twitch.tv'],
     };
@@ -1205,6 +1205,21 @@ app.get('/api/services', async (req, res) => {
     }
     const isPartner = req.session && req.session.role === 'partner';
     const isDefaultSite = !site || site.id === 'default';
+    
+    // 🎯 플랫폼 우선순위 정렬 (한국 사용자 선호도 기반)
+    // YouTube, Instagram, TikTok 먼저 → Twitter, Threads → 기타
+    const platformOrder = {
+      youtube: 1, instagram: 2, tiktok: 3,
+      threads: 4, twitter: 5, spotify: 6,
+      twitch: 7, facebook: 8, telegram: 9,
+      traffic: 10, travel: 11, other: 99,
+    };
+    serviceRows.sort((a, b) => {
+      const oa = platformOrder[a.pl] || 50;
+      const ob = platformOrder[b.pl] || 50;
+      if (oa !== ob) return oa - ob;
+      return (a.id > b.id ? 1 : -1); // 같은 플랫폼 내에서는 id 순
+    });
     
     // 글로벌 기본 사이트 마진 (GLOW의 사이트 마진)
     const globalSiteMgStr = await getGlobalSetting('global_site_margin');
