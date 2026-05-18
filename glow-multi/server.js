@@ -209,18 +209,18 @@ async function initDB() {
   const no9Exists = await query(`SELECT id FROM sites WHERE domain='no9story.com'`);
   if (no9Exists.rows.length === 0) {
     await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,bank,margin,exrate,credit,super_margin)
-      VALUES('no9story','no9story.com','나인스토리','🔥','#DC143C','#FF8C00',$1,40,1500,0,100)`, [BANK_INFO]);
+      VALUES('no9story','no9story.com','나인스토리','🔥','#DC143C','#FF8C00','',40,1500,0,100)`);
   } else {
-    await query(`UPDATE sites SET bank=$1, super_margin=100 WHERE domain='no9story.com'`, [BANK_INFO]);
+    await query(`UPDATE sites SET super_margin=100 WHERE domain='no9story.com'`);
   }
 
   // 이그니트리스
   const ignitrisExists = await query(`SELECT id FROM sites WHERE domain='ignitris.co.kr'`);
   if (ignitrisExists.rows.length === 0) {
     await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,bank,margin,exrate,credit,super_margin)
-      VALUES('ignitris','ignitris.co.kr','이그니트리스','💕','#7209B7','#B5179E',$1,40,1500,0,100)`, [BANK_INFO]);
+      VALUES('ignitris','ignitris.co.kr','이그니트리스','💕','#7209B7','#B5179E','',40,1500,0,100)`);
   } else {
-    await query(`UPDATE sites SET bank=$1, super_margin=100 WHERE domain='ignitris.co.kr'`, [BANK_INFO]);
+    await query(`UPDATE sites SET super_margin=100 WHERE domain='ignitris.co.kr'`);
   }
 
   // 슈퍼어드민
@@ -1026,7 +1026,13 @@ app.get('/api/site-config', (req, res) => {
     chargeGuide: site.charge_guide || '입금 후 아래 양식을 작성해주세요.',
     orderGuide: site.order_guide || '주문 후 취소가 어려울 수 있습니다.',
     heroBadge: site.hero_badge || '소셜 성장 자동화 플랫폼',
-    theme: site.theme || 'glow'
+    theme: site.theme || 'glow',
+    superBank: site.id === 'default' ? (site.bank || '') : (await (async () => {
+      try {
+        const def = await query(`SELECT bank FROM sites WHERE id='default'`);
+        return def.rows[0]?.bank || '';
+      } catch(e) { return ''; }
+    })())
   });
 });
 
