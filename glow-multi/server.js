@@ -189,14 +189,38 @@ async function initDB() {
     await query(`INSERT INTO global_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO NOTHING`, [k, v]);
   }
 
-  // 기본 사이트
+  // 기본 사이트 (계좌번호 포함)
+  const BANK_INFO = '우리은행 1002-160-164625 (예금주: 조인호)';
+  
+  // GLOW 본사
   const siteExists = await query(`SELECT id FROM sites WHERE id='default'`);
   if (siteExists.rows.length === 0) {
-    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,kakao,bank,margin,exrate,credit)
-      VALUES('default','localhost','GLOW','✨','#7209B7','#F72585',
-      'https://open.kakao.com/o/sphCuRed',
-      '우리은행 1002-160-164625 (예금주: 조인호)',
-      50,1380,999999999)`);
+    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,kakao,bank,margin,exrate,credit,super_margin)
+      VALUES('default','localhost','GLOW','✨','#F72585','#B5179E',
+      '',
+      $1,
+      40,1500,999999999,100)`, [BANK_INFO]);
+  } else {
+    // 기존 사이트도 계좌번호 업데이트
+    await query(`UPDATE sites SET bank=$1, super_margin=100, exrate=1500 WHERE id='default'`, [BANK_INFO]);
+  }
+
+  // 나인스토리
+  const no9Exists = await query(`SELECT id FROM sites WHERE domain='no9story.com'`);
+  if (no9Exists.rows.length === 0) {
+    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,bank,margin,exrate,credit,super_margin)
+      VALUES('no9story','no9story.com','나인스토리','🔥','#DC143C','#FF8C00',$1,40,1500,0,100)`, [BANK_INFO]);
+  } else {
+    await query(`UPDATE sites SET bank=$1, super_margin=100 WHERE domain='no9story.com'`, [BANK_INFO]);
+  }
+
+  // 이그니트리스
+  const ignitrisExists = await query(`SELECT id FROM sites WHERE domain='ignitris.co.kr'`);
+  if (ignitrisExists.rows.length === 0) {
+    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,bank,margin,exrate,credit,super_margin)
+      VALUES('ignitris','ignitris.co.kr','이그니트리스','💕','#7209B7','#B5179E',$1,40,1500,0,100)`, [BANK_INFO]);
+  } else {
+    await query(`UPDATE sites SET bank=$1, super_margin=100 WHERE domain='ignitris.co.kr'`, [BANK_INFO]);
   }
 
   // 슈퍼어드민
@@ -205,6 +229,28 @@ async function initDB() {
     const hash = bcrypt.hashSync('6933', 10);
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       ['superadmin', 'default', '슈퍼관리자', 'leestones@naver.com', hash, 'superadmin', 0]);
+  }
+
+  // 나인스토리 관리자 계정
+  const no9Admin = await query(`SELECT id FROM users WHERE email='no9story@admin.com'`);
+  if (no9Admin.rows.length === 0) {
+    const no9Site = await query(`SELECT id FROM sites WHERE domain='no9story.com'`);
+    if (no9Site.rows.length > 0) {
+      const hash = bcrypt.hashSync('1234', 10);
+      await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
+        [require('crypto').randomUUID(), no9Site.rows[0].id, '나인스토리관리자', 'no9story@admin.com', hash, 'admin', 0]);
+    }
+  }
+
+  // 이그니트리스 관리자 계정
+  const ignitrisAdmin = await query(`SELECT id FROM users WHERE email='ignitris@admin.com'`);
+  if (ignitrisAdmin.rows.length === 0) {
+    const ignitrisSite = await query(`SELECT id FROM sites WHERE domain='ignitris.co.kr'`);
+    if (ignitrisSite.rows.length > 0) {
+      const hash = bcrypt.hashSync('1234', 10);
+      await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
+        [require('crypto').randomUUID(), ignitrisSite.rows[0].id, '이그니트리스관리자', 'ignitris@admin.com', hash, 'admin', 0]);
+    }
   }
 
   // 기본 서비스 강제 최신화 (매 시작시 기본 서비스 삭제 후 재삽입)
