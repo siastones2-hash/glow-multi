@@ -1275,10 +1275,14 @@ async function enterDash(){
   ge('si-super').style.display=isSuper?'flex':'none';
   ge('bni-super').style.display=isSuper?'flex':'none';
 
+  // 최신 유저 정보 (포인트, 추천코드 포함)
+  var me = await api('/api/me');
+  if(me && me.id) CUR = Object.assign({}, CUR, me);
+
   updBal();
   await loadSvcs();
   renderQCards();renderSfBar();
-  loadOrders();loadChargeHis();loadOrders();loadChargeHis();loadBankInfo();
+  loadOrders();loadChargeHis();loadBankInfo();
   goTab('home');
 }
 function updBal(){
@@ -1483,15 +1487,20 @@ async function loadOrderStats(){
 
 // ── 충전 ──
 async function loadBankInfo(){
-  var d=await api('/api/site-config');
-  var bi=ge('bankInfo');
-  if(!bi) return;
-  if(d.bank && d.bank.trim()){
-    bi.innerHTML='💳 <strong style="color:var(--p2)">'+d.bank+'</strong><br><span style="font-size:11px;color:var(--tl)">입금 후 아래 버튼을 눌러 충전 요청해주세요.</span>';
-  } else {
-    bi.innerHTML='<span style="color:var(--tl);font-size:13px">⚠️ 계좌 정보 준비 중입니다. 관리자에게 문의하세요.</span>';
+  try {
+    var d=await api('/api/site-config');
+    var bi=ge('bankInfo');
+    if(!bi) return;
+    if(d && d.bank && d.bank.trim()){
+      bi.innerHTML='💳 <strong style="color:var(--p2)">'+d.bank+'</strong><br><span style="font-size:11px;color:var(--tl)">입금 후 아래 버튼을 눌러 충전 요청해주세요.</span>';
+    } else {
+      bi.innerHTML='<span style="color:var(--tl);font-size:13px">⚠️ 입금 계좌는 관리자에게 문의해주세요.</span>';
+    }
+    if(d && d.kakao) window._kakao=d.kakao;
+  } catch(e) {
+    var bi=ge('bankInfo');
+    if(bi) bi.innerHTML='<span style="color:var(--tl);font-size:13px">계좌 정보를 불러오는 중입니다...</span>';
   }
-  if(d.kakao) window._kakao=d.kakao;
 }
 function pickCharge(a,el){
   document.querySelectorAll('.ci').forEach(function(c){c.classList.remove('on')});
@@ -2284,16 +2293,16 @@ async function loadSuperBankInfo(){
   try {
     var d = await api('/api/site-config');
     var el = ge('superBankText');
-    if(el){
-      if(d && d.superBank && d.superBank.trim()){
-        el.innerHTML = '<strong style="font-size:15px;color:var(--p2)">'+d.superBank+'</strong>';
-      } else {
-        el.textContent = '계좌 미등록 (슈퍼관리자에게 문의)';
-      }
+    if(!el) return;
+    if(d && d.superBank && d.superBank.trim()){
+      el.innerHTML = '<strong style="font-size:15px;color:var(--p2)">'+d.superBank+'</strong>';
+    } else {
+      // superBank 없으면 슈퍼관리자에게 직접 문의 안내
+      el.innerHTML = '<span style="color:var(--tl)">슈퍼관리자에게 입금 계좌를 문의하세요.</span>';
     }
   } catch(e) {
     var el = ge('superBankText');
-    if(el) el.textContent = '계좌 정보를 불러올 수 없습니다.';
+    if(el) el.innerHTML = '<span style="color:var(--tl)">슈퍼관리자에게 입금 계좌를 문의하세요.</span>';
   }
 }
 async function loadCreditRequests(){
