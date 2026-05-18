@@ -1022,9 +1022,22 @@ async function tgChargeAlert(chargeId, userName, amount, note, site) {
 
 // ── API 라우트 ──
 
-app.get('/api/site-config', (req, res) => {
+app.get('/api/site-config', async (req, res) => {
+  try {
   const site = req.site;
   if (!site) return res.json({ error: '사이트를 찾을 수 없습니다' });
+  
+  // 슈퍼관리자(조인호) 계좌 가져오기
+  let superBank = '';
+  if (site.id === 'default') {
+    superBank = site.bank || '';
+  } else {
+    try {
+      const def = await query(`SELECT bank FROM sites WHERE id='default'`);
+      superBank = def.rows[0]?.bank || '';
+    } catch(e) { superBank = ''; }
+  }
+
   res.json({
     name: site.name, logo: site.logo,
     primaryColor: site.primary_color, accentColor: site.accent_color,
@@ -1049,13 +1062,9 @@ app.get('/api/site-config', (req, res) => {
     orderGuide: site.order_guide || '주문 후 취소가 어려울 수 있습니다.',
     heroBadge: site.hero_badge || '소셜 성장 자동화 플랫폼',
     theme: site.theme || 'glow',
-    superBank: site.id === 'default' ? (site.bank || '') : (await (async () => {
-      try {
-        const def = await query(`SELECT bank FROM sites WHERE id='default'`);
-        return def.rows[0]?.bank || '';
-      } catch(e) { return ''; }
-    })())
+    superBank: superBank
   });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/login', async (req, res) => {
