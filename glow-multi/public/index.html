@@ -295,6 +295,7 @@ tr:last-child td{border-bottom:none}
       <div class="fg"><label>닉네임</label><input type="text" id="rName" placeholder="닉네임"/></div>
       <div class="fg"><label>이메일</label><input type="email" id="r이메일" placeholder="이메일" autocomplete="email"/></div>
       <div class="fg"><label>비밀번호 (6자 이상)</label><input type="password" id="rPw" placeholder="비밀번호" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+      <div class="fg"><label>추천 코드 (선택) <span style="font-size:11px;color:var(--tl)">· 입력 시 500P 지급!</span></label><input type="text" id="rRef" placeholder="추천 코드 입력 (선택사항)" style="text-transform:uppercase"/></div>
       <button class="bp bpf" onclick="doRegister()">가입하기 →</button>
     </div>
     <div style="text-align:center;margin-top:16px">
@@ -387,7 +388,7 @@ tr:last-child td{border-bottom:none}
       <div class="tab on" id="tab-home">
         <div class="sg">
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">잔액</div><div class="gt" style="font-size:22px;font-weight:800" id="stBal">₩0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">총 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="stTotal">0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">포인트</div><div style="font-size:22px;font-weight:800;color:#F59E0B" id="stPoints">0P</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">처리 중</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="stPend">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">완료</div><div style="font-size:22px;font-weight:800;color:var(--ok)" id="stDone">0</div></div>
         </div>
@@ -398,6 +399,24 @@ tr:last-child td{border-bottom:none}
             <button class="bp bsm" onclick="goTab('order')">✨ 주문하기</button>
             <button class="bo bsm" onclick="goTab('charge')">💳 충전</button>
             <button class="bo bsm" onclick="goTab('orders')">📦 주문내역</button>
+          </div>
+        </div>
+        <!-- 포인트 카드 -->
+        <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#FCD34D" id="pointsCard">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:14px;font-weight:800">🎁 내 포인트</div>
+            <div style="font-size:18px;font-weight:800;color:#F59E0B"><span id="myPoints">0</span>P</div>
+          </div>
+          <div style="font-size:12px;color:#92400E;margin-bottom:10px">주문 완료 시 결제금액의 1% 적립 · 1P = ₩1</div>
+          <button onclick="convertPoints()" class="bp bsm" style="background:#F59E0B;border-color:#F59E0B">💰 잔액으로 전환</button>
+        </div>
+        <!-- 추천인 카드 -->
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:800;margin-bottom:8px">🔗 친구 추천</div>
+          <div style="font-size:12px;color:var(--tl);margin-bottom:8px">친구가 내 코드로 가입하면 나와 친구 모두 500P 지급!</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="flex:1;background:#f5f0ff;border:1.5px solid var(--bd2);border-radius:10px;padding:10px;font-size:14px;font-weight:700;color:var(--p2);text-align:center" id="myRefCode">로딩 중...</div>
+            <button onclick="copyRefCode()" class="bo bsm">복사</button>
           </div>
         </div>
         <div style="font-size:14px;font-weight:800;margin-bottom:12px">🔥 인기 서비스</div>
@@ -483,8 +502,31 @@ tr:last-child td{border-bottom:none}
           <button class="admtab" onclick="goAdm('users',this)">👥 회원</button>
           <button class="admtab" onclick="goAdm('charges',this)">💳 충전</button>
           <button class="admtab" onclick="goAdm('creditreq',this)">💰 크레딧 요청</button>
+          <button class="admtab" onclick="goAdm('revenue',this)">📊 수익 현황</button>
           <button class="admtab" onclick="goAdm('settings',this)">⚙️ 설정</button>
           <button class="admtab" id="svcMgmtTab" onclick="goAdm('svcmgmt',this)">🛍 서비스 관리</button>
+        </div>
+        <div class="apanel" id="ap-revenue">
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px">
+            <div class="card" style="text-align:center">
+              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">오늘 매출</div>
+              <div style="font-size:22px;font-weight:800;color:var(--p2)" id="rev-today">₩0</div>
+            </div>
+            <div class="card" style="text-align:center">
+              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">이번 달 매출</div>
+              <div style="font-size:22px;font-weight:800;color:var(--p2)" id="rev-month">₩0</div>
+            </div>
+            <div class="card" style="text-align:center">
+              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">전체 매출</div>
+              <div style="font-size:22px;font-weight:800;color:var(--p1)" id="rev-total">₩0</div>
+            </div>
+            <div class="card" style="text-align:center">
+              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">총 주문 수</div>
+              <div style="font-size:22px;font-weight:800;color:var(--p1)" id="rev-orders">0</div>
+            </div>
+          </div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">최근 주문 (매출 기준)</div>
+          <div class="tw"><table><thead><tr><th>날짜</th><th>회원</th><th>서비스</th><th>금액</th><th>상태</th></tr></thead><tbody id="revTb"></tbody></table></div>
         </div>
         <div class="apanel on" id="ap-orders">
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
@@ -1201,12 +1243,17 @@ async function doLogin(){
 }
 async function doRegister(){
   var n=ge('rName').value.trim(),e=ge('r이메일').value.trim(),p=ge('rPw').value;
+  var ref=(ge('rRef')?.value||'').trim().toUpperCase();
   if(!n||!e||!p){toast('모든 항목을 입력하세요','err');return}
-  var d=await api('/api/register','POST',{name:n,email:e,pw:p});
+  var body={name:n,email:e,pw:p};
+  if(ref)body.referral_code=ref;
+  var d=await api('/api/register','POST',body);
   if(d.error){toast(d.error,'err');return}
   if(d.token)localStorage.setItem('glow_token',d.token);
-  if(d.token)localStorage.setItem('glow_token',d.token);
-  CUR=d.user;enterDash();toast('가입 완료! 환영합니다 ✨','ok');
+  CUR=d.user;
+  if(d.user&&d.user.points>0) toast('가입 완료! '+d.user.points+'P 지급! ✨','ok');
+  else toast('가입 완료! 환영합니다 ✨','ok');
+  enterDash();
 }
 async function doLogout(){await api('/api/logout','POST');localStorage.removeItem('glow_token');CUR=null;showPg('pg-land')}
 
@@ -1237,6 +1284,35 @@ async function enterDash(){
 function updBal(){
   var b=gf(CUR.balance||0);
   ['hBal','mBal','stBal','chBal'].forEach(function(id){var el=ge(id);if(el)el.textContent=b});
+  // 포인트 업데이트
+  var pts = CUR.points||0;
+  ['stPoints','myPoints'].forEach(function(id){var el=ge(id);if(el)el.textContent=pts.toLocaleString()+'P'});
+  if(ge('myPoints')) ge('myPoints').textContent = pts.toLocaleString();
+  if(ge('stPoints')) ge('stPoints').textContent = pts.toLocaleString()+'P';
+  // 추천 코드
+  if(ge('myRefCode') && CUR.referral_code) ge('myRefCode').textContent = CUR.referral_code;
+  // 포인트 카드 숨기기 (0일때)
+  var pc=ge('pointsCard');if(pc)pc.style.display=pts>0?'block':'none';
+}
+async function convertPoints(){
+  var pts = CUR.points||0;
+  if(pts<=0){toast('전환할 포인트가 없습니다','err');return}
+  if(!confirm(pts.toLocaleString()+'P를 ₩'+pts.toLocaleString()+'으로 전환하시겠습니까?'))return;
+  var d=await api('/api/points/convert','POST');
+  if(d.error){toast(d.error,'err');return}
+  toast('₩'+d.converted.toLocaleString()+' 전환 완료! 🎉','ok');
+  CUR.points=0; CUR.balance=(CUR.balance||0)+d.converted;
+  updBal();
+}
+function copyRefCode(){
+  var code=CUR.referral_code||'';
+  if(!code){toast('추천 코드가 없습니다','err');return}
+  var url = window.location.origin+'?ref='+code;
+  navigator.clipboard.writeText(url).then(function(){
+    toast('추천 링크 복사 완료! 🔗','ok');
+  }).catch(function(){
+    toast('코드: '+code,'ok');
+  });
 }
 async function refreshMe(){
   var d=await api('/api/me');
@@ -1351,11 +1427,25 @@ async function loadOrders(){
     if(canCancel) {
       actionBtns += '<button onclick="cancelOrder(\''+o.id+'\')" style="background:rgba(220,20,60,.1);color:#DC143C;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer" title="주문 취소 요청">✕</button>';
     }
+    // 진행률 계산
+    var progressHtml = '';
+    if(o.status === 'processing' || o.status === 'partial_refunded'){
+      var qty = o.qty || 1;
+      var starts = o.starts_count || 0;
+      var remains = o.remains || 0;
+      var done = Math.max(0, qty - remains);
+      var pct = Math.min(100, Math.round((done / qty) * 100));
+      progressHtml = '<div style="margin-top:3px"><div style="background:#f0e8ff;border-radius:100px;height:4px;width:100%">'
+        +'<div style="background:var(--p2);height:4px;border-radius:100px;width:'+pct+'%"></div></div>'
+        +'<span style="font-size:10px;color:var(--tl)">'+pct+'% ('+done.toLocaleString()+'/'+qty.toLocaleString()+')</span></div>';
+    } else if(o.status === 'completed'){
+      progressHtml = '<div style="font-size:10px;color:#10B981;margin-top:2px">✅ 100% 완료</div>';
+    }
     h+='<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#1A1030">'+PLI[o.pl]+' '+o.sname+'</td>'
       +'<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="'+o.link+'" target="_blank" style="color:#B5179E;text-decoration:none;font-size:12px">'+o.link+'</a></td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
-      +'<td>'+badge(o.status)+'</td>'
+      +'<td>'+badge(o.status)+progressHtml+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
       +'<td style="white-space:nowrap">'+actionBtns+'</td></tr>';
   });
@@ -1394,8 +1484,14 @@ async function loadOrderStats(){
 // ── 충전 ──
 async function loadBankInfo(){
   var d=await api('/api/site-config');
-  if(d.bank){var bi=ge('bankInfo');if(bi)bi.innerHTML='✦ <strong style="color:#B5179E">'+d.bank+'</strong><br><span style="font-size:11px;color:#9A8AB0">입금 후 카카오톡으로 입금자명+금액 알려주시면 즉시 충전됩니다.</span>'}
-  if(d.kakao)window._kakao=d.kakao;
+  var bi=ge('bankInfo');
+  if(!bi) return;
+  if(d.bank && d.bank.trim()){
+    bi.innerHTML='💳 <strong style="color:var(--p2)">'+d.bank+'</strong><br><span style="font-size:11px;color:var(--tl)">입금 후 아래 버튼을 눌러 충전 요청해주세요.</span>';
+  } else {
+    bi.innerHTML='<span style="color:var(--tl);font-size:13px">⚠️ 계좌 정보 준비 중입니다. 관리자에게 문의하세요.</span>';
+  }
+  if(d.kakao) window._kakao=d.kakao;
 }
 function pickCharge(a,el){
   document.querySelectorAll('.ci').forEach(function(c){c.classList.remove('on')});
@@ -1452,6 +1548,7 @@ function goAdm(tab,el){
   if(tab==='orders')loadAdmOrders();
   if(tab==='users')loadAdmUsers();
   if(tab==='creditreq'){loadCreditRequests();loadSuperBankInfo();}
+  if(tab==='revenue')loadRevenue();
   if(tab==='svcmgmt')loadSvcMgmt();
   if(tab==='charges')loadAdmCharges();
 }
@@ -2153,16 +2250,51 @@ async function requestCredit(){
   ge('crAmount').value='';ge('crNote').value='';
   loadCreditRequests();
 }
+async function loadRevenue(){
+  var d = await api('/api/admin/orders');
+  if(!Array.isArray(d)) return;
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var monthStr = now.toISOString().slice(0,7);
+  var todayTotal=0, monthTotal=0, allTotal=0;
+  var rows='';
+  d.forEach(function(o){
+    var dateStr = (o.created||'').slice(0,10);
+    var monthS = (o.created||'').slice(0,7);
+    var charge = o.charge||0;
+    if(o.status !== 'refunded'){
+      allTotal += charge;
+      if(dateStr === todayStr) todayTotal += charge;
+      if(monthS === monthStr) monthTotal += charge;
+    }
+    rows += '<tr><td style="font-size:11px;color:var(--tl)">'+fd(o.created)+'</td>'
+      +'<td style="font-size:12px">'+o.uname+'</td>'
+      +'<td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+o.sname+'</td>'
+      +'<td style="font-weight:700;color:var(--p2)">'+gf(charge)+'</td>'
+      +'<td>'+badge(o.status)+'</td></tr>';
+  });
+  ge('rev-today').textContent = gf(todayTotal);
+  ge('rev-month').textContent = gf(monthTotal);
+  ge('rev-total').textContent = gf(allTotal);
+  ge('rev-orders').textContent = d.length;
+  var tb = ge('revTb');
+  if(tb) tb.innerHTML = rows || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--tl)">주문 내역 없음</td></tr>';
+}
 async function loadSuperBankInfo(){
   try {
     var d = await api('/api/site-config');
     var el = ge('superBankText');
-    if(el && d && d.superBank){
-      el.textContent = d.superBank;
-    } else if(el) {
-      el.textContent = '계좌 미등록 (슈퍼관리자에게 문의)';
+    if(el){
+      if(d && d.superBank && d.superBank.trim()){
+        el.innerHTML = '<strong style="font-size:15px;color:var(--p2)">'+d.superBank+'</strong>';
+      } else {
+        el.textContent = '계좌 미등록 (슈퍼관리자에게 문의)';
+      }
     }
-  } catch(e) {}
+  } catch(e) {
+    var el = ge('superBankText');
+    if(el) el.textContent = '계좌 정보를 불러올 수 없습니다.';
+  }
 }
 async function loadCreditRequests(){
   var d=await api('/api/admin/credit-requests');
@@ -2462,6 +2594,19 @@ function downloadPriceTable(){
 
 window.addEventListener('DOMContentLoaded',async function(){
   loadSiteConfig();
+  // 🔗 추천인 코드 URL 파라미터 자동 감지 (?ref=XXXXX)
+  var urlParams = new URLSearchParams(window.location.search);
+  var refCode = urlParams.get('ref');
+  if(refCode){
+    // 회원가입 탭으로 이동 후 코드 자동 입력
+    showPg('pg-auth');
+    switchAuth('register');
+    setTimeout(function(){
+      var el = ge('rRef');
+      if(el) el.value = refCode.toUpperCase();
+    }, 100);
+    return;
+  }
   // 🔐 비밀번호 재설정 링크 접속 처리
   var isResetPage=await handleResetPasswordPage();
   if(isResetPage)return;
