@@ -141,9 +141,19 @@ async function initDB() {
       qty INTEGER NOT NULL,
       charge REAL NOT NULL,
       status TEXT DEFAULT 'pending',
+      starts_count INTEGER DEFAULT 0,
+      remains INTEGER DEFAULT 0,
       created TIMESTAMP DEFAULT NOW()
     )
   `);
+  // 기존 테이블에 컬럼 추가 (없으면)
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS starts_count INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS remains INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL`).catch(()=>{});
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by TEXT DEFAULT NULL`).catch(()=>{});
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus INTEGER DEFAULT 0`).catch(()=>{});
 
   await query(`
     CREATE TABLE IF NOT EXISTS charges (
@@ -674,19 +684,17 @@ async function autoRefundOrder(order, peakerrData) {
     // Peakerr 상태 확인
     const status = (peakerrData.status || '').toLowerCase();
     const remains = parseInt(peakerrData.remains || 0);
+    const startsCount = parseInt(peakerrData.start_count || 0);
     
     let refundPercent = 0;
     let newStatus = order.status;
     
     if (status === 'completed') {
-      // 완료 → 환불 없음
       newStatus = 'completed';
     } else if (status === 'canceled' || status === 'cancelled') {
-      // 취소됨 → 전액 환불
       refundPercent = 100;
       newStatus = 'refunded';
     } else if (status === 'partial') {
-      // 부분 완료 → 미처리분 비례 환불
       if (remains > 0 && order.qty > 0) {
         refundPercent = Math.round((remains / order.qty) * 100);
         newStatus = refundPercent >= 100 ? 'refunded' : 'partial_refunded';
@@ -694,14 +702,17 @@ async function autoRefundOrder(order, peakerrData) {
     } else if (status === 'in progress' || status === 'processing' || status === 'pending') {
       newStatus = 'processing';
     } else if (status === 'error' || status === 'failed') {
-      // 에러 → 전액 환불
       refundPercent = 100;
       newStatus = 'refunded';
     }
     
-    // 상태 업데이트
-    if (newStatus !== order.status) {
-      await query(`UPDATE orders SET status=$1 WHERE id=$2`, [newStatus, order.id]);
+    // 진행률 저장 (starts_count, remains)
+    await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3 WHERE id=$4`,
+      [newStatus, startsCount, remains, order.id]);
+    
+    // 🎁 완료 시 포인트 적립
+    if (newStatus === 'completed' && order.status !== 'completed') {
+      await earnPoints({ ...order, status: 'processing' }); // status를 completed 이전으로 전달
     }
     
     // 환불 처리
@@ -753,6 +764,17 @@ async function autoRefundOrder(order, peakerrData) {
     
     return { status: newStatus, refundPercent };
   } catch(e) { console.log('자동 환불 실패:', e.message); return null; }
+}
+
+// 🎁 포인트 적립 (주문 완료 시 결제금액의 1%)
+async function earnPoints(order) {
+  try {
+    if (order.status === 'completed' || order.points_earned > 0) return;
+    const points = Math.floor(order.charge / 100); // 1% 포인트
+    if (points <= 0) return;
+    await query(`UPDATE users SET points=COALESCE(points,0)+$1 WHERE id=$2`, [points, order.uid]);
+    await query(`UPDATE orders SET points_earned=$1 WHERE id=$2`, [points, order.id]);
+  } catch(e) { console.log('포인트 적립 실패:', e.message); }
 }
 
 // 🔄 진행중인 모든 주문 상태 동기화
@@ -1084,10 +1106,25 @@ app.post('/api/register', async (req, res) => {
     if (exists.rows.length > 0) return res.json({ error: '이미 사용 중인 이메일입니다' });
     const hash = bcrypt.hashSync(pw, 10);
     const id = 'u' + Date.now();
-    await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
-      [id, req.siteId, name, email, hash, 'user', 0]);
+    // 레퍼럴 코드 생성 (6자리 랜덤)
+    const refCode = Math.random().toString(36).substring(2,8).toUpperCase();
+    // 추천인 코드 처리
+    const { referral_code } = req.body;
+    let referredBy = null;
+    let signupBonus = 0;
+    if (referral_code) {
+      const refUser = await query(`SELECT id FROM users WHERE site_id=$1 AND referral_code=$2`, [req.siteId, referral_code]);
+      if (refUser.rows.length > 0) {
+        referredBy = refUser.rows[0].id;
+        signupBonus = 500; // 추천인 가입 시 ₩500 포인트 지급
+        // 추천인에게도 포인트 지급
+        await query(`UPDATE users SET points=COALESCE(points,0)+500, referral_bonus=COALESCE(referral_bonus,0)+500 WHERE id=$1`, [referredBy]);
+      }
+    }
+    await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance,referral_code,referred_by,points) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus]);
     const token = createToken({ userId: id, role: 'user', siteId: req.siteId });
-    res.json({ ok: true, token, user: { id, name, email, role: 'user', balance: 0 }});
+    res.json({ ok: true, token, user: { id, name, email, role: 'user', balance: 0, points: signupBonus, referral_code: refCode }});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1216,7 +1253,7 @@ app.post('/api/reset-password', async (req, res) => {
 
 app.get('/api/me', requireAuth, async (req, res) => {
   try {
-    const r = await query(`SELECT id,name,email,role,balance,status FROM users WHERE id=$1`, [req.session.userId]);
+    const r = await query(`SELECT id,name,email,role,balance,status,COALESCE(points,0) as points FROM users WHERE id=$1`, [req.session.userId]);
     res.json(r.rows[0]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1488,6 +1525,22 @@ app.post('/api/orders/cancel/:orderId', requireAuth, async (req, res) => {
     } catch(e) {
       res.json({ error: '취소 요청 실패: ' + e.message });
     }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 🎁 포인트 → 잔액 전환
+app.post('/api/points/convert', requireAuth, async (req, res) => {
+  try {
+    const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
+    const user = userR.rows[0];
+    if (!user) return res.json({ error: '사용자 없음' });
+    const points = Math.floor(user.points || 0);
+    if (points <= 0) return res.json({ error: '전환할 포인트가 없습니다' });
+    // 1포인트 = 1원
+    await query(`UPDATE users SET balance=balance+$1, points=0 WHERE id=$2`, [points, user.id]);
+    await logBalance(user.site_id, user.id, user.name, points,
+      user.balance, user.balance + points, `포인트 전환 (${points}P → ₩${points.toLocaleString()})`, 'system');
+    res.json({ ok: true, converted: points });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
