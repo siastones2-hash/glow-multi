@@ -1080,8 +1080,24 @@ app.post('/api/login', async (req, res) => {
       return res.json({ error: '이메일 또는 비밀번호가 올바르지 않습니다' });
     if (targetUser.status === 'banned')
       return res.json({ error: '정지된 계정입니다. 관리자에게 문의하세요.' });
+    
+    // 레퍼럴 코드 없으면 자동 생성
+    if (!targetUser.referral_code) {
+      const refCode = Math.random().toString(36).substring(2,8).toUpperCase();
+      await query(`UPDATE users SET referral_code=$1 WHERE id=$2`, [refCode, targetUser.id]);
+      targetUser.referral_code = refCode;
+    }
+    
     const token = createToken({ userId: targetUser.id, role: targetUser.role, siteId: req.siteId });
-    res.json({ ok: true, token, user: { id: targetUser.id, name: targetUser.name, email: targetUser.email, role: targetUser.role, balance: targetUser.balance }});
+    res.json({ ok: true, token, user: {
+      id: targetUser.id,
+      name: targetUser.name,
+      email: targetUser.email,
+      role: targetUser.role,
+      balance: targetUser.balance,
+      points: targetUser.points || 0,
+      referral_code: targetUser.referral_code
+    }});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1253,8 +1269,16 @@ app.post('/api/reset-password', async (req, res) => {
 
 app.get('/api/me', requireAuth, async (req, res) => {
   try {
-    const r = await query(`SELECT id,name,email,role,balance,status,COALESCE(points,0) as points FROM users WHERE id=$1`, [req.session.userId]);
-    res.json(r.rows[0]);
+    const r = await query(`SELECT id,name,email,role,balance,status,COALESCE(points,0) as points,referral_code FROM users WHERE id=$1`, [req.session.userId]);
+    const user = r.rows[0];
+    if (!user) return res.json({ error: '사용자 없음' });
+    // referral_code 없으면 자동 생성
+    if (!user.referral_code) {
+      const refCode = Math.random().toString(36).substring(2,8).toUpperCase();
+      await query(`UPDATE users SET referral_code=$1 WHERE id=$2`, [refCode, req.session.userId]);
+      user.referral_code = refCode;
+    }
+    res.json(user);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
