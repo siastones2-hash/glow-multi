@@ -2837,16 +2837,32 @@ app.listen(PORT, async () => {
   console.log(`✨ GLOW Multi-Tenant 서버 실행 중: http://localhost:${PORT}`);
   await initDB();
 
-  // 텔레그램 웹훅 자동 등록
+  // 텔레그램 웹훅 자동 등록 (슈퍼관리자 봇 + 모든 사이트 봇)
   try {
-    const token = await getGlobalSetting('tg_token');
     const renderUrl = process.env.RENDER_EXTERNAL_URL;
-    if (token && renderUrl) {
-      await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: `${renderUrl}/api/tg-webhook` })
-      });
-      console.log('✅ 텔레그램 웹훅 등록 완료');
+    if (renderUrl) {
+      const webhookUrl = `${renderUrl}/api/tg-webhook`;
+      // 등록할 봇 토큰 수집 (중복 제거)
+      const tokens = new Set();
+      const superToken = await getGlobalSetting('tg_token');
+      if (superToken) tokens.add(superToken);
+      // 모든 사이트의 봇 토큰
+      try {
+        const siteR = await query(`SELECT tg_token FROM sites WHERE tg_token IS NOT NULL AND tg_token != ''`);
+        siteR.rows.forEach(s => { if (s.tg_token) tokens.add(s.tg_token); });
+      } catch(e) {}
+      // 각 봇에 webhook 등록
+      let ok = 0;
+      for (const tk of tokens) {
+        try {
+          await fetch(`https://api.telegram.org/bot${tk}/setWebhook`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: webhookUrl })
+          });
+          ok++;
+        } catch(e) { console.log('웹훅 등록 실패(개별):', e.message); }
+      }
+      console.log(`✅ 텔레그램 웹훅 등록 완료: ${ok}/${tokens.size}개 봇`);
     }
   } catch(e) { console.log('웹훅 등록 실패:', e.message); }
   
