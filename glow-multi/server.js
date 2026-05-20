@@ -2448,6 +2448,26 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// 크레딧 요청 내역 삭제 (관리자 전용 · DB 완전 삭제 · 모든 상태 삭제 가능)
+// ⚠️ 삭제는 '기록 정리'이며 이미 지급된 크레딧은 회수하지 않음
+app.post('/api/admin/credit-requests/delete', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (!id) return res.json({ error: '삭제할 항목을 지정해주세요' });
+    const r = await query(`SELECT * FROM credit_requests WHERE id=$1`, [id]);
+    const cr = r.rows[0];
+    if (!cr) return res.json({ error: '크레딧 요청 내역을 찾을 수 없습니다' });
+    // 권한: 슈퍼관리자는 전체, 일반 관리자는 자기 사이트 건만 삭제 가능
+    if (req.session.role !== 'superadmin' && cr.site_id !== req.siteId) {
+      return res.json({ error: '다른 사이트의 크레딧 요청은 삭제할 수 없습니다' });
+    }
+    await query(`DELETE FROM credit_requests WHERE id=$1`, [id]);
+    await logActivity(req.siteId, req.session.userId, '', '크레딧 요청 삭제', 'credit', id,
+      `₩${Math.round(cr.amount).toLocaleString()} (${cr.status})`);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 // ── 서비스 CRUD (슈퍼어드민) ──
 app.post('/api/super/services/create', requireSuperAdmin, async (req, res) => {
@@ -2577,6 +2597,25 @@ app.post('/api/super/sites/credit', requireSuperAdmin, async (req, res) => {
     await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [amt, siteId]);
     const r = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
     res.json({ ok: true, credit: r.rows[0].credit });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 사이트 크레딧 직접 수정 (정확한 값으로 덮어쓰기 · 잘못 충전 정정용)
+app.post('/api/super/sites/credit-set', requireSuperAdmin, async (req, res) => {
+  try {
+    const { siteId, credit } = req.body;
+    const newCredit = parseFloat(credit);
+    if (isNaN(newCredit) || newCredit < 0) return res.json({ error: '0 이상의 크레딧 값을 입력하세요' });
+    const beforeR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+    if (!beforeR.rows[0]) return res.json({ error: '사이트를 찾을 수 없습니다' });
+    const before = parseFloat(beforeR.rows[0].credit) || 0;
+    await query(`UPDATE sites SET credit=$1 WHERE id=$2`, [newCredit, siteId]);
+    // 변경 이력 기록 (추적용)
+    try {
+      await logActivity('default', req.session.userId, '', '크레딧 직접 수정', 'credit', siteId,
+        `$${before.toFixed(2)} → $${newCredit.toFixed(2)} (${beforeR.rows[0].name})`);
+    } catch(e) {}
+    res.json({ ok: true, credit: newCredit, before });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
