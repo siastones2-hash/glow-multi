@@ -1604,14 +1604,16 @@ async function loadAdmCharges(){
   var d=await api('/api/admin/charges');var tb=ge('aCTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
+    var actions=(c.status==='pending'
+      ?'<button class="btn bok bxs" onclick="procCharge(\''+c.id+'\',\'approve\')">✓ 승인</button><button class="btn ber bxs" onclick="procCharge(\''+c.id+'\',\'reject\')">✗ 거절</button>'
+      :'<span style="font-size:11px;color:#9A8AB0">완료</span>')
+      +'<button class="btn bxs" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1" onclick="delCharge(\''+c.id+'\')">🗑 삭제</button>';
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
       +'<td style="font-weight:700;color:#B5179E">'+gf(c.amount)+'</td>'
       +'<td style="font-size:12px">'+(c.note||'-')+'</td>'
       +'<td>'+badge(c.status)+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(c.created)+'</td>'
-      +'<td>'+(c.status==='pending'
-        ?'<div style="display:flex;gap:5px"><button class="btn bok bxs" onclick="procCharge(\''+c.id+'\',\'approve\')">✓ 승인</button><button class="btn ber bxs" onclick="procCharge(\''+c.id+'\',\'reject\')">✗ 거절</button></div>'
-        :'<span style="font-size:11px;color:#9A8AB0">완료</span>')+'</td></tr>';
+      +'<td><div style="display:flex;gap:5px;flex-wrap:wrap">'+actions+'</div></td></tr>';
   });
   tb.innerHTML=h;
 }
@@ -1619,6 +1621,13 @@ async function procCharge(id,action){
   var d=await api('/api/admin/charges/process','POST',{id:id,action:action});
   if(d.error){toast(d.error,'err');return}
   toast(action==='approve'?'충전 승인 완료 ✨':'충전 거절','ok');
+  loadAdmCharges();loadAdmDash();
+}
+async function delCharge(id){
+  if(!confirm('이 충전 내역을 삭제하시겠습니까?\n삭제해도 이미 지급된 잔액은 회수되지 않습니다.'))return;
+  var d=await api('/api/admin/charges/delete','POST',{id:id});
+  if(d.error){toast(d.error,'err');return}
+  toast('충전 내역 삭제됨','ok');
   loadAdmCharges();loadAdmDash();
 }
 
@@ -2042,17 +2051,32 @@ async function loadSuperCharges(){
   var d=await api('/api/super/charges');var tb=ge('spCTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
+    var actions=(c.status==='pending'
+      ?'<button class="btn bok bxs" onclick="procChargeSuper(\''+c.id+'\',\'approve\')">✓</button><button class="btn ber bxs" onclick="procChargeSuper(\''+c.id+'\',\'reject\')">✗</button>'
+      :'<span style="font-size:11px;color:#9A8AB0">완료</span>')
+      +'<button class="btn bxs" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1" onclick="delChargeSuper(\''+c.id+'\')">🗑</button>';
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_id||'-')+'</td>'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
       +'<td style="font-weight:700;color:#B5179E">'+gf(c.amount)+'</td>'
       +'<td style="font-size:12px">'+(c.note||'-')+'</td>'
       +'<td>'+badge(c.status)+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(c.created)+'</td>'
-      +'<td>'+(c.status==='pending'
-        ?'<div style="display:flex;gap:5px"><button class="btn bok bxs" onclick="procCharge(\''+c.id+'\',\'approve\')">✓</button><button class="btn ber bxs" onclick="procCharge(\''+c.id+'\',\'reject\')">✗</button></div>'
-        :'<span style="font-size:11px;color:#9A8AB0">완료</span>')+'</td></tr>';
+      +'<td><div style="display:flex;gap:5px;flex-wrap:wrap">'+actions+'</div></td></tr>';
   });
   tb.innerHTML=h;
+}
+async function procChargeSuper(id,action){
+  var d=await api('/api/admin/charges/process','POST',{id:id,action:action});
+  if(d.error){toast(d.error,'err');return}
+  toast(action==='approve'?'충전 승인 완료 ✨':'충전 거절','ok');
+  loadSuperCharges();
+}
+async function delChargeSuper(id){
+  if(!confirm('이 충전 내역을 삭제하시겠습니까?\n삭제해도 이미 지급된 잔액은 회수되지 않습니다.'))return;
+  var d=await api('/api/admin/charges/delete','POST',{id:id});
+  if(d.error){toast(d.error,'err');return}
+  toast('충전 내역 삭제됨','ok');
+  loadSuperCharges();
 }
 
 // 사이트 생성
