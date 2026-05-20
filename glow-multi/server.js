@@ -154,6 +154,7 @@ async function initDB() {
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by TEXT DEFAULT NULL`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''`).catch(()=>{});
 
   await query(`
     CREATE TABLE IF NOT EXISTS charges (
@@ -1148,6 +1149,8 @@ app.post('/api/register', async (req, res) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.json({ error: '올바른 이메일 형식이 아닙니다' });
     // 이름 길이 제한 (봇 스팸 방지)
     if (name.length < 2 || name.length > 50) return res.json({ error: '이름은 2~50자 사이여야 합니다' });
+    // 전화번호 (선택 입력)
+    const phone = (req.body.phone || '').trim();
     
     const exists = await query(`SELECT id FROM users WHERE site_id=$1 AND email=$2`, [req.siteId, email]);
     if (exists.rows.length > 0) return res.json({ error: '이미 사용 중인 이메일입니다' });
@@ -1168,8 +1171,8 @@ app.post('/api/register', async (req, res) => {
         await query(`UPDATE users SET points=COALESCE(points,0)+500, referral_bonus=COALESCE(referral_bonus,0)+500 WHERE id=$1`, [referredBy]);
       }
     }
-    await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance,referral_code,referred_by,points) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus]);
+    await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance,referral_code,referred_by,points,phone) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus, phone]);
     const token = createToken({ userId: id, role: 'user', siteId: req.siteId });
     res.json({ ok: true, token, user: { id, name, email, role: 'user', balance: 0, points: signupBonus, referral_code: refCode }});
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1300,7 +1303,7 @@ app.post('/api/reset-password', async (req, res) => {
 
 app.get('/api/me', requireAuth, async (req, res) => {
   try {
-    const r = await query(`SELECT id,name,email,role,balance,status,COALESCE(points,0) as points,referral_code FROM users WHERE id=$1`, [req.session.userId]);
+    const r = await query(`SELECT id,name,email,role,balance,status,COALESCE(points,0) as points,referral_code,COALESCE(phone,'') as phone FROM users WHERE id=$1`, [req.session.userId]);
     const user = r.rows[0];
     if (!user) return res.json({ error: '사용자 없음' });
     // referral_code 없으면 자동 생성
@@ -1310,6 +1313,38 @@ app.get('/api/me', requireAuth, async (req, res) => {
       user.referral_code = refCode;
     }
     res.json(user);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 내 정보 - 비밀번호 변경 (현재 비밀번호 확인 필수)
+app.post('/api/me/password', requireAuth, async (req, res) => {
+  try {
+    const { currentPw, newPw } = req.body;
+    if (!currentPw || !newPw) return res.json({ error: '현재 비밀번호와 새 비밀번호를 모두 입력하세요' });
+    if (newPw.length < 6) return res.json({ error: '새 비밀번호는 6자 이상이어야 합니다' });
+    const r = await query(`SELECT pw FROM users WHERE id=$1`, [req.session.userId]);
+    const user = r.rows[0];
+    if (!user) return res.json({ error: '사용자를 찾을 수 없습니다' });
+    // 현재 비밀번호 확인
+    if (!bcrypt.compareSync(currentPw, user.pw)) {
+      return res.json({ error: '현재 비밀번호가 올바르지 않습니다' });
+    }
+    if (bcrypt.compareSync(newPw, user.pw)) {
+      return res.json({ error: '새 비밀번호가 기존 비밀번호와 같습니다' });
+    }
+    const hash = bcrypt.hashSync(newPw, 10);
+    await query(`UPDATE users SET pw=$1 WHERE id=$2`, [hash, req.session.userId]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 내 정보 - 전화번호 저장/수정
+app.post('/api/me/phone', requireAuth, async (req, res) => {
+  try {
+    const phone = (req.body.phone || '').trim();
+    if (phone.length > 30) return res.json({ error: '전화번호가 너무 깁니다' });
+    await query(`UPDATE users SET phone=$1 WHERE id=$2`, [phone, req.session.userId]);
+    res.json({ ok: true, phone });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
