@@ -1396,7 +1396,8 @@ function calcPrice(){
   if(!SEL||!CUR)return;
   var qty=parseInt(ge('o수량').value)||0;
   ge('oBal').textContent=gf(CUR.balance||0);
-  ge('oTotal').textContent=qty?gf(SEL.sell*qty):'₩0';
+  // 서버와 동일하게 반올림 → 화면 표시값과 실제 차감액 일치
+  ge('oTotal').textContent=qty?gf(Math.round(SEL.sell*qty)):'₩0';
 }
 function renderQCards(){
   var el=ge('qCards');if(!el)return;
