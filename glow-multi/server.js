@@ -948,25 +948,27 @@ async function scanNewServices() {
 }
 
 async function tgAlert(msg, site) {
-  // 슈퍼관리자(전역)에게 항상 알림 전송
+  const siteObj = typeof site === 'object' ? site : null;
+  const isDefaultSite = !siteObj || siteObj.id === 'default';
+
   const superToken = await getGlobalSetting('tg_token');
   const superChat = await getGlobalSetting('tg_chat');
-  
-  // 사이트별 관리자 텔레그램 (설정된 경우)
-  const siteToken = site?.tg_token || '';
-  const siteChat = site?.tg_chat || '';
-  
-  // 중복 방지: 사이트 텔레그램이 슈퍼와 같으면 한 번만
+  const siteToken = siteObj?.tg_token || '';
+  const siteChat = siteObj?.tg_chat || '';
+
   const sendList = [];
+
+  // 주문 알림은 조인호한테 항상 옴 (전체 현황 파악용)
   if (superToken && superChat) {
     sendList.push({ token: superToken, chat: superChat, label: 'super' });
   }
-  if (siteToken && siteChat && 
+
+  // 사이트 관리자한테도 전송 (설정된 경우, 중복 제외)
+  if (siteToken && siteChat &&
       (siteToken !== superToken || siteChat !== superChat)) {
     sendList.push({ token: siteToken, chat: siteChat, label: 'site' });
   }
-  
-  // 병렬 전송
+
   await Promise.all(sendList.map(async ({ token, chat }) => {
     try {
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -980,23 +982,35 @@ async function tgAlert(msg, site) {
 
 async function tgChargeAlert(chargeId, userName, amount, note, site) {
   const siteName = typeof site === 'object' ? site.name : site;
+  const siteObj = typeof site === 'object' ? site : null;
+  const isDefaultSite = !siteObj || siteObj.id === 'default';
+  
   const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`;
   
-  // 슈퍼관리자에게 항상 전송
-  const superToken = await getGlobalSetting('tg_token');
-  const superChat = await getGlobalSetting('tg_chat');
-  
-  // 사이트별 관리자 (설정된 경우)
-  const siteToken = (typeof site === 'object' ? site.tg_token : '') || '';
-  const siteChat = (typeof site === 'object' ? site.tg_chat : '') || '';
+  const siteToken = (siteObj?.tg_token) || '';
+  const siteChat = (siteObj?.tg_chat) || '';
   
   const sendList = [];
-  if (superToken && superChat) {
-    sendList.push({ token: superToken, chat: superChat });
-  }
-  if (siteToken && siteChat && 
-      (siteToken !== superToken || siteChat !== superChat)) {
-    sendList.push({ token: siteToken, chat: siteChat });
+
+  if (isDefaultSite) {
+    // GLOW 본사 → 조인호한테만 전송
+    const superToken = await getGlobalSetting('tg_token');
+    const superChat = await getGlobalSetting('tg_chat');
+    if (superToken && superChat) {
+      sendList.push({ token: superToken, chat: superChat });
+    }
+  } else {
+    // 지인 사이트 → 해당 사이트 관리자한테만 전송
+    if (siteToken && siteChat) {
+      sendList.push({ token: siteToken, chat: siteChat });
+    } else {
+      // 사이트 관리자 텔레그램 미설정 시 조인호한테 전송 (폴백)
+      const superToken = await getGlobalSetting('tg_token');
+      const superChat = await getGlobalSetting('tg_chat');
+      if (superToken && superChat) {
+        sendList.push({ token: superToken, chat: superChat });
+      }
+    }
   }
   
   const body = {
@@ -2145,6 +2159,54 @@ app.post('/api/tg-webhook', async (req, res) => {
     const chatId = data.callback_query.message.chat.id;
     const token = await getGlobalSetting('tg_token');
     if (!token) return res.json({ ok: true });
+
+    // 크레딧 요청 처리 (cr_approve_ / cr_reject_)
+    if (cbData.startsWith('cr_approve_') || cbData.startsWith('cr_reject_')) {
+      const crAction = cbData.startsWith('cr_approve_') ? 'approve' : 'reject';
+      const crId = cbData.replace('cr_approve_', '').replace('cr_reject_', '');
+      const crR = await query(`SELECT * FROM credit_requests WHERE id=$1`, [crId]);
+      const cr = crR.rows[0];
+      if (!cr || cr.status !== 'pending') {
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '이미 처리된 요청입니다' })
+        });
+        return res.json({ ok: true });
+      }
+      if (crAction === 'approve') {
+        await query(`UPDATE credit_requests SET status='approved' WHERE id=$1`, [crId]);
+        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [cr.amount, cr.site_id]);
+        await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
+        });
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: `✅ 크레딧 승인 완료!\n🏢 ${cr.site_name}\n💵 ₩${Math.round(cr.amount).toLocaleString()} 충전됨`, parse_mode: 'HTML' })
+        });
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '✅ 승인 완료!' })
+        });
+      } else {
+        await query(`UPDATE credit_requests SET status='rejected' WHERE id=$1`, [crId]);
+        await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
+        });
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: `❌ 크레딧 거절!\n🏢 ${cr.site_name}\n💵 ₩${Math.round(cr.amount).toLocaleString()}`, parse_mode: 'HTML' })
+        });
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '❌ 거절 완료!' })
+        });
+      }
+      return res.json({ ok: true });
+    }
+
+    // 고객 충전 요청 처리 (approve_ / reject_)
     const parts = cbData.split('_');
     const action = parts[0];
     const chargeId = parts.slice(1).join('_');
@@ -2221,14 +2283,14 @@ app.post('/api/admin/tg-test', requireAdmin, async (req, res) => {
 app.post('/api/admin/credit-request', requireAdmin, async (req, res) => {
   try {
     const { amount, note } = req.body;
-    const amt = parseFloat(amount);
-    if (!amt || amt <= 0) return res.json({ error: '금액을 입력하세요' });
+    const amt = parseFloat(amount); // 원화 금액
+    if (!amt || amt < 1000) return res.json({ error: '최소 ₩1,000 이상 입력하세요' });
     const site = req.site;
     if (!site) return res.json({ error: '사이트 정보를 찾을 수 없습니다' });
     const id = 'CR' + Date.now();
     await query(`INSERT INTO credit_requests(id,site_id,site_name,amount,note,status) VALUES($1,$2,$3,$4,$5,$6)`,
       [id, site.id, site.name, amt, note || '', 'pending']);
-    // 슈퍼관리자 텔레그램 알림
+    // 슈퍼관리자 텔레그램 알림 (승인/거절 버튼 포함)
     const token = await getGlobalSetting('tg_token');
     const chat = await getGlobalSetting('tg_chat');
     if (token && chat) {
@@ -2236,8 +2298,14 @@ app.post('/api/admin/credit-request', requireAdmin, async (req, res) => {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chat,
-          text: `💰 <b>크레딧 요청</b>\n🏢 ${site.name}\n💵 $${amt}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`,
-          parse_mode: 'HTML'
+          text: `💰 <b>크레딧 요청</b>\n🏢 ${site.name}\n💵 ₩${Math.round(amt).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`,
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '✅ 승인', callback_data: `cr_approve_${id}` },
+              { text: '❌ 거절', callback_data: `cr_reject_${id}` }
+            ]]
+          }
         })
       });
     }
