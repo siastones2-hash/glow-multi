@@ -1460,17 +1460,23 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     // - GLOW(default): 고객 결제 = 원가 × 슈퍼 × 사이트마진
     // - 지인 사이트: 고객 결제 = GLOW 판매가 × (1 + 지인마진)
     //                크레딧 차감 = GLOW 판매가 (지인 입장의 "원가")
+    // ⚠️ charge는 서비스목록 sell과 동일하게 "1개당 가격 반올림 × 수량"으로 계산
+    //    → 화면 표시 총액과 실제 차감액이 100% 일치 (고객 혼란 방지)
     let charge, apiCost;
     if (isDefaultSite2) {
-      charge = svc.rate / 1000 * qtyNum * ex * (1 + superMg2 / 100) * (1 + siteMg / 100);
+      // 1000개당 판매가(₩) → 1개당 반올림(최소 1원) → × 수량
+      const sellPer1000 = svc.rate * ex * (1 + superMg2 / 100) * (1 + siteMg / 100);
+      const sellPerUnit = Math.max(Math.round(sellPer1000 / 1000), 1);
+      charge = sellPerUnit * qtyNum;
       apiCost = svc.rate / 1000 * qtyNum * (1 + superMg2 / 100); // 공급가($) - default는 크레딧 안 씀
     } else {
-      // GLOW 판매가 = 원가 × 슈퍼마진 × 글로벌 사이트마진
-      const glowPrice = svc.rate / 1000 * qtyNum * (1 + superMg2 / 100) * (1 + globalSiteMg2 / 100); // $
-      // 지인 고객가 = GLOW 판매가 × (1 + 지인마진)
-      charge = glowPrice * ex * (1 + siteMg / 100);
+      // GLOW 판매가($/1000) → 지인 고객가(₩/1000) → 1개당 반올림 → × 수량
+      const glowPricePer1000 = svc.rate * (1 + superMg2 / 100) * (1 + globalSiteMg2 / 100); // $/1000
+      const sellPer1000 = glowPricePer1000 * ex * (1 + siteMg / 100); // ₩/1000
+      const sellPerUnit = Math.max(Math.round(sellPer1000 / 1000), 1);
+      charge = sellPerUnit * qtyNum;
       // 지인 크레딧 차감 = GLOW 판매가 ($)
-      apiCost = glowPrice;
+      apiCost = glowPricePer1000 / 1000 * qtyNum;
     }
     const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
     const user = userR.rows[0];
