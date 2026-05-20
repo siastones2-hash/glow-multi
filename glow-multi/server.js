@@ -1651,12 +1651,16 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status=$1`, ['pending']);
     }
     const credit = req.session.role === 'superadmin' ? null : (req.site?.credit || 0);
+    // 크레딧 원화 환산용 환율
+    const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
+    const siteEx = (req.site && req.site.exrate > 0) ? req.site.exrate : globalEx;
     res.json({
       users: parseInt(users.rows[0].c),
       orders: parseInt(orders.rows[0].c),
       revenue: revenue.rows[0].s || 0,
       pendingCharges: parseInt(pending.rows[0].c),
-      credit
+      credit,
+      exrate: siteEx
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2503,7 +2507,9 @@ app.post('/api/super/services/delete', requireSuperAdmin, async (req, res) => {
 app.get('/api/super/sites', requireSuperAdmin, async (req, res) => {
   try {
     const r = await query(`SELECT * FROM sites ORDER BY created DESC`);
-    res.json(r.rows);
+    // 크레딧 원화 환산용 글로벌 기본 환율 함께 전달
+    const globalExrate = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
+    res.json({ sites: r.rows, globalExrate });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2696,7 +2702,8 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       totalRevenue: totalRevenue.rows[0].s || 0,
       pendingCharges: parseInt(pendingCharges.rows[0].c),
       apiBalance,
-      myProfit: Math.round(myProfitKrw)
+      myProfit: Math.round(myProfitKrw),
+      globalExrate: parseFloat((await getGlobalSetting('global_exrate')) || '1500')
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
