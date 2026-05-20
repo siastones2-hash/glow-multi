@@ -495,7 +495,7 @@ tr:last-child td{border-bottom:none}
         </div>
         <!-- API 크레딧 표시 -->
         <div class="ibox" style="margin-bottom:14px" id="creditInfo" style="display:none">
-          💰 API 크레딧 잔액: <strong id="creditBal">$0</strong> | 부족 시 슈퍼관리자에게 충전 요청하세요
+          💰 API 크레딧 잔액: <strong id="creditBal">₩0</strong> | 부족 시 슈퍼관리자에게 충전 요청하세요
         </div>
         <div class="admtabs">
           <button class="admtab on" onclick="goAdm('orders',this)">📦 주문</button>
@@ -922,9 +922,9 @@ tr:last-child td{border-bottom:none}
       <div class="fg"><label>슈퍼마진율 (%)</label><input type="number" id="nsSuperMargin" value="50" inputmode="numeric"/><div style="font-size:10px;color:var(--tl);margin-top:3px">내(슈퍼) 수익</div></div>
       <div class="fg"><label>관리자 마진율 (%)</label><input type="number" id="ns마진" value="0" inputmode="numeric"/><div style="font-size:10px;color:var(--tl);margin-top:3px">관리자 수익 (변경 가능)</div></div>
       <div class="fg"><label>환율 (USD→KRW)</label><input type="number" id="nsExrate" value="1380" inputmode="numeric"/></div>
-      <div class="fg"><label>초기 크레딧 ($)</label><input type="number" id="nsCredit" value="0" step="0.01" inputmode="decimal"/></div>
+      <div class="fg"><label>초기 크레딧 (원 ₩)</label><input type="number" id="nsCredit" value="0" step="1" inputmode="numeric"/></div>
     </div>
-    <div class="ibox" style="margin-bottom:14px">크레딧은 사이트가 API 주문을 처리할 수 있는 달러 잔액입니다. 나중에 충전 가능합니다.</div>
+    <div class="ibox" style="margin-bottom:14px">크레딧은 사이트가 주문을 처리할 수 있는 잔액입니다. 원화로 입력하시면 환율에 맞춰 저장되며, 나중에 충전 가능합니다.</div>
     <div style="display:flex;gap:8px">
       <button class="bp bpf" onclick="createSite()">생성하기</button>
       <button class="bo bpf" onclick="closeM('mNewSite')">취소</button>
@@ -969,8 +969,8 @@ tr:last-child td{border-bottom:none}
     </div>
     <input type="hidden" id="creditSiteId"/>
     <div class="fg"><label>사이트</label><input id="creditSiteName" readonly style="background:#f5f0ff"/></div>
-    <div class="fg"><label>충전 금액 (달러 $)</label><input type="number" id="credit금액" placeholder="10.00" step="0.01" inputmode="decimal"/></div>
-    <div class="ibox" style="margin-bottom:14px">충전된 크레딧만큼 해당 사이트에서 API 주문이 가능합니다.</div>
+    <div class="fg"><label>충전 금액 (원 ₩)</label><input type="number" id="credit금액" placeholder="15000" step="1" inputmode="numeric"/></div>
+    <div class="ibox" style="margin-bottom:14px">원화로 입력하시면 환율에 맞춰 크레딧이 충전됩니다. 충전된 크레딧만큼 해당 사이트에서 주문이 가능합니다.</div>
     <button class="bp bpf" onclick="addCredit()">충전하기</button>
   </div>
 </div>
@@ -1027,6 +1027,7 @@ var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스�
 var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
 
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
+var _globalExrate=1500; // 크레딧 원화 환산용 글로벌 환율
 
 async function api(url,method,body){
   var opts={method:method||'GET',headers:{'Content-Type':'application/json'}};
@@ -1515,10 +1516,14 @@ async function loadAdmDash(){
   if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
   if(ge('aSC'))ge('aSC').textContent=d.pendingCharges||0;
 
-  // 크레딧 표시 (일반 어드민만)
+  // 크레딧 표시 (일반 어드민만) - 원화 환산
   if(CUR.role==='admin'&&d.credit!==undefined){
     var ci=ge('creditInfo');if(ci)ci.style.display='block';
-    var cb=ge('creditBal');if(cb)cb.textContent='$'+parseFloat(d.credit||0).toFixed(2);
+    var cb=ge('creditBal');
+    if(cb){
+      var aEx=(d.exrate&&d.exrate>0)?d.exrate:_globalExrate;
+      cb.textContent=gf(parseFloat(d.credit||0)*aEx);
+    }
   }
 
   loadAdmOrders(); loadAdmCharges();
@@ -1982,6 +1987,7 @@ async function loadSuperDash(){
   ge('sTotalPending').textContent=d.pendingCharges||0;
   if(ge('sApiBalance'))ge('sApiBalance').textContent=d.apiBalance?'$'+d.apiBalance:'-';
   if(ge('sMyProfit'))ge('sMyProfit').textContent=gf(d.myProfit||0);
+  if(d.globalExrate)_globalExrate=d.globalExrate;
   renderSiteList(d.sites||[]);
 
   // 글로벌 설정 로드
@@ -2009,6 +2015,11 @@ function renderSiteList(sites){
   var el=ge('siteList');if(!el)return;
   if(!sites.length){el.innerHTML='<div style="text-align:center;padding:28px;color:#9A8AB0">사이트가 없습니다</div>';return}
   el.innerHTML=sites.map(function(s){
+    // 크레딧($) → 원화(₩) 환산: 사이트 환율 우선, 없으면 글로벌 환율
+    var siteEx=(s.exrate&&s.exrate>0)?s.exrate:_globalExrate;
+    var creditUsd=parseFloat(s.credit||0);
+    var creditKrw=creditUsd*siteEx;
+    var lowCredit=creditKrw<1000;
     return'<div class="site-card">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
       +'<div>'
@@ -2021,11 +2032,11 @@ function renderSiteList(sites){
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.userCount||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.orderCount||0)+'</div><div style="font-size:10px;color:var(--tl)">주문</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:var(--p2)">'+gf(s.revenue||0)+'</div><div style="font-size:10px;color:var(--tl)">매출</div></div>'
-      +'<div style="text-align:center;background:'+(parseFloat(s.credit||0)<1?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(parseFloat(s.credit||0)<1?'#EF4444':'#10B981')+'">$'+parseFloat(s.credit||0).toFixed(2)+'</div><div style="font-size:10px;color:var(--tl)">크레딧</div></div>'
+      +'<div style="text-align:center;background:'+(lowCredit?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(lowCredit?'#EF4444':'#10B981')+'">'+gf(creditKrw)+'</div><div style="font-size:10px;color:var(--tl)">크레딧</div></div>'
       +'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-      +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\')">💰 크레딧 충전</button>'
-      +'<button class="btn bxs" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74" onclick="editCredit(\''+s.id+'\',\''+s.name+'\','+(parseFloat(s.credit||0))+')">✏️ 크레딧 수정</button>'
+      +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\','+siteEx+')">💰 크레딧 충전</button>'
+      +'<button class="btn bxs" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74" onclick="editCredit(\''+s.id+'\',\''+s.name+'\','+creditUsd+','+siteEx+')">✏️ 크레딧 수정</button>'
       +'<button class="btn binf bxs" onclick="openEditSite(\''+s.id+'\')">' + '수정</button>'
       +'<button class="btn bpu bxs" onclick="manageAdmin(\''+s.id+'\')">👤 관리자</button>'
       +(s.id!=='default'?'<button class="btn ber bxs" onclick="deleteSite(\''+s.id+'\',\''+s.name+'\')">🗑 삭제</button>':'')
@@ -2091,10 +2102,13 @@ async function createSite(){
   var superMargin=ge('nsSuperMargin')?.value||50;
   var exrate=ge('nsExrate')?.value||1380;
   var adminRole=ge('nsAdminRole')?.value||'admin';
+  // 초기 크레딧: 원화 입력 → 환율로 달러 환산
+  var creditKrw=parseFloat(credit||0);
+  var creditUsd=creditKrw>0?(creditKrw/parseFloat(exrate)):0;
   var d=await api('/api/super/sites/create','POST',{
     domain,name,logo,primaryColor:primary,accentColor:accent,
     adminEmail:email,adminPw:pw,margin:parseFloat(margin),
-    exrate:parseFloat(exrate),credit:parseFloat(credit||0),
+    exrate:parseFloat(exrate),credit:creditUsd,
     superMargin:parseFloat(superMargin),adminRole
   });
   if(d.error){toast(d.error,'err');return}
@@ -2149,28 +2163,34 @@ async function manageAdmin(siteId){
   }
 }
 
-// 크레딧 충전
-function openCreditModal(siteId,siteName){
+// 크레딧 충전 (원화 입력 → 환율로 달러 환산하여 저장)
+var _creditModalEx=1500; // 현재 모달 대상 사이트의 환율
+function openCreditModal(siteId,siteName,exrate){
   ge('creditSiteId').value=siteId;ge('creditSiteName').value=siteName;ge('credit금액').value='';
+  _creditModalEx=(exrate&&exrate>0)?exrate:_globalExrate;
   ge('mCredit').classList.add('on');
 }
 async function addCredit(){
-  var siteId=ge('creditSiteId').value,amount=parseFloat(ge('credit금액').value);
-  if(!amount||amount<=0){toast('금액을 입력하세요','err');return}
-  var d=await api('/api/super/sites/credit','POST',{siteId,amount});
+  var siteId=ge('creditSiteId').value,krw=parseFloat(ge('credit금액').value);
+  if(!krw||krw<=0){toast('금액을 입력하세요','err');return}
+  var usd=krw/_creditModalEx; // 원화 → 달러 환산
+  var d=await api('/api/super/sites/credit','POST',{siteId:siteId,amount:usd});
   if(d.error){toast(d.error,'err');return}
-  toast('크레딧 $'+amount+' 충전 완료! ✨','ok');
+  toast('크레딧 '+gf(krw)+' 충전 완료! ✨','ok');
   closeM('mCredit');loadSuperDash();
 }
-async function editCredit(siteId,siteName,current){
-  var input=prompt(siteName+'의 크레딧을 정확한 값으로 수정합니다.\n현재: $'+Number(current).toFixed(2)+'\n\n새 크레딧 값을 입력하세요 (잘못 충전 정정용):',Number(current).toFixed(2));
+async function editCredit(siteId,siteName,currentUsd,exrate){
+  var ex=(exrate&&exrate>0)?exrate:_globalExrate;
+  var curKrw=Math.round(Number(currentUsd)*ex);
+  var input=prompt(siteName+'의 크레딧을 정확한 값으로 수정합니다.\n현재: ₩'+curKrw.toLocaleString()+'\n\n새 크레딧 값을 원화로 입력하세요 (잘못 충전 정정용):',String(curKrw));
   if(input===null)return;
-  var v=parseFloat(input);
-  if(isNaN(v)||v<0){toast('0 이상의 숫자를 입력하세요','err');return}
-  if(!confirm(siteName+' 크레딧을\n$'+Number(current).toFixed(2)+' → $'+v.toFixed(2)+'\n(으)로 변경하시겠습니까?'))return;
-  var d=await api('/api/super/sites/credit-set','POST',{siteId:siteId,credit:v});
+  var newKrw=parseFloat(input);
+  if(isNaN(newKrw)||newKrw<0){toast('0 이상의 숫자를 입력하세요','err');return}
+  if(!confirm(siteName+' 크레딧을\n₩'+curKrw.toLocaleString()+' → ₩'+newKrw.toLocaleString()+'\n(으)로 변경하시겠습니까?'))return;
+  var newUsd=newKrw/ex; // 원화 → 달러 환산
+  var d=await api('/api/super/sites/credit-set','POST',{siteId:siteId,credit:newUsd});
   if(d.error){toast(d.error,'err');return}
-  toast('크레딧 수정 완료: $'+v.toFixed(2),'ok');
+  toast('크레딧 수정 완료: ₩'+newKrw.toLocaleString(),'ok');
   loadSuperDash();
 }
 
@@ -2178,7 +2198,8 @@ var _sitesCache = [];
 async function openEditSite(id){
   if(!_sitesCache.length){
     var d=await api('/api/super/sites');
-    _sitesCache=Array.isArray(d)?d:[];
+    _sitesCache=(d&&Array.isArray(d.sites))?d.sites:[];
+    if(d&&d.globalExrate)_globalExrate=d.globalExrate;
   }
   var s=_sitesCache.find(function(x){return x.id===id});
   if(!s){toast('사이트 정보를 찾을 수 없습니다','err');return}
