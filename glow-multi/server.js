@@ -263,9 +263,9 @@ async function initDB() {
     }
   }
 
-  // 기본 서비스 강제 최신화 (매 시작시 기본 서비스 삭제 후 재삽입)
-  await query(`DELETE FROM services WHERE id LIKE 'api_%'`);
-  await query(`DELETE FROM services WHERE id NOT LIKE 'api_%'`);
+  // 기본 서비스 최신화 (삭제하지 않고 UPSERT만 - site_services 정합성 보존)
+  // ⚠️ DELETE 제거: 매 재시작마다 services를 비우면 site_services 레코드가 고아가 되어
+  //    지인 사이트 고객 화면에 서비스가 안 보이는 버그 발생 (페이스북만 뜨던 원인)
   if (true) {
     const svcs = [
       {id:'pkr8',name:'YouTube 좋아요 — 한국 (평생 보장)',pl:'youtube',rate:0.98,min:100,max:50000,description:'한국 기반 YouTube 좋아요 서비스로, 평생 보장 리필이 제공됩니다. 국내 타겟 채널에서 한국인 좋아요 비율이 높으면 국내 추천 탭과 홈 피드 노출이 증가합니다. 일 5만개 고속 처리로 빠르게 영상 참여도를 높이고 한국 시청자 대상 알고리즘 부스트 효과를 극대화합니다.',api_id:'13810'},
@@ -980,31 +980,39 @@ async function tgAlert(msg, site) {
   }));
 }
 
-async function tgChargeAlert(chargeId, userName, amount, note, site) {
+async function tgChargeAlert(chargeId, userName, amount, note, site, requesterRole) {
   const siteName = typeof site === 'object' ? site.name : site;
   const siteObj = typeof site === 'object' ? site : null;
   const isDefaultSite = !siteObj || siteObj.id === 'default';
-  
+
   const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`;
-  
-  const siteToken = (siteObj?.tg_token) || '';
-  const siteChat = (siteObj?.tg_chat) || '';
-  
+
   const sendList = [];
 
-  if (isDefaultSite) {
-    // GLOW 본사 → 조인호한테만 전송
+  // 📌 충전 알림 라우팅 정책
+  //  · 지인 사이트 관리자/파트너 본인이 충전 요청 → 슈퍼관리자에게 알림
+  //    (지인이 GLOW 본사에 입금하는 개념이므로 슈퍼관리자가 승인)
+  //  · 지인 사이트의 일반 회원이 충전 요청 → 해당 사이트 관리자에게만 알림
+  //    (슈퍼관리자는 받지 않음)
+  //  · GLOW 본사(default) 사이트의 요청 → 항상 슈퍼관리자에게
+  const isAdminRequester = requesterRole === 'admin' || requesterRole === 'partner';
+
+  if (isDefaultSite || isAdminRequester) {
+    // 슈퍼관리자에게 전송
     const superToken = await getGlobalSetting('tg_token');
     const superChat = await getGlobalSetting('tg_chat');
     if (superToken && superChat) {
       sendList.push({ token: superToken, chat: superChat });
     }
   } else {
-    // 지인 사이트 → 해당 사이트 관리자한테만 전송
+    // 지인 사이트 일반 회원 → 해당 사이트 관리자에게만 전송
+    const siteToken = (siteObj?.tg_token) || '';
+    const siteChat = (siteObj?.tg_chat) || '';
     if (siteToken && siteChat) {
       sendList.push({ token: siteToken, chat: siteChat });
-    } else {
-      // 사이트 관리자 텔레그램 미설정 시 조인호한테 전송 (폴백)
+    }
+    // 사이트 관리자 텔레그램 미설정 시: 누락 방지 위해 슈퍼관리자에게 폴백
+    else {
       const superToken = await getGlobalSetting('tg_token');
       const superChat = await getGlobalSetting('tg_chat');
       if (superToken && superChat) {
@@ -1012,7 +1020,7 @@ async function tgChargeAlert(chargeId, userName, amount, note, site) {
       }
     }
   }
-  
+
   const body = {
     text: msg, parse_mode: 'HTML',
     reply_markup: {
@@ -1601,7 +1609,8 @@ app.post('/api/charges', requireAuth, async (req, res) => {
     const id = 'C' + Date.now();
     await query(`INSERT INTO charges(id,site_id,uid,uname,amount,note,status) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       [id, req.siteId, user.id, user.name, amt, note || '', 'pending']);
-    tgChargeAlert(id, user.name, amt, note, req.site || {name:'GLOW'});
+    // 요청자 role 전달 → 관리자 본인 요청이면 슈퍼관리자에게, 일반 회원이면 사이트 관리자에게
+    tgChargeAlert(id, user.name, amt, note, req.site || {name:'GLOW'}, user.role);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1886,6 +1895,26 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// 충전 내역 삭제 (관리자 전용 · DB 완전 삭제 · 모든 상태 삭제 가능)
+// ⚠️ 삭제는 '기록 정리'이며 이미 지급된 잔액은 회수하지 않음
+app.post('/api/admin/charges/delete', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (!id) return res.json({ error: '삭제할 항목을 지정해주세요' });
+    const r = await query(`SELECT * FROM charges WHERE id=$1`, [id]);
+    const charge = r.rows[0];
+    if (!charge) return res.json({ error: '충전 내역을 찾을 수 없습니다' });
+    // 권한: 슈퍼관리자는 전체, 일반 관리자는 자기 사이트 건만 삭제 가능
+    if (req.session.role !== 'superadmin' && charge.site_id !== req.siteId) {
+      return res.json({ error: '다른 사이트의 충전 내역은 삭제할 수 없습니다' });
+    }
+    await query(`DELETE FROM charges WHERE id=$1`, [id]);
+    await logActivity(req.siteId, req.session.userId, '', '충전 내역 삭제', 'charge', id,
+      `₩${Math.round(charge.amount).toLocaleString()} (${charge.status})`);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // 관리자 서비스 활성화 목록 조회
 app.get('/api/admin/site-services', requireAdmin, async (req, res) => {
   try {
@@ -1958,14 +1987,21 @@ app.post('/api/admin/site-services/toggle-all', requireAdmin, async (req, res) =
     const siteId = req.siteId;
     if (siteId === 'default') return res.json({ error: '슈퍼관리자 전용' });
     const { active } = req.body;
+    // ⚠️ 더 이상 존재하지 않는 서비스를 가리키는 고아 레코드 정리
+    //    (과거 services 전체 삭제 버그로 생긴 끊긴 레코드 제거)
+    await query(`
+      DELETE FROM site_services
+      WHERE site_id=$1 AND service_id NOT IN (SELECT id FROM services)
+    `, [siteId]);
     // 전체 서비스에 대해 site_services 레코드 생성/업데이트
     const allSvcs = await query(`SELECT id FROM services WHERE active=1`);
+    const val = active ? 1 : 0;
     for (const s of allSvcs.rows) {
       await query(`
         INSERT INTO site_services(site_id, service_id, active)
         VALUES($1, $2, $3)
         ON CONFLICT(site_id, service_id) DO UPDATE SET active=$3
-      `, [siteId, s.id, active ? 1 : 0]);
+      `, [siteId, s.id, val]);
     }
     res.json({ ok: true, count: allSvcs.rows.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -2212,39 +2248,68 @@ app.post('/api/tg-webhook', async (req, res) => {
     const chargeId = parts.slice(1).join('_');
     const r = await query(`SELECT * FROM charges WHERE id=$1`, [chargeId]);
     const charge = r.rows[0];
+
+    // 📌 충전 콜백 토큰 결정: tgChargeAlert와 동일한 라우팅 규칙으로 어느 봇이 보냈는지 재현
+    //  · 요청자가 관리자/파트너이거나 default 사이트 → 슈퍼 토큰
+    //  · 지인 사이트 일반 회원 → 해당 사이트 토큰 (없으면 슈퍼 토큰 폴백)
+    let cbToken = token; // 기본: 슈퍼 글로벌 토큰
+    if (charge) {
+      let requesterRole = 'user';
+      try {
+        const reqUserR = await query(`SELECT role FROM users WHERE id=$1`, [charge.uid]);
+        requesterRole = reqUserR.rows[0]?.role || 'user';
+      } catch(e) {}
+      const isAdminReq = requesterRole === 'admin' || requesterRole === 'partner';
+      const isDefault = !charge.site_id || charge.site_id === 'default';
+      if (!isAdminReq && !isDefault) {
+        // 지인 사이트 일반 회원 → 사이트 봇 토큰
+        const cbSiteR = await query(`SELECT tg_token FROM sites WHERE id=$1`, [charge.site_id]);
+        const cbSiteToken = cbSiteR.rows[0]?.tg_token;
+        if (cbSiteToken) cbToken = cbSiteToken;
+      }
+    }
+    if (!cbToken) cbToken = token;
+
     if (!charge || charge.status !== 'pending') {
-      await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      await fetch(`https://api.telegram.org/bot${cbToken}/answerCallbackQuery`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '이미 처리된 요청입니다' })
       });
       return res.json({ ok: true });
     }
     if (action === 'approve') {
+      // 잔액 변동 로그 포함 (process 라우트와 동일하게 정합성 유지)
+      const beforeR = await query(`SELECT balance FROM users WHERE id=$1`, [charge.uid]);
+      const beforeBal = beforeR.rows[0]?.balance || 0;
       await query(`UPDATE charges SET status='approved' WHERE id=$1`, [chargeId]);
       await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge.amount, charge.uid]);
-      await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+      try {
+        await logBalance(charge.site_id, charge.uid, charge.uname, charge.amount,
+          beforeBal, beforeBal + charge.amount, '충전 승인 (텔레그램)', 'telegram');
+      } catch(e) {}
+      await fetch(`https://api.telegram.org/bot${cbToken}/editMessageReplyMarkup`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
       });
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      await fetch(`https://api.telegram.org/bot${cbToken}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: `✅ 승인 완료!\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()} 충전됨`, parse_mode: 'HTML' })
       });
-      await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      await fetch(`https://api.telegram.org/bot${cbToken}/answerCallbackQuery`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '✅ 승인 완료!' })
       });
     } else if (action === 'reject') {
       await query(`UPDATE charges SET status='rejected' WHERE id=$1`, [chargeId]);
-      await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+      await fetch(`https://api.telegram.org/bot${cbToken}/editMessageReplyMarkup`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
       });
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      await fetch(`https://api.telegram.org/bot${cbToken}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: `❌ 거절 완료!\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}`, parse_mode: 'HTML' })
       });
-      await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      await fetch(`https://api.telegram.org/bot${cbToken}/answerCallbackQuery`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '❌ 거절 완료!' })
       });
