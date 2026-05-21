@@ -1849,6 +1849,32 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// 주문 내역 삭제 (관리자 전용 · 끝난 주문만 삭제 가능 · 기록 정리용)
+// ⚠️ 처리중(processing)·대기(pending) 주문은 추적이 끊기므로 삭제 불가
+//    삭제는 '기록 정리'이며 이미 처리된 환불·정산에는 영향 없음
+app.post('/api/admin/orders/delete', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (!id) return res.json({ error: '삭제할 주문을 지정해주세요' });
+    const r = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
+    const order = r.rows[0];
+    if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
+    // 권한: 슈퍼관리자는 전체, 일반 관리자는 자기 사이트 건만
+    if (req.session.role !== 'superadmin' && order.site_id !== req.siteId) {
+      return res.json({ error: '다른 사이트의 주문은 삭제할 수 없습니다' });
+    }
+    // 끝난 주문만 삭제 가능 (처리중·대기 주문은 보호)
+    const deletable = ['cancelled', 'canceled', 'failed', 'completed', 'refunded', 'partial_refunded'];
+    if (!deletable.includes(order.status)) {
+      return res.json({ error: '진행 중인 주문은 삭제할 수 없습니다. 완료·취소·환불된 주문만 삭제 가능합니다.' });
+    }
+    await query(`DELETE FROM orders WHERE id=$1`, [id]);
+    await logActivity(req.siteId, req.session.userId, '', '주문 내역 삭제', 'order', id,
+      `${order.sname} ₩${Math.round(order.charge).toLocaleString()} (${order.status})`);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
