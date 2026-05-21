@@ -876,11 +876,47 @@ async function syncPeakerrServices() {
     }
     
     console.log(`✅ 서비스 동기화: 체크 ${checked}개, 비활성화 ${disabled}개, 가격변경 ${priceChanged}개`);
+
+    // ⚠️ Peakerr 전송에 실패해 멈춰있는 주문 자동 환불
+    //    (api_order_id 없이 pending 상태로 남은 주문 = 돈은 빠졌는데 작업 안 된 건)
+    let stuckRefunded = 0;
+    try {
+      const stuckR = await query(`
+        SELECT * FROM orders
+        WHERE status='pending' AND (api_order_id IS NULL OR api_order_id='')
+      `);
+      for (const o of stuckR.rows) {
+        const uR = await query(`SELECT * FROM users WHERE id=$1`, [o.uid]);
+        const u = uR.rows[0];
+        if (u) {
+          const before = u.balance || 0;
+          await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [o.charge, o.uid]);
+          await logBalance(o.site_id, o.uid, u.name, o.charge, before, before + o.charge,
+            `미처리 주문 자동 환불 - ${o.sname}`, 'system');
+        }
+        // 지인 크레딧 복구
+        if (o.site_id && o.site_id !== 'default') {
+          const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [o.sid]);
+          if (svcR.rows[0]) {
+            const superMgStr = await getGlobalSetting('super_margin');
+            const superMg = parseFloat(superMgStr || '50');
+            const globalSiteMgStr = await getGlobalSetting('global_site_margin');
+            const globalSiteMg = parseFloat(globalSiteMgStr || '50');
+            const creditRefund = svcR.rows[0].rate / 1000 * o.qty * (1 + superMg/100) * (1 + globalSiteMg/100);
+            await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditRefund, o.site_id]);
+          }
+        }
+        await query(`UPDATE orders SET status='failed' WHERE id=$1`, [o.id]);
+        stuckRefunded++;
+      }
+    } catch(e) { console.log('미처리 주문 환불 실패:', e.message); }
+    if (stuckRefunded > 0) console.log(`💸 미처리 주문 ${stuckRefunded}건 자동 환불`);
     
     // 슈퍼관리자 알림 (변경사항 있을 때만)
-    if (disabled > 0 || priceChanged > 0) {
+    if (disabled > 0 || priceChanged > 0 || stuckRefunded > 0) {
       let msg = `🔄 <b>서비스 자동 동기화</b>\n\n`;
       if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (Peakerr에서 삭제됨)\n`;
+      if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
       if (priceChanged > 0) {
         msg += `💰 가격 업데이트: ${priceChanged}개\n`;
         priceChangedList.slice(0, 5).forEach(p => {
@@ -981,12 +1017,14 @@ async function tgAlert(msg, site) {
   }));
 }
 
-async function tgChargeAlert(chargeId, userName, amount, note, site, requesterRole) {
+async function tgChargeAlert(chargeId, userName, amount, note, site, requesterRole, currentBalance) {
   const siteName = typeof site === 'object' ? site.name : site;
   const siteObj = typeof site === 'object' ? site : null;
   const isDefaultSite = !siteObj || siteObj.id === 'default';
 
-  const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`;
+  const balLine = (currentBalance !== undefined && currentBalance !== null)
+    ? `\n💳 현재 잔액: ₩${Math.round(currentBalance).toLocaleString()}` : '';
+  const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}${balLine}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`;
 
   const sendList = [];
 
@@ -1523,6 +1561,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (site && site.id !== 'default')
       await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, site.id]);
     let apiOrderId = null;
+    let apiError = null;
     const apiKey = await getGlobalSetting('peakerr_api_key');
     if (apiKey && svc.api_id) {
       try {
@@ -1532,14 +1571,49 @@ app.post('/api/orders', requireAuth, async (req, res) => {
           body: new URLSearchParams({ key: apiKey, action: 'add', service: svc.api_id, link, quantity: String(qty) })
         });
         const data = await resp.json();
-        if (data.order) apiOrderId = String(data.order);
-      } catch(e) { console.log('API 오류:', e.message); }
+        if (data.order) {
+          apiOrderId = String(data.order);
+        } else {
+          // Peakerr가 주문을 거부함 (서비스 삭제/최소수량 미달/잔액부족 등)
+          apiError = data.error || 'Peakerr 주문 접수 실패';
+        }
+      } catch(e) {
+        apiError = 'Peakerr 연결 실패: ' + e.message;
+        console.log('API 오류:', e.message);
+      }
+    } else if (!svc.api_id) {
+      apiError = '연동되지 않은 서비스입니다';
     }
+
+    // ⚠️ Peakerr 전송 실패 → 즉시 자동 환불 + 주문 실패 처리 ("돈 냈는데 작업 안 됨" 방지)
+    if (apiError) {
+      // 고객 잔액 복구
+      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge, user.id]);
+      // 지인 크레딧 복구
+      if (site && site.id !== 'default')
+        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [apiCost, site.id]);
+      // 실패 주문 기록 (추적용)
+      const failId = 'O' + Date.now();
+      try {
+        await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, link, qtyNum, charge, 'failed']);
+        await logBalance(req.siteId, user.id, user.name, charge,
+          (user.balance || 0) - charge, user.balance || 0,
+          `주문 실패 자동 환불 - ${svc.name}`, 'system');
+      } catch(e) {}
+      // 서비스가 Peakerr에 없으면 즉시 비활성화 (다른 고객 추가 피해 방지)
+      if (/not\s*found|invalid\s*service|존재|없/i.test(apiError) || apiError === 'Peakerr 주문 접수 실패') {
+        await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(()=>{});
+      }
+      return res.json({ error: `주문에 실패하여 자동 환불되었습니다. (사유: ${apiError})\n다른 서비스를 이용해주세요.` });
+    }
+
     const orderId = 'O' + Date.now();
     await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, apiOrderId ? 'processing' : 'pending']);
+      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, 'processing']);
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
-    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n🔗 ${link}`, site);
+    const custBal = Math.round(updR.rows[0]?.balance || 0);
+    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n💳 주문 후 잔액: ₩${custBal.toLocaleString()}\n🔗 ${link}`, site);
     
     // 💵 Peakerr 잔액 체크 (비동기, 주문 처리와 별도로)
     checkPeakerrBalance().catch(e => console.log('잔액 체크 실패:', e.message));
@@ -1651,7 +1725,7 @@ app.post('/api/charges', requireAuth, async (req, res) => {
     await query(`INSERT INTO charges(id,site_id,uid,uname,amount,note,status) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       [id, req.siteId, user.id, user.name, amt, note || '', 'pending']);
     // 요청자 role 전달 → 관리자 본인 요청이면 슈퍼관리자에게, 일반 회원이면 사이트 관리자에게
-    tgChargeAlert(id, user.name, amt, note, req.site || {name:'GLOW'}, user.role);
+    tgChargeAlert(id, user.name, amt, note, req.site || {name:'GLOW'}, user.role, user.balance || 0);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2941,10 +3015,12 @@ app.listen(PORT, async () => {
     await syncAllOrderStatuses().catch(e => console.log('주문 동기화 스케줄러 오류:', e.message));
   }, 30 * 60 * 1000);
   
-  // 🔄 서비스 동기화 (24시간마다, 삭제/가격변경 체크)
+  // 🔄 서비스 동기화 (6시간마다 + 시작 시 1회, 삭제/가격변경 체크)
+  //    Render 무료 인스턴스는 잠들었다 깨면 타이머가 리셋되므로 시작 시 실행 필수
+  syncPeakerrServices().catch(e => console.log('서비스 동기화 초기 실행 오류:', e.message));
   setInterval(async () => {
     await syncPeakerrServices().catch(e => console.log('서비스 동기화 스케줄러 오류:', e.message));
-  }, 24 * 60 * 60 * 1000);
+  }, 6 * 60 * 60 * 1000);
   
   // 🆕 신규 서비스 스캔 (일요일마다)
   setInterval(async () => {
