@@ -1652,7 +1652,13 @@ async function loadAdmOrders(){
   });
   tb.innerHTML=h;
 }
-async function chgOSt(id,st){await api('/api/admin/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
+async function chgOSt(id,st){
+  var d=await api('/api/admin/orders/status','POST',{id:id,status:st});
+  if(d&&d.error){toast(d.error,'err');return}
+  if(d&&d.refunded){toast('주문 취소 + ₩'+(d.refundAmount||0).toLocaleString()+' 자동 환불 완료 ✨','ok')}
+  else{toast('상태 변경 완료','ok')}
+  loadAdmOrders();
+}
 async function delOrder(id){
   if(!confirm('이 주문 내역을 삭제하시겠습니까?\n끝난 주문의 기록만 정리되며, 환불·정산에는 영향이 없습니다.'))return;
   var d=await api('/api/admin/orders/delete','POST',{id:id});
