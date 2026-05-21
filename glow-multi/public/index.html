@@ -1635,7 +1635,11 @@ function goAdm(tab,el){
 async function loadAdmOrders(){
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
+    var delBtn=done.indexOf(o.status)>=0
+      ?'<button onclick="delOrder(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;margin-top:4px">🗑 삭제</button>'
+      :'';
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
@@ -1644,11 +1648,18 @@ async function loadAdmOrders(){
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
       +'<td><select onchange="chgOSt(\''+o.id+'\',this.value)" style="font-size:12px;padding:5px 8px;width:80px;background:#f5f0ff;border:1px solid rgba(114,9,183,.2);border-radius:6px">'
       +['pending','processing','completed','cancelled'].map(function(s){return'<option value="'+s+'"'+(o.status===s?' selected':'')+'>'+{pending:'대기',processing:'처리중',completed:'완료',cancelled:'취소'}[s]+'</option>'}).join('')
-      +'</select></td></tr>';
+      +'</select>'+(delBtn?'<br>'+delBtn:'')+'</td></tr>';
   });
   tb.innerHTML=h;
 }
 async function chgOSt(id,st){await api('/api/admin/orders/status','POST',{id:id,status:st});toast('상태 변경 완료','ok')}
+async function delOrder(id){
+  if(!confirm('이 주문 내역을 삭제하시겠습니까?\n끝난 주문의 기록만 정리되며, 환불·정산에는 영향이 없습니다.'))return;
+  var d=await api('/api/admin/orders/delete','POST',{id:id});
+  if(d.error){toast(d.error,'err');return}
+  toast('주문 내역 삭제됨','ok');
+  loadAdmOrders();
+}
 async function _loadAdmUsersInline(){
   var d=await api('/api/admin/users');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
   d.forEach(function(u){
@@ -2114,16 +2125,27 @@ function renderSiteList(sites){
 async function loadSuperOrders(){
   var d=await api('/api/super/orders');var tb=ge('spOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
+    var delBtn=done.indexOf(o.status)>=0
+      ?' <button onclick="delOrderSuper(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer">🗑</button>'
+      :'';
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_id||'-')+'</td>'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
-      +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td></tr>';
+      +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+delBtn+'</td></tr>';
   });
   tb.innerHTML=h;
+}
+async function delOrderSuper(id){
+  if(!confirm('이 주문 내역을 삭제하시겠습니까?\n끝난 주문의 기록만 정리되며, 환불·정산에는 영향이 없습니다.'))return;
+  var d=await api('/api/admin/orders/delete','POST',{id:id});
+  if(d.error){toast(d.error,'err');return}
+  toast('주문 내역 삭제됨','ok');
+  loadSuperOrders();
 }
 async function loadSuperCharges(){
   var d=await api('/api/super/charges');var tb=ge('spCTb'),h='';
