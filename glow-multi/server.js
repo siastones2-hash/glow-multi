@@ -1793,6 +1793,44 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
 app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
   try {
     const { id, status } = req.body;
+    const orderR = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
+    const order = orderR.rows[0];
+    if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
+
+    // 사이트 권한 체크
+    if (req.session.role !== 'superadmin' && order.site_id !== req.siteId) {
+      return res.json({ error: '다른 사이트 주문은 변경할 수 없습니다' });
+    }
+
+    // ⚠️ '취소'로 변경 시 자동 환불 — 이미 환불/취소된 주문이 아닐 때만
+    const alreadyDone = ['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status);
+    if ((status === 'cancelled' || status === 'canceled') && !alreadyDone) {
+      // 고객 잔액 복구
+      const userR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
+      const user = userR.rows[0];
+      if (user) {
+        const beforeBal = user.balance || 0;
+        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [order.charge, order.uid]);
+        await logBalance(order.site_id, order.uid, user.name, order.charge,
+          beforeBal, beforeBal + order.charge, `주문 취소 자동 환불 - ${order.sname}`, req.session.userId);
+      }
+      // 지인 사이트면 크레딧도 복구
+      if (order.site_id && order.site_id !== 'default') {
+        const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [order.sid]);
+        if (svcR.rows[0]) {
+          const superMg = parseFloat((await getGlobalSetting('super_margin')) || '50');
+          const globalSiteMg = parseFloat((await getGlobalSetting('global_site_margin')) || '50');
+          const creditRefund = svcR.rows[0].rate / 1000 * order.qty * (1 + superMg/100) * (1 + globalSiteMg/100);
+          await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditRefund, order.site_id]);
+        }
+      }
+      await query(`UPDATE orders SET status='cancelled' WHERE id=$1`, [id]);
+      await logActivity(req.siteId, req.session.userId, '', '주문 취소+환불', 'order', id,
+        `₩${Math.round(order.charge).toLocaleString()} 환불`);
+      return res.json({ ok: true, refunded: true, refundAmount: Math.round(order.charge) });
+    }
+
+    // 그 외 상태 변경은 단순 변경
     await query(`UPDATE orders SET status=$1 WHERE id=$2`, [status, id]);
     await logActivity(req.siteId, req.session.userId, '', '주문 상태 변경', 'order', id, `상태: ${status}`);
     res.json({ ok: true });
