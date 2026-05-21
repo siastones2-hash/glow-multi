@@ -1059,7 +1059,20 @@ async function api(url,method,body){
   return res.json();
 }
 function gf(v){return'₩'+Math.round(v||0).toLocaleString()}
-function fd(s){return s?String(s).slice(0,16).replace('T',' '):'-'}
+function fd(s){
+  if(!s)return '-';
+  // DB는 UTC로 저장됨 → 한국 시간(KST, +9h)으로 변환해 표시
+  var str=String(s);
+  // 타임존 정보가 없으면 UTC로 간주하고 Z 추가
+  var iso=str.replace(' ','T');
+  if(!/[Z+]|[-]\d\d:\d\d$/.test(iso))iso+='Z';
+  var d=new Date(iso);
+  if(isNaN(d.getTime()))return str.slice(0,16).replace('T',' ');
+  // 한국 시간 기준 포맷
+  var kst=new Date(d.getTime()+9*60*60*1000);
+  var p=function(n){return n<10?'0'+n:''+n};
+  return kst.getUTCFullYear()+'-'+p(kst.getUTCMonth()+1)+'-'+p(kst.getUTCDate())+' '+p(kst.getUTCHours())+':'+p(kst.getUTCMinutes());
+}
 function ge(id){return document.getElementById(id)}
 function toast(msg,type){
   var t=ge('toast');t.textContent=msg;
