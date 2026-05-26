@@ -371,7 +371,7 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
   </nav>
-  <div class="dm" style="flex:1;display:flex;flex-direction:column;min-width:0">
+  <div class="dm" id="dashMain" style="flex:1;display:flex;flex-direction:column;min-width:0">
     <div class="dhdr">
       <div style="font-size:15px;font-weight:800" id="dhTitle">대시보드</div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -886,8 +886,8 @@ tr:last-child td{border-bottom:none}
       <button onclick="closeM('mService')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>
     </div>
     <input type="hidden" id="svcEditId"/>
-    <div class="fg"><label>Peakerr 서비스 ID (필수 — 숫자)</label><input type="text" id="svcApiId" placeholder="예: 13810" inputmode="numeric"/>
-      <div style="font-size:11px;color:#9A8AB0;margin-top:4px">⚠️ Peakerr 상품 번호입니다. 비워두면 주문이 작동하지 않습니다.</div>
+    <div class="fg"><label>공급 상품 번호 (필수 — 숫자)</label><input type="text" id="svcApiId" placeholder="예: 13810" inputmode="numeric"/>
+      <div style="font-size:11px;color:#9A8AB0;margin-top:4px">⚠️ 공급사 상품 번호입니다. 비워두면 주문이 작동하지 않습니다.</div>
     </div>
     <div class="fg"><label>서비스명</label><input type="text" id="svcName" placeholder="YouTube 조회수"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1194,22 +1194,24 @@ async function loadSiteConfig(){
   var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
   var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
 
-  // 공지사항 — 랜딩(pg-land)과 로그인 후 대시보드(pg-dash) 양쪽에 표시
+  // 공지사항 — 랜딩(pg-land)과 로그인 후 대시보드 본문(dashMain) 양쪽에 표시
+  // ⚠️ pg-dash는 가로 flex 레이아웃이므로 본문(dashMain) 안쪽에 넣어야 함
+  var noticeTargets=[{pg:'pg-land',host:'pg-land'},{pg:'pg-dash',host:'dashMain'}];
   if(d.notice){
-    ['pg-land','pg-dash'].forEach(function(pgId){
-      var nbId='noticeBanner_'+pgId;
+    noticeTargets.forEach(function(t){
+      var nbId='noticeBanner_'+t.pg;
       var nb=ge(nbId);
       if(!nb){
         nb=document.createElement('div');nb.id=nbId;
-        nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:200';
-        var pg=ge(pgId);if(pg)pg.insertBefore(nb,pg.firstChild);
+        nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;z-index:200';
+        var host=ge(t.host);if(host)host.insertBefore(nb,host.firstChild);
       }
       nb.textContent='📢 '+d.notice;
       nb.style.display='block';
     });
   }else{
-    ['pg-land','pg-dash'].forEach(function(pgId){
-      var nb=ge('noticeBanner_'+pgId);
+    noticeTargets.forEach(function(t){
+      var nb=ge('noticeBanner_'+t.pg);
       if(nb)nb.style.display='none';
     });
   }
@@ -1553,7 +1555,7 @@ async function loadOrders(){
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:26px;color:#9A8AB0">주문 내역이 없습니다</td></tr>';return}
   d.forEach(function(o){
     var canCancel = ['pending','processing'].includes(o.status) && o.api_order_id;
-    var actionBtns = '<button onclick="refreshOrder(\''+o.id+'\')" style="background:rgba(114,9,183,.1);color:var(--p2);border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;margin-right:4px" title="Peakerr에서 실시간 상태 확인">🔄</button>';
+    var actionBtns = '<button onclick="refreshOrder(\''+o.id+'\')" style="background:rgba(114,9,183,.1);color:var(--p2);border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;margin-right:4px" title="실시간 상태 확인">🔄</button>';
     if(canCancel) {
       actionBtns += '<button onclick="cancelOrder(\''+o.id+'\')" style="background:rgba(220,20,60,.1);color:#DC143C;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer" title="주문 취소 요청">✕</button>';
     }
@@ -1585,7 +1587,7 @@ async function loadOrders(){
   ge('stDone').textContent=d.filter(function(o){return o.status==='completed'}).length;
 }
 
-// 🔄 주문 상태 실시간 새로고침 (Peakerr에서 가져옴)
+// 🔄 주문 상태 실시간 새로고침 (공급사에서 가져옴)
 async function refreshOrder(orderId){
   toast('상태 확인 중...','ok');
   var d=await api('/api/orders/refresh/'+orderId,'POST');
@@ -1597,7 +1599,7 @@ async function refreshOrder(orderId){
 
 // 🚫 주문 취소 요청
 async function cancelOrder(orderId){
-  if(!confirm('이 주문을 취소하시겠어요?\n\nPeakerr가 아직 처리하지 않았다면 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
+  if(!confirm('이 주문을 취소하시겠어요?\n\n아직 처리되지 않았다면 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
   var d=await api('/api/orders/cancel/'+orderId,'POST');
   if(d.error){toast(d.error,'err');return}
   toast(d.message||'취소 처리되었습니다','ok');
@@ -1942,7 +1944,7 @@ function renderSvcMgmtList(){
   if(!list.length){el.innerHTML='<div style="text-align:center;color:var(--tl);padding:20px">서비스 없음</div>';return;}
   el.innerHTML=list.map(function(s){
     var on=s.site_active==1;
-    // 🔒 서버에서 내려준 baseCost(원가)/sellPrice(판매가) 사용 - Peakerr 원가 숨김
+    // 🔒 서버에서 내려준 baseCost(원가)/sellPrice(판매가) 사용 - 공급가 숨김
     var baseCost=s.baseCost||0;
     var sellPrice=s.sellPrice||baseCost;
     return'<div style="display:flex;align-items:center;gap:10px;background:var(--w);border:1px solid var(--bd);border-radius:10px;padding:10px 12px">'
@@ -2111,7 +2113,7 @@ async function testTg(){
 
 // 🔄 수동 주문 동기화
 async function manualSyncOrders(){
-  if(!confirm('모든 진행중 주문의 상태를 Peakerr에서 확인하고 자동 환불 처리합니다.\n계속하시겠어요?'))return;
+  if(!confirm('모든 진행중 주문의 상태를 공급사에서 확인하고 자동 환불 처리합니다.\n계속하시겠어요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 시작...';
   var d=await api('/api/super/sync-orders','POST');
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
@@ -2121,7 +2123,7 @@ async function manualSyncOrders(){
 
 // 🔄 수동 서비스 체크
 async function manualSyncServices(){
-  if(!confirm('Peakerr에서 삭제된 서비스를 자동 비활성화하고, 가격 변동된 서비스를 업데이트합니다.\n계속하시겠어요?'))return;
+  if(!confirm('공급사에서 삭제된 서비스를 자동 비활성화하고, 가격 변동된 서비스를 업데이트합니다.\n계속하시겠어요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>체크 중...';
   var d=await api('/api/super/sync-services','POST');
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
@@ -2666,7 +2668,7 @@ async function saveService(){
   var description=ge('svcDesc').value.trim();
   var active=parseInt(ge('svcActive').value);
   if(!name||isNaN(rate)){toast('서비스명과 원가를 입력하세요','err');return}
-  if(!apiId){toast('Peakerr 서비스 ID를 입력하세요 (주문 작동에 필수)','err');return}
+  if(!apiId){toast('공급 상품 번호를 입력하세요 (주문 작동에 필수)','err');return}
   var url=id?'/api/super/services/update':'/api/super/services/create';
   var d=await api(url,'POST',{id,apiId,name,pl,rate,min,max,description,active});
   if(d.error){toast(d.error,'err');return}
