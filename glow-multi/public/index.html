@@ -473,6 +473,8 @@ tr:last-child td{border-bottom:none}
               <div class="ci" onclick="pickCharge(50000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩50,000</div><div class="chBonus" data-amt="50000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
               <div class="ci" onclick="pickCharge(100000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩100,000</div><div class="chBonus" data-amt="100000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
               <div class="ci" onclick="pickCharge(200000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩200,000</div><div class="chBonus" data-amt="200000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(500000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩500,000</div><div class="chBonus" data-amt="500000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(1000000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩1,000,000</div><div class="chBonus" data-amt="1000000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
               <div class="ci" onclick="pickCharge(0,this)"><div style="font-size:13px;color:var(--tm)">직접 입력</div></div>
             </div>
             <div class="fg"><label>충전 금액 (원)</label><input type="number" id="chAmt" placeholder="최소 ₩5,000" min="5000" inputmode="numeric"/></div>
@@ -674,6 +676,8 @@ tr:last-child td{border-bottom:none}
                   <div class="fg" style="margin:0"><label>₩50,000 충전 시 (%)</label><input type="number" id="stBonus50000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
                   <div class="fg" style="margin:0"><label>₩100,000 충전 시 (%)</label><input type="number" id="stBonus100000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
                   <div class="fg" style="margin:0"><label>₩200,000 충전 시 (%)</label><input type="number" id="stBonus200000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩500,000 충전 시 (%)</label><input type="number" id="stBonus500000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩1,000,000 충전 시 (%)</label><input type="number" id="stBonus1000000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
                 </div>
                 <div style="font-size:11px;color:#9A8AB0;margin-top:8px">💡 직접 입력 충전은 — 도달한 가장 높은 구간의 보너스율이 적용됩니다. (예: 7만원 충전 → ₩50,000 구간 적용)</div>
               </div>
@@ -1254,7 +1258,7 @@ async function loadSiteConfig(){
   (function(){
     var tiers={};
     try{ if(d.chargeBonusTiers) tiers=JSON.parse(d.chargeBonusTiers); }catch(e){}
-    [10000,30000,50000,100000,200000].forEach(function(a){
+    [10000,30000,50000,100000,200000,500000,1000000].forEach(function(a){
       var el=ge('stBonus'+a);
       if(el){ var v=parseFloat(tiers[a]); el.value=(!isNaN(v)&&v>0)?v:''; }
     });
@@ -1921,7 +1925,7 @@ async function saveCustomTexts(){
     description:ge('stDesc')?.value,
     notice:ge('stNotice')?.value,
     charge_bonus_tiers:(function(){
-      var amts=[10000,30000,50000,100000,200000];
+      var amts=[10000,30000,50000,100000,200000,500000,1000000];
       var tiers={};
       amts.forEach(function(a){
         var v=parseFloat(ge('stBonus'+a)?.value);
