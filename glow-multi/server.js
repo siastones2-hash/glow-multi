@@ -398,6 +398,7 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_text TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_image TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_link TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS charge_bonus REAL DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS footer_text TEXT DEFAULT '소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_welcome TEXT DEFAULT '다시 만나서 반가워요'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_sub TEXT DEFAULT '계정에 로그인하세요'`); } catch(e) {}
@@ -1117,6 +1118,7 @@ app.get('/api/site-config', async (req, res) => {
     stat3Num: site.stat3_num || '50%+', stat3Label: site.stat3_label || '마진 보장',
     stat4Num: site.stat4_num || '100%', stat4Label: site.stat4_label || '안전 보장',
     notice: site.notice || '',
+    chargeBonus: parseFloat(site.charge_bonus) || 0,
     bannerText: site.banner_text || '',
     bannerImage: site.banner_image || '',
     bannerLink: site.banner_link || '',
@@ -2102,17 +2104,27 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
       // 잔액 변동 로그
       const beforeR = await query(`SELECT * FROM users WHERE id=$1`, [charge.uid]);
       const beforeBal = beforeR.rows[0]?.balance || 0;
-      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge.amount, charge.uid]);
+      const chargerRole = beforeR.rows[0]?.role || 'user';
+      // 💰 충전 보너스 — 사이트 설정 보너스율, 일반 고객(user)에게만 지급
+      let bonus = 0;
+      if (chargerRole === 'user') {
+        const bSiteR = await query(`SELECT charge_bonus FROM sites WHERE id=$1`, [charge.site_id]);
+        const bonusRate = parseFloat(bSiteR.rows[0]?.charge_bonus) || 0;
+        if (bonusRate > 0) bonus = Math.round(charge.amount * bonusRate / 100);
+      }
+      const totalAdd = charge.amount + bonus;
+      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [totalAdd, charge.uid]);
       const afterR = await query(`SELECT * FROM users WHERE id=$1`, [charge.uid]);
       const afterBal = afterR.rows[0]?.balance || 0;
-      
+
+      const bonusNote = bonus > 0 ? ` +보너스 ₩${bonus.toLocaleString()}` : '';
       await logBalance(
-        charge.site_id, charge.uid, charge.uname, charge.amount,
+        charge.site_id, charge.uid, charge.uname, totalAdd,
         beforeBal, afterBal,
-        `충전 승인 (${charge.memo || '메모 없음'})`,
+        `충전 승인 (${charge.memo || '메모 없음'})${bonusNote}`,
         req.session.userId
       );
-      tgAlert(`✅ 충전승인 [${req.site?.name}]\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}`, req.site);
+      tgAlert(`✅ 충전승인 [${req.site?.name}]\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}${bonusNote}`, req.site);
     }
     await logActivity(req.siteId, req.session.userId, '', `충전 ${action === 'approve' ? '승인' : '거절'}`, 'charge', id, `₩${Math.round(charge.amount).toLocaleString()}`);
     res.json({ ok: true });
@@ -2341,7 +2353,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
       }
       return res.json({ error: '슈퍼관리자 전용 설정입니다' });
     }
-    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','banner_text','banner_image','banner_link'];
+    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','banner_text','banner_image','banner_link','charge_bonus'];
     if (siteFields.includes(key)) {
       // 🛡️ 숫자 필드 검증
       if (key === 'margin') {
@@ -2508,13 +2520,23 @@ app.post('/api/tg-webhook', async (req, res) => {
     }
     if (action === 'approve') {
       // 잔액 변동 로그 포함 (process 라우트와 동일하게 정합성 유지)
-      const beforeR = await query(`SELECT balance FROM users WHERE id=$1`, [charge.uid]);
+      const beforeR = await query(`SELECT balance, role FROM users WHERE id=$1`, [charge.uid]);
       const beforeBal = beforeR.rows[0]?.balance || 0;
+      const chargerRole = beforeR.rows[0]?.role || 'user';
+      // 💰 충전 보너스 — 일반 고객(user)에게만 지급
+      let bonus = 0;
+      if (chargerRole === 'user') {
+        const bSiteR = await query(`SELECT charge_bonus FROM sites WHERE id=$1`, [charge.site_id]);
+        const bonusRate = parseFloat(bSiteR.rows[0]?.charge_bonus) || 0;
+        if (bonusRate > 0) bonus = Math.round(charge.amount * bonusRate / 100);
+      }
+      const totalAdd = charge.amount + bonus;
+      const bonusNote = bonus > 0 ? ` +보너스 ₩${bonus.toLocaleString()}` : '';
       await query(`UPDATE charges SET status='approved' WHERE id=$1`, [chargeId]);
-      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge.amount, charge.uid]);
+      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [totalAdd, charge.uid]);
       try {
-        await logBalance(charge.site_id, charge.uid, charge.uname, charge.amount,
-          beforeBal, beforeBal + charge.amount, '충전 승인 (텔레그램)', 'telegram');
+        await logBalance(charge.site_id, charge.uid, charge.uname, totalAdd,
+          beforeBal, beforeBal + totalAdd, `충전 승인 (텔레그램)${bonusNote}`, 'telegram');
       } catch(e) {}
       await fetch(`https://api.telegram.org/bot${cbToken}/editMessageReplyMarkup`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2522,7 +2544,7 @@ app.post('/api/tg-webhook', async (req, res) => {
       });
       await fetch(`https://api.telegram.org/bot${cbToken}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: `✅ 승인 완료!\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()} 충전됨`, parse_mode: 'HTML' })
+        body: JSON.stringify({ chat_id: chatId, text: `✅ 승인 완료!\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}${bonusNote} 충전됨`, parse_mode: 'HTML' })
       });
       await fetch(`https://api.telegram.org/bot${cbToken}/answerCallbackQuery`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
