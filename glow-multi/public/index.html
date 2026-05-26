@@ -518,6 +518,10 @@ tr:last-child td{border-bottom:none}
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">📦 총 원가 (크레딧 사용)</div><div style="font-size:22px;font-weight:800;color:#c2410c" id="aSCost">₩0</div></div>
           <div class="sc" style="background:#ecfdf5;border:1px solid #6ee7b7"><div style="font-size:10px;letter-spacing:.1em;color:#047857;font-weight:700;text-transform:uppercase;margin-bottom:5px">✨ 내 수익 (매출−원가)</div><div style="font-size:22px;font-weight:800;color:#047857" id="aSProfit">₩0</div></div>
         </div>
+        <div id="aAdminOrderBox" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#64748b">
+          🛠 <strong style="color:#475569">내가 직접 주문한 작업분</strong> — 결제액 <strong id="aAdmRev">₩0</strong> / 크레딧 원가 <strong id="aAdmCost">₩0</strong>
+          <span style="color:#94a3b8">(고객 매출과 별도로 집계됩니다)</span>
+        </div>
         <!-- API 크레딧 표시 -->
         <div class="ibox" style="margin-bottom:14px" id="creditInfo" style="display:none">
           💰 API 크레딧 잔액: <strong id="creditBal">₩0</strong> | 부족 시 슈퍼관리자에게 충전 요청하세요
@@ -664,7 +668,7 @@ tr:last-child td{border-bottom:none}
               <div style="border-top:1px solid var(--bd);margin:14px 0;padding-top:12px">
                 <div style="font-size:13px;font-weight:800;color:var(--p2);margin-bottom:4px">📣 사이드바 홍보 배너</div>
                 <div style="font-size:11px;color:var(--tl);margin-bottom:10px">메뉴 아래에 표시됩니다. 창업문의·이벤트 홍보 등에 활용하세요. (텍스트·이미지 둘 다 비워두면 미표시)</div>
-                <div class="fg"><label>배너 텍스트</label><input type="text" id="stBannerText" placeholder="예: 💼 창업문의 환영! 카톡 ○○○"/></div>
+                <div class="fg"><label>배너 텍스트 (엔터로 줄바꿈 가능)</label><textarea id="stBannerText" rows="3" placeholder="예: 💼 창업문의 환영!&#10;카톡 ○○○&#10;24시간 상담 가능" style="width:100%;resize:vertical;font-family:inherit"></textarea></div>
                 <div class="fg"><label>배너 이미지 주소 (URL · 선택)</label><input type="text" id="stBannerImage" placeholder="https://... 이미지 링크"/>
                   <div style="font-size:11px;color:#9A8AB0;margin-top:4px">이미지를 다른 곳에 올린 뒤 그 주소를 붙여넣으세요</div>
                 </div>
@@ -1190,16 +1194,24 @@ async function loadSiteConfig(){
   var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
   var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
 
-  // 공지사항
+  // 공지사항 — 랜딩(pg-land)과 로그인 후 대시보드(pg-dash) 양쪽에 표시
   if(d.notice){
-    var nb=ge('noticeBanner');
-    if(!nb){
-      nb=document.createElement('div');nb.id='noticeBanner';
-      nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:200';
-      var pg=ge('pg-land');if(pg)pg.insertBefore(nb,pg.firstChild);
-    }
-    nb.textContent='📢 '+d.notice;
-    nb.style.display='block';
+    ['pg-land','pg-dash'].forEach(function(pgId){
+      var nbId='noticeBanner_'+pgId;
+      var nb=ge(nbId);
+      if(!nb){
+        nb=document.createElement('div');nb.id=nbId;
+        nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:200';
+        var pg=ge(pgId);if(pg)pg.insertBefore(nb,pg.firstChild);
+      }
+      nb.textContent='📢 '+d.notice;
+      nb.style.display='block';
+    });
+  }else{
+    ['pg-land','pg-dash'].forEach(function(pgId){
+      var nb=ge('noticeBanner_'+pgId);
+      if(nb)nb.style.display='none';
+    });
   }
 
   // 사이드바 배너 (사이트별 홍보 배너 — 텍스트/이미지)
@@ -1629,6 +1641,18 @@ async function loadAdmDash(){
   if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
   if(ge('aSCost'))ge('aSCost').textContent=gf(d.cost||0);
   if(ge('aSProfit'))ge('aSProfit').textContent=gf(d.profit||0);
+  // 관리자 본인 주문분 (작업분) — 금액이 있을 때만 표시
+  var admBox=ge('aAdminOrderBox');
+  if(admBox){
+    var admRev=d.adminRevenue||0;
+    if(!d.isSuper && admRev>0){
+      if(ge('aAdmRev'))ge('aAdmRev').textContent=gf(admRev);
+      if(ge('aAdmCost'))ge('aAdmCost').textContent=gf(d.adminCost||0);
+      admBox.style.display='block';
+    }else{
+      admBox.style.display='none';
+    }
+  }
   if(ge('aSC'))ge('aSC').textContent=d.pendingCharges||0;
 
   // 크레딧 표시 (일반 어드민만) - 원화 환산
@@ -1805,6 +1829,7 @@ async function openUserDetail(uid){
     +'<div class="card" style="margin-bottom:12px">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">'
     +'<div><span style="color:var(--tl);font-size:11px">이메일</span><br><strong>'+u.email+'</strong></div>'
+    +'<div><span style="color:var(--tl);font-size:11px">📞 연락처</span><br><strong style="color:var(--p2)">'+(u.phone?u.phone:'<span style=\'color:#bbb\'>미등록</span>')+'</strong></div>'
     +'<div><span style="color:var(--tl);font-size:11px">잔액</span><br><strong style="color:var(--p2)">'+gf(u.balance||0)+'</strong></div>'
     +'<div><span style="color:var(--tl);font-size:11px">상태</span><br><strong style="color:'+(u.status==='banned'?'#EF4444':'#10B981')+'">'+(u.status==='banned'?'정지':'정상')+'</strong></div>'
     +'<div><span style="color:var(--tl);font-size:11px">총 주문</span><br><strong>'+orders.length+'건</strong></div>'
@@ -2163,10 +2188,9 @@ function renderSiteList(sites){
       +'</div>'
       +'<span class="bdg" style="'+(s.active?'background:#D1FAE5;color:#10B981':'background:#FEE2E2;color:#EF4444')+'">'+(s.active?'활성':'비활성')+'</span>'
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.userCount||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.orderCount||0)+'</div><div style="font-size:10px;color:var(--tl)">주문</div></div>'
-      +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:var(--p2)">'+gf(s.revenue||0)+'</div><div style="font-size:10px;color:var(--tl)">매출</div></div>'
       +'<div style="text-align:center;background:'+(lowCredit?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(lowCredit?'#EF4444':'#10B981')+'">'+gf(creditKrw)+'</div><div style="font-size:10px;color:var(--tl)">크레딧</div></div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'
