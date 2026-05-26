@@ -3072,14 +3072,18 @@ app.post('/api/super/admin/delete', requireSuperAdmin, async (req, res) => {
 
 app.get('/api/super/orders', requireSuperAdmin, async (req, res) => {
   try {
-    const r = await query(`SELECT * FROM orders ORDER BY created DESC LIMIT 200`);
+    const r = await query(`SELECT o.*, COALESCE(s.name, o.site_id) AS site_name
+      FROM orders o LEFT JOIN sites s ON o.site_id = s.id
+      ORDER BY o.created DESC LIMIT 200`);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/super/charges', requireSuperAdmin, async (req, res) => {
   try {
-    const r = await query(`SELECT * FROM charges ORDER BY created DESC LIMIT 200`);
+    const r = await query(`SELECT c.*, COALESCE(s.name, c.site_id) AS site_name
+      FROM charges c LEFT JOIN sites s ON c.site_id = s.id
+      ORDER BY c.created DESC LIMIT 200`);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
