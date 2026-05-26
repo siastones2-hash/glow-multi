@@ -2272,7 +2272,7 @@ async function loadSuperOrders(){
     var delBtn=done.indexOf(o.status)>=0
       ?' <button onclick="delOrderSuper(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer">🗑</button>'
       :'';
-    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_id||'-')+'</td>'
+    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_name||o.site_id||'-')+'</td>'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
@@ -2297,7 +2297,7 @@ async function loadSuperCharges(){
       ?'<button class="btn bok bxs" onclick="procChargeSuper(\''+c.id+'\',\'approve\')">✓</button><button class="btn ber bxs" onclick="procChargeSuper(\''+c.id+'\',\'reject\')">✗</button>'
       :'<span style="font-size:11px;color:#9A8AB0">완료</span>')
       +'<button class="btn bxs" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1" onclick="delChargeSuper(\''+c.id+'\')">🗑</button>';
-    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_id||'-')+'</td>'
+    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_name||c.site_id||'-')+'</td>'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
       +'<td style="font-weight:700;color:#B5179E">'+gf(c.amount)+'</td>'
       +'<td style="font-size:12px">'+(c.note||'-')+'</td>'
