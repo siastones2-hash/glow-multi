@@ -666,9 +666,16 @@ tr:last-child td{border-bottom:none}
               <div class="fg"><label>부제목 설명</label><textarea id="stDesc" rows="2" placeholder="유튜브·인스타·틱톡·X까지..."></textarea></div>
               <div class="fg"><label>공지사항 (비워두면 미표시)</label><input type="text" id="stNotice" placeholder="현재 이벤트 진행 중!"/></div>
               <div style="border-top:1px solid var(--bd);margin:14px 0;padding-top:12px">
-                <div style="font-size:13px;font-weight:800;color:var(--p2);margin-bottom:4px">💰 충전 보너스</div>
-                <div style="font-size:11px;color:var(--tl);margin-bottom:10px">고객이 충전할 때 보너스를 얹어줍니다. 예: 7 입력 시 10만원 충전 → 잔액 10만 7천원. 비워두거나 0이면 보너스 없음. ⚠️ 보너스만큼 크레딧 소모가 늘어나니, 크레딧을 여유 있게 확보하세요.</div>
-                <div class="fg"><label>충전 보너스율 (%)</label><input type="number" id="stChargeBonus" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                <div style="font-size:13px;font-weight:800;color:var(--p2);margin-bottom:4px">💰 충전 보너스 (금액별)</div>
+                <div style="font-size:11px;color:var(--tl);margin-bottom:10px">충전 금액이 클수록 보너스율을 높게 줄 수 있습니다. 각 금액의 보너스율(%)을 입력하세요. 비워두면 그 금액은 보너스 없음. 전부 비우면 보너스 미사용. ⚠️ 보너스만큼 크레딧 소모가 늘어나니 크레딧을 여유 있게 확보하세요.</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div class="fg" style="margin:0"><label>₩10,000 충전 시 (%)</label><input type="number" id="stBonus10000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩30,000 충전 시 (%)</label><input type="number" id="stBonus30000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩50,000 충전 시 (%)</label><input type="number" id="stBonus50000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩100,000 충전 시 (%)</label><input type="number" id="stBonus100000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩200,000 충전 시 (%)</label><input type="number" id="stBonus200000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                </div>
+                <div style="font-size:11px;color:#9A8AB0;margin-top:8px">💡 직접 입력 충전은 — 도달한 가장 높은 구간의 보너스율이 적용됩니다. (예: 7만원 충전 → ₩50,000 구간 적용)</div>
               </div>
               <div style="border-top:1px solid var(--bd);margin:14px 0;padding-top:12px">
                 <div style="font-size:13px;font-weight:800;color:var(--p2);margin-bottom:4px">📣 사이드바 홍보 배너</div>
@@ -1199,18 +1206,22 @@ async function loadSiteConfig(){
   var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
   var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
 
-  // 충전 보너스 표시 — 사이트 보너스율에 따라 프리셋 버튼에 동적 표시 (0%면 미표시)
-  window._chargeBonusRate=parseFloat(d.chargeBonus)||0;
-  var chBonusEls=document.querySelectorAll('.chBonus');
-  chBonusEls.forEach(function(el){
-    var amt=parseInt(el.getAttribute('data-amt'))||0;
-    if(window._chargeBonusRate>0 && amt>0){
-      var bonus=Math.round(amt*window._chargeBonusRate/100);
-      el.textContent='+₩'+bonus.toLocaleString();
-    }else{
-      el.textContent='';
-    }
-  });
+  // 충전 보너스 표시 — 금액 구간별 보너스율에 따라 프리셋 버튼에 동적 표시
+  (function(){
+    var tiers={};
+    try{ if(d.chargeBonusTiers) tiers=JSON.parse(d.chargeBonusTiers); }catch(e){}
+    window._chargeBonusTiers=tiers;
+    document.querySelectorAll('.chBonus').forEach(function(el){
+      var amt=parseInt(el.getAttribute('data-amt'))||0;
+      var rate=parseFloat(tiers[amt])||0;
+      if(rate>0&&amt>0){
+        var bonus=Math.round(amt*rate/100);
+        el.textContent='+₩'+bonus.toLocaleString();
+      }else{
+        el.textContent='';
+      }
+    });
+  })();
 
   // 공지사항 — 랜딩(pg-land)과 로그인 후 대시보드 본문(dashMain) 양쪽에 표시
   // ⚠️ pg-dash는 가로 flex 레이아웃이므로 본문(dashMain) 안쪽에 넣어야 함
@@ -1239,7 +1250,15 @@ async function loadSiteConfig(){
   if(ge('stBannerText'))ge('stBannerText').value=d.bannerText||'';
   if(ge('stBannerImage'))ge('stBannerImage').value=d.bannerImage||'';
   if(ge('stBannerLink'))ge('stBannerLink').value=d.bannerLink||'';
-  if(ge('stChargeBonus'))ge('stChargeBonus').value=(d.chargeBonus&&d.chargeBonus>0)?d.chargeBonus:'';
+  // 충전 보너스 구간 5칸 채우기 (저장된 JSON 파싱)
+  (function(){
+    var tiers={};
+    try{ if(d.chargeBonusTiers) tiers=JSON.parse(d.chargeBonusTiers); }catch(e){}
+    [10000,30000,50000,100000,200000].forEach(function(a){
+      var el=ge('stBonus'+a);
+      if(el){ var v=parseFloat(tiers[a]); el.value=(!isNaN(v)&&v>0)?v:''; }
+    });
+  })();
   var sbBanner=ge('sidebarBanner');
   if(sbBanner){
     var bImg=d.bannerImage||'';
@@ -1901,7 +1920,17 @@ async function saveCustomTexts(){
     slogan_sub:ge('stSloganSub')?.value,
     description:ge('stDesc')?.value,
     notice:ge('stNotice')?.value,
-    charge_bonus:ge('stChargeBonus')?.value,
+    charge_bonus_tiers:(function(){
+      var amts=[10000,30000,50000,100000,200000];
+      var tiers={};
+      amts.forEach(function(a){
+        var v=parseFloat(ge('stBonus'+a)?.value);
+        tiers[a]=(!isNaN(v)&&v>0)?v:0;
+      });
+      // 전부 0이면 빈 문자열(보너스 미사용)
+      var hasAny=amts.some(function(a){return tiers[a]>0;});
+      return hasAny?JSON.stringify(tiers):'';
+    })(),
     banner_text:ge('stBannerText')?.value,
     banner_image:ge('stBannerImage')?.value,
     banner_link:ge('stBannerLink')?.value,
