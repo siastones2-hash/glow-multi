@@ -440,6 +440,7 @@ tr:last-child td{border-bottom:none}
             <div style="font-size:15px;font-weight:800;margin-bottom:14px">주문하기 ✨</div>
             <div class="fg"><label>선택된 서비스</label><div id="selName" style="padding:11px 13px;background:#f5f0ff;border:1.5px solid var(--bd);border-radius:10px;font-size:13px;color:var(--tm);min-height:42px;line-height:1.5">서비스를 선택하세요</div></div>
             <div class="fg"><label>링크 (URL)</label><input type="url" id="o링크" placeholder="https://..." autocomplete="off"/><div style="font-size:11px;color:var(--tl);margin-top:4px" id="linkHint">서비스 대상 URL</div></div>
+            <div id="orderGuideBox" style="display:none;background:#f5f0ff;border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.7"></div>
             <div class="fg"><label>수량 <span id="qHint" style="color:var(--p2);font-size:10px;font-weight:500;letter-spacing:0;text-transform:none"></span></label><input type="number" id="o수량" placeholder="수량" min="1" inputmode="numeric" oninput="calcPrice()"/></div>
             <div class="osum">
               <div class="osr"><span style="color:var(--tm);font-weight:300">내 잔액</span><span id="oBal">-</span></div>
@@ -560,7 +561,7 @@ tr:last-child td{border-bottom:none}
           <div class="tw"><table><thead><tr><th>날짜</th><th>회원</th><th>서비스</th><th>금액</th><th>상태</th></tr></thead><tbody id="revTb"></tbody></table></div>
         </div>
         <div class="apanel on" id="ap-orders">
-          <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
         <div class="apanel" id="ap-users">
           <div class="tw"><table><thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead><tbody id="aUTb"></tbody></table></div>
@@ -759,7 +760,7 @@ tr:last-child td{border-bottom:none}
 
         <!-- 전체 주문 -->
         <div class="apanel" id="sp-allorders">
-          <div class="tw"><table><thead><tr><th>사이트</th><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th></tr></thead><tbody id="spOTb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>사이트</th><th>회원</th><th>서비스</th><th>링크</th><th>공급사 주문번호</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th></tr></thead><tbody id="spOTb"></tbody></table></div>
         </div>
 
         <!-- 전체 충전 -->
@@ -1083,6 +1084,12 @@ var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'�
 var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
 var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
+var ORDERGUIDE={
+  youtube:{title:'유튜브 링크 넣는 법',steps:['유튜브 앱이나 사이트에서 대상 영상을 엽니다.','영상 아래 <b>공유</b> 버튼을 누르고 <b>링크 복사</b>를 선택합니다.','복사한 주소(youtube.com/... 또는 youtu.be/...)를 그대로 붙여넣습니다.'],warn:'구독자 주문은 영상 링크가 아닌 <b>채널 주소</b>를 넣어주세요.'},
+  instagram:{title:'인스타그램 링크 넣는 법',steps:['인스타그램에서 대상 게시물(또는 릴스)을 엽니다.','게시물 우측 상단 <b>···</b> 메뉴에서 <b>링크 복사</b>를 누릅니다.','복사한 주소(instagram.com/p/... 등)를 붙여넣습니다.'],warn:'팔로워 주문은 게시물이 아닌 <b>프로필 주소</b>(instagram.com/아이디)를 넣어주세요. 계정은 <b>공개</b> 상태여야 합니다.'},
+  tiktok:{title:'틱톡 링크 넣는 법',steps:['틱톡에서 대상 영상을 엽니다.','우측 <b>공유</b> 아이콘을 누르고 <b>링크 복사</b>를 선택합니다.','복사한 주소(tiktok.com/... 또는 vt.tiktok.com/...)를 붙여넣습니다.'],warn:'팔로워 주문은 영상이 아닌 <b>프로필 주소</b>를 넣어주세요. 계정은 <b>공개</b> 상태여야 합니다.'},
+  facebook:{title:'페이스북 링크 넣는 법',steps:['페이스북에서 대상 게시물 또는 페이지를 엽니다.','게시물 우측 상단 <b>···</b> 메뉴 또는 <b>공유 → 링크 복사</b>를 누릅니다.','복사한 주소를 붙여넣습니다.'],warn:'좋아요·팔로워 주문은 <b>페이지 주소</b>를, 게시물 주문은 <b>게시물 주소</b>를 넣어주세요. 공개 상태여야 합니다.'}
+};
 
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 var _globalExrate=1500; // 크레딧 원화 환산용 글로벌 환율
@@ -1555,6 +1562,17 @@ function selSvc(id){
     +'<div style="font-size:12px;color:#5A4A7A;font-weight:300;margin-top:5px;line-height:1.6">'+SEL.description+'</div>';
   ge('qHint').textContent='최소 '+(SEL.min||0).toLocaleString()+' / 최대 '+(SEL.max||0).toLocaleString()+'개';
   ge('linkHint').textContent=HINTS[SEL.pl]||'서비스 대상 URL';
+  var gb=ge('orderGuideBox'),g=ORDERGUIDE[SEL.pl];
+  if(gb){
+    if(g){
+      var gh='<div style="font-weight:700;color:var(--p2);margin-bottom:6px">📌 '+g.title+'</div>';
+      gh+='<ol style="margin:0 0 6px 0;padding-left:18px;color:#5A4A7A">';
+      g.steps.forEach(function(s){gh+='<li style="margin-bottom:3px">'+s+'</li>'});
+      gh+='</ol>';
+      if(g.warn)gh+='<div style="color:#B5179E;font-weight:600;margin-top:4px">⚠ '+g.warn+'</div>';
+      gb.innerHTML=gh;gb.style.display='block';
+    }else{gb.style.display='none';}
+  }
   ge('o수량').min=SEL.min||1;
   calcPrice();renderSvcList();
   var ofc=document.querySelector('.ofc');
@@ -1751,14 +1769,18 @@ function goAdm(tab,el){
 }
 async function loadAdmOrders(){
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
     var delBtn=done.indexOf(o.status)>=0
       ?'<button onclick="delOrder(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;margin-top:4px">🗑 삭제</button>'
       :'';
+    var linkCell=o.link
+      ?'<a href="'+o.link+'" target="_blank" rel="noopener" style="color:#7209B7;text-decoration:underline;font-size:11px">바로가기 ↗</a>'
+      :'<span style="color:#9A8AB0;font-size:11px">-</span>';
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
+      +'<td style="white-space:nowrap">'+linkCell+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
@@ -2266,15 +2288,23 @@ function renderSiteList(sites){
 }
 async function loadSuperOrders(){
   var d=await api('/api/super/orders');var tb=ge('spOTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
     var delBtn=done.indexOf(o.status)>=0
       ?' <button onclick="delOrderSuper(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer">🗑</button>'
       :'';
+    var linkCell=o.link
+      ?'<a href="'+o.link+'" target="_blank" rel="noopener" style="color:#7209B7;text-decoration:underline;font-size:11px">바로가기 ↗</a>'
+      :'<span style="color:#9A8AB0;font-size:11px">-</span>';
+    var apiOid=o.api_order_id
+      ?'<span style="font-size:11px;color:#1A1030">'+o.api_order_id+'</span>'
+      :'<span style="color:#9A8AB0;font-size:11px">-</span>';
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_name||o.site_id||'-')+'</td>'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
+      +'<td style="white-space:nowrap">'+linkCell+'</td>'
+      +'<td style="white-space:nowrap">'+apiOid+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
