@@ -715,9 +715,12 @@ tr:last-child td{border-bottom:none}
 
         <!-- 사이트 관리 -->
         <div class="apanel on" id="sp-sites">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <div style="font-size:14px;font-weight:800">사이트 목록</div>
-            <button class="bp bsm" style="padding:8px 16px" onclick="ge('mNewSite').classList.add('on')">+ 새 사이트</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn ber bsm" onclick="fixAbnormalCredits()">🔧 비정상 크레딧 0원 정리</button>
+              <button class="bp bsm" style="padding:8px 16px" onclick="ge('mNewSite').classList.add('on')">+ 새 사이트</button>
+            </div>
           </div>
           <div id="siteList"></div>
         </div>
@@ -2062,6 +2065,14 @@ async function manualScanNewServices(){
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
   if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
   toast('신규 서비스 스캔 시작됨 ✨','ok');
+}
+
+async function fixAbnormalCredits(){
+  if(!confirm('화면에 1천만 원 넘게 보이는 크레딧(버그)을 전 사이트 0원으로 맞춥니다.\n이후 필요한 금액만 다시 충전하세요.\n\n계속할까요?'))return;
+  var d=await api('/api/super/sites/fix-abnormal-credits','POST',{});
+  if(d.error){toast(d.error,'err');return}
+  toast((d.fixed||0)+'개 사이트 크레딧 정리 완료 ✨','ok');
+  loadSuperDash();
 }
 
 // ── 슈퍼관리자 ──

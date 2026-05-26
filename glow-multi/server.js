@@ -214,9 +214,9 @@ async function initDB() {
   } else {
     // 기존 사이트도 계좌번호 업데이트
     await query(`UPDATE sites SET bank=$1, super_margin=100, exrate=1500 WHERE id='default'`, [BANK_INFO]);
-    // 예전 버그: default 크레딧이 999999999 USD로 들어가 1.5조 원처럼 보임 → 0으로 정정
-    await query(`UPDATE sites SET credit=0 WHERE id='default' AND credit >= 999999999`);
   }
+
+  await normalizeAbnormalCredits();
 
   // 나인스토리
   const no9Exists = await query(`SELECT id FROM sites WHERE domain='no9story.com'`);
@@ -462,6 +462,21 @@ async function initDB() {
   )`); } catch(e) {}
   
   console.log('✅ DB 초기화 완료');
+}
+
+/** DB=credit(USD), 화면=USD×exrate(원). 비정상적으로 큰 값 일괄 0 정리 */
+async function normalizeAbnormalCredits() {
+  const KRW_LIMIT = 10000000; // 화면 1천만 원 초과 시 버그로 간주
+  const r = await query(`
+    UPDATE sites SET credit = 0
+    WHERE credit >= 999999999
+       OR (credit * COALESCE(NULLIF(exrate, 0), 1500)) > $1
+    RETURNING id, name
+  `, [KRW_LIMIT]);
+  if (r.rowCount > 0) {
+    console.log(`🔧 비정상 크레딧 ${r.rowCount}개 사이트 → 0원 정리:`, r.rows.map(s => s.name).join(', '));
+  }
+  return r.rowCount;
 }
 
 // ── 미들웨어 ──
@@ -2809,6 +2824,18 @@ app.post('/api/super/sites/credit', requireSuperAdmin, async (req, res) => {
 });
 
 // 사이트 크레딧 직접 수정 (정확한 값으로 덮어쓰기 · 잘못 충전 정정용)
+app.post('/api/super/sites/fix-abnormal-credits', requireSuperAdmin, async (req, res) => {
+  try {
+    const before = await query(`
+      SELECT id, name, credit, exrate FROM sites
+      WHERE credit >= 999999999
+         OR (credit * COALESCE(NULLIF(exrate, 0), 1500)) > 10000000
+    `);
+    const fixed = await normalizeAbnormalCredits();
+    res.json({ ok: true, fixed, sites: before.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/super/sites/credit-set', requireSuperAdmin, async (req, res) => {
   try {
     const { siteId, credit } = req.body;
