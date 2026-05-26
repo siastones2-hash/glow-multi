@@ -398,7 +398,8 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_text TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_image TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_link TEXT DEFAULT ''`); } catch(e) {}
-  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS charge_bonus REAL DEFAULT 0`); } catch(e) {}
+  // 충전 보너스 — 금액 구간별 보너스율 JSON 저장 (예: {"10000":0,"30000":0,"50000":1,"100000":5,"200000":6})
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS charge_bonus_tiers TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS footer_text TEXT DEFAULT '소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_welcome TEXT DEFAULT '다시 만나서 반가워요'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_sub TEXT DEFAULT '계정에 로그인하세요'`); } catch(e) {}
@@ -989,6 +990,29 @@ async function scanNewServices() {
   } catch(e) { console.log('신규 서비스 스캔 실패:', e.message); }
 }
 
+// 💰 충전 보너스 계산 — 금액이 도달한 가장 높은 구간의 보너스율(%)을 적용
+// tiersJson: {"10000":0,"30000":0,"50000":1,"100000":5,"200000":6} 형태
+function calcChargeBonus(amount, tiersJson) {
+  try {
+    if (!tiersJson) return 0;
+    const tiers = typeof tiersJson === 'string' ? JSON.parse(tiersJson) : tiersJson;
+    if (!tiers || typeof tiers !== 'object') return 0;
+    // 충전액 이하의 구간 중 가장 높은 금액 구간을 찾음
+    let bestRate = 0;
+    let bestThreshold = -1;
+    for (const key in tiers) {
+      const threshold = parseFloat(key);
+      const rate = parseFloat(tiers[key]) || 0;
+      if (amount >= threshold && threshold > bestThreshold && rate > 0) {
+        bestThreshold = threshold;
+        bestRate = rate;
+      }
+    }
+    if (bestRate <= 0) return 0;
+    return Math.round(amount * bestRate / 100);
+  } catch(e) { return 0; }
+}
+
 async function tgAlert(msg, site) {
   const siteObj = typeof site === 'object' ? site : null;
   const isDefaultSite = !siteObj || siteObj.id === 'default';
@@ -1118,7 +1142,7 @@ app.get('/api/site-config', async (req, res) => {
     stat3Num: site.stat3_num || '50%+', stat3Label: site.stat3_label || '마진 보장',
     stat4Num: site.stat4_num || '100%', stat4Label: site.stat4_label || '안전 보장',
     notice: site.notice || '',
-    chargeBonus: parseFloat(site.charge_bonus) || 0,
+    chargeBonusTiers: site.charge_bonus_tiers || '',
     bannerText: site.banner_text || '',
     bannerImage: site.banner_image || '',
     bannerLink: site.banner_link || '',
@@ -2105,12 +2129,11 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
       const beforeR = await query(`SELECT * FROM users WHERE id=$1`, [charge.uid]);
       const beforeBal = beforeR.rows[0]?.balance || 0;
       const chargerRole = beforeR.rows[0]?.role || 'user';
-      // 💰 충전 보너스 — 사이트 설정 보너스율, 일반 고객(user)에게만 지급
+      // 💰 충전 보너스 — 금액 구간별, 일반 고객(user)에게만 지급
       let bonus = 0;
       if (chargerRole === 'user') {
-        const bSiteR = await query(`SELECT charge_bonus FROM sites WHERE id=$1`, [charge.site_id]);
-        const bonusRate = parseFloat(bSiteR.rows[0]?.charge_bonus) || 0;
-        if (bonusRate > 0) bonus = Math.round(charge.amount * bonusRate / 100);
+        const bSiteR = await query(`SELECT charge_bonus_tiers FROM sites WHERE id=$1`, [charge.site_id]);
+        bonus = calcChargeBonus(charge.amount, bSiteR.rows[0]?.charge_bonus_tiers);
       }
       const totalAdd = charge.amount + bonus;
       await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [totalAdd, charge.uid]);
@@ -2353,7 +2376,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
       }
       return res.json({ error: '슈퍼관리자 전용 설정입니다' });
     }
-    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','banner_text','banner_image','banner_link','charge_bonus'];
+    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','banner_text','banner_image','banner_link','charge_bonus_tiers'];
     if (siteFields.includes(key)) {
       // 🛡️ 숫자 필드 검증
       if (key === 'margin') {
@@ -2523,12 +2546,11 @@ app.post('/api/tg-webhook', async (req, res) => {
       const beforeR = await query(`SELECT balance, role FROM users WHERE id=$1`, [charge.uid]);
       const beforeBal = beforeR.rows[0]?.balance || 0;
       const chargerRole = beforeR.rows[0]?.role || 'user';
-      // 💰 충전 보너스 — 일반 고객(user)에게만 지급
+      // 💰 충전 보너스 — 금액 구간별, 일반 고객(user)에게만 지급
       let bonus = 0;
       if (chargerRole === 'user') {
-        const bSiteR = await query(`SELECT charge_bonus FROM sites WHERE id=$1`, [charge.site_id]);
-        const bonusRate = parseFloat(bSiteR.rows[0]?.charge_bonus) || 0;
-        if (bonusRate > 0) bonus = Math.round(charge.amount * bonusRate / 100);
+        const bSiteR = await query(`SELECT charge_bonus_tiers FROM sites WHERE id=$1`, [charge.site_id]);
+        bonus = calcChargeBonus(charge.amount, bSiteR.rows[0]?.charge_bonus_tiers);
       }
       const totalAdd = charge.amount + bonus;
       const bonusNote = bonus > 0 ? ` +보너스 ₩${bonus.toLocaleString()}` : '';
