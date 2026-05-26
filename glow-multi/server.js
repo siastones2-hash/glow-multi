@@ -2968,13 +2968,15 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
 
 app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
   try {
+    // 매출 집계 제외 상태: 취소·실패·환불 주문은 실매출이 아님
+    const EXCLUDE = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
     const sites = await query(`SELECT * FROM sites ORDER BY created DESC`);
     const totalUsers = await query(`SELECT COUNT(*) as c FROM users WHERE role='user'`);
-    const totalOrders = await query(`SELECT COUNT(*) as c FROM orders`);
-    const totalRevenue = await query(`SELECT SUM(charge) as s FROM orders`);
+    const totalOrders = await query(`SELECT COUNT(*) as c FROM orders WHERE ${EXCLUDE}`);
+    const totalRevenue = await query(`SELECT SUM(charge) as s FROM orders WHERE ${EXCLUDE}`);
     const pendingCharges = await query(`SELECT COUNT(*) as c FROM charges WHERE status='pending'`);
-    // 순수익 계산: 총매출 - API 원가 합계
-    const totalApiCost = await query(`SELECT SUM(qty * rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id`);
+    // 순수익 계산: API 원가 합계 (취소·환불 주문 제외)
+    const totalApiCost = await query(`SELECT SUM(o.qty * s.rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id WHERE o.${EXCLUDE}`);
     let apiBalance = null;
     try {
       const apiKey = await getGlobalSetting('peakerr_api_key');
@@ -2989,8 +2991,8 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
     } catch(e) {}
     const siteStats = await Promise.all(sites.rows.map(async s => {
       const uc = await query(`SELECT COUNT(*) as c FROM users WHERE site_id=$1 AND role='user'`, [s.id]);
-      const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1`, [s.id]);
-      const rv = await query(`SELECT SUM(charge) as v FROM orders WHERE site_id=$1`, [s.id]);
+      const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
+      const rv = await query(`SELECT SUM(charge) as v FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
       const pc = await query(`SELECT COUNT(*) as c FROM charges WHERE site_id=$1 AND status='pending'`, [s.id]);
       return { ...s, userCount: parseInt(uc.rows[0].c), orderCount: parseInt(oc.rows[0].c), revenue: rv.rows[0].v || 0, pendingCharge: parseInt(pc.rows[0].c) };
     }));
