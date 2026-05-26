@@ -238,7 +238,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
       <div class="chip">⚡ 즉시 처리</div><div class="chip">🔄 드롭 보상</div>
-      <div class="chip">🔒 계정 안전</div><div class="chip">💰 최저가</div><div class="chip">💬 24/7 지원</div>
+      <div class="chip">🔒 계정 안전</div><div class="chip">💰 최저가</div><div class="chip">💬 컨설팅 지원</div>
     </div>
   </div>
   <div class="sts">
@@ -475,7 +475,7 @@ tr:last-child td{border-bottom:none}
               <div class="ci" onclick="pickCharge(0,this)"><div style="font-size:13px;color:var(--tm)">직접 입력</div></div>
             </div>
             <div class="fg"><label>충전 금액 (원)</label><input type="number" id="chAmt" placeholder="최소 ₩5,000" min="5000" inputmode="numeric"/></div>
-            <div class="fg"><label>메모 (선택)</label><input type="text" id="chNote" placeholder="입금자명 등"/></div>
+            <div class="fg"><label>메모 (필수 — 입금자명)</label><input type="text" id="chNote" placeholder="입금자명을 꼭 입력하세요"/></div>
             <div class="ibox" style="margin-bottom:13px" id="bankInfo">로딩 중...</div>
             <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:#EF4444;line-height:1.7">
 ⚠️ <strong>입금 먼저 하신 후</strong> 충전 요청해주세요!<br>
@@ -867,6 +867,9 @@ tr:last-child td{border-bottom:none}
       <button onclick="closeM('mService')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>
     </div>
     <input type="hidden" id="svcEditId"/>
+    <div class="fg"><label>Peakerr 서비스 ID (필수 — 숫자)</label><input type="text" id="svcApiId" placeholder="예: 13810" inputmode="numeric"/>
+      <div style="font-size:11px;color:#9A8AB0;margin-top:4px">⚠️ Peakerr 상품 번호입니다. 비워두면 주문이 작동하지 않습니다.</div>
+    </div>
     <div class="fg"><label>서비스명</label><input type="text" id="svcName" placeholder="YouTube 조회수"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fg"><label>플랫폼</label>
@@ -2543,6 +2546,7 @@ async function loadSuperServices(){
 function openAddService(){
   ge('mServiceTitle').textContent='서비스 추가';
   ge('svcEditId').value='';
+  ge('svcApiId').value='';
   ge('svcName').value='';ge('svcPl').value='youtube';
   ge('svcRate').value='';ge('svcMin').value='100';
   ge('svcMax').value='1000000';ge('svcDesc').value='';
@@ -2565,6 +2569,7 @@ async function openEditService(id){
 function editService(s){
   ge('mServiceTitle').textContent='서비스 수정';
   ge('svcEditId').value=s.id;
+  ge('svcApiId').value=s.api_id||'';
   ge('svcName').value=s.name;ge('svcPl').value=s.pl;
   ge('svcRate').value=s.rate;ge('svcMin').value=s.min;
   ge('svcMax').value=s.max;ge('svcDesc').value=s.description||'';
@@ -2574,6 +2579,7 @@ function editService(s){
 
 async function saveService(){
   var id=ge('svcEditId').value;
+  var apiId=ge('svcApiId').value.trim();
   var name=ge('svcName').value.trim();
   var pl=ge('svcPl').value;
   var rate=parseFloat(ge('svcRate').value);
@@ -2582,8 +2588,9 @@ async function saveService(){
   var description=ge('svcDesc').value.trim();
   var active=parseInt(ge('svcActive').value);
   if(!name||isNaN(rate)){toast('서비스명과 원가를 입력하세요','err');return}
+  if(!apiId){toast('Peakerr 서비스 ID를 입력하세요 (주문 작동에 필수)','err');return}
   var url=id?'/api/super/services/update':'/api/super/services/create';
-  var d=await api(url,'POST',{id,name,pl,rate,min,max,description,active});
+  var d=await api(url,'POST',{id,apiId,name,pl,rate,min,max,description,active});
   if(d.error){toast(d.error,'err');return}
   toast('저장 완료 ✨','ok');
   closeM('mService');loadSuperServices();
