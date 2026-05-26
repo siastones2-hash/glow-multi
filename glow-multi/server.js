@@ -1024,7 +1024,7 @@ async function tgChargeAlert(chargeId, userName, amount, note, site, requesterRo
 
   const balLine = (currentBalance !== undefined && currentBalance !== null)
     ? `\n💳 현재 잔액: ₩${Math.round(currentBalance).toLocaleString()}` : '';
-  const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}${balLine}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`;
+  const msg = `💳 <b>충전 요청</b> [${siteName}]\n👤 ${userName}\n💰 ₩${Math.round(amount).toLocaleString()}${balLine}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`;
 
   const sendList = [];
 
@@ -2394,7 +2394,12 @@ app.post('/api/tg-webhook', async (req, res) => {
       }
       if (crAction === 'approve') {
         await query(`UPDATE credit_requests SET status='approved' WHERE id=$1`, [crId]);
-        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [cr.amount, cr.site_id]);
+        // cr.amount는 원화(₩) → DB credit은 USD이므로 환율로 나눔
+        const crSiteR = await query(`SELECT exrate FROM sites WHERE id=$1`, [cr.site_id]);
+        const crGlobalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
+        const crEx = (crSiteR.rows[0] && crSiteR.rows[0].exrate > 0) ? crSiteR.rows[0].exrate : crGlobalEx;
+        const crUSD = parseFloat(cr.amount) / crEx;
+        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [crUSD, cr.site_id]);
         await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
@@ -2546,7 +2551,7 @@ app.post('/api/admin/credit-request', requireAdmin, async (req, res) => {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chat,
-          text: `💰 <b>크레딧 요청</b>\n🏢 ${site.name}\n💵 ₩${Math.round(amt).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR')}`,
+          text: `💰 <b>크레딧 요청</b>\n🏢 ${site.name}\n💵 ₩${Math.round(amt).toLocaleString()}\n📝 ${note || '-'}\n⏰ ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`,
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [[
@@ -2612,7 +2617,12 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
     const status = action === 'approve' ? 'approved' : 'rejected';
     await query(`UPDATE credit_requests SET status=$1 WHERE id=$2`, [status, id]);
     if (action === 'approve') {
-      await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [cr.amount, cr.site_id]);
+      // cr.amount는 원화(₩) → DB credit은 USD이므로 환율로 나눔
+      const crSiteR = await query(`SELECT exrate FROM sites WHERE id=$1`, [cr.site_id]);
+      const crGlobalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
+      const crEx = (crSiteR.rows[0] && crSiteR.rows[0].exrate > 0) ? crSiteR.rows[0].exrate : crGlobalEx;
+      const crUSD = parseFloat(cr.amount) / crEx;
+      await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [crUSD, cr.site_id]);
       // 해당 사이트 텔레그램 알림
       const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [cr.site_id]);
       const site = siteR.rows[0];
@@ -2655,21 +2665,30 @@ app.post('/api/admin/credit-requests/delete', requireAdmin, async (req, res) => 
 // ── 서비스 CRUD (슈퍼어드민) ──
 app.post('/api/super/services/create', requireSuperAdmin, async (req, res) => {
   try {
-    const { name, pl, rate, min, max, description, active } = req.body;
+    const { name, pl, rate, min, max, description, active, apiId } = req.body;
     if (!name) return res.json({ error: '서비스명을 입력하세요' });
+    if (!apiId) return res.json({ error: 'Peakerr 서비스 ID를 입력하세요' });
     const id = 'svc_' + Date.now();
-    await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [id, name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0]);
+    await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active,api_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [id, name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, String(apiId).trim()]);
+    // 🆕 모든 사이트의 site_services에도 자동 연결 — 새 상품이 지인 사이트에도 바로 보이도록
+    try {
+      const sitesR = await query(`SELECT id FROM sites`);
+      for (const st of sitesR.rows) {
+        await query(`INSERT INTO site_services(site_id, service_id, active) VALUES($1,$2,1)
+                     ON CONFLICT(site_id, service_id) DO NOTHING`, [st.id, id]);
+      }
+    } catch(e) { console.error('site_services 자동 연결 실패:', e.message); }
     res.json({ ok: true, id });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/super/services/update', requireSuperAdmin, async (req, res) => {
   try {
-    const { id, name, pl, rate, min, max, description, active } = req.body;
+    const { id, name, pl, rate, min, max, description, active, apiId } = req.body;
     if (!id) return res.json({ error: 'ID가 없습니다' });
-    await query(`UPDATE services SET name=$1,pl=$2,rate=$3,min=$4,max=$5,description=$6,active=$7 WHERE id=$8`,
-      [name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, id]);
+    await query(`UPDATE services SET name=$1,pl=$2,rate=$3,min=$4,max=$5,description=$6,active=$7,api_id=$8 WHERE id=$9`,
+      [name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, apiId?String(apiId).trim():null, id]);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2777,6 +2796,7 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/sites/credit', requireSuperAdmin, async (req, res) => {
   try {
     const { siteId, amount } = req.body;
+    // amount는 프론트엔드에서 이미 USD로 환산되어 전달됨
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return res.json({ error: '금액을 입력하세요' });
     await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [amt, siteId]);
