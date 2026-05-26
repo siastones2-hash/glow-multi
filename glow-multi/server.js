@@ -210,10 +210,12 @@ async function initDB() {
       VALUES('default','localhost','GLOW','✨','#F72585','#B5179E',
       '',
       $1,
-      40,1500,999999999,100)`, [BANK_INFO]);
+      40,1500,0,100)`, [BANK_INFO]);
   } else {
     // 기존 사이트도 계좌번호 업데이트
     await query(`UPDATE sites SET bank=$1, super_margin=100, exrate=1500 WHERE id='default'`, [BANK_INFO]);
+    // 예전 버그: default 크레딧이 999999999 USD로 들어가 1.5조 원처럼 보임 → 0으로 정정
+    await query(`UPDATE sites SET credit=0 WHERE id='default' AND credit >= 999999999`);
   }
 
   // 나인스토리
@@ -510,6 +512,15 @@ async function getGlobalSetting(key) {
 }
 async function setGlobalSetting(key, value) {
   await query(`INSERT INTO global_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=$2`, [key, value]);
+}
+
+/** credit_requests.amount = 원화(₩) → sites.credit = 달러($) */
+async function krwToCreditUsd(siteId, krwAmount) {
+  const krw = parseFloat(krwAmount);
+  if (!krw || krw <= 0) return 0;
+  const siteR = await query(`SELECT exrate FROM sites WHERE id=$1`, [siteId]);
+  const exrate = parseFloat(siteR.rows[0]?.exrate) || parseFloat(await getGlobalSetting('global_exrate')) || 1500;
+  return krw / exrate;
 }
 
 // 🛡️ ── 보안 & 검증 유틸 ──
@@ -2394,7 +2405,8 @@ app.post('/api/tg-webhook', async (req, res) => {
       }
       if (crAction === 'approve') {
         await query(`UPDATE credit_requests SET status='approved' WHERE id=$1`, [crId]);
-        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [cr.amount, cr.site_id]);
+        const creditUsd = await krwToCreditUsd(cr.site_id, cr.amount);
+        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditUsd, cr.site_id]);
         await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
@@ -2612,16 +2624,18 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
     const status = action === 'approve' ? 'approved' : 'rejected';
     await query(`UPDATE credit_requests SET status=$1 WHERE id=$2`, [status, id]);
     if (action === 'approve') {
-      await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [cr.amount, cr.site_id]);
+      const creditUsd = await krwToCreditUsd(cr.site_id, cr.amount);
+      await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditUsd, cr.site_id]);
       // 해당 사이트 텔레그램 알림
       const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [cr.site_id]);
       const site = siteR.rows[0];
+      const exrate = parseFloat(site?.exrate) || 1500;
       if (site?.tg_token && site?.tg_chat) {
         await fetch(`https://api.telegram.org/bot${site.tg_token}/sendMessage`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: site.tg_chat,
-            text: `✅ <b>크레딧 충전 완료</b>\n💵 $${cr.amount} 충전됨\n현재 잔액 확인해주세요`,
+            text: `✅ <b>크레딧 충전 완료</b>\n💵 ₩${Math.round(cr.amount).toLocaleString()} ($${creditUsd.toFixed(2)}) 충전됨\n현재 잔액 확인해주세요`,
             parse_mode: 'HTML'
           })
         });
