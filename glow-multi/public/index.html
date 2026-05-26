@@ -2583,13 +2583,16 @@ async function loadRevenue(){
   var todayStr = now.toISOString().slice(0,10);
   var monthStr = now.toISOString().slice(0,7);
   var todayTotal=0, monthTotal=0, allTotal=0;
+  var EXCLUDE=['cancelled','canceled','failed','refunded','partial_refunded'];
+  var validCount=0;
   var rows='';
   d.forEach(function(o){
     var dateStr = (o.created||'').slice(0,10);
     var monthS = (o.created||'').slice(0,7);
     var charge = o.charge||0;
-    if(o.status !== 'refunded'){
+    if(EXCLUDE.indexOf(o.status) < 0){
       allTotal += charge;
+      validCount++;
       if(dateStr === todayStr) todayTotal += charge;
       if(monthS === monthStr) monthTotal += charge;
     }
@@ -2602,7 +2605,7 @@ async function loadRevenue(){
   ge('rev-today').textContent = gf(todayTotal);
   ge('rev-month').textContent = gf(monthTotal);
   ge('rev-total').textContent = gf(allTotal);
-  ge('rev-orders').textContent = d.length;
+  ge('rev-orders').textContent = validCount;
   var tb = ge('revTb');
   if(tb) tb.innerHTML = rows || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--tl)">주문 내역 없음</td></tr>';
 }
