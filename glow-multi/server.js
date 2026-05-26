@@ -1762,38 +1762,61 @@ app.post('/api/charges/cancel', requireAuth, async (req, res) => {
 // ── 관리자 API ──
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   try {
-    const siteId = req.session.role === 'superadmin' ? null : req.siteId;
-    let users, orders, revenue, pending, costSum;
-    // 매출/원가는 취소·실패·환불 제외한 유효 주문만 집계
-    const validStatuses = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+    const isSuper = req.session.role === 'superadmin';
+    const siteId = isSuper ? null : req.siteId;
+    const validStatuses = `o.status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+    let users, orders, pending;
     if (siteId) {
       users   = await query(`SELECT COUNT(*) as c FROM users WHERE role=$1 AND site_id=$2`, ['user', siteId]);
       orders  = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1`, [siteId]);
-      revenue = await query(`SELECT SUM(charge) as s FROM orders WHERE site_id=$1 AND ${validStatuses}`, [siteId]);
-      costSum = await query(`SELECT SUM(cost) as s FROM orders WHERE site_id=$1 AND ${validStatuses}`, [siteId]);
       pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status=$1 AND site_id=$2`, ['pending', siteId]);
     } else {
       users   = await query(`SELECT COUNT(*) as c FROM users WHERE role=$1`, ['user']);
       orders  = await query(`SELECT COUNT(*) as c FROM orders`);
-      revenue = await query(`SELECT SUM(charge) as s FROM orders WHERE ${validStatuses}`);
-      costSum = await query(`SELECT SUM(cost) as s FROM orders WHERE ${validStatuses}`);
       pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status=$1`, ['pending']);
     }
-    const credit = req.session.role === 'superadmin' ? null : (req.site?.credit || 0);
-    // 크레딧 원화 환산용 환율
+    // 매출/원가 — 주문자 role별로 분리 집계 (orders ⨝ users)
+    // customer = 일반 회원 주문, admin = 관리자 본인 주문
+    const siteCond = siteId ? `AND o.site_id = $1` : ``;
+    const params = siteId ? [siteId] : [];
+    const statQ = await query(`
+      SELECT
+        COALESCE(u.role,'user') as role,
+        SUM(o.charge) as revenue,
+        SUM(o.cost) as cost
+      FROM orders o
+      LEFT JOIN users u ON o.uid = u.id
+      WHERE ${validStatuses} ${siteCond}
+      GROUP BY COALESCE(u.role,'user')
+    `, params);
+    let custRev = 0, custCost = 0, admRev = 0, admCost = 0;
+    statQ.rows.forEach(r => {
+      const rev = parseFloat(r.revenue) || 0;
+      const cst = parseFloat(r.cost) || 0;
+      if (r.role === 'user') { custRev += rev; custCost += cst; }
+      else { admRev += rev; admCost += cst; }  // admin/partner/superadmin = 본인 주문
+    });
+    const credit = isSuper ? null : (req.site?.credit || 0);
     const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
     const siteEx = (req.site && req.site.exrate > 0) ? req.site.exrate : globalEx;
-    const revVal = revenue.rows[0].s || 0;       // 매출 (고객 결제 합계)
-    const costVal = costSum.rows[0].s || 0;      // 원가 (크레딧 사용 합계)
+
+    // 슈퍼관리자 → 전부 합산 / 파트너 → 고객 주문만 매출, 관리자 주문은 별도
+    const totalRev = custRev + admRev;
+    const totalCost = custCost + admCost;
     res.json({
       users: parseInt(users.rows[0].c),
       orders: parseInt(orders.rows[0].c),
-      revenue: revVal,
-      cost: costVal,                              // 원가 합계
-      profit: revVal - costVal,                   // 수익 = 매출 - 원가
+      // 슈퍼관리자: 전체 합산 / 파트너: 고객 주문만
+      revenue: isSuper ? totalRev : custRev,
+      cost: isSuper ? totalCost : custCost,
+      profit: isSuper ? (totalRev - totalCost) : (custRev - custCost),
+      // 파트너용 — 관리자 본인 주문 분 (자기가 작업한 것)
+      adminRevenue: admRev,
+      adminCost: admCost,
       pendingCharges: parseInt(pending.rows[0].c),
       credit,
-      exrate: siteEx
+      exrate: siteEx,
+      isSuper
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2023,7 +2046,7 @@ app.post('/api/admin/users/role', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/users/:uid/detail', requireAdmin, async (req, res) => {
   try {
-    const userR = await query(`SELECT id,name,email,role,balance,status,joined FROM users WHERE id=$1`, [req.params.uid]);
+    const userR = await query(`SELECT id,name,email,phone,role,balance,status,joined FROM users WHERE id=$1`, [req.params.uid]);
     if (!userR.rows[0]) return res.json({ error: '회원을 찾을 수 없습니다' });
     const orders = await query(`SELECT * FROM orders WHERE uid=$1 ORDER BY created DESC`, [req.params.uid]);
     const charges = await query(`SELECT * FROM charges WHERE uid=$1 ORDER BY created DESC`, [req.params.uid]);
