@@ -634,7 +634,7 @@ async function checkPeakerrBalance() {
       const lastAlert = await getGlobalSetting('peakerr_low_balance_alert');
       const today = new Date().toDateString();
       if (lastAlert !== today) {
-        await sendTelegramToSuper(`⚠️ <b>Peakerr 잔액 부족</b>\n\n현재 잔액: <b>$${balance.toFixed(2)}</b>\n\nhttps://peakerr.com 에서 충전해주세요.`);
+        await sendTelegramToSuper(`⚠️ <b>공급사 잔액 부족</b>\n\n현재 잔액: <b>$${balance.toFixed(2)}</b>\n\n공급사 사이트에서 충전해주세요.`);
         await setGlobalSetting('peakerr_low_balance_alert', today);
       }
     }
@@ -735,7 +735,7 @@ async function autoRefundOrder(order, peakerrData) {
         await logBalance(
           order.site_id, order.uid, user.name, refundAmount,
           beforeBal, afterR.rows[0]?.balance || 0,
-          `자동 환불 (Peakerr ${status}) - 주문 ${order.id}`,
+          `자동 환불 (주문 ${status}) - 주문 ${order.id}`,
           'system'
         );
       }
@@ -763,7 +763,7 @@ async function autoRefundOrder(order, peakerrData) {
       await logActivity(
         order.site_id, 'system', '자동환불',
         `자동 환불 (${refundPercent}%)`, 'order', order.id,
-        `Peakerr ${status} → ₩${refundAmount.toLocaleString()} 환불`
+        `주문 ${status} → ₩${refundAmount.toLocaleString()} 환불`
       );
     }
     
@@ -919,7 +919,7 @@ async function syncPeakerrServices() {
     // 슈퍼관리자 알림 (변경사항 있을 때만)
     if (disabled > 0 || priceChanged > 0 || stuckRefunded > 0) {
       let msg = `🔄 <b>서비스 자동 동기화</b>\n\n`;
-      if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (Peakerr에서 삭제됨)\n`;
+      if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (공급사에서 삭제됨)\n`;
       if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
       if (priceChanged > 0) {
         msg += `💰 가격 업데이트: ${priceChanged}개\n`;
@@ -977,7 +977,7 @@ async function scanNewServices() {
     const top5 = candidates.slice(0, 5);
     
     if (top5.length > 0) {
-      let msg = `🆕 <b>Peakerr 신규 고품질 서비스</b>\n\n`;
+      let msg = `🆕 <b>신규 고품질 서비스</b>\n\n`;
       top5.forEach((s, i) => {
         msg += `${i+1}. ${(s.name || '').substring(0, 50)}\n`;
         msg += `   💰 $${s.rate}/1K, Q${s.qs}\n\n`;
@@ -1581,18 +1581,18 @@ app.post('/api/orders', requireAuth, async (req, res) => {
         if (data.order) {
           apiOrderId = String(data.order);
         } else {
-          // Peakerr가 주문을 거부함 (서비스 삭제/최소수량 미달/잔액부족 등)
-          apiError = data.error || 'Peakerr 주문 접수 실패';
+          // 공급사가 주문을 거부함 (서비스 삭제/최소수량 미달/잔액부족 등)
+          apiError = data.error || '주문 접수 실패';
         }
       } catch(e) {
-        apiError = 'Peakerr 연결 실패: ' + e.message;
+        apiError = '서버 연결 실패: ' + e.message;
         console.log('API 오류:', e.message);
       }
     } else if (!svc.api_id) {
       apiError = '연동되지 않은 서비스입니다';
     }
 
-    // ⚠️ Peakerr 전송 실패 → 즉시 자동 환불 + 주문 실패 처리 ("돈 냈는데 작업 안 됨" 방지)
+    // ⚠️ 공급사 전송 실패 → 즉시 자동 환불 + 주문 실패 처리 ("돈 냈는데 작업 안 됨" 방지)
     if (apiError) {
       // 고객 잔액 복구
       await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge, user.id]);
@@ -1608,8 +1608,8 @@ app.post('/api/orders', requireAuth, async (req, res) => {
           (user.balance || 0) - charge, user.balance || 0,
           `주문 실패 자동 환불 - ${svc.name}`, 'system');
       } catch(e) {}
-      // 서비스가 Peakerr에 없으면 즉시 비활성화 (다른 고객 추가 피해 방지)
-      if (/not\s*found|invalid\s*service|존재|없/i.test(apiError) || apiError === 'Peakerr 주문 접수 실패') {
+      // 서비스가 공급사에 없으면 즉시 비활성화 (다른 고객 추가 피해 방지)
+      if (/not\s*found|invalid\s*service|존재|없/i.test(apiError) || apiError === '주문 접수 실패') {
         await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(()=>{});
       }
       return res.json({ error: `주문에 실패하여 자동 환불되었습니다. (사유: ${apiError})\n다른 서비스를 이용해주세요.` });
@@ -2672,7 +2672,7 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: site.tg_chat,
-            text: `✅ <b>크레딧 충전 완료</b>\n💵 $${cr.amount} 충전됨\n현재 잔액 확인해주세요`,
+            text: `✅ <b>크레딧 충전 완료</b>\n💵 ₩${Math.round(cr.amount).toLocaleString()} 충전됨\n현재 잔액 확인해주세요`,
             parse_mode: 'HTML'
           })
         });
@@ -2708,7 +2708,7 @@ app.post('/api/super/services/create', requireSuperAdmin, async (req, res) => {
   try {
     const { name, pl, rate, min, max, description, active, apiId } = req.body;
     if (!name) return res.json({ error: '서비스명을 입력하세요' });
-    if (!apiId) return res.json({ error: 'Peakerr 서비스 ID를 입력하세요' });
+    if (!apiId) return res.json({ error: '공급 상품 번호를 입력하세요' });
     const id = 'svc_' + Date.now();
     await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active,api_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [id, name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, String(apiId).trim()]);
