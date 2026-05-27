@@ -1,0 +1,7 @@
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile /Users/apple/.ssh/id_ed25519
+  IdentitiesOnly yes
+  UseKeychain yes
+  AddKeysToAgent yes

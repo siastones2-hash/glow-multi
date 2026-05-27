@@ -1,0 +1,7 @@
+# SSH 개인키·민감 정보 (GitHub 업로드 금지)
+glow-multi/ssh_keys/id_ed25519
+.env
+.env.*
+node_modules/
+.DS_Store
+.claude-export-tmp/
