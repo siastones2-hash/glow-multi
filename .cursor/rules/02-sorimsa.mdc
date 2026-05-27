@@ -1,0 +1,16 @@
+---
+description: "【2】 소림사 — FRANCHAIN 관제·21개점·네이버"
+globs: naver_review_collector.py,data/naver_reviews/**
+alwaysApply: false
+---
+
+# 【2-소림사】
+
+- **관제 플랫폼**: https://calm-druid-c94f2b.netlify.app (FRANCHAIN v5.7, Netlify)
+- **DB**: Supabase `rfpsrldxnwucjfejvoxh.supabase.co`
+- **네이버 리뷰 수집**: `naver_review_collector.py` → `data/naver_reviews/`
+- 매장 예: 양산석산점, 동남지구점
+
+**GLOW `server.js` / Render DB 와 연동하지 않음.**
+
+소스 HTML이 이 Mac에 없으면 Export ZIP·Netlify에서 복구 안내.

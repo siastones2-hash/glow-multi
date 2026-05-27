@@ -1,0 +1,16 @@
+---
+description: "【4】 신화 — ERP v3·신화몰·수출무역"
+alwaysApply: false
+---
+
+# 【4-신화】
+
+- **ERP 배포**: https://siastones2-hash.github.io/shinhwa-erp/
+- **DB**: Supabase (ap-south-1) — ERP v3 단일 HTML JSX
+- **신화몰**: B2C 쇼핑몰 프로토타입 (ERP와 별도)
+- GitHub: `siastones2-hash/shinhwa-erp` (Private 권장)
+
+실데이터 있음 — reset/삭제 기능 극히 신중.
+백로그: 세금·PI/CI·CBM·채널별 손익 등 (Claude Export 메모 참고).
+
+**GLOW `sites` 테이블과 무관.**

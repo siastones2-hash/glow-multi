@@ -1,0 +1,16 @@
+---
+description: "【8】 SIA-WATCH — 병원·의료 마케팅 대시보드"
+alwaysApply: false
+---
+
+# 【8-SIA-WATCH】
+
+- **제품**: SIA-WATCH Medical Edition — 병원·성형·치과 마케팅 진단
+- **배포**: Netlify (`siawatch-package.zip`, `preview.html`)
+- **스택**: Vanilla HTML/JS + localStorage 관리자 모드
+- **UI**: Pretendard, Medical Clean White, 민트 포인트
+
+B2B 제안서: `sia-watch-v6-clean.docx`
+프랜차이즈 HQ용 SIA-WATCH HQ는 **【2-소림사】** FRANCHAIN과 연계되나 별도 빌드.
+
+**GLOW server.js 수정 금지.**
