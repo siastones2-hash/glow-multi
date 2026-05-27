@@ -5,3 +5,5 @@ glow-multi/ssh_keys/id_ed25519
 node_modules/
 .DS_Store
 .claude-export-tmp/
+data/naver_reviews/*.json
+!data/naver_reviews/.gitkeep

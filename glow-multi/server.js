@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const fetch = require('node-fetch');
 const path = require('path');
 const fs = require('fs');
+const { startDailyReportScheduler } = require('./lib/daily-site-report');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -3264,4 +3265,7 @@ app.listen(PORT, async () => {
     console.log('🔄 서버 시작 후 자동 동기화 실행');
     await syncAllOrderStatuses().catch(() => {});
   }, 5 * 60 * 1000);
+
+  // 📊 매일 23:50 KST — 사이트별 당일 매출·신규 가입 텔레그램 요약
+  startDailyReportScheduler(query, getGlobalSetting, setGlobalSetting, sendTelegramToSuper);
 });
