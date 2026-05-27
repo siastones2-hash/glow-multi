@@ -413,6 +413,8 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS order_guide TEXT DEFAULT '주문 후 취소가 어려울 수 있습니다. 신중하게 주문해주세요.'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS hero_badge TEXT DEFAULT '소셜 성장 자동화 플랫폼'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'glow'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS ui_layout TEXT DEFAULT 'classic'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS hero_prefix TEXT DEFAULT '콘텐츠가'`); } catch(e) {}
   // 사이트별 서비스 활성화 설정
   try { await query(`CREATE TABLE IF NOT EXISTS site_services (
     site_id TEXT NOT NULL,
@@ -1182,7 +1184,10 @@ app.get('/api/site-config', async (req, res) => {
     chargeGuide: site.charge_guide || '입금 후 아래 양식을 작성해주세요.',
     orderGuide: site.order_guide || '주문 후 취소가 어려울 수 있습니다.',
     heroBadge: site.hero_badge || '소셜 성장 자동화 플랫폼',
+    heroPrefix: site.hero_prefix || '콘텐츠가',
+    uiLayout: site.ui_layout || 'classic',
     theme: site.theme || 'glow',
+    themeIsCustom: !!(site.theme && String(site.theme).trim().startsWith('{')),
     superBank: superBank
   });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -2403,8 +2408,19 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
       }
       return res.json({ error: '슈퍼관리자 전용 설정입니다' });
     }
-    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','banner_text','banner_image','banner_link','charge_bonus_tiers'];
+    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','hero_prefix','ui_layout','theme','banner_text','banner_image','banner_link','charge_bonus_tiers'];
     if (siteFields.includes(key)) {
+      if (key === 'ui_layout') {
+        const allowed = ['classic', 'card', 'split', 'minimal'];
+        if (!allowed.includes(value)) return res.json({ error: '레이아웃 값이 올바르지 않습니다' });
+      }
+      if (key === 'theme') {
+        const t = String(value || '').trim();
+        if (t && !t.startsWith('{')) {
+          const allowedThemes = ['glow', 'dark', 'minimal', 'neon', 'gold', 'ocean', 'sunset', 'forest', 'candy'];
+          if (!allowedThemes.includes(t)) return res.json({ error: '테마 값이 올바르지 않습니다' });
+        }
+      }
       // 🛡️ 숫자 필드 검증
       if (key === 'margin') {
         const mg = parseFloat(value);
@@ -2839,6 +2855,100 @@ app.get('/api/super/sites', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+const SITE_PRESET_THEMES = ['dark', 'minimal', 'neon', 'gold', 'ocean', 'sunset', 'forest', 'candy'];
+
+function makeThemeRng(seed) {
+  let s = (seed >>> 0) || 1;
+  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xffffffff; };
+}
+
+function generateUniqueTheme(seed) {
+  const rnd = makeThemeRng(seed);
+  const bgTypeRnd = rnd();
+  const bgType = bgTypeRnd < 0.5 ? 'light' : (bgTypeRnd < 0.75 ? 'mid' : 'dark');
+  const palettes = [
+    { p: '#FF0080', a: '#7928CA' }, { p: '#00F5FF', a: '#0050FF' }, { p: '#39FF14', a: '#00CC44' },
+    { p: '#FFD700', a: '#FF8C00' }, { p: '#FF6B35', a: '#FF0A54' }, { p: '#00E5CC', a: '#0066FF' },
+    { p: '#FF85A1', a: '#C9184A' }, { p: '#A855F7', a: '#6D28D9' }, { p: '#F97316', a: '#DC2626' },
+    { p: '#10B981', a: '#059669' }, { p: '#3B82F6', a: '#1D4ED8' }, { p: '#EC4899', a: '#9333EA' },
+    { p: '#EAB308', a: '#D97706' }, { p: '#14B8A6', a: '#0891B2' }, { p: '#F43F5E', a: '#E11D48' },
+    { p: '#8B5CF6', a: '#7C3AED' }, { p: '#06B6D4', a: '#0284C7' }, { p: '#84CC16', a: '#65A30D' },
+    { p: '#FB923C', a: '#EA580C' }, { p: '#E879F9', a: '#A21CAF' },
+  ];
+  const palette = palettes[Math.floor(rnd() * palettes.length)];
+  const fonts = [
+    "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+    "'Courier New',monospace", "Georgia,serif",
+    "'Helvetica Neue',Helvetica,Arial,sans-serif",
+    "Verdana,Geneva,sans-serif", "'Trebuchet MS',sans-serif",
+  ];
+  const font = fonts[Math.floor(rnd() * fonts.length)];
+  const radii = ['4px', '8px', '12px', '20px', '100px'];
+  const radius = radii[Math.floor(rnd() * radii.length)];
+  const cardStyles = ['flat', 'shadow', 'glow', 'border'];
+  const cardStyle = cardStyles[Math.floor(rnd() * cardStyles.length)];
+  const hue = Math.floor(rnd() * 360);
+  let bg, w, tx, tm, tl, bd, bd2;
+  if (bgType === 'dark') {
+    bg = `hsl(${hue},20%,6%)`; w = `hsl(${hue},20%,10%)`; tx = `hsl(${hue},10%,90%)`;
+    tm = `hsl(${hue},10%,60%)`; tl = `hsl(${hue},10%,40%)`;
+    bd = `hsla(${hue},50%,60%,.15)`; bd2 = `hsla(${hue},50%,60%,.35)`;
+  } else if (bgType === 'light') {
+    bg = `hsl(${hue},30%,97%)`; w = '#ffffff'; tx = `hsl(${hue},40%,10%)`;
+    tm = `hsl(${hue},20%,40%)`; tl = `hsl(${hue},15%,60%)`;
+    bd = `hsla(${hue},40%,40%,.12)`; bd2 = `hsla(${hue},40%,40%,.28)`;
+  } else {
+    bg = `hsl(${hue},25%,18%)`; w = `hsl(${hue},20%,24%)`; tx = `hsl(${hue},10%,92%)`;
+    tm = `hsl(${hue},15%,65%)`; tl = `hsl(${hue},10%,45%)`;
+    bd = `hsla(${hue},40%,70%,.18)`; bd2 = `hsla(${hue},40%,70%,.38)`;
+  }
+  return { p1: palette.p, p2: palette.a, p3: palette.a, bg, w, tx, tm, tl, bd, bd2, font, radius, cardStyle, bgType };
+}
+
+function generateSiteBranding(seed, siteName) {
+  const rnd = makeThemeRng(seed);
+  const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+  const logos = ['✨', '🚀', '💎', '⚡', '🔥', '🌟', '💫', '🎯', '📈', '🛡️', '🌊', '🎨', '🏆', '💜', '🧡', '💚', '🔵', '⭐'];
+  const heroBadges = [
+    '채널 성장 · 마케팅 플랫폼', '소셜 성장 자동화', '크리에이터 성장 파트너',
+    '빠른 주문 · 안전 처리', '프리미엄 마케팅 허브', `${siteName} 공식 성장 센터`,
+  ];
+  const slogans = ['빛나도록', '성장하도록', '터지도록', '올라가도록', '뜨도록', '살아나도록', '확장되도록'];
+  const sloganSubs = [
+    '우리가 성장시킵니다', '데이터로 키웁니다', '빠르고 안전하게', '목표까지 함께 갑니다',
+    '채널 성장의 파트너', '성과가 보이는 마케팅',
+  ];
+  const descriptions = [
+    '유튜브·인스타·틱톡부터 쇼핑몰·블로그까지, 모든 채널의 성장을 지원합니다.',
+    '조회수·팔로워·좋아요·트래픽까지 한 곳에서 빠르게 주문하세요.',
+    '크리에이터와 브랜드를 위한 올인원 성장 마케팅 플랫폼입니다.',
+    '실시간 처리와 투명한 주문 내역으로 안심하고 이용하세요.',
+    `${siteName}만의 맞춤 성장 솔루션을 제공합니다.`,
+  ];
+  const statSets = [
+    { n1: '10K+', l1: '서비스 종류', n2: '24H', l2: '빠른 처리', n3: '50%+', l3: '마진 보장', n4: '100%', l4: '안전 보장' },
+    { n1: '500+', l1: '활성 서비스', n2: '1H', l2: '평균 시작', n3: '99%', l3: '처리율', n4: '24/7', l4: '자동화' },
+    { n1: '3년+', l1: '운영 경험', n2: '10만+', l2: '누적 주문', n3: '실시간', l3: '상태 추적', n4: 'KRW', l4: '원화 결제' },
+    { n1: 'ALL', l1: '플랫폼 지원', n2: 'FAST', l2: '즉시 접수', n3: 'SAFE', l3: '안전 처리', n4: 'PRO', l4: '전문 운영' },
+  ];
+  const stats = pick(statSets);
+  const uiLayouts = ['classic', 'card', 'split', 'minimal'];
+  const heroPrefixes = ['콘텐츠가', '브랜드가', '채널이', '성과가', `${siteName}는`, '마케팅이'];
+  return {
+    logo: pick(logos),
+    hero_badge: pick(heroBadges),
+    hero_prefix: pick(heroPrefixes),
+    ui_layout: pick(uiLayouts),
+    slogan: pick(slogans),
+    slogan_sub: pick(sloganSubs),
+    description: pick(descriptions),
+    stat1_num: stats.n1, stat1_label: stats.l1,
+    stat2_num: stats.n2, stat2_label: stats.l2,
+    stat3_num: stats.n3, stat3_label: stats.l3,
+    stat4_num: stats.n4, stat4_label: stats.l4,
+  };
+}
+
 app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
   try {
     const { domain, name, logo, primaryColor, accentColor, adminEmail, adminPw, margin, exrate, credit } = req.body;
@@ -2847,64 +2957,53 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     const siteId = 'site_' + Date.now();
     const superMarginVal = req.body.superMargin !== undefined ? parseFloat(req.body.superMargin) : -1;
 
-    // 자동 테마 생성 - 사이트마다 고유한 조합
-    function generateUniqueTheme(seed) {
-      let s = seed;
-      const rnd = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return Math.abs(s) / 0xffffffff; };
-      // 라이트 계열 비중 높임 (dark 25%, mid 25%, light 50%)
-      const bgTypeRnd = rnd();
-      const bgType = bgTypeRnd < 0.5 ? 'light' : (bgTypeRnd < 0.75 ? 'mid' : 'dark');
-      const palettes = [
-        {p:'#FF0080',a:'#7928CA'},{p:'#00F5FF',a:'#0050FF'},{p:'#39FF14',a:'#00CC44'},
-        {p:'#FFD700',a:'#FF8C00'},{p:'#FF6B35',a:'#FF0A54'},{p:'#00E5CC',a:'#0066FF'},
-        {p:'#FF85A1',a:'#C9184A'},{p:'#A855F7',a:'#6D28D9'},{p:'#F97316',a:'#DC2626'},
-        {p:'#10B981',a:'#059669'},{p:'#3B82F6',a:'#1D4ED8'},{p:'#EC4899',a:'#9333EA'},
-        {p:'#EAB308',a:'#D97706'},{p:'#14B8A6',a:'#0891B2'},{p:'#F43F5E',a:'#E11D48'},
-        {p:'#8B5CF6',a:'#7C3AED'},{p:'#06B6D4',a:'#0284C7'},{p:'#84CC16',a:'#65A30D'},
-        {p:'#FB923C',a:'#EA580C'},{p:'#E879F9',a:'#A21CAF'},
-      ];
-      const palette = palettes[Math.floor(rnd() * palettes.length)];
-      const fonts = [
-        "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-        "'Courier New',monospace","Georgia,serif",
-        "'Helvetica Neue',Helvetica,Arial,sans-serif",
-        "Verdana,Geneva,sans-serif","'Trebuchet MS',sans-serif",
-      ];
-      const font = fonts[Math.floor(rnd() * fonts.length)];
-      const radii = ['4px','8px','12px','20px','100px'];
-      const radius = radii[Math.floor(rnd() * radii.length)];
-      const cardStyles = ['flat','shadow','glow','border'];
-      const cardStyle = cardStyles[Math.floor(rnd() * cardStyles.length)];
-      const hue = Math.floor(rnd() * 360);
-      let bg, w, tx, tm, tl, bd, bd2;
-      if (bgType === 'dark') {
-        bg=`hsl(${hue},20%,6%)`;w=`hsl(${hue},20%,10%)`;tx=`hsl(${hue},10%,90%)`;
-        tm=`hsl(${hue},10%,60%)`;tl=`hsl(${hue},10%,40%)`;
-        bd=`hsla(${hue},50%,60%,.15)`;bd2=`hsla(${hue},50%,60%,.35)`;
-      } else if (bgType === 'light') {
-        bg=`hsl(${hue},30%,97%)`;w=`#ffffff`;tx=`hsl(${hue},40%,10%)`;
-        tm=`hsl(${hue},20%,40%)`;tl=`hsl(${hue},15%,60%)`;
-        bd=`hsla(${hue},40%,40%,.12)`;bd2=`hsla(${hue},40%,40%,.28)`;
-      } else {
-        bg=`hsl(${hue},25%,18%)`;w=`hsl(${hue},20%,24%)`;tx=`hsl(${hue},10%,92%)`;
-        tm=`hsl(${hue},15%,65%)`;tl=`hsl(${hue},10%,45%)`;
-        bd=`hsla(${hue},40%,70%,.18)`;bd2=`hsla(${hue},40%,70%,.38)`;
-      }
-      return { p1:palette.p, p2:palette.a, p3:palette.a, bg, w, tx, tm, tl, bd, bd2, font, radius, cardStyle, bgType };
-    }
-    const siteCountR = await query(`SELECT COUNT(*) as cnt FROM sites WHERE id != 'default'`);
-    const siteCount = parseInt(siteCountR.rows[0].cnt) || 0;
-    const themeData = generateUniqueTheme(siteCount * 999983 + 12345);
-    // 🔧 사용자가 색상을 직접 지정했으면 그 색 사용 + theme 비워두기 (glow 기본 테마 사용)
-    // 색상 미지정 시에만 자동 랜덤 테마 JSON 사용
-    const userPickedColors = !!(primaryColor && accentColor);
-    const autoTheme = userPickedColors ? 'glow' : JSON.stringify(themeData);
-    const finalPrimary = primaryColor || themeData.p1;
-    const finalAccent  = accentColor  || themeData.p2;
+    // autoTheme 기본 ON — 사이트마다 색·폰트·문구·로고 자동 차별화
+    const useAutoTheme = req.body.autoTheme !== false;
+    const seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
+    let finalTheme, finalPrimary, finalAccent, branding;
 
-    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin,theme) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [siteId, domain, name, logo||'✨', finalPrimary, finalAccent,
-        parseFloat(margin||0), parseFloat(exrate||1380), parseFloat(credit||0), superMarginVal, autoTheme]);
+    if (useAutoTheme) {
+      branding = generateSiteBranding(seed + 17, name);
+      const themeData = generateUniqueTheme(seed);
+      const rnd = makeThemeRng(seed + 99);
+      if (rnd() < 0.35) {
+        finalTheme = SITE_PRESET_THEMES[Math.floor(rnd() * SITE_PRESET_THEMES.length)];
+      } else {
+        finalTheme = JSON.stringify(themeData);
+      }
+      finalPrimary = themeData.p1;
+      finalAccent = themeData.p2;
+    } else {
+      branding = {
+        logo: logo || '✨',
+        hero_badge: '소셜 성장 자동화 플랫폼',
+        hero_prefix: '콘텐츠가',
+        ui_layout: 'classic',
+        slogan: '빛나도록',
+        slogan_sub: '우리가 성장시킵니다',
+        description: '유튜브·인스타·틱톡·X까지 모든 소셜 채널의 성장을 자동화합니다',
+        stat1_num: '10K+', stat1_label: '서비스 종류',
+        stat2_num: '24H', stat2_label: '빠른 처리',
+        stat3_num: '50%+', stat3_label: '마진 보장',
+        stat4_num: '100%', stat4_label: '안전 보장',
+      };
+      finalTheme = 'glow';
+      finalPrimary = primaryColor || '#7209B7';
+      finalAccent = accentColor || '#F72585';
+    }
+    const finalLogo = (logo && logo.trim() && logo.trim() !== '✨') ? logo.trim() : branding.logo;
+
+    await query(`INSERT INTO sites(
+      id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin,theme,
+      hero_badge,hero_prefix,ui_layout,slogan,slogan_sub,description,
+      stat1_num,stat1_label,stat2_num,stat2_label,stat3_num,stat3_label,stat4_num,stat4_label
+    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
+      [siteId, domain, name, finalLogo, finalPrimary, finalAccent,
+        parseFloat(margin || 0), parseFloat(exrate || 1380), parseFloat(credit || 0), superMarginVal, finalTheme,
+        branding.hero_badge, branding.hero_prefix, branding.ui_layout,
+        branding.slogan, branding.slogan_sub, branding.description,
+        branding.stat1_num, branding.stat1_label, branding.stat2_num, branding.stat2_label,
+        branding.stat3_num, branding.stat3_label, branding.stat4_num, branding.stat4_label]);
     const hash = bcrypt.hashSync(adminPw, 10);
     const adminRole = req.body.adminRole || 'admin';
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
@@ -2917,7 +3016,11 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
         ON CONFLICT(site_id, service_id) DO UPDATE SET active=1
       `, [siteId]);
     } catch(e) { console.error('site_services 자동 활성화 실패:', e.message); }
-    res.json({ ok: true, siteId });
+    const themeLabel = finalTheme.startsWith('{') ? '커스텀 조합' : finalTheme;
+    res.json({
+      ok: true, siteId, autoTheme: useAutoTheme, themeLabel, logo: finalLogo,
+      uiLayout: branding.ui_layout || 'classic'
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

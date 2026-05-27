@@ -211,6 +211,42 @@ tr:last-child td{border-bottom:none}
 .site-card{background:var(--w);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:10px}
 .site-card:hover{border-color:var(--bd2)}
 @media(max-width:480px){.sts{grid-template-columns:1fr 1fr}}
+
+/* ── 사이트별 UI 레이아웃 ── */
+.hero-inner{max-width:920px;margin:0 auto}
+.hero-panel{display:none}
+.lcta{padding:48px 16px;text-align:center;background:linear-gradient(160deg,var(--w),var(--bg))}
+.lfoot{background:color-mix(in srgb,var(--tx) 88%, var(--p2));padding:20px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.hero-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+[data-layout="card"] .hero{padding:72px 16px 56px;background:linear-gradient(180deg,var(--w),var(--bg))}
+[data-layout="card"] .sts{grid-template-columns:repeat(2,1fr);gap:12px;padding:20px 16px 28px;background:transparent;border:none}
+[data-layout="card"] .st{border:1px solid var(--bd);border-radius:16px;background:var(--w);box-shadow:0 8px 24px rgba(0,0,0,.04)}
+[data-layout="card"] .htag{font-size:12px;padding:8px 18px}
+
+[data-layout="split"] .hero{padding:48px 20px;display:flex;align-items:center;justify-content:center;gap:24px;text-align:left;background:linear-gradient(135deg,var(--w) 0%,var(--bg) 55%,color-mix(in srgb,var(--p2) 12%,var(--bg)) 100%)}
+[data-layout="split"] .hero-inner{flex:1;max-width:520px;margin:0}
+[data-layout="split"] .hero-panel{display:flex;flex:1;max-width:360px;min-height:280px;border-radius:24px;background:var(--g);box-shadow:0 20px 60px color-mix(in srgb,var(--p2) 35%,transparent);align-items:center;justify-content:center;font-size:72px;opacity:.95}
+[data-layout="split"] .hero-chips{justify-content:flex-start}
+[data-layout="split"] .hero h1{font-size:clamp(26px,5vw,46px)}
+@media(max-width:760px){[data-layout="split"] .hero{flex-direction:column;text-align:center}[data-layout="split"] .hero-panel{width:100%;max-width:100%;min-height:180px;font-size:56px}[data-layout="split"] .hero-chips{justify-content:center}}
+
+[data-layout="minimal"] .hero{padding:44px 20px 28px;text-align:left;background:var(--bg)}
+[data-layout="minimal"] .htag,[data-layout="minimal"] .hero-chips{display:none}
+[data-layout="minimal"] .hero h1{font-size:clamp(24px,6vw,40px);letter-spacing:-.04em}
+[data-layout="minimal"] .lnav{background:var(--w);border-bottom:1px solid var(--bd)}
+[data-layout="minimal"] .sts{border-top:none;background:var(--w)}
+[data-layout="minimal"] .st{padding:16px 10px}
+[data-layout="minimal"] .lcta{background:var(--w);border-top:1px solid var(--bd)}
+[data-layout="minimal"] .bp,[data-layout="minimal"] .bo{border-radius:8px}
+[data-layout="split"] .hero-cta,[data-layout="minimal"] .hero-cta{justify-content:flex-start!important}
+[data-layout="split"] #heroDesc,[data-layout="minimal"] #heroDesc{margin:0 0 28px 0;max-width:520px}
+[data-layout="minimal"] .hero h1 br{display:none}
+[data-layout="minimal"] #heroSloganSub{display:block;margin-top:6px;font-size:.72em;color:var(--tm);font-weight:600}
+[data-layout="minimal"] .abox{border-radius:8px;box-shadow:none}
+
+[data-layout="card"] #pg-auth.on,[data-layout="split"] #pg-auth.on{background:linear-gradient(160deg,var(--w),var(--bg))}
+[data-layout="card"] .lnav,[data-layout="split"] .lnav{background:color-mix(in srgb,var(--w) 92%,transparent)}
 </style>
 </head>
 <body>
@@ -229,17 +265,20 @@ tr:last-child td{border-bottom:none}
     </div>
   </nav>
   <div class="hero">
+    <div class="hero-inner">
     <div class="htag"><div class="tdot"></div><span id="heroBadge">채널 성장 · 마케팅 플랫폼</span></div>
-    <h1 id="heroSlogan">콘텐츠가 <span class="gt" id="heroSloganSpan">빛나도록</span><br><span id="heroSloganSub">우리가 성장시킵니다</span></h1>
+    <h1 id="heroSlogan"><span id="heroPrefix">콘텐츠가</span> <span class="gt" id="heroSloganSpan">빛나도록</span><br><span id="heroSloganSub">우리가 성장시킵니다</span></h1>
     <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:460px;margin:0 auto 28px;font-weight:300" id="heroDesc">유튜브·인스타·틱톡부터 아마존·쿠팡까지, 모든 채널의 성장을 지원합니다</p>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:32px">
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:32px" class="hero-cta">
       <button class="bp bplg" onclick="goAuth('register')">✨ 지금 무료로 시작하기</button>
       <button class="bo" style="padding:15px 28px;font-size:14px;border-radius:14px" onclick="goAuth('login')">기존 계정 로그인</button>
     </div>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+    <div class="hero-chips">
       <div class="chip">⚡ 즉시 처리</div><div class="chip">🔄 드롭 보상</div>
       <div class="chip">🔒 계정 안전</div><div class="chip">💰 최저가</div><div class="chip">💬 컨설팅 지원</div>
     </div>
+    </div>
+    <div class="hero-panel" id="heroPanel">✨</div>
   </div>
   <div class="sts">
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat1Num">10K+</div><div style="font-size:11px;color:var(--tm)" id="stat1Label">서비스 종류</div></div>
@@ -247,14 +286,14 @@ tr:last-child td{border-bottom:none}
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat3Num">50%+</div><div style="font-size:11px;color:var(--tm)" id="stat3Label">마진 보장</div></div>
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat4Num">100%</div><div style="font-size:11px;color:var(--tm)" id="stat4Label">안전 보장</div></div>
   </div>
-  <div style="padding:48px 16px;text-align:center;background:linear-gradient(160deg,#faf5ff,#fdf2ff)">
+  <div class="lcta">
     <h2 style="font-size:clamp(20px,5vw,30px);font-weight:800;margin-bottom:8px">채널 성장, 오늘부터 <span class="gt">시작하세요</span></h2>
     <p style="font-size:13px;color:var(--tl);margin:0 auto 22px">가입은 무료입니다.</p>
     <button class="bp bplg" onclick="goAuth('register')">✨ 무료로 시작하기 →</button>
   </div>
-  <footer style="background:#1a1030;padding:20px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+  <footer class="lfoot">
     <div style="font-size:16px;font-weight:800;color:#fff" id="footerName">__SITE_LOGO__ __SITE_NAME__</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.3)" id="footerText">각 플랫폼과 공식 제휴된 서비스가 아닙니다.</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55)" id="footerText">각 플랫폼과 공식 제휴된 서비스가 아닙니다.</div>
   </footer>
 </div>
 
@@ -662,7 +701,40 @@ tr:last-child td{border-bottom:none}
               <button class="bp bsm" style="padding:9px 16px;margin-bottom:16px" onclick="saveSiteSettings()">저장</button>
 
               <div style="height:1px;background:var(--bd);margin:8px 0 16px"></div>
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">🎨 화면 스타일 (UI/UX)</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">사이트마다 메인 화면 분위기를 다르게 보이게 합니다. 저장 후 메인 페이지를 새로고침하세요.</div>
+              <div class="fg"><label>메인 레이아웃</label>
+                <select id="stUiLayout">
+                  <option value="classic">클래식 — GLOW 기본형</option>
+                  <option value="card">카드형 — 통계·히어로 넓게</option>
+                  <option value="split">스플릿 — 좌 문구 / 우 비주얼</option>
+                  <option value="minimal">미니멀 — 심플·비즈니스</option>
+                </select>
+              </div>
+              <div class="fg"><label>색상 테마</label>
+                <select id="stTheme">
+                  <option value="glow">Glow 기본 (아래 색상 사용)</option>
+                  <option value="dark">다크 · 사이버</option>
+                  <option value="minimal">미니멀 · 흑백</option>
+                  <option value="neon">네온 · 그린</option>
+                  <option value="gold">골드 · 프리미엄</option>
+                  <option value="ocean">오션 · 블루</option>
+                  <option value="sunset">선셋 · 오렌지</option>
+                  <option value="forest">포레스트 · 그린</option>
+                  <option value="candy">캔디 · 핑크</option>
+                  <option value="__custom__">자동 생성 테마 유지</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+                <div class="fg" style="margin:0"><label>로고</label><input type="text" id="stLogo" placeholder="✨" maxlength="4"/></div>
+                <div class="fg" style="margin:0"><label>메인 색</label><input type="color" id="stPrimary" value="#7209B7"/></div>
+                <div class="fg" style="margin:0"><label>포인트 색</label><input type="color" id="stAccent" value="#F72585"/></div>
+              </div>
+              <button class="bp bsm" style="padding:9px 16px;margin-bottom:16px" onclick="saveUiStyle()">화면 스타일 저장</button>
+
+              <div style="height:1px;background:var(--bd);margin:8px 0 16px"></div>
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🏠 메인 페이지 커스텀</div>
+              <div class="fg"><label>히어로 첫 줄 (예: 콘텐츠가)</label><input type="text" id="stHeroPrefix" placeholder="콘텐츠가"/></div>
               <div class="fg"><label>상단 배지 텍스트</label><input type="text" id="stHeroBadge" placeholder="채널 성장 · 마케팅 플랫폼"/></div>
               <div class="fg"><label>메인 슬로건 (강조 부분)</label><input type="text" id="stSlogan" placeholder="빛나도록"/></div>
               <div class="fg"><label>메인 슬로건 (두 번째 줄)</label><input type="text" id="stSloganSub" placeholder="우리가 성장시킵니다"/></div>
@@ -755,7 +827,7 @@ tr:last-child td{border-bottom:none}
             <div style="font-size:14px;font-weight:800">사이트 목록</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn ber bsm" onclick="fixAbnormalCredits()">🔧 비정상 크레딧 0원 정리</button>
-              <button class="bp bsm" style="padding:8px 16px" onclick="ge('mNewSite').classList.add('on')">+ 새 사이트</button>
+              <button class="bp bsm" style="padding:8px 16px" onclick="ge('mNewSite').classList.add('on');toggleNsAutoTheme()">+ 새 사이트</button>
             </div>
           </div>
           <div id="siteList"></div>
@@ -970,11 +1042,16 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="fg"><label>도메인 *</label><input type="text" id="nsDomain" placeholder="example.com"/></div>
     <div class="fg"><label>사이트 이름 *</label><input type="text" id="nsName" placeholder="NEXUS"/></div>
-    <div class="fg"><label>로고 이모지</label><input type="text" id="nsLogo" placeholder="✨" maxlength="4"/></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="fg"><label>로고 이모지</label><input type="text" id="nsLogo" placeholder="비우면 자동 (🚀💎⚡ 등)" maxlength="4"/></div>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;font-size:13px;color:var(--tm);text-transform:none;letter-spacing:0;font-weight:600">
+      <input type="checkbox" id="nsAutoTheme" checked onchange="toggleNsAutoTheme()" style="width:18px;height:18px;accent-color:var(--p2)"/>
+      사이트마다 자동으로 다른 디자인 (색·폰트·메인 문구)
+    </label>
+    <div id="nsColorRow" style="display:none;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fg"><label>메인 컬러</label><input type="color" id="nsPrimary" value="#7209B7"/></div>
       <div class="fg"><label>포인트 컬러</label><input type="color" id="nsAccent" value="#F72585"/></div>
     </div>
+    <div class="ibox" id="nsAutoThemeHint" style="margin-bottom:12px;font-size:12px">체크 시 neon·gold·ocean 등 프리셋 + 랜덤 색 조합·히어로 문구가 사이트마다 달라집니다. 통일하려면 체크 해제 후 색을 지정하세요.</div>
     <div style="height:1px;background:var(--bd);margin:8px 0"></div>
     <div style="font-size:12px;font-weight:700;color:var(--p2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">어드민 계정</div>
     <div class="fg"><label>어드민 이메일 *</label><input type="email" id="nsAdminEmail" placeholder="관리자@example.com"/></div>
@@ -1150,6 +1227,8 @@ async function loadSiteConfig(){
   if(d.error)return;
   SITE_CONFIG=d;
 
+  document.documentElement.setAttribute('data-layout', d.uiLayout||'classic');
+
   // CSS 변수 동적 업데이트
   // 테마 적용 - JSON 조합 테마 or 기본 glow
   var themeRaw=d.theme||'glow';
@@ -1202,6 +1281,8 @@ async function loadSiteConfig(){
   ['navLogo','authLogo','sbLogo','tbLogo'].forEach(function(id){var el=ge(id);if(el)el.textContent=logo});
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
+  var hp=ge('heroPanel');if(hp)hp.textContent=logo;
+  var hpf=ge('heroPrefix');if(hpf)hpf.textContent=d.heroPrefix||'콘텐츠가';
 
   // 커스텀 텍스트 적용
   var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'채널 성장 · 마케팅 플랫폼';
@@ -1259,8 +1340,30 @@ async function loadSiteConfig(){
     });
   }
 
-  // 사이드바 배너 (사이트별 홍보 배너 — 텍스트/이미지)
-  // 어드민 설정 입력칸에 기존 배너 값 채우기
+  // 사이드바 배너 (사이트별 홍보 배너) + 어드민 설정 입력칸 채우기
+  if(ge('stUiLayout'))ge('stUiLayout').value=d.uiLayout||'classic';
+  if(ge('stTheme')){
+    var thSel=ge('stTheme');
+    if(d.themeIsCustom)thSel.value='__custom__';
+    else thSel.value=(d.theme&&d.theme!=='glow')?d.theme:'glow';
+  }
+  if(ge('stLogo'))ge('stLogo').value=d.logo||'';
+  if(ge('stPrimary'))ge('stPrimary').value=d.primaryColor||'#7209B7';
+  if(ge('stAccent'))ge('stAccent').value=d.accentColor||'#F72585';
+  if(ge('stHeroPrefix'))ge('stHeroPrefix').value=d.heroPrefix||'';
+  if(ge('stHeroBadge'))ge('stHeroBadge').value=d.heroBadge||'';
+  if(ge('stSlogan'))ge('stSlogan').value=d.slogan||'';
+  if(ge('stSloganSub'))ge('stSloganSub').value=d.sloganSub||'';
+  if(ge('stDesc'))ge('stDesc').value=d.description||'';
+  if(ge('stNotice'))ge('stNotice').value=d.notice||'';
+  if(ge('stStat1Num'))ge('stStat1Num').value=d.stat1Num||'';
+  if(ge('stStat1Label'))ge('stStat1Label').value=d.stat1Label||'';
+  if(ge('stStat2Num'))ge('stStat2Num').value=d.stat2Num||'';
+  if(ge('stStat2Label'))ge('stStat2Label').value=d.stat2Label||'';
+  if(ge('stStat3Num'))ge('stStat3Num').value=d.stat3Num||'';
+  if(ge('stStat3Label'))ge('stStat3Label').value=d.stat3Label||'';
+  if(ge('stStat4Num'))ge('stStat4Num').value=d.stat4Num||'';
+  if(ge('stStat4Label'))ge('stStat4Label').value=d.stat4Label||'';
   if(ge('stBannerText'))ge('stBannerText').value=d.bannerText||'';
   if(ge('stBannerImage'))ge('stBannerImage').value=d.bannerImage||'';
   if(ge('stBannerLink'))ge('stBannerLink').value=d.bannerLink||'';
@@ -1942,8 +2045,30 @@ async function changeRole(uid,role){
 
 // 설정 저장
 
+async function saveUiStyle(){
+  var layout=ge('stUiLayout')?.value||'classic';
+  var themeSel=ge('stTheme')?.value||'glow';
+  var fields={
+    ui_layout:layout,
+    logo:ge('stLogo')?.value||'✨',
+    primary_color:ge('stPrimary')?.value,
+    accent_color:ge('stAccent')?.value
+  };
+  if(themeSel!=='__custom__')fields.theme=themeSel;
+  var errors=[];
+  for(var key in fields){
+    if(fields[key]===undefined||fields[key]===null)continue;
+    var d=await api('/api/admin/settings/save','POST',{key,value:fields[key]});
+    if(d.error)errors.push(d.error);
+  }
+  if(errors.length){toast('저장 실패: '+errors[0],'err');return;}
+  toast('화면 스타일 저장! 메인 페이지를 새로고침하세요 ✨','ok');
+  await loadSiteConfig();
+}
+
 async function saveCustomTexts(){
   var fields={
+    hero_prefix:ge('stHeroPrefix')?.value,
     hero_badge:ge('stHeroBadge')?.value,
     slogan:ge('stSlogan')?.value,
     slogan_sub:ge('stSloganSub')?.value,
@@ -2363,9 +2488,16 @@ async function delChargeSuper(id){
 }
 
 // 사이트 생성
+function toggleNsAutoTheme(){
+  var on=ge('nsAutoTheme')?.checked;
+  var row=ge('nsColorRow'),hint=ge('nsAutoThemeHint');
+  if(row)row.style.display=on?'none':'grid';
+  if(hint)hint.style.display=on?'block':'none';
+}
 async function createSite(){
   var domain=ge('nsDomain').value.trim(),name=ge('nsName').value.trim();
-  var logo=ge('nsLogo').value||'✨';
+  var logo=(ge('nsLogo').value||'').trim();
+  var autoTheme=ge('nsAutoTheme')?.checked!==false;
   var primary=ge('nsPrimary').value,accent=ge('nsAccent').value;
   var email=ge('nsAdminEmail').value.trim(),pw=ge('nsAdminPw').value;
   var margin=ge('ns마진').value,credit=ge('nsCredit').value;
@@ -2376,14 +2508,24 @@ async function createSite(){
   // 초기 크레딧: 원화 입력 → 환율로 달러 환산
   var creditKrw=parseFloat(credit||0);
   var creditUsd=creditKrw>0?(creditKrw/parseFloat(exrate)):0;
-  var d=await api('/api/super/sites/create','POST',{
-    domain,name,logo,primaryColor:primary,accentColor:accent,
+  var payload={
+    domain,name,logo,autoTheme,
     adminEmail:email,adminPw:pw,margin:parseFloat(margin),
     exrate:parseFloat(exrate),credit:creditUsd,
     superMargin:parseFloat(superMargin),adminRole
-  });
+  };
+  if(!autoTheme){payload.primaryColor=primary;payload.accentColor=accent;}
+  var d=await api('/api/super/sites/create','POST',payload);
   if(d.error){toast(d.error,'err');return}
-  toast('사이트 생성 완료! ✨','ok');
+  var msg='사이트 생성 완료!';
+  if(d.autoTheme){
+    var parts=[];
+    if(d.logo)parts.push(d.logo);
+    if(d.themeLabel)parts.push(d.themeLabel);
+    if(d.uiLayout)parts.push(d.uiLayout);
+    if(parts.length)msg+=' ('+parts.join(' · ')+')';
+  }
+  toast(msg,'ok');
   closeM('mNewSite');
   loadSuperDash();
   // 입력 초기화
