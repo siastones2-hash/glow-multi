@@ -149,6 +149,7 @@ async function initDB() {
   // 기존 테이블에 컬럼 추가 (없으면)
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS starts_count INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS remains INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cost REAL DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL`).catch(()=>{});
@@ -396,6 +397,11 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat4_num TEXT DEFAULT '100%'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS stat4_label TEXT DEFAULT '안전 보장'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS notice TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_text TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_image TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS banner_link TEXT DEFAULT ''`); } catch(e) {}
+  // 충전 보너스 — 금액 구간별 보너스율 JSON 저장 (예: {"10000":0,"30000":0,"50000":1,"100000":5,"200000":6})
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS charge_bonus_tiers TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS footer_text TEXT DEFAULT '소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_welcome TEXT DEFAULT '다시 만나서 반가워요'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS login_sub TEXT DEFAULT '계정에 로그인하세요'`); } catch(e) {}
@@ -656,7 +662,7 @@ async function checkPeakerrBalance() {
       const lastAlert = await getGlobalSetting('peakerr_low_balance_alert');
       const today = new Date().toDateString();
       if (lastAlert !== today) {
-        await sendTelegramToSuper(`⚠️ <b>Peakerr 잔액 부족</b>\n\n현재 잔액: <b>$${balance.toFixed(2)}</b>\n\nhttps://peakerr.com 에서 충전해주세요.`);
+        await sendTelegramToSuper(`⚠️ <b>공급사 잔액 부족</b>\n\n현재 잔액: <b>$${balance.toFixed(2)}</b>\n\n공급사 사이트에서 충전해주세요.`);
         await setGlobalSetting('peakerr_low_balance_alert', today);
       }
     }
@@ -757,7 +763,7 @@ async function autoRefundOrder(order, peakerrData) {
         await logBalance(
           order.site_id, order.uid, user.name, refundAmount,
           beforeBal, afterR.rows[0]?.balance || 0,
-          `자동 환불 (Peakerr ${status}) - 주문 ${order.id}`,
+          `자동 환불 (주문 ${status}) - 주문 ${order.id}`,
           'system'
         );
       }
@@ -785,7 +791,7 @@ async function autoRefundOrder(order, peakerrData) {
       await logActivity(
         order.site_id, 'system', '자동환불',
         `자동 환불 (${refundPercent}%)`, 'order', order.id,
-        `Peakerr ${status} → ₩${refundAmount.toLocaleString()} 환불`
+        `주문 ${status} → ₩${refundAmount.toLocaleString()} 환불`
       );
     }
     
@@ -941,7 +947,7 @@ async function syncPeakerrServices() {
     // 슈퍼관리자 알림 (변경사항 있을 때만)
     if (disabled > 0 || priceChanged > 0 || stuckRefunded > 0) {
       let msg = `🔄 <b>서비스 자동 동기화</b>\n\n`;
-      if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (Peakerr에서 삭제됨)\n`;
+      if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (공급사에서 삭제됨)\n`;
       if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
       if (priceChanged > 0) {
         msg += `💰 가격 업데이트: ${priceChanged}개\n`;
@@ -999,7 +1005,7 @@ async function scanNewServices() {
     const top5 = candidates.slice(0, 5);
     
     if (top5.length > 0) {
-      let msg = `🆕 <b>Peakerr 신규 고품질 서비스</b>\n\n`;
+      let msg = `🆕 <b>신규 고품질 서비스</b>\n\n`;
       top5.forEach((s, i) => {
         msg += `${i+1}. ${(s.name || '').substring(0, 50)}\n`;
         msg += `   💰 $${s.rate}/1K, Q${s.qs}\n\n`;
@@ -1008,6 +1014,29 @@ async function scanNewServices() {
       await sendTelegramToSuper(msg);
     }
   } catch(e) { console.log('신규 서비스 스캔 실패:', e.message); }
+}
+
+// 💰 충전 보너스 계산 — 금액이 도달한 가장 높은 구간의 보너스율(%)을 적용
+// tiersJson: {"10000":0,"30000":0,"50000":1,"100000":5,"200000":6} 형태
+function calcChargeBonus(amount, tiersJson) {
+  try {
+    if (!tiersJson) return 0;
+    const tiers = typeof tiersJson === 'string' ? JSON.parse(tiersJson) : tiersJson;
+    if (!tiers || typeof tiers !== 'object') return 0;
+    // 충전액 이하의 구간 중 가장 높은 금액 구간을 찾음
+    let bestRate = 0;
+    let bestThreshold = -1;
+    for (const key in tiers) {
+      const threshold = parseFloat(key);
+      const rate = parseFloat(tiers[key]) || 0;
+      if (amount >= threshold && threshold > bestThreshold && rate > 0) {
+        bestThreshold = threshold;
+        bestRate = rate;
+      }
+    }
+    if (bestRate <= 0) return 0;
+    return Math.round(amount * bestRate / 100);
+  } catch(e) { return 0; }
 }
 
 async function tgAlert(msg, site) {
@@ -1139,6 +1168,10 @@ app.get('/api/site-config', async (req, res) => {
     stat3Num: site.stat3_num || '50%+', stat3Label: site.stat3_label || '마진 보장',
     stat4Num: site.stat4_num || '100%', stat4Label: site.stat4_label || '안전 보장',
     notice: site.notice || '',
+    chargeBonusTiers: site.charge_bonus_tiers || '',
+    bannerText: site.banner_text || '',
+    bannerImage: site.banner_image || '',
+    bannerLink: site.banner_link || '',
     footerText: site.footer_text || '소셜 미디어 플랫폼과 공식 제휴된 서비스가 아닙니다.',
     loginWelcome: site.login_welcome || '다시 만나서 반가워요',
     loginSub: site.login_sub || '계정에 로그인하세요',
@@ -1600,18 +1633,18 @@ app.post('/api/orders', requireAuth, async (req, res) => {
         if (data.order) {
           apiOrderId = String(data.order);
         } else {
-          // Peakerr가 주문을 거부함 (서비스 삭제/최소수량 미달/잔액부족 등)
-          apiError = data.error || 'Peakerr 주문 접수 실패';
+          // 공급사가 주문을 거부함 (서비스 삭제/최소수량 미달/잔액부족 등)
+          apiError = data.error || '주문 접수 실패';
         }
       } catch(e) {
-        apiError = 'Peakerr 연결 실패: ' + e.message;
+        apiError = '서버 연결 실패: ' + e.message;
         console.log('API 오류:', e.message);
       }
     } else if (!svc.api_id) {
       apiError = '연동되지 않은 서비스입니다';
     }
 
-    // ⚠️ Peakerr 전송 실패 → 즉시 자동 환불 + 주문 실패 처리 ("돈 냈는데 작업 안 됨" 방지)
+    // ⚠️ 공급사 전송 실패 → 즉시 자동 환불 + 주문 실패 처리 ("돈 냈는데 작업 안 됨" 방지)
     if (apiError) {
       // 고객 잔액 복구
       await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge, user.id]);
@@ -1627,16 +1660,19 @@ app.post('/api/orders', requireAuth, async (req, res) => {
           (user.balance || 0) - charge, user.balance || 0,
           `주문 실패 자동 환불 - ${svc.name}`, 'system');
       } catch(e) {}
-      // 서비스가 Peakerr에 없으면 즉시 비활성화 (다른 고객 추가 피해 방지)
-      if (/not\s*found|invalid\s*service|존재|없/i.test(apiError) || apiError === 'Peakerr 주문 접수 실패') {
+      // 서비스가 공급사에 없으면 즉시 비활성화 (다른 고객 추가 피해 방지)
+      if (/not\s*found|invalid\s*service|존재|없/i.test(apiError) || apiError === '주문 접수 실패') {
         await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(()=>{});
       }
       return res.json({ error: `주문에 실패하여 자동 환불되었습니다. (사유: ${apiError})\n다른 서비스를 이용해주세요.` });
     }
 
     const orderId = 'O' + Date.now();
-    await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, 'processing']);
+    // 💰 cost = 지인(파트너) 입장의 원가 = 슈퍼시아에게 크레딧으로 지불한 금액(원화 환산)
+    //    default 사이트는 크레딧을 안 쓰므로 0
+    const orderCost = (site && site.id !== 'default') ? (apiCost * ex) : 0;
+    await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, 'processing', orderCost]);
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
     tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n💳 주문 후 잔액: ₩${custBal.toLocaleString()}\n🔗 ${link}`, site);
@@ -1778,30 +1814,61 @@ app.post('/api/charges/cancel', requireAuth, async (req, res) => {
 // ── 관리자 API ──
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   try {
-    const siteId = req.session.role === 'superadmin' ? null : req.siteId;
-    let users, orders, revenue, pending;
+    const isSuper = req.session.role === 'superadmin';
+    const siteId = isSuper ? null : req.siteId;
+    const validStatuses = `o.status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+    let users, orders, pending;
     if (siteId) {
       users   = await query(`SELECT COUNT(*) as c FROM users WHERE role=$1 AND site_id=$2`, ['user', siteId]);
       orders  = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1`, [siteId]);
-      revenue = await query(`SELECT SUM(charge) as s FROM orders WHERE site_id=$1`, [siteId]);
       pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status=$1 AND site_id=$2`, ['pending', siteId]);
     } else {
       users   = await query(`SELECT COUNT(*) as c FROM users WHERE role=$1`, ['user']);
       orders  = await query(`SELECT COUNT(*) as c FROM orders`);
-      revenue = await query(`SELECT SUM(charge) as s FROM orders`);
       pending = await query(`SELECT COUNT(*) as c FROM charges WHERE status=$1`, ['pending']);
     }
-    const credit = req.session.role === 'superadmin' ? null : (req.site?.credit || 0);
-    // 크레딧 원화 환산용 환율
+    // 매출/원가 — 주문자 role별로 분리 집계 (orders ⨝ users)
+    // customer = 일반 회원 주문, admin = 관리자 본인 주문
+    const siteCond = siteId ? `AND o.site_id = $1` : ``;
+    const params = siteId ? [siteId] : [];
+    const statQ = await query(`
+      SELECT
+        COALESCE(u.role,'user') as role,
+        SUM(o.charge) as revenue,
+        SUM(o.cost) as cost
+      FROM orders o
+      LEFT JOIN users u ON o.uid = u.id
+      WHERE ${validStatuses} ${siteCond}
+      GROUP BY COALESCE(u.role,'user')
+    `, params);
+    let custRev = 0, custCost = 0, admRev = 0, admCost = 0;
+    statQ.rows.forEach(r => {
+      const rev = parseFloat(r.revenue) || 0;
+      const cst = parseFloat(r.cost) || 0;
+      if (r.role === 'user') { custRev += rev; custCost += cst; }
+      else { admRev += rev; admCost += cst; }  // admin/partner/superadmin = 본인 주문
+    });
+    const credit = isSuper ? null : (req.site?.credit || 0);
     const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
     const siteEx = (req.site && req.site.exrate > 0) ? req.site.exrate : globalEx;
+
+    // 슈퍼관리자 → 전부 합산 / 파트너 → 고객 주문만 매출, 관리자 주문은 별도
+    const totalRev = custRev + admRev;
+    const totalCost = custCost + admCost;
     res.json({
       users: parseInt(users.rows[0].c),
       orders: parseInt(orders.rows[0].c),
-      revenue: revenue.rows[0].s || 0,
+      // 슈퍼관리자: 전체 합산 / 파트너: 고객 주문만
+      revenue: isSuper ? totalRev : custRev,
+      cost: isSuper ? totalCost : custCost,
+      profit: isSuper ? (totalRev - totalCost) : (custRev - custCost),
+      // 파트너용 — 관리자 본인 주문 분 (자기가 작업한 것)
+      adminRevenue: admRev,
+      adminCost: admCost,
       pendingCharges: parseInt(pending.rows[0].c),
       credit,
-      exrate: siteEx
+      exrate: siteEx,
+      isSuper
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2031,7 +2098,7 @@ app.post('/api/admin/users/role', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/users/:uid/detail', requireAdmin, async (req, res) => {
   try {
-    const userR = await query(`SELECT id,name,email,role,balance,status,joined FROM users WHERE id=$1`, [req.params.uid]);
+    const userR = await query(`SELECT id,name,email,phone,role,balance,status,joined FROM users WHERE id=$1`, [req.params.uid]);
     if (!userR.rows[0]) return res.json({ error: '회원을 찾을 수 없습니다' });
     const orders = await query(`SELECT * FROM orders WHERE uid=$1 ORDER BY created DESC`, [req.params.uid]);
     const charges = await query(`SELECT * FROM charges WHERE uid=$1 ORDER BY created DESC`, [req.params.uid]);
@@ -2087,17 +2154,26 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
       // 잔액 변동 로그
       const beforeR = await query(`SELECT * FROM users WHERE id=$1`, [charge.uid]);
       const beforeBal = beforeR.rows[0]?.balance || 0;
-      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge.amount, charge.uid]);
+      const chargerRole = beforeR.rows[0]?.role || 'user';
+      // 💰 충전 보너스 — 금액 구간별, 일반 고객(user)에게만 지급
+      let bonus = 0;
+      if (chargerRole === 'user') {
+        const bSiteR = await query(`SELECT charge_bonus_tiers FROM sites WHERE id=$1`, [charge.site_id]);
+        bonus = calcChargeBonus(charge.amount, bSiteR.rows[0]?.charge_bonus_tiers);
+      }
+      const totalAdd = charge.amount + bonus;
+      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [totalAdd, charge.uid]);
       const afterR = await query(`SELECT * FROM users WHERE id=$1`, [charge.uid]);
       const afterBal = afterR.rows[0]?.balance || 0;
-      
+
+      const bonusNote = bonus > 0 ? ` +보너스 ₩${bonus.toLocaleString()}` : '';
       await logBalance(
-        charge.site_id, charge.uid, charge.uname, charge.amount,
+        charge.site_id, charge.uid, charge.uname, totalAdd,
         beforeBal, afterBal,
-        `충전 승인 (${charge.memo || '메모 없음'})`,
+        `충전 승인 (${charge.memo || '메모 없음'})${bonusNote}`,
         req.session.userId
       );
-      tgAlert(`✅ 충전승인 [${req.site?.name}]\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}`, req.site);
+      tgAlert(`✅ 충전승인 [${req.site?.name}]\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}${bonusNote}`, req.site);
     }
     await logActivity(req.siteId, req.session.userId, '', `충전 ${action === 'approve' ? '승인' : '거절'}`, 'charge', id, `₩${Math.round(charge.amount).toLocaleString()}`);
     res.json({ ok: true });
@@ -2326,7 +2402,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
       }
       return res.json({ error: '슈퍼관리자 전용 설정입니다' });
     }
-    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge'];
+    const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','banner_text','banner_image','banner_link','charge_bonus_tiers'];
     if (siteFields.includes(key)) {
       // 🛡️ 숫자 필드 검증
       if (key === 'margin') {
@@ -2489,13 +2565,22 @@ app.post('/api/tg-webhook', async (req, res) => {
     }
     if (action === 'approve') {
       // 잔액 변동 로그 포함 (process 라우트와 동일하게 정합성 유지)
-      const beforeR = await query(`SELECT balance FROM users WHERE id=$1`, [charge.uid]);
+      const beforeR = await query(`SELECT balance, role FROM users WHERE id=$1`, [charge.uid]);
       const beforeBal = beforeR.rows[0]?.balance || 0;
+      const chargerRole = beforeR.rows[0]?.role || 'user';
+      // 💰 충전 보너스 — 금액 구간별, 일반 고객(user)에게만 지급
+      let bonus = 0;
+      if (chargerRole === 'user') {
+        const bSiteR = await query(`SELECT charge_bonus_tiers FROM sites WHERE id=$1`, [charge.site_id]);
+        bonus = calcChargeBonus(charge.amount, bSiteR.rows[0]?.charge_bonus_tiers);
+      }
+      const totalAdd = charge.amount + bonus;
+      const bonusNote = bonus > 0 ? ` +보너스 ₩${bonus.toLocaleString()}` : '';
       await query(`UPDATE charges SET status='approved' WHERE id=$1`, [chargeId]);
-      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge.amount, charge.uid]);
+      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [totalAdd, charge.uid]);
       try {
-        await logBalance(charge.site_id, charge.uid, charge.uname, charge.amount,
-          beforeBal, beforeBal + charge.amount, '충전 승인 (텔레그램)', 'telegram');
+        await logBalance(charge.site_id, charge.uid, charge.uname, totalAdd,
+          beforeBal, beforeBal + totalAdd, `충전 승인 (텔레그램)${bonusNote}`, 'telegram');
       } catch(e) {}
       await fetch(`https://api.telegram.org/bot${cbToken}/editMessageReplyMarkup`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2503,7 +2588,7 @@ app.post('/api/tg-webhook', async (req, res) => {
       });
       await fetch(`https://api.telegram.org/bot${cbToken}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: `✅ 승인 완료!\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()} 충전됨`, parse_mode: 'HTML' })
+        body: JSON.stringify({ chat_id: chatId, text: `✅ 승인 완료!\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}${bonusNote} 충전됨`, parse_mode: 'HTML' })
       });
       await fetch(`https://api.telegram.org/bot${cbToken}/answerCallbackQuery`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2686,7 +2771,7 @@ app.post('/api/super/services/create', requireSuperAdmin, async (req, res) => {
   try {
     const { name, pl, rate, min, max, description, active, apiId } = req.body;
     if (!name) return res.json({ error: '서비스명을 입력하세요' });
-    if (!apiId) return res.json({ error: 'Peakerr 서비스 ID를 입력하세요' });
+    if (!apiId) return res.json({ error: '공급 상품 번호를 입력하세요' });
     const id = 'svc_' + Date.now();
     await query(`INSERT INTO services(id,name,pl,rate,min,max,description,active,api_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [id, name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, String(apiId).trim()]);
@@ -2726,7 +2811,30 @@ app.get('/api/super/sites', requireSuperAdmin, async (req, res) => {
     const r = await query(`SELECT * FROM sites ORDER BY created DESC`);
     // 크레딧 원화 환산용 글로벌 기본 환율 함께 전달
     const globalExrate = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
-    res.json({ sites: r.rows, globalExrate });
+    // 사이트별 매출·원가 통계 (취소·실패·환불 제외)
+    const validStatuses = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+    const statR = await query(`SELECT site_id, SUM(charge) as revenue, SUM(cost) as cost, COUNT(*) as orders
+                               FROM orders WHERE ${validStatuses} GROUP BY site_id`);
+    const statMap = {};
+    statR.rows.forEach(row => {
+      statMap[row.site_id] = {
+        revenue: parseFloat(row.revenue) || 0,
+        cost: parseFloat(row.cost) || 0,
+        orders: parseInt(row.orders) || 0
+      };
+    });
+    // 각 사이트에 통계 부착
+    const sites = r.rows.map(s => {
+      const st = statMap[s.id] || { revenue: 0, cost: 0, orders: 0 };
+      return {
+        ...s,
+        stat_revenue: st.revenue,        // 파트너 고객 매출 합계 (₩)
+        stat_cost: st.cost,              // 파트너가 크레딧으로 쓴 원가 합계 (₩) = 슈퍼시아 판매가
+        stat_partner_profit: st.revenue - st.cost,  // 파트너 수익
+        stat_orders: st.orders
+      };
+    });
+    res.json({ sites, globalExrate });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2815,6 +2923,7 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/sites/credit', requireSuperAdmin, async (req, res) => {
   try {
     const { siteId, amount } = req.body;
+    // amount는 프론트엔드에서 이미 USD로 환산되어 전달됨
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return res.json({ error: '금액을 입력하세요' });
     await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [amt, siteId]);
@@ -2890,13 +2999,15 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
 
 app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
   try {
+    // 매출 집계 제외 상태: 취소·실패·환불 주문은 실매출이 아님
+    const EXCLUDE = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
     const sites = await query(`SELECT * FROM sites ORDER BY created DESC`);
     const totalUsers = await query(`SELECT COUNT(*) as c FROM users WHERE role='user'`);
-    const totalOrders = await query(`SELECT COUNT(*) as c FROM orders`);
-    const totalRevenue = await query(`SELECT SUM(charge) as s FROM orders`);
+    const totalOrders = await query(`SELECT COUNT(*) as c FROM orders WHERE ${EXCLUDE}`);
+    const totalRevenue = await query(`SELECT SUM(charge) as s FROM orders WHERE ${EXCLUDE}`);
     const pendingCharges = await query(`SELECT COUNT(*) as c FROM charges WHERE status='pending'`);
-    // 순수익 계산: 총매출 - API 원가 합계
-    const totalApiCost = await query(`SELECT SUM(qty * rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id`);
+    // 순수익 계산: API 원가 합계 (취소·환불 주문 제외)
+    const totalApiCost = await query(`SELECT SUM(o.qty * s.rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id WHERE o.${EXCLUDE}`);
     let apiBalance = null;
     try {
       const apiKey = await getGlobalSetting('peakerr_api_key');
@@ -2911,8 +3022,8 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
     } catch(e) {}
     const siteStats = await Promise.all(sites.rows.map(async s => {
       const uc = await query(`SELECT COUNT(*) as c FROM users WHERE site_id=$1 AND role='user'`, [s.id]);
-      const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1`, [s.id]);
-      const rv = await query(`SELECT SUM(charge) as v FROM orders WHERE site_id=$1`, [s.id]);
+      const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
+      const rv = await query(`SELECT SUM(charge) as v FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
       const pc = await query(`SELECT COUNT(*) as c FROM charges WHERE site_id=$1 AND status='pending'`, [s.id]);
       return { ...s, userCount: parseInt(uc.rows[0].c), orderCount: parseInt(oc.rows[0].c), revenue: rv.rows[0].v || 0, pendingCharge: parseInt(pc.rows[0].c) };
     }));
@@ -2994,14 +3105,18 @@ app.post('/api/super/admin/delete', requireSuperAdmin, async (req, res) => {
 
 app.get('/api/super/orders', requireSuperAdmin, async (req, res) => {
   try {
-    const r = await query(`SELECT * FROM orders ORDER BY created DESC LIMIT 200`);
+    const r = await query(`SELECT o.*, COALESCE(s.name, o.site_id) AS site_name
+      FROM orders o LEFT JOIN sites s ON o.site_id = s.id
+      ORDER BY o.created DESC LIMIT 200`);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/super/charges', requireSuperAdmin, async (req, res) => {
   try {
-    const r = await query(`SELECT * FROM charges ORDER BY created DESC LIMIT 200`);
+    const r = await query(`SELECT c.*, COALESCE(s.name, c.site_id) AS site_name
+      FROM charges c LEFT JOIN sites s ON c.site_id = s.id
+      ORDER BY c.created DESC LIMIT 200`);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

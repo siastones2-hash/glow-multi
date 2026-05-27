@@ -359,6 +359,7 @@ tr:last-child td{border-bottom:none}
       <button class="si" id="si-admin" style="display:none" onclick="goTab('admin')">⚙ 관리자</button>
       <button class="si" id="si-super" style="display:none" onclick="goTab('super')">👑 슈퍼관리자</button>
       <button class="si" onclick="doLogout()">→ 로그아웃</button>
+      <div id="sidebarBanner" style="margin-top:14px;display:none"></div>
     </div>
     <div style="border-top:1px solid var(--bd);padding:12px">
       <div style="display:flex;align-items:center;gap:9px">
@@ -370,7 +371,7 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
   </nav>
-  <div class="dm" style="flex:1;display:flex;flex-direction:column;min-width:0">
+  <div class="dm" id="dashMain" style="flex:1;display:flex;flex-direction:column;min-width:0">
     <div class="dhdr">
       <div style="font-size:15px;font-weight:800" id="dhTitle">대시보드</div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -439,6 +440,7 @@ tr:last-child td{border-bottom:none}
             <div style="font-size:15px;font-weight:800;margin-bottom:14px">주문하기 ✨</div>
             <div class="fg"><label>선택된 서비스</label><div id="selName" style="padding:11px 13px;background:#f5f0ff;border:1.5px solid var(--bd);border-radius:10px;font-size:13px;color:var(--tm);min-height:42px;line-height:1.5">서비스를 선택하세요</div></div>
             <div class="fg"><label>링크 (URL)</label><input type="url" id="o링크" placeholder="https://..." autocomplete="off"/><div style="font-size:11px;color:var(--tl);margin-top:4px" id="linkHint">서비스 대상 URL</div></div>
+            <div id="orderGuideBox" style="display:none;background:#f5f0ff;border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.7"></div>
             <div class="fg"><label>수량 <span id="qHint" style="color:var(--p2);font-size:10px;font-weight:500;letter-spacing:0;text-transform:none"></span></label><input type="number" id="o수량" placeholder="수량" min="1" inputmode="numeric" oninput="calcPrice()"/></div>
             <div class="osum">
               <div class="osr"><span style="color:var(--tm);font-weight:300">내 잔액</span><span id="oBal">-</span></div>
@@ -467,11 +469,13 @@ tr:last-child td{border-bottom:none}
           <div class="card" style="margin-bottom:14px">
             <div style="font-size:15px;font-weight:800;margin-bottom:14px">💳 충전 요청</div>
             <div class="cg">
-              <div class="ci" onclick="pickCharge(10000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩10,000</div></div>
-              <div class="ci" onclick="pickCharge(30000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩30,000</div><div style="font-size:10px;color:var(--p2);font-weight:700">+₩1,500</div></div>
-              <div class="ci" onclick="pickCharge(50000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩50,000</div><div style="font-size:10px;color:var(--p2);font-weight:700">+₩3,000</div></div>
-              <div class="ci" onclick="pickCharge(100000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩100,000</div><div style="font-size:10px;color:var(--p2);font-weight:700">+₩7,000</div></div>
-              <div class="ci" onclick="pickCharge(200000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩200,000</div><div style="font-size:10px;color:var(--p2);font-weight:700">+₩20,000</div></div>
+              <div class="ci" onclick="pickCharge(10000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩10,000</div><div class="chBonus" data-amt="10000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(30000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩30,000</div><div class="chBonus" data-amt="30000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(50000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩50,000</div><div class="chBonus" data-amt="50000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(100000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩100,000</div><div class="chBonus" data-amt="100000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(200000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩200,000</div><div class="chBonus" data-amt="200000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(500000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩500,000</div><div class="chBonus" data-amt="500000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
+              <div class="ci" onclick="pickCharge(1000000,this)"><div class="gt" style="font-size:14px;font-weight:800">₩1,000,000</div><div class="chBonus" data-amt="1000000" style="font-size:10px;color:var(--p2);font-weight:700"></div></div>
               <div class="ci" onclick="pickCharge(0,this)"><div style="font-size:13px;color:var(--tm)">직접 입력</div></div>
             </div>
             <div class="fg"><label>충전 금액 (원)</label><input type="number" id="chAmt" placeholder="최소 ₩5,000" min="5000" inputmode="numeric"/></div>
@@ -509,8 +513,17 @@ tr:last-child td{border-bottom:none}
         <div class="sg" style="margin-bottom:14px">
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">총 회원</div><div class="gt" style="font-size:22px;font-weight:800" id="aSU">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">총 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="aSO">0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">총 매출</div><div class="gt" style="font-size:22px;font-weight:800" id="aSR">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">충전 대기</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="aSC">0</div></div>
+        </div>
+        <!-- 매출 · 원가 · 수익 -->
+        <div class="sg" style="margin-bottom:14px">
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 총 매출 (고객 결제)</div><div class="gt" style="font-size:22px;font-weight:800" id="aSR">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">📦 총 원가 (크레딧 사용)</div><div style="font-size:22px;font-weight:800;color:#c2410c" id="aSCost">₩0</div></div>
+          <div class="sc" style="background:#ecfdf5;border:1px solid #6ee7b7"><div style="font-size:10px;letter-spacing:.1em;color:#047857;font-weight:700;text-transform:uppercase;margin-bottom:5px">✨ 내 수익 (매출−원가)</div><div style="font-size:22px;font-weight:800;color:#047857" id="aSProfit">₩0</div></div>
+        </div>
+        <div id="aAdminOrderBox" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#64748b">
+          🛠 <strong style="color:#475569">내가 직접 주문한 작업분</strong> — 결제액 <strong id="aAdmRev">₩0</strong> / 크레딧 원가 <strong id="aAdmCost">₩0</strong>
+          <span style="color:#94a3b8">(고객 매출과 별도로 집계됩니다)</span>
         </div>
         <!-- API 크레딧 표시 -->
         <div class="ibox" style="margin-bottom:14px" id="creditInfo" style="display:none">
@@ -548,7 +561,7 @@ tr:last-child td{border-bottom:none}
           <div class="tw"><table><thead><tr><th>날짜</th><th>회원</th><th>서비스</th><th>금액</th><th>상태</th></tr></thead><tbody id="revTb"></tbody></table></div>
         </div>
         <div class="apanel on" id="ap-orders">
-          <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
         <div class="apanel" id="ap-users">
           <div class="tw"><table><thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead><tbody id="aUTb"></tbody></table></div>
@@ -655,6 +668,29 @@ tr:last-child td{border-bottom:none}
               <div class="fg"><label>메인 슬로건 (두 번째 줄)</label><input type="text" id="stSloganSub" placeholder="우리가 성장시킵니다"/></div>
               <div class="fg"><label>부제목 설명</label><textarea id="stDesc" rows="2" placeholder="유튜브·인스타·틱톡·X까지..."></textarea></div>
               <div class="fg"><label>공지사항 (비워두면 미표시)</label><input type="text" id="stNotice" placeholder="현재 이벤트 진행 중!"/></div>
+              <div style="border-top:1px solid var(--bd);margin:14px 0;padding-top:12px">
+                <div style="font-size:13px;font-weight:800;color:var(--p2);margin-bottom:4px">💰 충전 보너스 (금액별)</div>
+                <div style="font-size:11px;color:var(--tl);margin-bottom:10px">충전 금액이 클수록 보너스율을 높게 줄 수 있습니다. 각 금액의 보너스율(%)을 입력하세요. 비워두면 그 금액은 보너스 없음. 전부 비우면 보너스 미사용. ⚠️ 보너스만큼 크레딧 소모가 늘어나니 크레딧을 여유 있게 확보하세요.</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div class="fg" style="margin:0"><label>₩10,000 충전 시 (%)</label><input type="number" id="stBonus10000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩30,000 충전 시 (%)</label><input type="number" id="stBonus30000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩50,000 충전 시 (%)</label><input type="number" id="stBonus50000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩100,000 충전 시 (%)</label><input type="number" id="stBonus100000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩200,000 충전 시 (%)</label><input type="number" id="stBonus200000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩500,000 충전 시 (%)</label><input type="number" id="stBonus500000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                  <div class="fg" style="margin:0"><label>₩1,000,000 충전 시 (%)</label><input type="number" id="stBonus1000000" placeholder="0" min="0" max="100" step="0.5" inputmode="numeric"/></div>
+                </div>
+                <div style="font-size:11px;color:#9A8AB0;margin-top:8px">💡 직접 입력 충전은 — 도달한 가장 높은 구간의 보너스율이 적용됩니다. (예: 7만원 충전 → ₩50,000 구간 적용)</div>
+              </div>
+              <div style="border-top:1px solid var(--bd);margin:14px 0;padding-top:12px">
+                <div style="font-size:13px;font-weight:800;color:var(--p2);margin-bottom:4px">📣 사이드바 홍보 배너</div>
+                <div style="font-size:11px;color:var(--tl);margin-bottom:10px">메뉴 아래에 표시됩니다. 창업문의·이벤트 홍보 등에 활용하세요. (텍스트·이미지 둘 다 비워두면 미표시)</div>
+                <div class="fg"><label>배너 텍스트 (엔터로 줄바꿈 가능)</label><textarea id="stBannerText" rows="3" placeholder="예: 💼 창업문의 환영!&#10;카톡 ○○○&#10;24시간 상담 가능" style="width:100%;resize:vertical;font-family:inherit"></textarea></div>
+                <div class="fg"><label>배너 이미지 주소 (URL · 선택)</label><input type="text" id="stBannerImage" placeholder="https://... 이미지 링크"/>
+                  <div style="font-size:11px;color:#9A8AB0;margin-top:4px">이미지를 다른 곳에 올린 뒤 그 주소를 붙여넣으세요</div>
+                </div>
+                <div class="fg"><label>배너 클릭 시 이동할 링크 (선택)</label><input type="text" id="stBannerLink" placeholder="https://... 또는 카톡 오픈채팅 주소"/></div>
+              </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                 <div class="fg"><label>통계1 숫자</label><input type="text" id="stStat1Num" placeholder="10K+"/></div>
                 <div class="fg"><label>통계1 설명</label><input type="text" id="stStat1Label" placeholder="서비스 종류"/></div>
@@ -727,7 +763,7 @@ tr:last-child td{border-bottom:none}
 
         <!-- 전체 주문 -->
         <div class="apanel" id="sp-allorders">
-          <div class="tw"><table><thead><tr><th>사이트</th><th>회원</th><th>서비스</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th></tr></thead><tbody id="spOTb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>사이트</th><th>회원</th><th>서비스</th><th>링크</th><th>공급사 주문번호</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th></tr></thead><tbody id="spOTb"></tbody></table></div>
         </div>
 
         <!-- 전체 충전 -->
@@ -870,8 +906,8 @@ tr:last-child td{border-bottom:none}
       <button onclick="closeM('mService')" style="width:28px;height:28px;border-radius:50%;background:#f5f0ff;border:1px solid var(--bd);cursor:pointer;font-size:15px">✕</button>
     </div>
     <input type="hidden" id="svcEditId"/>
-    <div class="fg"><label>Peakerr 서비스 ID (필수 — 숫자)</label><input type="text" id="svcApiId" placeholder="예: 13810" inputmode="numeric"/>
-      <div style="font-size:11px;color:#9A8AB0;margin-top:4px">⚠️ Peakerr 상품 번호입니다. 비워두면 주문이 작동하지 않습니다.</div>
+    <div class="fg"><label>공급 상품 번호 (필수 — 숫자)</label><input type="text" id="svcApiId" placeholder="예: 13810" inputmode="numeric"/>
+      <div style="font-size:11px;color:#9A8AB0;margin-top:4px">⚠️ 공급사 상품 번호입니다. 비워두면 주문이 작동하지 않습니다.</div>
     </div>
     <div class="fg"><label>서비스명</label><input type="text" id="svcName" placeholder="YouTube 조회수"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1051,6 +1087,12 @@ var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'�
 var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
 var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
+var ORDERGUIDE={
+  youtube:{title:'유튜브 링크 넣는 법',steps:['유튜브 앱이나 사이트에서 대상 영상을 엽니다.','영상 아래 <b>공유</b> 버튼을 누르고 <b>링크 복사</b>를 선택합니다.','복사한 주소(youtube.com/... 또는 youtu.be/...)를 그대로 붙여넣습니다.'],warn:'구독자 주문은 영상 링크가 아닌 <b>채널 주소</b>를 넣어주세요.'},
+  instagram:{title:'인스타그램 링크 넣는 법',steps:['인스타그램에서 대상 게시물(또는 릴스)을 엽니다.','게시물 우측 상단 <b>···</b> 메뉴에서 <b>링크 복사</b>를 누릅니다.','복사한 주소(instagram.com/p/... 등)를 붙여넣습니다.'],warn:'팔로워 주문은 게시물이 아닌 <b>프로필 주소</b>(instagram.com/아이디)를 넣어주세요. 계정은 <b>공개</b> 상태여야 합니다.'},
+  tiktok:{title:'틱톡 링크 넣는 법',steps:['틱톡에서 대상 영상을 엽니다.','우측 <b>공유</b> 아이콘을 누르고 <b>링크 복사</b>를 선택합니다.','복사한 주소(tiktok.com/... 또는 vt.tiktok.com/...)를 붙여넣습니다.'],warn:'팔로워 주문은 영상이 아닌 <b>프로필 주소</b>를 넣어주세요. 계정은 <b>공개</b> 상태여야 합니다.'},
+  facebook:{title:'페이스북 링크 넣는 법',steps:['페이스북에서 대상 게시물 또는 페이지를 엽니다.','게시물 우측 상단 <b>···</b> 메뉴 또는 <b>공유 → 링크 복사</b>를 누릅니다.','복사한 주소를 붙여넣습니다.'],warn:'좋아요·팔로워 주문은 <b>페이지 주소</b>를, 게시물 주문은 <b>게시물 주소</b>를 넣어주세요. 공개 상태여야 합니다.'}
+};
 
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 var _globalExrate=1500; // 크레딧 원화 환산용 글로벌 환율
@@ -1178,16 +1220,81 @@ async function loadSiteConfig(){
   var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
   var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
 
-  // 공지사항
+  // 충전 보너스 표시 — 금액 구간별 보너스율에 따라 프리셋 버튼에 동적 표시
+  (function(){
+    var tiers={};
+    try{ if(d.chargeBonusTiers) tiers=JSON.parse(d.chargeBonusTiers); }catch(e){}
+    window._chargeBonusTiers=tiers;
+    document.querySelectorAll('.chBonus').forEach(function(el){
+      var amt=parseInt(el.getAttribute('data-amt'))||0;
+      var rate=parseFloat(tiers[amt])||0;
+      if(rate>0&&amt>0){
+        var bonus=Math.round(amt*rate/100);
+        el.textContent='+₩'+bonus.toLocaleString();
+      }else{
+        el.textContent='';
+      }
+    });
+  })();
+
+  // 공지사항 — 랜딩(pg-land)과 로그인 후 대시보드 본문(dashMain) 양쪽에 표시
+  // ⚠️ pg-dash는 가로 flex 레이아웃이므로 본문(dashMain) 안쪽에 넣어야 함
+  var noticeTargets=[{pg:'pg-land',host:'pg-land'},{pg:'pg-dash',host:'dashMain'}];
   if(d.notice){
-    var nb=ge('noticeBanner');
-    if(!nb){
-      nb=document.createElement('div');nb.id='noticeBanner';
-      nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:200';
-      var pg=ge('pg-land');if(pg)pg.insertBefore(nb,pg.firstChild);
+    noticeTargets.forEach(function(t){
+      var nbId='noticeBanner_'+t.pg;
+      var nb=ge(nbId);
+      if(!nb){
+        nb=document.createElement('div');nb.id=nbId;
+        nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;z-index:200';
+        var host=ge(t.host);if(host)host.insertBefore(nb,host.firstChild);
+      }
+      nb.textContent='📢 '+d.notice;
+      nb.style.display='block';
+    });
+  }else{
+    noticeTargets.forEach(function(t){
+      var nb=ge('noticeBanner_'+t.pg);
+      if(nb)nb.style.display='none';
+    });
+  }
+
+  // 사이드바 배너 (사이트별 홍보 배너 — 텍스트/이미지)
+  // 어드민 설정 입력칸에 기존 배너 값 채우기
+  if(ge('stBannerText'))ge('stBannerText').value=d.bannerText||'';
+  if(ge('stBannerImage'))ge('stBannerImage').value=d.bannerImage||'';
+  if(ge('stBannerLink'))ge('stBannerLink').value=d.bannerLink||'';
+  // 충전 보너스 구간 5칸 채우기 (저장된 JSON 파싱)
+  (function(){
+    var tiers={};
+    try{ if(d.chargeBonusTiers) tiers=JSON.parse(d.chargeBonusTiers); }catch(e){}
+    [10000,30000,50000,100000,200000,500000,1000000].forEach(function(a){
+      var el=ge('stBonus'+a);
+      if(el){ var v=parseFloat(tiers[a]); el.value=(!isNaN(v)&&v>0)?v:''; }
+    });
+  })();
+  var sbBanner=ge('sidebarBanner');
+  if(sbBanner){
+    var bImg=d.bannerImage||'';
+    var bText=d.bannerText||'';
+    var bLink=d.bannerLink||'';
+    if(bImg||bText){
+      var inner='';
+      if(bImg){
+        inner+='<img src="'+bImg+'" style="width:100%;border-radius:10px;display:block" alt="배너"/>';
+      }
+      if(bText){
+        inner+='<div style="background:linear-gradient(135deg,var(--p2),var(--p1));color:#fff;border-radius:10px;padding:12px;font-size:12px;font-weight:600;text-align:center;line-height:1.5;'+(bImg?'margin-top:8px':'')+'">'+bText.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
+      }
+      if(bLink){
+        sbBanner.innerHTML='<a href="'+bLink+'" target="_blank" style="text-decoration:none;display:block">'+inner+'</a>';
+      }else{
+        sbBanner.innerHTML=inner;
+      }
+      sbBanner.style.display='block';
+    }else{
+      sbBanner.style.display='none';
     }
-    nb.textContent='📢 '+d.notice;
-    nb.style.display='block';
   }
 
   // 로그인/회원가입 문구 저장 (switchAuth에서 사용)
@@ -1458,6 +1565,17 @@ function selSvc(id){
     +'<div style="font-size:12px;color:#5A4A7A;font-weight:300;margin-top:5px;line-height:1.6">'+SEL.description+'</div>';
   ge('qHint').textContent='최소 '+(SEL.min||0).toLocaleString()+' / 최대 '+(SEL.max||0).toLocaleString()+'개';
   ge('linkHint').textContent=HINTS[SEL.pl]||'서비스 대상 URL';
+  var gb=ge('orderGuideBox'),g=ORDERGUIDE[SEL.pl];
+  if(gb){
+    if(g){
+      var gh='<div style="font-weight:700;color:var(--p2);margin-bottom:6px">📌 '+g.title+'</div>';
+      gh+='<ol style="margin:0 0 6px 0;padding-left:18px;color:#5A4A7A">';
+      g.steps.forEach(function(s){gh+='<li style="margin-bottom:3px">'+s+'</li>'});
+      gh+='</ol>';
+      if(g.warn)gh+='<div style="color:#B5179E;font-weight:600;margin-top:4px">⚠ '+g.warn+'</div>';
+      gb.innerHTML=gh;gb.style.display='block';
+    }else{gb.style.display='none';}
+  }
   ge('o수량').min=SEL.min||1;
   calcPrice();renderSvcList();
   var ofc=document.querySelector('.ofc');
@@ -1500,7 +1618,7 @@ async function loadOrders(){
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:26px;color:#9A8AB0">주문 내역이 없습니다</td></tr>';return}
   d.forEach(function(o){
     var canCancel = ['pending','processing'].includes(o.status) && o.api_order_id;
-    var actionBtns = '<button onclick="refreshOrder(\''+o.id+'\')" style="background:rgba(114,9,183,.1);color:var(--p2);border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;margin-right:4px" title="Peakerr에서 실시간 상태 확인">🔄</button>';
+    var actionBtns = '<button onclick="refreshOrder(\''+o.id+'\')" style="background:rgba(114,9,183,.1);color:var(--p2);border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;margin-right:4px" title="실시간 상태 확인">🔄</button>';
     if(canCancel) {
       actionBtns += '<button onclick="cancelOrder(\''+o.id+'\')" style="background:rgba(220,20,60,.1);color:#DC143C;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer" title="주문 취소 요청">✕</button>';
     }
@@ -1532,7 +1650,7 @@ async function loadOrders(){
   ge('stDone').textContent=d.filter(function(o){return o.status==='completed'}).length;
 }
 
-// 🔄 주문 상태 실시간 새로고침 (Peakerr에서 가져옴)
+// 🔄 주문 상태 실시간 새로고침 (공급사에서 가져옴)
 async function refreshOrder(orderId){
   toast('상태 확인 중...','ok');
   var d=await api('/api/orders/refresh/'+orderId,'POST');
@@ -1544,7 +1662,7 @@ async function refreshOrder(orderId){
 
 // 🚫 주문 취소 요청
 async function cancelOrder(orderId){
-  if(!confirm('이 주문을 취소하시겠어요?\n\nPeakerr가 아직 처리하지 않았다면 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
+  if(!confirm('이 주문을 취소하시겠어요?\n\n아직 처리되지 않았다면 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
   var d=await api('/api/orders/cancel/'+orderId,'POST');
   if(d.error){toast(d.error,'err');return}
   toast(d.message||'취소 처리되었습니다','ok');
@@ -1586,6 +1704,20 @@ async function loadAdmDash(){
   if(ge('aSU'))ge('aSU').textContent=d.users||0;
   if(ge('aSO'))ge('aSO').textContent=d.orders||0;
   if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
+  if(ge('aSCost'))ge('aSCost').textContent=gf(d.cost||0);
+  if(ge('aSProfit'))ge('aSProfit').textContent=gf(d.profit||0);
+  // 관리자 본인 주문분 (작업분) — 금액이 있을 때만 표시
+  var admBox=ge('aAdminOrderBox');
+  if(admBox){
+    var admRev=d.adminRevenue||0;
+    if(!d.isSuper && admRev>0){
+      if(ge('aAdmRev'))ge('aAdmRev').textContent=gf(admRev);
+      if(ge('aAdmCost'))ge('aAdmCost').textContent=gf(d.adminCost||0);
+      admBox.style.display='block';
+    }else{
+      admBox.style.display='none';
+    }
+  }
   if(ge('aSC'))ge('aSC').textContent=d.pendingCharges||0;
 
   // 크레딧 표시 (일반 어드민만) - 원화 환산
@@ -1640,14 +1772,18 @@ function goAdm(tab,el){
 }
 async function loadAdmOrders(){
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
     var delBtn=done.indexOf(o.status)>=0
       ?'<button onclick="delOrder(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;margin-top:4px">🗑 삭제</button>'
       :'';
+    var linkCell=o.link
+      ?'<a href="'+o.link+'" target="_blank" rel="noopener" style="color:#7209B7;text-decoration:underline;font-size:11px">바로가기 ↗</a>'
+      :'<span style="color:#9A8AB0;font-size:11px">-</span>';
     h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
+      +'<td style="white-space:nowrap">'+linkCell+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
@@ -1762,6 +1898,7 @@ async function openUserDetail(uid){
     +'<div class="card" style="margin-bottom:12px">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">'
     +'<div><span style="color:var(--tl);font-size:11px">이메일</span><br><strong>'+u.email+'</strong></div>'
+    +'<div><span style="color:var(--tl);font-size:11px">📞 연락처</span><br><strong style="color:var(--p2)">'+(u.phone?u.phone:'<span style=\'color:#bbb\'>미등록</span>')+'</strong></div>'
     +'<div><span style="color:var(--tl);font-size:11px">잔액</span><br><strong style="color:var(--p2)">'+gf(u.balance||0)+'</strong></div>'
     +'<div><span style="color:var(--tl);font-size:11px">상태</span><br><strong style="color:'+(u.status==='banned'?'#EF4444':'#10B981')+'">'+(u.status==='banned'?'정지':'정상')+'</strong></div>'
     +'<div><span style="color:var(--tl);font-size:11px">총 주문</span><br><strong>'+orders.length+'건</strong></div>'
@@ -1812,6 +1949,20 @@ async function saveCustomTexts(){
     slogan_sub:ge('stSloganSub')?.value,
     description:ge('stDesc')?.value,
     notice:ge('stNotice')?.value,
+    charge_bonus_tiers:(function(){
+      var amts=[10000,30000,50000,100000,200000,500000,1000000];
+      var tiers={};
+      amts.forEach(function(a){
+        var v=parseFloat(ge('stBonus'+a)?.value);
+        tiers[a]=(!isNaN(v)&&v>0)?v:0;
+      });
+      // 전부 0이면 빈 문자열(보너스 미사용)
+      var hasAny=amts.some(function(a){return tiers[a]>0;});
+      return hasAny?JSON.stringify(tiers):'';
+    })(),
+    banner_text:ge('stBannerText')?.value,
+    banner_image:ge('stBannerImage')?.value,
+    banner_link:ge('stBannerLink')?.value,
     stat1_num:ge('stStat1Num')?.value,stat1_label:ge('stStat1Label')?.value,
     stat2_num:ge('stStat2Num')?.value,stat2_label:ge('stStat2Label')?.value,
     stat3_num:ge('stStat3Num')?.value,stat3_label:ge('stStat3Label')?.value,
@@ -1871,7 +2022,7 @@ function renderSvcMgmtList(){
   if(!list.length){el.innerHTML='<div style="text-align:center;color:var(--tl);padding:20px">서비스 없음</div>';return;}
   el.innerHTML=list.map(function(s){
     var on=s.site_active==1;
-    // 🔒 서버에서 내려준 baseCost(원가)/sellPrice(판매가) 사용 - Peakerr 원가 숨김
+    // 🔒 서버에서 내려준 baseCost(원가)/sellPrice(판매가) 사용 - 공급가 숨김
     var baseCost=s.baseCost||0;
     var sellPrice=s.sellPrice||baseCost;
     return'<div style="display:flex;align-items:center;gap:10px;background:var(--w);border:1px solid var(--bd);border-radius:10px;padding:10px 12px">'
@@ -2040,7 +2191,7 @@ async function testTg(){
 
 // 🔄 수동 주문 동기화
 async function manualSyncOrders(){
-  if(!confirm('모든 진행중 주문의 상태를 Peakerr에서 확인하고 자동 환불 처리합니다.\n계속하시겠어요?'))return;
+  if(!confirm('모든 진행중 주문의 상태를 공급사에서 확인하고 자동 환불 처리합니다.\n계속하시겠어요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 시작...';
   var d=await api('/api/super/sync-orders','POST');
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
@@ -2050,7 +2201,7 @@ async function manualSyncOrders(){
 
 // 🔄 수동 서비스 체크
 async function manualSyncServices(){
-  if(!confirm('Peakerr에서 삭제된 서비스를 자동 비활성화하고, 가격 변동된 서비스를 업데이트합니다.\n계속하시겠어요?'))return;
+  if(!confirm('공급사에서 삭제된 서비스를 자동 비활성화하고, 가격 변동된 서비스를 업데이트합니다.\n계속하시겠어요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>체크 중...';
   var d=await api('/api/super/sync-services','POST');
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
@@ -2125,11 +2276,15 @@ function renderSiteList(sites){
       +'</div>'
       +'<span class="bdg" style="'+(s.active?'background:#D1FAE5;color:#10B981':'background:#FEE2E2;color:#EF4444')+'">'+(s.active?'활성':'비활성')+'</span>'
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.userCount||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.orderCount||0)+'</div><div style="font-size:10px;color:var(--tl)">주문</div></div>'
-      +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:var(--p2)">'+gf(s.revenue||0)+'</div><div style="font-size:10px;color:var(--tl)">매출</div></div>'
       +'<div style="text-align:center;background:'+(lowCredit?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(lowCredit?'#EF4444':'#10B981')+'">'+gf(creditKrw)+'</div><div style="font-size:10px;color:var(--tl)">크레딧</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'
+      +'<div style="text-align:center;background:#eff6ff;border-radius:8px;padding:8px"><div style="font-size:13px;font-weight:800;color:#2563eb">'+gf(s.stat_revenue||0)+'</div><div style="font-size:10px;color:var(--tl)">고객 매출</div></div>'
+      +'<div style="text-align:center;background:#fff7ed;border-radius:8px;padding:8px"><div style="font-size:13px;font-weight:800;color:#c2410c">'+gf(s.stat_cost||0)+'</div><div style="font-size:10px;color:var(--tl)">크레딧 원가</div></div>'
+      +'<div style="text-align:center;background:#ecfdf5;border-radius:8px;padding:8px"><div style="font-size:13px;font-weight:800;color:#047857">'+gf(s.stat_partner_profit||0)+'</div><div style="font-size:10px;color:var(--tl)">파트너 수익</div></div>'
       +'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
       +'<button class="btn binf bxs" onclick="openCreditModal(\''+s.id+'\',\''+s.name+'\','+siteEx+')">💰 크레딧 충전</button>'
@@ -2144,15 +2299,23 @@ function renderSiteList(sites){
 }
 async function loadSuperOrders(){
   var d=await api('/api/super/orders');var tb=ge('spOTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
     var delBtn=done.indexOf(o.status)>=0
       ?' <button onclick="delOrderSuper(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer">🗑</button>'
       :'';
-    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_id||'-')+'</td>'
+    var linkCell=o.link
+      ?'<a href="'+o.link+'" target="_blank" rel="noopener" style="color:#7209B7;text-decoration:underline;font-size:11px">바로가기 ↗</a>'
+      :'<span style="color:#9A8AB0;font-size:11px">-</span>';
+    var apiOid=o.api_order_id
+      ?'<span style="font-size:11px;color:#1A1030">'+o.api_order_id+'</span>'
+      :'<span style="color:#9A8AB0;font-size:11px">-</span>';
+    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(o.site_name||o.site_id||'-')+'</td>'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
+      +'<td style="white-space:nowrap">'+linkCell+'</td>'
+      +'<td style="white-space:nowrap">'+apiOid+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
@@ -2175,7 +2338,7 @@ async function loadSuperCharges(){
       ?'<button class="btn bok bxs" onclick="procChargeSuper(\''+c.id+'\',\'approve\')">✓</button><button class="btn ber bxs" onclick="procChargeSuper(\''+c.id+'\',\'reject\')">✗</button>'
       :'<span style="font-size:11px;color:#9A8AB0">완료</span>')
       +'<button class="btn bxs" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1" onclick="delChargeSuper(\''+c.id+'\')">🗑</button>';
-    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_id||'-')+'</td>'
+    h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_name||c.site_id||'-')+'</td>'
       +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
       +'<td style="font-weight:700;color:#B5179E">'+gf(c.amount)+'</td>'
       +'<td style="font-size:12px">'+(c.note||'-')+'</td>'
@@ -2431,13 +2594,16 @@ async function loadRevenue(){
   var todayStr = now.toISOString().slice(0,10);
   var monthStr = now.toISOString().slice(0,7);
   var todayTotal=0, monthTotal=0, allTotal=0;
+  var EXCLUDE=['cancelled','canceled','failed','refunded','partial_refunded'];
+  var validCount=0;
   var rows='';
   d.forEach(function(o){
     var dateStr = (o.created||'').slice(0,10);
     var monthS = (o.created||'').slice(0,7);
     var charge = o.charge||0;
-    if(o.status !== 'refunded'){
+    if(EXCLUDE.indexOf(o.status) < 0){
       allTotal += charge;
+      validCount++;
       if(dateStr === todayStr) todayTotal += charge;
       if(monthS === monthStr) monthTotal += charge;
     }
@@ -2450,7 +2616,7 @@ async function loadRevenue(){
   ge('rev-today').textContent = gf(todayTotal);
   ge('rev-month').textContent = gf(monthTotal);
   ge('rev-total').textContent = gf(allTotal);
-  ge('rev-orders').textContent = d.length;
+  ge('rev-orders').textContent = validCount;
   var tb = ge('revTb');
   if(tb) tb.innerHTML = rows || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--tl)">주문 내역 없음</td></tr>';
 }
@@ -2599,7 +2765,7 @@ async function saveService(){
   var description=ge('svcDesc').value.trim();
   var active=parseInt(ge('svcActive').value);
   if(!name||isNaN(rate)){toast('서비스명과 원가를 입력하세요','err');return}
-  if(!apiId){toast('Peakerr 서비스 ID를 입력하세요 (주문 작동에 필수)','err');return}
+  if(!apiId){toast('공급 상품 번호를 입력하세요 (주문 작동에 필수)','err');return}
   var url=id?'/api/super/services/update':'/api/super/services/create';
   var d=await api(url,'POST',{id,apiId,name,pl,rate,min,max,description,active});
   if(d.error){toast(d.error,'err');return}
