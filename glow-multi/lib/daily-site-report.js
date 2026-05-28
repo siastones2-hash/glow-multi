@@ -21,17 +21,17 @@ function formatKrw(n) {
  * @param {Function} sendTelegramToSuper
  */
 async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSetting, sendTelegramToSuper) {
-  const todayKst = kstDateString();
+  const reportDateKst = kstDateString();
   const lastSent = await getGlobalSetting('daily_report_last_sent');
-  if (lastSent === todayKst) {
-    console.log('📊 일일 리포트: 오늘 이미 발송됨 (' + todayKst + ')');
+  if (lastSent === reportDateKst) {
+    console.log('📊 일일 리포트: 오늘 이미 발송됨 (' + reportDateKst + ')');
     return { skipped: true, reason: 'already_sent' };
   }
 
   const sitesR = await query(`SELECT id, name, domain FROM sites WHERE active=1 ORDER BY name`);
   const lines = [
     '📊 <b>GLOW 일일 요약</b>',
-    `📅 ${todayKst} (KST)`,
+    `📅 ${reportDateKst} (KST)`,
     '',
   ];
 
@@ -45,9 +45,11 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
       FROM orders
       WHERE site_id = $1
         AND ${EXCLUDE_ORDER_STATUSES}
-        AND (created AT TIME ZONE 'Asia/Seoul')::date = (NOW() AT TIME ZONE 'Asia/Seoul')::date
+        -- created 컬럼은 TIMESTAMP(타임존 없음)이라 UTC 기준으로 저장될 수 있음.
+        -- UTC로 해석 후 KST로 변환해 날짜 비교해야 누락이 없음.
+        AND ((created AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Seoul')::date = $2::date
       `,
-      [site.id]
+      [site.id, reportDateKst]
     );
     const userR = await query(
       `
@@ -55,9 +57,9 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
       FROM users
       WHERE site_id = $1
         AND role = 'user'
-        AND (joined AT TIME ZONE 'Asia/Seoul')::date = (NOW() AT TIME ZONE 'Asia/Seoul')::date
+        AND ((joined AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Seoul')::date = $2::date
       `,
-      [site.id]
+      [site.id, reportDateKst]
     );
 
     const revenue = parseFloat(revR.rows[0].revenue) || 0;
@@ -79,12 +81,12 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
   const message = lines.join('\n');
   const sent = await sendTelegramToSuper(message);
   if (sent) {
-    await setGlobalSetting('daily_report_last_sent', todayKst);
-    console.log('✅ 일일 텔레그램 리포트 발송:', todayKst);
+    await setGlobalSetting('daily_report_last_sent', reportDateKst);
+    console.log('✅ 일일 텔레그램 리포트 발송:', reportDateKst);
   } else {
     console.log('⚠️ 일일 리포트: 텔레그램 미설정 또는 발송 실패 (tg_token / tg_chat 확인)');
   }
-  return { ok: sent, date: todayKst, message };
+  return { ok: sent, date: reportDateKst, message };
 }
 
 /**
