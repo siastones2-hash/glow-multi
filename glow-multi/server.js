@@ -3067,15 +3067,69 @@ app.post('/api/super/sites/credit-set', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/super/sites/default-pricing', requireSuperAdmin, async (req, res) => {
+  try {
+    const r = await query(`SELECT id, name, domain, margin, super_margin FROM sites WHERE id='default'`);
+    if (!r.rows[0]) return res.json({ error: 'default 사이트가 없습니다' });
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/** GLOW 본사(default) 고객 마진만 저장 — 지인 사이트와 별개 */
+app.post('/api/super/sites/default-pricing', requireSuperAdmin, async (req, res) => {
+  try {
+    const margin = parseFloat(req.body.margin);
+    const superMargin = parseFloat(req.body.superMargin);
+    if (isNaN(margin) || margin < 0 || margin > 500) {
+      return res.json({ error: '본사 사이트마진은 0~500% 사이여야 합니다' });
+    }
+    if (isNaN(superMargin) || superMargin < 0 || superMargin > 500) {
+      return res.json({ error: '본사 슈퍼마진은 0~500% 사이여야 합니다' });
+    }
+    await query(`UPDATE sites SET margin=$1, super_margin=$2 WHERE id='default'`, [margin, superMargin]);
+    const r = await query(`SELECT id, name, domain, margin, super_margin FROM sites WHERE id='default'`);
+    await logActivity('default', req.session.userId, '', '본사 마진 변경', 'site', 'default',
+      `사이트마진 ${margin}% / 슈퍼마진 ${superMargin}%`);
+    res.json({ ok: true, site: r.rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
   try {
     const { siteId, name, domain, logo, primaryColor, accentColor, margin, exrate, active } = req.body;
-    const superMarginUpd = req.body.superMargin !== undefined ? parseFloat(req.body.superMargin) : -1;
-    // 🔧 색상을 지정해서 변경했다면 theme을 'glow'(기본)로 설정해 사용자 색상이 표시되게 함
-    await query(`UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9,theme='glow' WHERE id=$10`,
-      [name, domain, logo, primaryColor, accentColor, parseFloat(margin), parseFloat(exrate), active?1:0, superMarginUpd, siteId]);
-    res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    if (!siteId) return res.json({ error: 'siteId가 필요합니다' });
+
+    const beforeR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+    if (!beforeR.rows[0]) return res.json({ error: '사이트를 찾을 수 없습니다' });
+    const before = beforeR.rows[0];
+
+    const marginNum = parseFloat(margin);
+    if (isNaN(marginNum) || marginNum < 0 || marginNum > 500) {
+      return res.json({ error: '사이트마진은 0~500% 사이여야 합니다' });
+    }
+    const exrateNum = parseFloat(exrate);
+    if (isNaN(exrateNum) || exrateNum < 500 || exrateNum > 3000) {
+      return res.json({ error: '환율은 500~3000 사이여야 합니다' });
+    }
+
+    let superMarginVal = before.super_margin >= 0 ? before.super_margin : 50;
+    if (req.body.superMargin !== undefined && req.body.superMargin !== null && String(req.body.superMargin).trim() !== '') {
+      const sm = parseFloat(req.body.superMargin);
+      if (isNaN(sm) || sm < 0 || sm > 500) {
+        return res.json({ error: '슈퍼마진은 0~500% 사이여야 합니다' });
+      }
+      superMarginVal = sm;
+    }
+
+    // theme은 건드리지 않음 (자동 테마 JSON 보존 · 저장 실패처럼 보이는 현상 방지)
+    await query(
+      `UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9 WHERE id=$10`,
+      [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, active ? 1 : 0, superMarginVal, siteId]
+    );
+
+    const afterR = await query(`SELECT id, name, margin, super_margin, domain FROM sites WHERE id=$1`, [siteId]);
+    res.json({ ok: true, site: afterR.rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 

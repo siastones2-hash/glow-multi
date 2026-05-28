@@ -929,11 +929,21 @@ tr:last-child td{border-bottom:none}
               <div id="manualSyncRes" style="font-size:12px;color:var(--tm);margin-top:8px"></div>
             </div>
             <div class="card">
-              <div style="font-size:15px;font-weight:800;margin-bottom:12px">💰 슈퍼관리자 마진율</div>
-              <div style="font-size:12px;color:var(--tm);margin-bottom:10px">원가 → 사이트 판매가 마진 (각 사이트 마진과 별도로 적용됩니다)</div>
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">💰 슈퍼관리자 마진율 (지인 도매)</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:10px">지인 사이트에 넘기는 도매 마진입니다. <b>본사 고객 마진과 별개</b>입니다.</div>
               <div class="fg"><label>슈퍼 마진율 (%)</label><input type="number" id="spSuperMargin" placeholder="50" min="0" max="500"/></div>
               <div style="font-size:11px;color:var(--tl);margin-bottom:10px">예: 원가 $1 → 슈퍼마진 50% → $1.5 → 사이트마진 50% → 고객가 $2.25</div>
               <button class="bp bsm" style="padding:9px 16px" onclick="saveSuperMargin()">저장</button>
+            </div>
+            <div class="card" style="border-color:rgba(16,185,129,.35)">
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">🏠 GLOW 본사 고객 마진</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:10px;line-height:1.6">본사(default) 직접 고객 판매가입니다. 지인 사이트마진 50%와 <b>별도</b>로 적용됩니다.</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="fg"><label>본사 사이트마진 (%)</label><input type="number" id="spDefaultMargin" value="100" min="0" max="500" step="1"/></div>
+                <div class="fg"><label>본사 슈퍼마진 (%)</label><input type="number" id="spDefaultSuperMg" value="100" min="0" max="500" step="1"/></div>
+              </div>
+              <div id="spDefaultPricingStatus" style="font-size:12px;color:var(--tm);margin-bottom:10px"></div>
+              <button class="bp bsm" style="padding:9px 16px" onclick="saveDefaultPricing()">본사 마진 저장</button>
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">💱 글로벌 기본 환율</div>
@@ -2269,6 +2279,31 @@ async function saveSuperMargin(){
   if(d.error){toast(d.error,'err');return}
   toast('슈퍼 마진율 저장 완료 ✨','ok');
 }
+
+async function loadDefaultPricing(){
+  try{
+    var d=await api('/api/super/sites/default-pricing');
+    if(d&&d.error){return;}
+    if(ge('spDefaultMargin'))ge('spDefaultMargin').value=d.margin!=null?d.margin:100;
+    if(ge('spDefaultSuperMg'))ge('spDefaultSuperMg').value=(d.super_margin>=0?d.super_margin:100);
+    var st=ge('spDefaultPricingStatus');
+    if(st)st.textContent='현재 저장값: 사이트마진 '+Math.round(d.margin||0)+'% · 본사 슈퍼마진 '+Math.round(d.super_margin>=0?d.super_margin:100)+'% ('+(d.domain||'default')+')';
+  }catch(e){}
+}
+
+async function saveDefaultPricing(){
+  var margin=parseFloat(ge('spDefaultMargin')?.value);
+  var superMg=parseFloat(ge('spDefaultSuperMg')?.value);
+  if(isNaN(margin)||margin<0||margin>500){toast('본사 사이트마진 0~500% 로 입력하세요','err');return}
+  if(isNaN(superMg)||superMg<0||superMg>500){toast('본사 슈퍼마진 0~500% 로 입력하세요','err');return}
+  var d=await api('/api/super/sites/default-pricing','POST',{margin:margin,superMargin:superMg});
+  if(d.error){toast(d.error,'err');return}
+  if(!d.ok){toast('저장에 실패했습니다','err');return}
+  _sitesCache=[];
+  toast('본사 GLOW 마진 저장 완료 (사이트마진 '+margin+'%) ✨','ok');
+  loadDefaultPricing();
+  loadSuperDash();
+}
 async function saveGlobalExrate(){
   var val=ge('spGlobalExrate').value;
   if(!val||isNaN(val)||parseFloat(val)<100){toast('올바른 환율을 입력하세요 (100 이상)','err');return}
@@ -2362,6 +2397,7 @@ async function loadSuperDash(){
   if(ge('sMyProfit'))ge('sMyProfit').textContent=gf(d.myProfit||0);
   if(d.globalExrate)_globalExrate=d.globalExrate;
   renderSiteList(d.sites||[]);
+  loadDefaultPricing();
 
   // 글로벌 설정 로드
   var s=await api('/api/admin/settings');
@@ -2646,26 +2682,38 @@ function editSite(s){
     '</div></div>';
   document.body.appendChild(m);
 }
-function saveSiteEdit(siteId){
+async function saveSiteEdit(siteId){
+  var margin=parseFloat(ge('seMg')?.value);
+  var superMg=parseFloat(ge('seSuperMg')?.value);
+  var exrate=parseFloat(ge('seEx')?.value);
+  if(isNaN(margin)||margin<0||margin>500){toast('사이트마진 0~500% 로 입력하세요','err');return}
+  if(isNaN(superMg)||superMg<0||superMg>500){toast('슈퍼마진 0~500% 로 입력하세요','err');return}
+  if(isNaN(exrate)||exrate<500||exrate>3000){toast('환율 500~3000 으로 입력하세요','err');return}
   var body={
     siteId:siteId,
-    name:ge('seName').value,
-    domain:ge('seDomain').value,
+    name:ge('seName').value.trim(),
+    domain:ge('seDomain').value.trim(),
     logo:ge('seLogo').value||'✨',
     primaryColor:ge('sePrimary').value,
     accentColor:ge('seAccent').value,
-    margin:parseFloat(ge('seMg').value)||0,
-    exrate:parseFloat(ge('seEx').value)||1500,
+    margin:margin,
+    exrate:exrate,
     active:1,
-    superMargin:parseFloat(ge('seSuperMg').value)
+    superMargin:superMg
   };
-  api('/api/super/sites/update','POST',body).then(function(d){
+  if(!body.name||!body.domain){toast('사이트 이름과 도메인을 입력하세요','err');return}
+  try{
+    var d=await api('/api/super/sites/update','POST',body);
     if(d.error){toast(d.error,'err');return}
-    document.getElementById('siteEditModal').remove();
+    if(!d.ok){toast('저장에 실패했습니다','err');return}
+    var modal=document.getElementById('siteEditModal');
+    if(modal)modal.remove();
     _sitesCache=[];
-    toast('수정 완료! ✨','ok');
+    toast('수정 완료! (사이트마진 '+margin+'%) ✨','ok');
     loadSuperDash();
-  });
+  }catch(e){
+    toast('저장 중 오류: '+(e.message||'네트워크 확인'),'err');
+  }
 }
 
 async function loadAdmUsers(){
