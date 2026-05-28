@@ -212,10 +212,10 @@ async function initDB() {
       VALUES('default','localhost','GLOW','✨','#F72585','#B5179E',
       '',
       $1,
-      40,1500,0,100)`, [BANK_INFO]);
+      100,1500,0,100)`, [BANK_INFO]);
   } else {
-    // 기존 사이트도 계좌번호 업데이트
-    await query(`UPDATE sites SET bank=$1, super_margin=100, exrate=1500 WHERE id='default'`, [BANK_INFO]);
+    // 본사(default) 고객 마진 100% — 지인 사이트(50%)보다 낮게 팔면 파트너 불만 방지
+    await query(`UPDATE sites SET bank=$1, margin=100, super_margin=100, exrate=1500 WHERE id='default'`, [BANK_INFO]);
   }
 
   await normalizeAbnormalCredits();
