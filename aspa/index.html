@@ -549,19 +549,22 @@
   .acad-note{text-align:center;font-family:var(--mono);font-size:.74rem;color:var(--txt-faint);margin-top:24px;}
 
   /* COURSE LIST */
-  .course-list{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(9,auto);grid-auto-flow:column;gap:10px;}
-  @media(max-width:760px){.course-list{grid-template-columns:1fr 1fr;grid-template-rows:none;grid-auto-flow:row;}}
-  @media(max-width:480px){.course-list{grid-template-columns:1fr;}}
-  .cl-item{display:flex;align-items:center;gap:10px;padding:13px 16px;background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:11px;font-size:.86rem;color:var(--txt-2);transition:.25s;cursor:pointer;}
-  .cl-item:hover{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);color:var(--txt);}
-  .cl-item .ci-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan-glow);flex-shrink:0;}
-  .cl-item .ci-name{font-weight:500;}
-  .cl-item .ci-region{font-size:.72rem;color:var(--txt-faint);}
-  .cl-item .ci-tag{margin-left:auto;font-family:var(--mono);font-size:.6rem;color:var(--cyan);flex-shrink:0;}
-  .cl-item .ci-desc{flex:1;min-width:0;font-size:.72rem;color:var(--txt-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none;}
-  @media(min-width:900px){.cl-item .ci-desc{display:block;}}
-  .cl-item .ci-link{margin-left:4px;padding:4px 8px;border-radius:6px;background:rgba(90,169,255,.1);color:var(--blue);font-size:.68rem;flex-shrink:0;transition:.2s;}
-  .cl-item .ci-link:hover{background:rgba(90,169,255,.22);color:#fff;}
+  .course-gate{position:relative;border-radius:16px;min-height:200px;}
+  .course-gate.gate-locked .course-list,.course-gate.gate-dim .course-list{filter:blur(8px);opacity:.35;pointer-events:none;user-select:none;}
+  .course-gate.gate-dim .course-list{filter:blur(4px);opacity:.55;}
+  .course-gate .gate-over{border-radius:16px;justify-content:center;padding:48px 24px;}
+  .course-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+  .cl-item{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px 18px;min-height:118px;background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:14px;transition:.25s var(--ease);cursor:pointer;}
+  .cl-item:hover{border-color:rgba(0,229,255,.35);background:rgba(0,229,255,.05);transform:translateY(-2px);box-shadow:0 12px 32px -20px rgba(0,229,255,.35);}
+  .cl-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+  .cl-item .ci-name{font-family:var(--kr);font-weight:600;font-size:.92rem;line-height:1.35;color:var(--txt);flex:1;}
+  .cl-item .ci-region{font-family:var(--mono);font-size:.68rem;color:var(--cyan-2);letter-spacing:.04em;}
+  .cl-item .ci-desc{font-size:.78rem;color:var(--txt-dim);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1;}
+  .cl-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);}
+  .cl-item .ci-tag{font-family:var(--mono);font-size:.68rem;color:var(--cyan);background:rgba(0,229,255,.1);padding:4px 10px;border-radius:20px;flex-shrink:0;}
+  .cl-item .ci-link{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid var(--glass-bd);color:var(--txt-2);font-family:var(--mono);font-size:.68rem;flex-shrink:0;transition:.2s;text-decoration:none;}
+  .cl-item .ci-link:hover{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.3);color:var(--cyan);}
+  .course-hero-panel{border-color:rgba(0,229,255,.22);background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(255,255,255,.02));}
   .course-detail-desc{color:var(--txt-2);font-size:.92rem;line-height:1.75;margin-bottom:16px;padding:14px 16px;background:rgba(255,255,255,.03);border-radius:12px;border-left:3px solid var(--cyan);}
 
   /* BENEFIT TYPES */
@@ -1277,8 +1280,7 @@
       <div class="stat"><div class="lbl">아시아 네트워크</div><div class="val">22<small> 개국</small></div></div>
     </div>
 
-    <div class="benefit-gate" id="courseGate">
-    <div class="panel" style="border-color:var(--glass-bd-hi);background:rgba(0,229,255,.04)">
+    <div class="panel course-hero-panel">
       <h3>💳 아스파 정회원 골프장 할인 혜택</h3>
       <p class="ph-desc">아래 26개 제휴 골프장에서 <b style="color:var(--cyan)">라운드 시 1인 20,000원 할인</b>을 받으실 수 있습니다. 예약사이트에서 골프장 검색 후 부킹하세요.</p>
       <button class="btn btn-gold" onclick="bookingSite()">제휴 골프장 예약하기 (타이거부킹) →</button>
@@ -1286,10 +1288,11 @@
 
     <div class="panel">
       <h3>⛳ 제휴 골프장 (26개소)</h3>
-      <p class="ph-desc">골프장을 클릭하면 상세 설명·공식 사이트·네이버 검색 링크를 확인할 수 있습니다. 🔗 아이콘으로 바로 검색할 수도 있습니다.</p>
-      <div class="course-list" id="courseList"></div>
+      <p class="ph-desc">카드를 클릭하면 상세 설명·공식 사이트·예약 링크를 확인할 수 있습니다.</p>
+      <div class="course-gate" id="courseGate">
+        <div class="course-list" id="courseList"></div>
+      </div>
     </div>
-    </div><!-- /courseGate -->
     <div id="courseCta" style="margin-top:8px"></div>
   </div>
 </div></div>
@@ -1847,7 +1850,7 @@ function courseDetail(i){const c=PARTNER_COURSES[i];if(!c)return;
   $('mdModal').classList.add('show');}
 function openCourseSearch(i,e){if(e){e.stopPropagation();}const c=PARTNER_COURSES[i];if(!c)return;window.open(courseSearchUrl(c),'_blank');}
 function renderCourses(){const el=$('courseList');if(!el)return;
-  el.innerHTML=PARTNER_COURSES.map((c,i)=>`<div class="cl-item" onclick="courseDetail(${i})"><span class="ci-dot"></span><span class="ci-name">${c.name}</span><span class="ci-region">${c.region}</span><span class="ci-desc">${c.desc}</span><span class="ci-tag">−2만원</span><a class="ci-link" href="${courseSearchUrl(c)}" target="_blank" rel="noopener" onclick="openCourseSearch(${i},event)" title="네이버에서 보기">🔗</a></div>`).join('');
+  el.innerHTML=PARTNER_COURSES.map((c,i)=>`<div class="cl-item" onclick="courseDetail(${i})"><div class="cl-top"><span class="ci-name">${c.name}</span><span class="ci-tag">−2만원</span></div><span class="ci-region">${c.region}</span><span class="ci-desc">${c.desc}</span><div class="cl-foot"><span style="font-family:var(--mono);font-size:.64rem;color:var(--txt-faint)">자세히 보기 →</span><a class="ci-link" href="${courseSearchUrl(c)}" target="_blank" rel="noopener" onclick="openCourseSearch(${i},event)" title="네이버에서 보기">🔍 검색</a></div></div>`).join('');
   const gate=$('courseGate'),cta=$('courseCta');if(!gate)return;
   const s=state.session.role;
   const m=s==='member'?state.members.find(x=>x.id===state.session.mid):null;
