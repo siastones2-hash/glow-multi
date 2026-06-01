@@ -3095,115 +3095,110 @@ function MktAdvicePanel({
     style: {
       background: "rgba(16,185,129,.06)",
       borderRadius: 10,
-      padding: "10px 12px",
+      padding: "12px 14px",
       border: "1px solid rgba(16,185,129,.2)",
       marginBottom: 10
     }
   }, el("div", {
+    className: "fc-body",
     style: {
-      fontSize: 13,
       fontWeight: 700,
       color: "#10b981",
-      marginBottom: 2
+      marginBottom: 4
     }
   }, "✅ 채널 활동량 양호"), el("div", {
+    className: "fc-muted",
     style: {
-      fontSize: 12,
-      color: "#64748b",
-      lineHeight: 1.4
+      lineHeight: 1.45
     }
   }, "5대 채널 모두 상위 5% 대비 50% 이상 달성 중입니다."));
   return el("div", {
     style: {
       background: "#0c1629",
       borderRadius: 11,
-      padding: "10px 12px",
+      padding: "12px 14px",
       border: "1px solid rgba(245,158,11,.2)",
       marginBottom: 10
     }
   }, el("div", {
+    className: "fc-body",
     style: {
-      fontSize: 13,
       fontWeight: 800,
       color: "#f59e0b",
-      marginBottom: 3
+      marginBottom: 4
     }
   }, "📌 1위 추격을 위해 부족한 채널"), el("div", {
+    className: "fc-muted",
     style: {
-      fontSize: 12,
-      color: "#64748b",
-      marginBottom: 8,
-      lineHeight: 1.4
+      marginBottom: 10,
+      lineHeight: 1.45
     }
   }, "상위 5% 평균 대비 50% 미만 채널 — 점주가 직접 보완해야 할 항목입니다."), el("div", {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 5
+      gap: 6
     }
   }, gaps.map((g, i) => el("div", {
     key: i,
     style: {
       display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "8px 10px",
+      alignItems: "flex-start",
+      gap: 10,
+      padding: "10px 12px",
       background: "rgba(239,68,68,.05)",
       borderRadius: 8,
       border: "1px solid rgba(239,68,68,.15)"
     }
   }, el("span", {
     style: {
-      fontSize: 18,
-      flexShrink: 0
+      fontSize: 20,
+      flexShrink: 0,
+      lineHeight: 1.2
     }
   }, g.icon), el("div", {
     style: {
-      flex: 1
+      flex: 1,
+      minWidth: 0
     }
   }, el("div", {
     style: {
       display: "flex",
-      gap: 6,
+      gap: 8,
       alignItems: "center",
-      marginBottom: 2,
+      marginBottom: 4,
       flexWrap: "wrap"
     }
   }, el("span", {
+    className: "fc-body",
     style: {
-      fontSize: 13,
       fontWeight: 700,
       color: "#e2e8f0"
     }
   }, "[" + g.label + "]"), el("span", {
-    className: "mono",
+    className: "mono fc-body",
     style: {
-      fontSize: 12,
       color: "#ef4444",
       fontWeight: 700
     }
-  }, "내 매장: 주" + g.mine + "건"), el("span", {
-    style: {
-      fontSize: 12,
-      color: "#334155"
-    }
+  }, "내 주" + g.mine + "건"), el("span", {
+    className: "fc-muted"
   }, "vs"), el("span", {
-    className: "mono",
+    className: "mono fc-body",
     style: {
-      fontSize: 12,
       color: "#10b981",
       fontWeight: 700
     }
-  }, "상위5%: 주" + g.bench + "건")), el(MBar, {
+  }, "상위5% 주" + g.bench + "건")), el(MBar, {
     r: Math.round(g.mine / g.bench * 100),
     color: "#ef4444"
   }), el("div", {
+    className: "fc-body",
     style: {
-      fontSize: 12,
-      color: "#ef4444",
+      color: "#fca5a5",
       fontWeight: 600,
-      marginTop: 2,
-      lineHeight: 1.4
+      marginTop: 4,
+      lineHeight: 1.45
     }
   }, g.label + " " + g.diff + "건 추가 필요 → 블로그 체험단 / 자체 콘텐츠 제작 권장"))))));
 }
@@ -3218,37 +3213,36 @@ function RankLog({
     style: {
       background: "#0c1629",
       borderRadius: 10,
-      padding: "10px 12px",
+      padding: "12px 14px",
       border: "1px solid #1e3a5f",
       marginBottom: 10
     }
   }, el("div", {
+    className: "fc-body",
     style: {
-      fontSize: 13,
       fontWeight: 700,
-      color: "#64748b",
-      marginBottom: 2
+      color: "#94a3b8",
+      marginBottom: 4
     }
   }, "📋 활동량 → 순위 변동 로그"), el("div", {
+    className: "fc-muted",
     style: {
-      fontSize: 12,
-      color: "#334155",
-      lineHeight: 1.4
+      lineHeight: 1.45
     }
   }, "아직 로그가 없습니다. 채널 활동 후 자동으로 기록됩니다."));
   return el("div", {
     style: {
       background: "#0c1629",
       borderRadius: 11,
-      padding: "10px 12px",
+      padding: "12px 14px",
       border: "1px solid #1e3a5f",
       marginBottom: 10
     }
   }, el("div", {
+    className: "fc-body",
     style: {
-      fontSize: 13,
       fontWeight: 700,
-      color: "#64748b",
+      color: "#94a3b8",
       marginBottom: 8
     }
   }, "📋 활동량 → 순위 변동 로그"), el("div", {
@@ -3293,33 +3287,31 @@ function RankLog({
       flex: 1
     }
   }, el("div", {
+    className: "fc-body",
     style: {
-      fontSize: 13,
-      color: "#e2e8f0",
       fontWeight: 600,
-      marginBottom: 1
+      marginBottom: 2
     }
   }, log.event), el("div", {
+    className: "fc-muted",
     style: {
-      fontSize: 12,
-      color: "#64748b",
       lineHeight: 1.45
     }
   }, log.detail))))));
 }
 
-// ── SVG 차트 ─────────────────────────────────────────────
+// ── 매출 추이 (고정 높이·라벨은 HTML — SVG 확대 방지) ─────
 function SalesChart({
   store,
   topStore
 }) {
   const el = React.createElement;
-  const W = 320,
-    H = 118,
-    PL = 34,
-    PR = 10,
-    PT = 14,
-    PB = 22;
+  const W = 300,
+    H = 72,
+    PL = 28,
+    PR = 8,
+    PT = 8,
+    PB = 4;
   const cw = W - PL - PR,
     ch = H - PT - PB;
   const myH = (store.history || []).map((d, i, a) => i === a.length - 1 ? {
@@ -3342,34 +3334,28 @@ function SalesChart({
       points: pts,
       fill: "none",
       stroke: c,
-      strokeWidth: 2,
-      strokeDasharray: dash ? "5 3" : undefined,
+      strokeWidth: 1.8,
+      strokeDasharray: dash ? "4 3" : undefined,
       strokeLinecap: "round",
       strokeLinejoin: "round"
-    }), data.map((d, i) => el("g", {
-      key: i
-    }, el("circle", {
+    }), data.map((d, i) => el("circle", {
+      key: i,
       cx: xp(i, data.length),
       cy: yp(d.v),
-      r: 3.5,
+      r: 3,
       fill: c,
       stroke: "#070d1a",
       strokeWidth: 1.5
-    }), el("text", {
-      x: xp(i, data.length),
-      y: yp(d.v) - 6,
-      textAnchor: "middle",
-      fontSize: 10,
-      fontWeight: "600",
-      fill: c
-    }, (d.v >= 0 ? "+" : "") + d.v + "%"))));
+    })));
   };
-  const grids = [...new Set([-20, -10, 0, 10, 20, 30].filter(v => v >= minV - 2 && v <= maxV + 2))];
+  const topLbl = topStore.name.replace("소림사 ", "").slice(0, 4);
+  const fmt = v => (v >= 0 ? "+" : "") + v + "%";
   return el("div", {
+    className: "fc-chart",
     style: {
       background: "#0c1629",
       borderRadius: 10,
-      padding: "10px 12px",
+      padding: "12px 14px",
       border: "1px solid #1e3a5f",
       marginBottom: 9
     }
@@ -3377,21 +3363,28 @@ function SalesChart({
     style: {
       display: "flex",
       justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 6,
-      flexWrap: "wrap",
-      gap: 4
+      alignItems: "flex-start",
+      gap: 8,
+      marginBottom: 4,
+      flexWrap: "wrap"
     }
-  }, el("span", {
+  }, el("div", null, el("div", {
+    className: "fc-body",
     style: {
-      fontSize: 13,
       fontWeight: 700,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, "📊 최근 3개월 매출 추이"), el("div", {
+    className: "fc-muted",
+    style: {
+      marginTop: 2,
+      lineHeight: 1.35
+    }
+  }, "관리 입력 % · 1위 매장과 비교 참고")), el("div", {
     style: {
       display: "flex",
-      gap: 8
+      gap: 10,
+      flexShrink: 0
     }
   }, [{
     c: "#f59e0b",
@@ -3399,64 +3392,87 @@ function SalesChart({
     d: false
   }, {
     c: "#10b981",
-    l: "1위(" + topStore.name.replace("소림사 ", "").slice(0, 3) + ")",
+    l: "1위(" + topLbl + ")",
     d: true
   }].map(x => el("div", {
     key: x.l,
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 3
+      gap: 4
     }
   }, el("svg", {
-    width: 12,
+    width: 14,
     height: 6
   }, el("line", {
     x1: 0,
     y1: 3,
-    x2: 12,
+    x2: 14,
     y2: 3,
     stroke: x.c,
-    strokeWidth: "1.5",
+    strokeWidth: "2",
     strokeDasharray: x.d ? "3 2" : undefined
   })), el("span", {
+    className: "fc-muted",
     style: {
-      fontSize: 11,
       color: x.c,
       fontWeight: 600
     }
   }, x.l))))), el("svg", {
-    width: "100%",
+    width: W,
+    height: H,
     viewBox: "0 0 " + W + " " + H,
+    preserveAspectRatio: "none",
     style: {
       display: "block",
-      overflow: "visible"
+      width: "100%",
+      height: H,
+      maxHeight: H
     }
-  }, grids.map(v => el("g", {
-    key: v
   }, el("line", {
     x1: PL,
-    y1: yp(v),
+    y1: yp(0),
     x2: W - PR,
-    y2: yp(v),
-    stroke: v === 0 ? "#1e3a5f" : "#0f1e35",
-    strokeWidth: v === 0 ? 1.5 : 1,
-    strokeDasharray: v === 0 ? "4 2" : undefined
-  }), el("text", {
-    x: PL - 3,
-    y: yp(v) + 3,
-    textAnchor: "end",
-    fontSize: 10,
-    fill: "#475569"
-  }, v + "%"))), myH.map((d, i) => el("text", {
+    y2: yp(0),
+    stroke: "#1e3a5f",
+    strokeWidth: 1,
+    strokeDasharray: "3 2"
+  }), store.id !== topStore.id && ln(tpH, "#10b981", true), ln(myH, "#f59e0b", false)), el("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(" + myH.length + ",1fr)",
+      gap: 4,
+      marginTop: 8
+    }
+  }, myH.map((d, i) => el("div", {
     key: i,
-    x: xp(i, myH.length),
-    y: H - 6,
-    textAnchor: "middle",
-    fontSize: 11,
-    fontWeight: i === myH.length - 1 ? "700" : "400",
-    fill: i === myH.length - 1 ? "#f59e0b" : "#475569"
-  }, d.m)), store.id !== topStore.id && ln(tpH, "#10b981", true), ln(myH, "#f59e0b", false)));
+    style: {
+      textAlign: "center",
+      minWidth: 0
+    }
+  }, el("div", {
+    className: "fc-muted",
+    style: {
+      fontWeight: i === myH.length - 1 ? 700 : 500,
+      color: i === myH.length - 1 ? "#f59e0b" : "#64748b"
+    }
+  }, d.m), el("div", {
+    className: "mono",
+    style: {
+      fontSize: "var(--fs-sm)",
+      fontWeight: 700,
+      color: "#f59e0b",
+      marginTop: 2
+    }
+  }, fmt(d.v)), store.id !== topStore.id && el("div", {
+    className: "mono",
+    style: {
+      fontSize: "var(--fs-xs)",
+      fontWeight: 600,
+      color: "#10b981",
+      marginTop: 1
+    }
+  }, fmt((tpH[i] || {}).v))))));
 }
 
 // ── 매장 폼 ──────────────────────────────────────────────
