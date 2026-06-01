@@ -298,7 +298,7 @@ tr:last-child td{border-bottom:none}
     <h1 id="heroSlogan"><span id="heroPrefix">콘텐츠가</span> <span class="gt" id="heroSloganSpan">빛나도록</span><br><span id="heroSloganSub">우리가 성장시킵니다</span></h1>
     <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:520px;margin:0 auto 28px;font-weight:300" id="heroDesc">인스타 팔로워·좋아요, 유튜브 구독자·조회수까지 — 링크만 넣으면 바로 성장 시작</p>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:32px" class="hero-cta">
-      <button class="bp bplg" onclick="goAuth('register')">✨ 지금 무료로 시작하기</button>
+      <button class="bp bplg" onclick="goAuth('register')">✨ 무료 가입하고 바로 UP →</button>
       <button class="bo" style="padding:15px 28px;font-size:14px;border-radius:14px" onclick="goAuth('login')">기존 계정 로그인</button>
     </div>
     <div class="hero-chips">
@@ -310,8 +310,8 @@ tr:last-child td{border-bottom:none}
   </div>
   <div class="land-svc" id="landServices" style="display:none">
     <div class="land-svc-inner">
-      <h2>GLOW에서 <span class="gt">이렇게 작업</span>됩니다</h2>
-      <p class="land-svc-sub">SNS 계정·게시물 링크만 넣으면, 아래 작업이 자동으로 진행됩니다</p>
+      <h2>링크 넣으면, <span class="gt">이게 올라갑니다</span></h2>
+      <p class="land-svc-sub">인스타·유튜브·틱톡 — 팔로워, 좋아요, 조회수, 구독자를 자동으로 키워드립니다</p>
       <div class="land-tasks">
         <div class="land-task">
           <div class="land-task-ico">📷</div>
@@ -1349,15 +1349,15 @@ function applyGlowLanding(isGlow){
   if(lh)lh.style.display=isGlow?'block':'none';
   if(!isGlow)return;
 
-  var hb=ge('heroBadge');if(hb)hb.textContent='SNS 팔로워 · 좋아요 · 조회수 서비스';
-  var hpf=ge('heroPrefix');if(hpf)hpf.textContent='인스타 · 유튜브 · 틱톡';
-  var hs=ge('heroSloganSpan');if(hs)hs.textContent='숫자 올리는 곳';
-  var hss=ge('heroSloganSub');if(hss)hss.textContent='팔로워, 좋아요, 구독자, 조회수 — 링크만 넣으면 됩니다';
-  var hd=ge('heroDesc');if(hd)hd.textContent='처음 오셨나요? GLOW는 SNS 계정·게시물 링크를 넣으면 팔로워·좋아요·조회수·구독자를 올려주는 서비스입니다.';
+  var hb=ge('heroBadge');if(hb)hb.textContent='🔥 인스타·유튜브·틱톡 즉시 성장';
+  var hpf=ge('heroPrefix');if(hpf)hpf.textContent='링크 하나면';
+  var hs=ge('heroSloganSpan');if(hs)hs.textContent='팔로워·조회수·구독자 UP';
+  var hss=ge('heroSloganSub');if(hss)hss.textContent='좋아요부터 구독자까지 — 오늘 바로 키우세요';
+  var hd=ge('heroDesc');if(hd)hd.textContent='가입 30초, 링크만 넣으면 끝. 크리에이터·셀러·매장도 지금 바로 채널 성장 시작할 수 있습니다.';
 
   var chips=ge('pg-land')?.querySelector('.hero-chips');
   if(chips){
-    chips.innerHTML='<div class="chip">📷 인스타 팔로워</div><div class="chip">❤️ 좋아요</div><div class="chip">▶ 유튜브 구독자</div><div class="chip">👁 조회수</div><div class="chip">⚡ 자동 처리</div>';
+    chips.innerHTML='<div class="chip">📷 팔로워 UP</div><div class="chip">❤️ 좋아요 UP</div><div class="chip">▶ 구독자 UP</div><div class="chip">👁 조회수 UP</div><div class="chip">⚡ 오늘 시작</div>';
   }
 
   var s3n=ge('stat3Num');if(s3n)s3n.textContent='링크';
@@ -1365,8 +1365,8 @@ function applyGlowLanding(isGlow){
   var s4n=ge('stat4Num');if(s4n)s4n.textContent='24H';
   var s4l=ge('stat4Label');if(s4l)s4l.textContent='자동 처리';
 
-  var ct=ge('lctaTitle');if(ct)ct.innerHTML='지금 가입하고 <span class="gt">바로 시작</span>하세요';
-  var cs=ge('lctaSub');if(cs)cs.textContent='인스타·유튜브·틱톡 성장 작업, 가입은 무료입니다.';
+  var ct=ge('lctaTitle');if(ct)ct.innerHTML='지금 가입하면 <span class="gt">오늘부터 UP</span>';
+  var cs=ge('lctaSub');if(cs)cs.textContent='무료 가입 · 링크만 있으면 바로 주문 가능합니다.';
 }
 
 async function loadSiteConfig(){
