@@ -54,6 +54,24 @@ const sbLoadStores = async () => {
   if (!rows?.length) return null;
   return rows;
 };
+let _dailyCache = null;
+let _dailyFetch = null;
+/** daily.json 단일 로드 (캐시·타임아웃 없음 — 전 매장 순위 공통) */
+const fetchDailyJson = () => {
+  if (_dailyCache) return Promise.resolve(_dailyCache);
+  if (_dailyFetch) return _dailyFetch;
+  _dailyFetch = fetch(new URL("data/daily.json", location.href).href).then(r => r.ok ? r.json() : null).then(d => {
+    _dailyCache = d || null;
+    return _dailyCache;
+  }).catch(() => null).finally(() => {
+    _dailyFetch = null;
+  });
+  return _dailyFetch;
+};
+const dailyRowForStore = (daily, s) => {
+  if (!daily?.stores?.length || !s) return null;
+  return daily.stores.find(x => x.place_id === s.placeId || x.franchain_store_id === s.id || x.store_id === s.id || x.store_id === "franchain_" + s.id) || null;
+};
 const api = {
   getStores: async () => {
     // Supabase에서 저장된 데이터 불러와서 SD에 합치기
@@ -1560,17 +1578,23 @@ const matjibKwForStore = s => {
   if (rg) return rg[1] + " 맛집";
   return s.keywordTarget || "-";
 };
-const naverRankForStore = s => {
-  const pr = s.placeKeywordRank;
-  const rd = s.naverSync?.rank_detail || {};
+const naverRankForStore = (s, drow) => {
+  const row = drow || null;
+  const pr = s.placeKeywordRank ?? row?.keyword_rank ?? row?.rank_detail?.place_rank;
+  const rd = {
+    ...(row?.rank_detail || {}),
+    ...(s.naverSync?.rank_detail || {})
+  };
   const kw = matjibKwForStore(s);
-  if (pr != null && pr > 0) return {
+  const synced = s.lastSynced || row?.collected_at || s.naverSync?.synced_at;
+  const measured = !!(s.naverMeasured || synced);
+  if (pr != null && pr > 0 && Number(pr) > 0) return {
     main: String(pr),
     unit: "위",
     color: rkC(pr),
     sub: "「" + kw + "」 실측",
     kind: "matjib",
-    sort: pr
+    sort: Number(pr)
   };
   if (!s.placeId) return {
     main: "미등록",
@@ -1591,7 +1615,7 @@ const naverRankForStore = s => {
       sort: 9998
     };
   }
-  if (s.naverMeasured) {
+  if (measured) {
     const n = rd.searched_count || 0;
     if (rd.incomplete_search || n < 25) return {
       main: "재측정",
@@ -1601,19 +1625,19 @@ const naverRankForStore = s => {
       kind: "wait",
       sort: 998
     };
-    if (pr != null && pr > 0) return {
+    if (pr != null && Number(pr) > 0) return {
       main: String(pr),
       unit: "위",
       color: rkC(pr),
       sub: "「" + kw + "」" + n + "곳 중 · 실측",
       kind: "matjib",
-      sort: pr
+      sort: Number(pr)
     };
     return {
       main: "100+",
       unit: "",
       color: "#f59e0b",
-      sub: "「" + kw + "」" + n + "곳 스캔 · 목록 밖",
+      sub: "「" + kw + "」" + (n || "?") + "곳 스캔 · 목록 밖",
       kind: "out",
       sort: 999
     };
@@ -1622,7 +1646,7 @@ const naverRankForStore = s => {
     main: "—",
     unit: "",
     color: "#64748b",
-    sub: "실측 로딩 중",
+    sub: "실측 불러오는 중…",
     kind: "wait",
     sort: 9999
   };
@@ -2092,22 +2116,21 @@ function FranchainHomeLogo({
 // ── 우선 3개 매장 순위 (본점·청주·산본) ─────────────────
 function PriorityTop3Panel({
   stores,
-  goDetail
+  goDetail,
+  daily: extDaily
 }) {
   const el = React.createElement;
-  const [daily, setDaily] = React.useState(null);
+  const [daily, setDaily] = React.useState(extDaily || null);
   React.useEffect(() => {
-    fetch(new URL("data/daily.json", location.href).href).then(r => r.ok ? r.json() : null).then(setDaily).catch(() => setDaily(null));
-  }, []);
-  const dailyByPlace = {};
-  if (daily && daily.stores) {
-    daily.stores.forEach(s => {
-      if (s.place_id) dailyByPlace[s.place_id] = s;
-    });
-  }
+    if (extDaily) {
+      setDaily(extDaily);
+      return;
+    }
+    fetchDailyJson().then(setDaily);
+  }, [extDaily]);
   const cards = PRIORITY_TOP3.map((p, i) => {
     const s = stores.find(x => x.placeId === p.placeId || x.id === p.storeId) || {};
-    const drow = dailyByPlace[p.placeId] || (daily?.stores || []).find(x => x.store_id === p.storeId || x.store_id === s.id);
+    const drow = dailyRowForStore(daily, s) || (daily?.stores || []).find(x => x.place_id === p.placeId);
     const kw = matjibKwForStore(s) || p.keyword;
     const rkInfo = rankDisplayForStore(s, drow, kw);
     const rcpt = receiptDisplay(s);
@@ -2628,15 +2651,29 @@ function StoreQuickStats({
 }
 function AllStoresNaverRankPanel({
   stores,
-  goDetail
+  goDetail,
+  daily: extDaily
 }) {
   const el = React.createElement;
-  const list = [...stores].filter(s => s.placeId).sort((a, b) => sortRankStore(a) - sortRankStore(b));
+  const [daily, setDaily] = React.useState(extDaily || null);
+  React.useEffect(() => {
+    if (extDaily) {
+      setDaily(extDaily);
+      return;
+    }
+    fetchDailyJson().then(setDaily);
+  }, [extDaily]);
+  const list = [...stores].filter(s => s.placeId).sort((a, b) => {
+    const ra = naverRankForStore(a, dailyRowForStore(daily, a));
+    const rb = naverRankForStore(b, dailyRowForStore(daily, b));
+    return ra.sort - rb.sort;
+  });
   if (!list.length) return null;
   const withRank = list.filter(s => {
-    const d = naverRankForStore(s);
+    const d = naverRankForStore(s, dailyRowForStore(daily, s));
     return d.kind === "matjib" && Number(d.main) > 0;
   }).length;
+  const dailyReady = !!daily?.stores?.length;
   return el("div", {
     style: {
       padding: "10px 12px",
@@ -2650,18 +2687,18 @@ function AllStoresNaverRankPanel({
   }, "전체 매장 순위"), el("div", {
     className: "fc-muted",
     style: {
-      fontSize: ".78rem",
       marginBottom: 8,
       lineHeight: 1.45
     }
-  }, "네이버 「지역+맛집」 검색 순서 실측 · ", withRank, "곳 숫자 순위 · ", list.length - withRank, "곳 100+ 또는 재측정"), el("div", {
+  }, dailyReady ? "네이버 「지역+맛집」 실측 · " + withRank + "곳 순위 · " + (list.length - withRank) + "곳 100+" : "daily.json 불러오는 중…"), el("div", {
     style: {
       display: "flex",
       flexDirection: "column",
       gap: 4
     }
   }, list.map(s => {
-    const d = naverRankForStore(s);
+    const drow = dailyRowForStore(daily, s);
+    const d = naverRankForStore(s, drow);
     const kw = matjibKwForStore(s);
     return el("div", {
       key: s.id,
@@ -2702,13 +2739,19 @@ function AllStoresNaverRankPanel({
       style: {
         color: d.color
       }
-    }, d.main, d.unit), el("div", {
+    }, d.main, d.unit && el("span", {
+      style: {
+        fontSize: FC.type.sm,
+        marginLeft: 1
+      }
+    }, d.unit)), el("div", {
       className: "fc-muted",
       style: {
-        marginTop: 1,
-        maxWidth: 96
+        marginTop: 2,
+        maxWidth: 100,
+        marginLeft: "auto"
       }
-    }, (d.sub || "").slice(0, 24))));
+    }, (d.sub || "").slice(0, 28))));
   })));
 }
 
@@ -3916,6 +3959,7 @@ function App({
   setNotice: extSetNotice,
   top5avg: extTop5avg,
   topStore: extTopStore,
+  daily: extDaily,
   onHome,
   initialDetail,
   onDetailConsumed
@@ -4498,10 +4542,12 @@ function App({
     className: "fc-page"
   }, el(PriorityTop3Panel, {
     stores,
-    goDetail: id => go("detail", id)
+    goDetail: id => go("detail", id),
+    daily: extDaily
   }), el(AllStoresNaverRankPanel, {
     stores,
-    goDetail: id => go("detail", id)
+    goDetail: id => go("detail", id),
+    daily: extDaily
   }), el(UrgentAlerts, {
     stores,
     goDetail: id => go("detail", id)
@@ -4531,7 +4577,7 @@ function App({
     const advice = getMktAdvice(s, top5avg);
     const pri = PRIORITY_TOP3.find(p => p.placeId === s.placeId || p.storeId === s.id);
     const displayName = (pri ? pri.label : s.name).replace(/^소림사\s*/, "");
-    const d = naverRankForStore(s);
+    const d = naverRankForStore(s, dailyRowForStore(extDaily, s));
     return el("div", {
       key: s.id,
       onClick: () => go("detail", s.id),
@@ -8010,6 +8056,7 @@ function Root() {
   const [view, setView] = useState("landing");
   const [jumpDetail, setJumpDetail] = useState(null);
   const [stores, setStores] = useState([]);
+  const [daily, setDaily] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
   useEffect(() => {
@@ -8017,21 +8064,11 @@ function Root() {
     setStores(base);
     setLoading(false);
     (async () => {
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 8000);
-        const res = await fetch(new URL("data/daily.json", location.href).href, {
-          signal: ctrl.signal
-        });
-        clearTimeout(t);
-        const daily = res.ok ? await res.json() : null;
-        if (daily?.stores?.length) {
-          setStores(SD.map(s => {
-            const row = daily.stores.find(x => x.place_id === s.placeId || x.franchain_store_id === s.id || x.store_id === s.id);
-            return mergeDailyIntoStore(rc(s), row);
-          }));
-        }
-      } catch (e) {}
+      const dailyData = await fetchDailyJson();
+      if (dailyData) setDaily(dailyData);
+      if (dailyData?.stores?.length) {
+        setStores(SD.map(s => mergeDailyIntoStore(rc(s), dailyRowForStore(dailyData, s))));
+      }
       try {
         const rows = await sbFetch("store_data?select=*");
         if (rows?.length) {
@@ -8047,7 +8084,13 @@ function Root() {
               keywordRank: row.keyword_rank ?? s.keywordRank,
               receiptReviewAge: row.receipt_age ?? s.receiptReviewAge,
               externalSignal: row.external_signal ?? s.externalSignal,
-              sales: row.sales ?? s.sales
+              sales: row.sales ?? s.sales,
+              naverMeasured: s.naverMeasured,
+              placeKeywordRank: s.placeKeywordRank,
+              naverSync: s.naverSync,
+              lastSynced: s.lastSynced,
+              placePageInvalid: s.placePageInvalid,
+              naverRankHint: s.naverRankHint
             };
           }));
         }
@@ -8155,6 +8198,7 @@ function Root() {
     setNotice,
     top5avg,
     topStore,
+    daily,
     onHome: () => setView("landing"),
     initialDetail: jumpDetail,
     onDetailConsumed: () => setJumpDetail(null)
