@@ -1870,15 +1870,8 @@ const rankDisplayForStore = (store, drow, keyword) => {
     label: "100+",
     unit: "",
     color: "#f59e0b",
-    hint: "순위 재검증 필요 · 목록 1번과 불일치",
+    hint: "목록 1번이 타 업체 · 재측정",
     sub: ""
-  };
-  if (rankN === 1 && (!top0 || !rd.rank_source)) return {
-    label: "상위",
-    unit: "",
-    color: "#f59e0b",
-    hint: "「" + kw + "」최상단 근접 · 정확 순위 재측정 중",
-    sub: "1위 단정 보류"
   };
   return {
     label: String(rankN),
@@ -2157,7 +2150,15 @@ function PriorityTop3Panel({
     const s = stores.find(x => x.placeId === p.placeId || x.id === p.storeId) || {};
     const drow = dailyRowForStore(daily, s) || (daily?.stores || []).find(x => x.place_id === p.placeId);
     const kw = matjibKwForStore(s) || p.keyword;
-    const rkInfo = rankDisplayForStore(s, drow, kw);
+    const merged = drow ? mergeDailyIntoStore(s, drow) : s;
+    const d = naverRankForStore(merged, drow);
+    const rkInfo = {
+      label: d.kind === "out" ? d.main : d.main + (d.unit || ""),
+      unit: "",
+      color: d.color,
+      hint: d.sub,
+      sub: ""
+    };
     const rcpt = receiptDisplay(s);
     const sid = s.id || p.storeId;
     return el("div", {
@@ -3053,7 +3054,7 @@ function ChannelTable({
       textAlign: "center",
       color: "var(--ok)"
     }
-  }, "상위"), top5avg && el("th", {
+  }, "벤치"), top5avg && el("th", {
     className: "fc-label",
     style: {
       padding: "4px 6px",
