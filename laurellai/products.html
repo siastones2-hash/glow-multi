@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clubs | LAURELLAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.cat-grid {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+  padding: 0 40px 110px;
+}
+.cat-card { background: white; cursor: pointer; transition: transform 0.5s; display: block; }
+.cat-card:hover { transform: translateY(-6px); }
+.cat-card-img { aspect-ratio: 4/3; overflow: hidden; background: var(--paper); }
+.cat-card-body { padding: 36px 32px 40px; }
+.cat-card-cat {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  color: var(--gold); font-size: 13px;
+  letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 10px;
+}
+.cat-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px; font-weight: 700;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.cat-card-desc { font-size: 13px; line-height: 1.8; color: var(--graphite); margin-bottom: 24px; }
+@media (max-width: 1100px) {
+  .cat-grid { grid-template-columns: 1fr; gap: 16px; padding: 0 24px 70px; }
+}
+
+@media (max-width: 768px) {
+  .cat-grid, .acc-list { grid-template-columns: 1fr; gap: 16px; padding: 0 16px 60px; }
+  .cat-card-body, .acc-list-body { padding: 24px 20px; }
+  .cat-card-title, .acc-list-title { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <div class="header-side">
+      <button class="icon-btn" id="menuToggle" aria-label="Open menu" style="background:none;border:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <a href="index.html" class="logo">Laurellai</a>
+    <div class="header-side right">
+      <a href="dealers.html" class="header-cta" style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink);">매장 찾기</a>
+    </div>
+  </div>
+  <nav class="header-nav">
+      <a href="products.html" class="active">CLUBS</a>
+      <a href="accessories.html">ACCESSORIES</a>
+      <a href="technology.html">TECHNOLOGY</a>
+      <a href="dealers.html">DEALERS</a>
+  </nav>
+</header>
+
+<!-- Side Menu -->
+<div class="side-menu-overlay" id="sideMenuOverlay"></div>
+<aside class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <a href="index.html" class="logo">Laurellai</a>
+    <button class="side-menu-close" id="sideMenuClose" aria-label="Close menu">×</button>
+  </div>
+  <nav class="side-menu-nav">
+    <div class="side-menu-section">Collection</div>
+    <a href="products.html" class="side-menu-item">Clubs</a>
+    <a href="product-pink.html" class="side-menu-item sub">— Pink Stone</a>
+    <a href="product-blanc.html" class="side-menu-item sub">— Blanc Stone</a>
+
+    <div class="side-menu-section">Technology</div>
+    <a href="technology.html" class="side-menu-item">Technology</a>
+
+    <div class="side-menu-section">Accessories</div>
+    <a href="accessories.html" class="side-menu-item">Accessories</a>
+    <a href="acc-bag-stand.html" class="side-menu-item sub">— Heritage Stand Bag</a>
+    <a href="acc-bag-small.html" class="side-menu-item sub">— Companion Bag</a>
+    <a href="acc-pouch.html" class="side-menu-item sub">— Atelier Pouch</a>
+    <a href="acc-ball.html" class="side-menu-item sub">— Signature Ball</a>
+
+    <div class="side-menu-section">Dealers</div>
+    <a href="dealers.html" class="side-menu-item">매장 찾기 / 파트너 신청</a>
+  </nav>
+  <div class="side-menu-footer">
+    Orient Golf Co., Ltd.<br>
+    Premium Park Golf
+  </div>
+</aside>
+<div class="breadcrumb">
+  <a href="index.html">Home</a><span class="sep">/</span><span class="current">Clubs</span>
+</div>
+<section class="page-hero">
+  <h1>CLUBS</h1>
+  <div class="subtitle">Pink Stone &amp; Blanc Stone</div>
+</section>
+<section style="padding-top: 60px;">
+  <div class="cat-grid">
+    <a href="product-pink.html" class="cat-card">
+      <div class="cat-card-img"><div class="img-slot" data-slot="product-pink-main" data-default-src="images/pink-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Pink Stone</div><div class="filename">product-pink-main</div></div>
+      </div></div>
+      <div class="cat-card-body">
+        <div class="cat-card-cat">No. 01 · <span data-cms="products.items.pink.meta">Pink Edition</span></div>
+        <h3 class="cat-card-title" data-cms="products.items.pink.name">Pink Stone</h3>
+        <p class="cat-card-desc" data-cms="products.items.pink.short"></p>
+        <span class="link-arrow">View Detail</span>
+      </div>
+    </a>
+    <a href="product-blanc.html" class="cat-card">
+      <div class="cat-card-img"><div class="img-slot" data-slot="product-blanc-main" data-default-src="images/blanc-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Blanc Stone</div><div class="filename">product-blanc-main</div></div>
+      </div></div>
+      <div class="cat-card-body">
+        <div class="cat-card-cat">No. 02 · <span data-cms="products.items.blanc.meta">Blanc Edition</span></div>
+        <h3 class="cat-card-title" data-cms="products.items.blanc.name">Blanc Stone</h3>
+        <p class="cat-card-desc" data-cms="products.items.blanc.short"></p>
+        <span class="link-arrow">View Detail</span>
+      </div>
+    </a>
+  </div>
+</section>
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand" data-cms="brand.name">Laurellai</div>
+        <p class="footer-desc" data-cms="brand.footerDesc"></p>
+        <div class="newsletter">
+          <input type="email" placeholder="EMAIL">
+          <button>SUBSCRIBE</button>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Collection</h5>
+        <ul>
+          <li><a href="product-pink.html">Pink Stone</a></li>
+          <li><a href="product-blanc.html">Blanc Stone</a></li>
+          <li><a href="accessories.html">Bags</a></li>
+          <li><a href="accessories.html">Pouch &amp; Ball</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Information</h5>
+        <ul>
+          <li><a href="technology.html">Technology</a></li>
+          <li><a href="dealers.html">Dealers</a></li>
+          <li><a href="#">Brand Story</a></li>
+          <li><a href="journal.html">Journal</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Support</h5>
+        <ul>
+          <li><a href="#">고객센터</a></li>
+          <li><a href="#">A/S 안내</a></li>
+          <li><a href="#">매장 찾기</a></li>
+          <li><a href="#">FAQ</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div data-cms="brand.copyright">© 2026 LAURELLAI · Orient Golf Co., Ltd.</div>
+      <div>이용약관 · 개인정보처리방침</div>
+    </div>
+  </div>
+</footer>
+
+<a href="admin.html" class="admin-banner">Admin</a>
+<script src="assets/site.js"></script>
+</body>
+</html>

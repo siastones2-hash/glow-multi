@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signature Ball | LAURELLAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.detail-hero {
+  display: grid; grid-template-columns: 1.1fr 1fr;
+  gap: 80px; max-width: 1400px; margin: 0 auto;
+  padding: 60px 40px 100px;
+}
+.detail-images { display: grid; gap: 12px; }
+.detail-main { aspect-ratio: 4/5; overflow: hidden; background: var(--paper); }
+.detail-thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.detail-thumb { aspect-ratio: 1; overflow: hidden; background: var(--paper); }
+.detail-info { padding-top: 20px; }
+.detail-name {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(48px, 6vw, 72px); font-weight: 800;
+  line-height: 1; margin-bottom: 28px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.detail-short {
+  font-size: 15px; line-height: 1.85; color: var(--graphite);
+  padding-bottom: 36px; border-bottom: 1px solid var(--line);
+  margin-bottom: 36px;
+}
+.detail-long {
+  font-size: 14px; line-height: 1.95; color: var(--graphite);
+  white-space: pre-wrap; margin-bottom: 48px;
+}
+.spec-table { border-top: 1px solid var(--ink); margin-bottom: 48px; }
+.spec-row {
+  display: grid; grid-template-columns: 1fr 2fr;
+  padding: 18px 0; border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.spec-label {
+  font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--stone);
+}
+.spec-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+}
+.detail-cta { display: flex; gap: 16px; align-items: center; }
+
+.detail-gallery {
+  background: white; padding: 100px 0;
+  border-top: 1px solid var(--line);
+}
+.gallery-head {
+  max-width: 1400px; margin: 0 auto 60px;
+  padding: 0 40px;
+}
+.gallery-title {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(32px, 4vw, 48px); font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  margin-bottom: 12px;
+}
+.gallery-grid {
+  max-width: 1400px; margin: 0 auto; padding: 0 40px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  background: var(--line);
+}
+.gallery-item { aspect-ratio: 4/3; overflow: hidden; background: var(--paper); }
+
+@media (max-width: 1100px) {
+  .detail-hero { grid-template-columns: 1fr; gap: 40px; padding: 40px 24px 60px; }
+  .detail-name { font-size: 42px; }
+  .gallery-grid { grid-template-columns: 1fr; padding: 0 24px; }
+}
+
+@media (max-width: 768px) {
+  .detail-hero { gap: 28px; padding: 30px 16px 50px; }
+  .detail-name { font-size: 36px; }
+  .detail-short { font-size: 14px; padding-bottom: 24px; margin-bottom: 24px; }
+  .detail-long { font-size: 13px; margin-bottom: 32px; }
+  .spec-row { grid-template-columns: 1fr 1.5fr; padding: 14px 0; }
+  .spec-value { font-size: 16px; }
+  .detail-cta { flex-direction: column; gap: 12px; align-items: stretch; }
+  .detail-cta .btn-solid { text-align: center; }
+  .gallery-head { padding: 0 16px; }
+  .gallery-title { font-size: 24px; }
+  .gallery-grid { grid-template-columns: 1fr; padding: 0 16px; }
+  .detail-gallery { padding: 60px 0; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <div class="header-side">
+      <button class="icon-btn" id="menuToggle" aria-label="Open menu" style="background:none;border:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <a href="index.html" class="logo">Laurellai</a>
+    <div class="header-side right">
+      <a href="dealers.html" class="header-cta" style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink);">매장 찾기</a>
+    </div>
+  </div>
+  <nav class="header-nav">
+      <a href="products.html">CLUBS</a>
+      <a href="accessories.html" class="active">ACCESSORIES</a>
+      <a href="technology.html">TECHNOLOGY</a>
+      <a href="dealers.html">DEALERS</a>
+  </nav>
+</header>
+
+<!-- Side Menu -->
+<div class="side-menu-overlay" id="sideMenuOverlay"></div>
+<aside class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <a href="index.html" class="logo">Laurellai</a>
+    <button class="side-menu-close" id="sideMenuClose" aria-label="Close menu">×</button>
+  </div>
+  <nav class="side-menu-nav">
+    <div class="side-menu-section">Collection</div>
+    <a href="products.html" class="side-menu-item">Clubs</a>
+    <a href="product-pink.html" class="side-menu-item sub">— Pink Stone</a>
+    <a href="product-blanc.html" class="side-menu-item sub">— Blanc Stone</a>
+
+    <div class="side-menu-section">Technology</div>
+    <a href="technology.html" class="side-menu-item">Technology</a>
+
+    <div class="side-menu-section">Accessories</div>
+    <a href="accessories.html" class="side-menu-item">Accessories</a>
+    <a href="acc-bag-stand.html" class="side-menu-item sub">— Heritage Stand Bag</a>
+    <a href="acc-bag-small.html" class="side-menu-item sub">— Companion Bag</a>
+    <a href="acc-pouch.html" class="side-menu-item sub">— Atelier Pouch</a>
+    <a href="acc-ball.html" class="side-menu-item sub">— Signature Ball</a>
+
+    <div class="side-menu-section">Dealers</div>
+    <a href="dealers.html" class="side-menu-item">매장 찾기 / 파트너 신청</a>
+  </nav>
+  <div class="side-menu-footer">
+    Orient Golf Co., Ltd.<br>
+    Premium Park Golf
+  </div>
+</aside>
+<div class="breadcrumb">
+  <a href="index.html">Home</a><span class="sep">/</span>
+  <a href="accessories.html">Accessories</a><span class="sep">/</span>
+  <span class="current">Signature Ball</span>
+</div>
+
+<section class="detail-hero">
+  <div class="detail-images">
+    <div class="detail-main" style="aspect-ratio:1;"><div class="img-slot" data-slot="acc-ball-main" data-default-src="images/both-stones-wide.jpg">
+        <div class="img-slot-guide"><div class="label">Signature Ball</div><div class="filename">acc-ball-main</div></div>
+      </div></div>
+    <div class="detail-thumbs">
+      <div class="detail-thumb"><div class="img-slot" data-slot="acc-ball-detail-1" data-default-src="images/pink-stone.jpg">
+        <div class="img-slot-guide"><div class="label">D1</div><div class="filename">acc-ball-detail-1</div></div>
+      </div></div>
+      <div class="detail-thumb"><div class="img-slot" data-slot="acc-ball-detail-2" data-default-src="images/blanc-stone.jpg">
+        <div class="img-slot-guide"><div class="label">D2</div><div class="filename">acc-ball-detail-2</div></div>
+      </div></div>
+      <div class="detail-thumb"><div class="img-slot" data-slot="acc-ball-detail-3" data-default-src="images/both-stones.jpg">
+        <div class="img-slot-guide"><div class="label">D3</div><div class="filename">acc-ball-detail-3</div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="detail-info">
+    <h1 class="detail-name" data-cms="accessories.items.ball.name">Signature Ball</h1>
+    <p class="detail-short" data-cms="accessories.items.ball.short"></p>
+    <p class="detail-long" data-cms="accessories.items.ball.long"></p>
+
+    <div class="detail-cta">
+      <a href="dealers.html" class="btn-solid">매장 찾기</a>
+      <a href="accessories.html" class="link-arrow">컬렉션 보기</a>
+    </div>
+  </div>
+</section>
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand" data-cms="brand.name">Laurellai</div>
+        <p class="footer-desc" data-cms="brand.footerDesc"></p>
+        <div class="newsletter">
+          <input type="email" placeholder="EMAIL">
+          <button>SUBSCRIBE</button>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Collection</h5>
+        <ul>
+          <li><a href="product-pink.html">Pink Stone</a></li>
+          <li><a href="product-blanc.html">Blanc Stone</a></li>
+          <li><a href="accessories.html">Bags</a></li>
+          <li><a href="accessories.html">Pouch &amp; Ball</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Information</h5>
+        <ul>
+          <li><a href="technology.html">Technology</a></li>
+          <li><a href="dealers.html">Dealers</a></li>
+          <li><a href="#">Brand Story</a></li>
+          <li><a href="journal.html">Journal</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Support</h5>
+        <ul>
+          <li><a href="#">고객센터</a></li>
+          <li><a href="#">A/S 안내</a></li>
+          <li><a href="#">매장 찾기</a></li>
+          <li><a href="#">FAQ</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div data-cms="brand.copyright">© 2026 LAURELLAI · Orient Golf Co., Ltd.</div>
+      <div>이용약관 · 개인정보처리방침</div>
+    </div>
+  </div>
+</footer>
+
+<a href="admin.html" class="admin-banner">Admin</a>
+<script src="assets/site.js"></script>
+</body>
+</html>

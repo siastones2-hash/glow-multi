@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | LAURELLAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --graphite: #4a4a4a;
+    --stone: #8a8580;
+    --silver: #c4bfb8;
+    --paper: #ededea;
+    --offwhite: #f0eeea;
+    --white: #ffffff;
+    --gold: #a08552;
+    --line: #d8d4cc;
+    --ok: #2d6a4f;
+    --warn: #b8860b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    background: var(--offwhite);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  .admin-header {
+    background: var(--ink); color: var(--offwhite);
+    padding: 18px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .admin-logo { font-size: 14px; font-weight: 500; letter-spacing: 0.42em; }
+  .admin-logo .badge {
+    margin-left: 12px; font-size: 10px;
+    letter-spacing: 0.2em; color: var(--gold);
+    padding: 3px 8px; border: 1px solid var(--gold);
+  }
+  .admin-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 18px;
+    font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: inherit;
+    cursor: pointer; border: none;
+    transition: all 0.3s;
+  }
+  .btn-primary { background: var(--gold); color: var(--ink); }
+  .btn-primary:hover { background: #c4a065; }
+  .btn-ghost {
+    background: transparent; color: var(--offwhite);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .btn-ghost:hover { border-color: var(--offwhite); }
+  .btn-danger { background: transparent; color: #c97070; border: 1px solid rgba(201,112,112,0.4); }
+
+  .admin-wrap {
+    display: grid; grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 64px);
+  }
+  .sidebar {
+    background: var(--white);
+    border-right: 1px solid var(--line);
+    padding: 28px 0;
+    position: sticky; top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+  .sidebar-section {
+    font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--stone);
+    padding: 16px 24px 8px;
+  }
+  .sidebar-item {
+    display: block;
+    padding: 10px 24px;
+    font-size: 13px; color: var(--graphite);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .sidebar-item:hover { background: var(--offwhite); color: var(--ink); }
+  .sidebar-item.active {
+    color: var(--ink);
+    border-left-color: var(--gold);
+    background: var(--offwhite);
+    font-weight: 500;
+  }
+
+  .main { padding: 40px 48px 80px; max-width: 920px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px; font-weight: 400; margin-bottom: 8px;
+  }
+  .panel-desc {
+    font-size: 13px; color: var(--graphite);
+    margin-bottom: 40px; padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .field { margin-bottom: 28px; }
+  .field-label {
+    display: block; font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--graphite); margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .field-hint {
+    font-size: 11px; color: var(--stone);
+    margin-top: 6px; line-height: 1.5;
+  }
+  .field input[type="text"], .field textarea {
+    width: 100%; padding: 12px 14px;
+    border: 1px solid var(--line);
+    background: var(--white);
+    font-family: inherit; font-size: 13px;
+    color: var(--ink); outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--ink); }
+  .field textarea { resize: vertical; min-height: 90px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .group {
+    background: var(--white);
+    border: 1px solid var(--line);
+    padding: 28px; margin-bottom: 24px;
+  }
+  .group-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic; font-size: 18px;
+    color: var(--gold); margin-bottom: 4px;
+  }
+  .group-sub {
+    font-size: 11px; color: var(--stone);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 24px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .image-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+  }
+  .image-card {
+    background: var(--white); border: 1px solid var(--line);
+    padding: 16px;
+  }
+  .image-card-label {
+    font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--graphite); font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .image-card-slot {
+    font-family: monospace; font-size: 10px;
+    color: var(--stone); margin-bottom: 12px;
+  }
+  .image-preview {
+    aspect-ratio: 4/3; background: var(--paper);
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .image-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .image-preview-empty {
+    font-size: 11px; color: var(--stone);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .image-actions { display: flex; gap: 8px; }
+  .image-actions label {
+    flex: 1; padding: 9px 12px;
+    font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--ink); color: var(--offwhite);
+    text-align: center; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .image-actions label:hover { background: var(--graphite); }
+  .image-actions input[type="file"] { display: none; }
+  .image-actions .remove-btn {
+    padding: 9px 12px;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; color: var(--stone);
+    border: 1px solid var(--line); cursor: pointer;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 14px 24px;
+    background: var(--ink); color: var(--offwhite);
+    font-size: 12px; letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-left: 3px solid var(--gold);
+    transform: translateX(150%);
+    transition: transform 0.4s;
+    z-index: 100;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.ok { border-left-color: var(--ok); }
+  .toast.warn { border-left-color: var(--warn); }
+
+  .help-box {
+    background: var(--white); border: 1px solid var(--line);
+    padding: 32px; margin-bottom: 24px;
+  }
+  .help-box h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; margin-bottom: 12px;
+  }
+  .help-box ol { margin-left: 20px; margin-top: 12px; }
+  .help-box li {
+    font-size: 13px; color: var(--graphite);
+    line-height: 1.9; margin-bottom: 4px;
+  }
+  .help-box code {
+    font-family: monospace;
+    background: var(--paper);
+    padding: 2px 6px;
+    font-size: 12px; color: var(--gold);
+  }
+
+  .storage-info {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px; background: var(--paper);
+    margin-bottom: 32px;
+    font-size: 12px; color: var(--graphite);
+  }
+  .storage-info strong { color: var(--ink); }
+
+  @media (max-width: 900px) {
+    .admin-wrap { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); }
+    .main { padding: 32px 24px; }
+    .field-row { grid-template-columns: 1fr; }
+    .image-grid { grid-template-columns: 1fr; }
+    .admin-header { flex-direction: column; gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="admin-header">
+  <div class="admin-logo">LAURELLAI <span class="badge">ADMIN</span></div>
+  <div class="admin-actions">
+    <a href="index.html" target="_blank" class="btn btn-ghost">사이트 미리보기 ↗</a>
+    <button class="btn btn-ghost" onclick="exportJSON()">JSON 내보내기</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">JSON 불러오기</button>
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importJSON(event)">
+    <button class="btn btn-primary" onclick="saveAll()">전체 저장</button>
+  </div>
+</div>
+
+<div class="admin-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-section">시작</div>
+    <a class="sidebar-item active" data-panel="help">사용 가이드</a>
+
+    <div class="sidebar-section">메인 페이지</div>
+    <a class="sidebar-item" data-panel="brand">브랜드 정보</a>
+    <a class="sidebar-item" data-panel="home-hero">히어로 (PROVEN)</a>
+    <a class="sidebar-item" data-panel="home-story">브랜드 스토리</a>
+    <a class="sidebar-item" data-panel="home-lineup">제품 라인업</a>
+    <a class="sidebar-item" data-panel="home-tech">테크놀로지</a>
+    <a class="sidebar-item" data-panel="home-stats">스탯</a>
+    <a class="sidebar-item" data-panel="home-acc">악세사리</a>
+    <a class="sidebar-item" data-panel="home-event">이벤트 배너</a>
+    <a class="sidebar-item" data-panel="home-dealers">대리점</a>
+    <a class="sidebar-item" data-panel="home-journal">저널 / 뉴스</a>
+
+    <div class="sidebar-section">상세 페이지</div>
+    <a class="sidebar-item" data-panel="products">Products</a>
+    <a class="sidebar-item" data-panel="technology">Technology</a>
+    <a class="sidebar-item" data-panel="accessories">Accessories</a>
+    <a class="sidebar-item" data-panel="dealers">Dealers</a>
+    <a class="sidebar-item" data-panel="journal-articles">Journal 본문</a>
+    <a class="sidebar-item" data-panel="event-page">Event 페이지</a>
+
+    <div class="sidebar-section">이미지</div>
+    <a class="sidebar-item" data-panel="images">이미지 업로드</a>
+  </aside>
+
+  <main class="main">
+
+    <!-- 사용 가이드 -->
+    <section class="panel active" id="panel-help">
+      <h1 class="panel-title">사용 가이드</h1>
+      <p class="panel-desc">로렐라이 홈페이지 콘텐츠 관리 시스템</p>
+      <div class="storage-info">
+        <div>저장 상태: <strong id="storageStatus">확인 중...</strong></div>
+        <div>용량: <strong id="storageSize">-</strong></div>
+      </div>
+      <div class="help-box">
+        <h3>1. 콘텐츠 수정</h3>
+        <ol>
+          <li>왼쪽 메뉴에서 수정할 영역 선택</li>
+          <li>텍스트 필드 입력</li>
+          <li>상단 <strong>전체 저장</strong> 버튼 클릭</li>
+          <li><strong>사이트 미리보기</strong>로 결과 확인</li>
+        </ol>
+      </div>
+      <div class="help-box">
+        <h3>2. 이미지 업로드</h3>
+        <ol>
+          <li>왼쪽 <strong>이미지 업로드</strong> 클릭</li>
+          <li>각 카드에서 <strong>업로드</strong> 버튼</li>
+          <li>이미지 선택 후 미리보기 확인</li>
+          <li>전체 저장으로 반영</li>
+        </ol>
+        <p class="field-hint">⚠ 파일당 2MB 이하 권장. 합계 5MB 한도.</p>
+      </div>
+      <div class="help-box">
+        <h3>3. 백업 / 이전</h3>
+        <ol>
+          <li><strong>JSON 내보내기</strong>: 모든 콘텐츠를 파일로</li>
+          <li><strong>JSON 불러오기</strong>: 백업 복원 또는 다른 PC로 이전</li>
+        </ol>
+      </div>
+      <div class="help-box" style="border-color:#c97070;">
+        <h3 style="color:#c97070;">⚠ 초기화</h3>
+        <p style="color:var(--graphite);font-size:13px;">모든 입력 내용을 지우고 처음 상태로 되돌립니다.</p>
+        <button class="btn btn-danger" style="margin-top:16px;" onclick="resetAll()">전체 초기화</button>
+      </div>
+    </section>
+
+    <!-- 브랜드 -->
+    <section class="panel" id="panel-brand">
+      <h1 class="panel-title">브랜드 정보</h1>
+      <p class="panel-desc">모든 페이지 공통 항목</p>
+      <div class="field"><label class="field-label">브랜드명 (로고)</label><input type="text" data-edit="brand.name"></div>
+      <div class="field"><label class="field-label">푸터 소개글</label><textarea data-edit="brand.footerDesc"></textarea></div>
+      <div class="field"><label class="field-label">저작권 문구</label><input type="text" data-edit="brand.copyright"></div>
+    </section>
+
+    <!-- 메인: 히어로 -->
+    <section class="panel" id="panel-home-hero">
+      <h1 class="panel-title">메인 - 히어로 (PROVEN)</h1>
+      <p class="panel-desc">메인 페이지 최상단 영역</p>
+      <div class="field"><label class="field-label">상단 거대 타이포</label><input type="text" data-edit="home.heroTop"></div>
+      <div class="field"><label class="field-label">하단 거대 타이포</label><input type="text" data-edit="home.heroBottom"></div>
+      <div class="field"><label class="field-label">제품명 (캐퍼션 위)</label><input type="text" data-edit="home.heroName"></div>
+      <div class="field"><label class="field-label">제품 소개 (캐퍼션 아래)</label><input type="text" data-edit="home.heroRole"></div>
+      <div class="field"><label class="field-label">브랜드 워드마크</label><input type="text" data-edit="home.heroProduct"></div>
+    </section>
+
+    <!-- 메인: 브랜드 스토리 -->
+    <section class="panel" id="panel-home-story">
+      <h1 class="panel-title">메인 - 브랜드 스토리</h1>
+      <p class="panel-desc">검정 배경 섹션</p>
+      <div class="field"><label class="field-label">아이브로우</label><input type="text" data-edit="home.storyEyebrow"></div>
+      <div class="field"><label class="field-label">제목 (br로 줄바꿈)</label><textarea data-edit="home.storyTitle"></textarea></div>
+      <div class="field"><label class="field-label">본문 1단락</label><textarea data-edit="home.storyP1"></textarea></div>
+      <div class="field"><label class="field-label">본문 2단락</label><textarea data-edit="home.storyP2"></textarea></div>
+    </section>
+
+    <!-- 메인: 라인업 -->
+    <section class="panel" id="panel-home-lineup">
+      <h1 class="panel-title">메인 - 제품 라인업</h1>
+      <p class="panel-desc">Pink/Blanc 카드 섹션 헤더</p>
+      <div class="field"><label class="field-label">아이브로우</label><input type="text" data-edit="home.lineupEyebrow"></div>
+      <div class="field"><label class="field-label">제목</label><textarea data-edit="home.lineupTitle"></textarea></div>
+      <div class="field"><label class="field-label">설명</label><textarea data-edit="home.lineupDesc"></textarea></div>
+      <p class="field-hint">제품 카드의 이름·설명은 <strong>Products</strong> 메뉴에서 수정합니다.</p>
+    </section>
+
+    <!-- 메인: 테크 -->
+    <section class="panel" id="panel-home-tech">
+      <h1 class="panel-title">메인 - 테크놀로지</h1>
+      <div class="field"><label class="field-label">아이브로우</label><input type="text" data-edit="home.techEyebrow"></div>
+      <div class="field"><label class="field-label">제목</label><textarea data-edit="home.techTitle"></textarea></div>
+      <div class="field"><label class="field-label">설명</label><textarea data-edit="home.techDesc"></textarea></div>
+      <p class="field-hint">3개 기술 카드의 상세 내용은 <strong>Technology</strong> 메뉴에서 수정합니다.</p>
+    </section>
+
+    <!-- 메인: 스탯 -->
+    <section class="panel" id="panel-home-stats">
+      <h1 class="panel-title">메인 - 스탯 (숫자 4개)</h1>
+      <p class="panel-desc">큰 숫자 + 라벨</p>
+      <div class="group">
+        <div class="group-title">No. 01</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">숫자</label><input type="text" data-edit="home.stat1Num"></div>
+          <div class="field"><label class="field-label">라벨</label><input type="text" data-edit="home.stat1Label"></div>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">No. 02</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">숫자</label><input type="text" data-edit="home.stat2Num"></div>
+          <div class="field"><label class="field-label">라벨</label><input type="text" data-edit="home.stat2Label"></div>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">No. 03</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">숫자</label><input type="text" data-edit="home.stat3Num"></div>
+          <div class="field"><label class="field-label">라벨</label><input type="text" data-edit="home.stat3Label"></div>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">No. 04</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">숫자</label><input type="text" data-edit="home.stat4Num"></div>
+          <div class="field"><label class="field-label">라벨</label><input type="text" data-edit="home.stat4Label"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 메인: 악세사리 -->
+    <section class="panel" id="panel-home-acc">
+      <h1 class="panel-title">메인 - 악세사리</h1>
+      <div class="field"><label class="field-label">아이브로우 (비우면 숨김)</label><input type="text" data-edit="home.accEyebrow"></div>
+      <div class="field"><label class="field-label">대제목</label><input type="text" data-edit="home.accTitle"></div>
+      <div class="field"><label class="field-label">부제 (이탤릭)</label><input type="text" data-edit="home.accSubtitle"></div>
+      <div class="field"><label class="field-label">소개 문단</label><textarea data-edit="home.accDesc" rows="4"></textarea></div>
+      <p class="field-hint">악세사리 카드 내용은 <strong>Accessories</strong> 메뉴에서 수정합니다.</p>
+    </section>
+
+    <!-- 메인: 이벤트 -->
+    <section class="panel" id="panel-home-event">
+      <h1 class="panel-title">메인 - 이벤트 배너 (검정)</h1>
+      <div class="field"><label class="field-label">큰 로고 텍스트 (LRL)</label><input type="text" data-edit="home.eventLogo"></div>
+      <div class="field"><label class="field-label">이벤트 제목</label><input type="text" data-edit="home.eventTitle"></div>
+      <div class="field"><label class="field-label">기간 정보</label><input type="text" data-edit="home.eventPeriod"></div>
+      <div class="field"><label class="field-label">CTA 버튼 문구</label><input type="text" data-edit="home.eventCta"></div>
+    </section>
+
+    <!-- 메인: 대리점 -->
+    <section class="panel" id="panel-home-dealers">
+      <h1 class="panel-title">메인 - 대리점 섹션</h1>
+      <div class="field"><label class="field-label">아이브로우</label><input type="text" data-edit="home.dealerEyebrow"></div>
+      <div class="field"><label class="field-label">제목</label><textarea data-edit="home.dealerTitle"></textarea></div>
+      <div class="field"><label class="field-label">설명</label><textarea data-edit="home.dealerDesc"></textarea></div>
+      <div class="field"><label class="field-label">혜택 리스트 (한 줄에 하나)</label>
+        <textarea data-edit="home.dealerBenefits" rows="5" data-array="true"></textarea>
+      </div>
+    </section>
+
+    <!-- 메인: 저널 -->
+    <section class="panel" id="panel-home-journal">
+      <h1 class="panel-title">메인 - 저널 / 뉴스</h1>
+      <div class="field"><label class="field-label">아이브로우</label><input type="text" data-edit="home.journalEyebrow"></div>
+      <div class="field"><label class="field-label">제목</label><textarea data-edit="home.journalTitle"></textarea></div>
+      <div class="field"><label class="field-label">설명</label><textarea data-edit="home.journalDesc"></textarea></div>
+
+      <div class="group">
+        <div class="group-title">스토리 No. 01</div>
+        <div class="field"><label class="field-label">날짜</label><input type="text" data-edit="home.journal1Date"></div>
+        <div class="field"><label class="field-label">제목</label><input type="text" data-edit="home.journal1Title"></div>
+        <div class="field"><label class="field-label">요약</label><textarea data-edit="home.journal1Excerpt"></textarea></div>
+      </div>
+      <div class="group">
+        <div class="group-title">스토리 No. 02</div>
+        <div class="field"><label class="field-label">날짜</label><input type="text" data-edit="home.journal2Date"></div>
+        <div class="field"><label class="field-label">제목</label><input type="text" data-edit="home.journal2Title"></div>
+        <div class="field"><label class="field-label">요약</label><textarea data-edit="home.journal2Excerpt"></textarea></div>
+      </div>
+      <div class="group">
+        <div class="group-title">스토리 No. 03</div>
+        <div class="field"><label class="field-label">날짜</label><input type="text" data-edit="home.journal3Date"></div>
+        <div class="field"><label class="field-label">제목</label><input type="text" data-edit="home.journal3Title"></div>
+        <div class="field"><label class="field-label">요약</label><textarea data-edit="home.journal3Excerpt"></textarea></div>
+      </div>
+    </section>
+
+    <!-- Products -->
+    <section class="panel" id="panel-products">
+      <h1 class="panel-title">Products 상세</h1>
+      <p class="panel-desc">Pink Stone, Blanc Stone 상세 페이지 콘텐츠</p>
+
+      <div class="group">
+        <div class="group-title">Pink Stone</div>
+        <div class="group-sub">No. 01</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">제품명</label><input type="text" data-edit="products.items.pink.name"></div>
+          <div class="field"><label class="field-label">에디션</label><input type="text" data-edit="products.items.pink.meta"></div>
+        </div>
+        <div class="field"><label class="field-label">짧은 소개</label><textarea data-edit="products.items.pink.short"></textarea></div>
+        <div class="field"><label class="field-label">상세 설명</label><textarea data-edit="products.items.pink.long" rows="6"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙1 라벨</label><input type="text" data-edit="products.items.pink.spec1Label"></div>
+          <div class="field"><label class="field-label">스펙1 값</label><input type="text" data-edit="products.items.pink.spec1Value"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙2 라벨</label><input type="text" data-edit="products.items.pink.spec2Label"></div>
+          <div class="field"><label class="field-label">스펙2 값</label><input type="text" data-edit="products.items.pink.spec2Value"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙3 라벨</label><input type="text" data-edit="products.items.pink.spec3Label"></div>
+          <div class="field"><label class="field-label">스펙3 값</label><input type="text" data-edit="products.items.pink.spec3Value"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙4 라벨</label><input type="text" data-edit="products.items.pink.spec4Label"></div>
+          <div class="field"><label class="field-label">스펙4 값</label><input type="text" data-edit="products.items.pink.spec4Value"></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Blanc Stone</div>
+        <div class="group-sub">No. 02</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">제품명</label><input type="text" data-edit="products.items.blanc.name"></div>
+          <div class="field"><label class="field-label">에디션</label><input type="text" data-edit="products.items.blanc.meta"></div>
+        </div>
+        <div class="field"><label class="field-label">짧은 소개</label><textarea data-edit="products.items.blanc.short"></textarea></div>
+        <div class="field"><label class="field-label">상세 설명</label><textarea data-edit="products.items.blanc.long" rows="6"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙1 라벨</label><input type="text" data-edit="products.items.blanc.spec1Label"></div>
+          <div class="field"><label class="field-label">스펙1 값</label><input type="text" data-edit="products.items.blanc.spec1Value"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙2 라벨</label><input type="text" data-edit="products.items.blanc.spec2Label"></div>
+          <div class="field"><label class="field-label">스펙2 값</label><input type="text" data-edit="products.items.blanc.spec2Value"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙3 라벨</label><input type="text" data-edit="products.items.blanc.spec3Label"></div>
+          <div class="field"><label class="field-label">스펙3 값</label><input type="text" data-edit="products.items.blanc.spec3Value"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙4 라벨</label><input type="text" data-edit="products.items.blanc.spec4Label"></div>
+          <div class="field"><label class="field-label">스펙4 값</label><input type="text" data-edit="products.items.blanc.spec4Value"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Technology -->
+    <section class="panel" id="panel-technology">
+      <h1 class="panel-title">Technology 페이지</h1>
+      <p class="panel-desc">3개 기술 피처 + 부제 + 마무리</p>
+
+      <div class="group">
+        <div class="group-title">페이지 상단 부제</div>
+        <div class="field"><label class="field-label">서브타이틀 (TECHNOLOGY 아래)</label><input type="text" data-edit="technology.pageSubtitle"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Feature 01 — Square Head</div>
+        <div class="field"><label class="field-label">제목 (br 사용 가능)</label><textarea data-edit="technology.f1Title"></textarea></div>
+        <div class="field"><label class="field-label">설명</label><textarea data-edit="technology.f1Desc"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙1 숫자</label><input type="text" data-edit="technology.f1Num1"></div>
+          <div class="field"><label class="field-label">스펙1 라벨</label><input type="text" data-edit="technology.f1Label1"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙2 숫자</label><input type="text" data-edit="technology.f1Num2"></div>
+          <div class="field"><label class="field-label">스펙2 라벨</label><input type="text" data-edit="technology.f1Label2"></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Feature 02 — Rear 3-Weight</div>
+        <div class="field"><label class="field-label">제목</label><textarea data-edit="technology.f2Title"></textarea></div>
+        <div class="field"><label class="field-label">설명</label><textarea data-edit="technology.f2Desc"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙1 숫자</label><input type="text" data-edit="technology.f2Num1"></div>
+          <div class="field"><label class="field-label">스펙1 라벨</label><input type="text" data-edit="technology.f2Label1"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙2 숫자</label><input type="text" data-edit="technology.f2Num2"></div>
+          <div class="field"><label class="field-label">스펙2 라벨</label><input type="text" data-edit="technology.f2Label2"></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Feature 03 — Patent Pending</div>
+        <div class="field"><label class="field-label">제목</label><textarea data-edit="technology.f3Title"></textarea></div>
+        <div class="field"><label class="field-label">설명</label><textarea data-edit="technology.f3Desc"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙1 숫자</label><input type="text" data-edit="technology.f3Num1"></div>
+          <div class="field"><label class="field-label">스펙1 라벨</label><input type="text" data-edit="technology.f3Label1"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">스펙2 숫자</label><input type="text" data-edit="technology.f3Num2"></div>
+          <div class="field"><label class="field-label">스펙2 라벨</label><input type="text" data-edit="technology.f3Label2"></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">페이지 마무리 (클로징 메시지)</div>
+        <div class="field"><label class="field-label">제목</label><textarea data-edit="technology.closingTitle"></textarea></div>
+        <div class="field"><label class="field-label">본문</label><textarea data-edit="technology.closingDesc" rows="4"></textarea></div>
+      </div>
+    </section>
+
+    <!-- Accessories -->
+    <section class="panel" id="panel-accessories">
+      <h1 class="panel-title">Accessories 상세</h1>
+      <p class="panel-desc">가방 2종 + 파우치 + 볼</p>
+
+      <div class="group">
+        <div class="group-title">No. 01 — Stand Bag</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">제품명</label><input type="text" data-edit="accessories.items.bag-stand.name"></div>
+          <div class="field"><label class="field-label">메타</label><input type="text" data-edit="accessories.items.bag-stand.meta"></div>
+        </div>
+        <div class="field"><label class="field-label">짧은 소개</label><input type="text" data-edit="accessories.items.bag-stand.short"></div>
+        <div class="field"><label class="field-label">상세 설명</label><textarea data-edit="accessories.items.bag-stand.long" rows="4"></textarea></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">No. 02 — Companion Bag</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">제품명</label><input type="text" data-edit="accessories.items.bag-small.name"></div>
+          <div class="field"><label class="field-label">메타</label><input type="text" data-edit="accessories.items.bag-small.meta"></div>
+        </div>
+        <div class="field"><label class="field-label">짧은 소개</label><input type="text" data-edit="accessories.items.bag-small.short"></div>
+        <div class="field"><label class="field-label">상세 설명</label><textarea data-edit="accessories.items.bag-small.long" rows="4"></textarea></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">No. 03 — Pouch</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">제품명</label><input type="text" data-edit="accessories.items.pouch.name"></div>
+          <div class="field"><label class="field-label">메타</label><input type="text" data-edit="accessories.items.pouch.meta"></div>
+        </div>
+        <div class="field"><label class="field-label">짧은 소개</label><input type="text" data-edit="accessories.items.pouch.short"></div>
+        <div class="field"><label class="field-label">상세 설명</label><textarea data-edit="accessories.items.pouch.long" rows="4"></textarea></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">No. 04 — Ball</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">제품명</label><input type="text" data-edit="accessories.items.ball.name"></div>
+          <div class="field"><label class="field-label">메타</label><input type="text" data-edit="accessories.items.ball.meta"></div>
+        </div>
+        <div class="field"><label class="field-label">짧은 소개</label><input type="text" data-edit="accessories.items.ball.short"></div>
+        <div class="field"><label class="field-label">상세 설명</label><textarea data-edit="accessories.items.ball.long" rows="4"></textarea></div>
+      </div>
+    </section>
+
+    <!-- Dealers -->
+    <section class="panel" id="panel-dealers">
+      <h1 class="panel-title">Dealers 페이지</h1>
+      <div class="field"><label class="field-label">파트너 섹션 제목</label><textarea data-edit="dealers.partnerTitle"></textarea></div>
+      <div class="field"><label class="field-label">파트너 설명</label><textarea data-edit="dealers.partnerDesc" rows="4"></textarea></div>
+      <div class="field"><label class="field-label">혜택 (한 줄에 하나)</label>
+        <textarea data-edit="dealers.benefits" rows="5" data-array="true"></textarea>
+      </div>
+    </section>
+
+    <!-- Journal Articles -->
+    <section class="panel" id="panel-journal-articles">
+      <h1 class="panel-title">Journal 기사 본문</h1>
+      <p class="panel-desc">메인 페이지의 저널 카드를 클릭하면 보이는 상세 페이지. 제목/날짜/요약은 "메인 - 저널" 패널에서 수정하세요.</p>
+
+      <div class="group">
+        <div class="group-title">기사 No. 01</div>
+        <div class="field"><label class="field-label">본문 (단락 사이는 빈 줄로 구분)</label>
+          <textarea data-edit="journal.article1Body" rows="14"></textarea>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">기사 No. 02</div>
+        <div class="field"><label class="field-label">본문</label>
+          <textarea data-edit="journal.article2Body" rows="14"></textarea>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">기사 No. 03</div>
+        <div class="field"><label class="field-label">본문</label>
+          <textarea data-edit="journal.article3Body" rows="14"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Event Page -->
+    <section class="panel" id="panel-event-page">
+      <h1 class="panel-title">Event 페이지</h1>
+      <p class="panel-desc">"이벤트 자세히 보기" 클릭 시 진입하는 페이지. 메인 페이지의 이벤트 배너 카피는 "메인 - 이벤트 배너"에서 수정합니다.</p>
+
+      <div class="field"><label class="field-label">소개 문구 (페이지 상단)</label>
+        <textarea data-edit="event.intro" rows="3"></textarea>
+      </div>
+      <div class="group">
+        <div class="group-title">이벤트 혜택</div>
+        <div class="field"><label class="field-label">혜택 리스트 (한 줄에 하나)</label>
+          <textarea data-edit="event.benefits" rows="5" data-array="true"></textarea>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">참여 방법</div>
+        <div class="field"><label class="field-label">참여 방법 (한 줄에 하나)</label>
+          <textarea data-edit="event.howto" rows="4" data-array="true"></textarea>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">유의사항</div>
+        <div class="field"><label class="field-label">유의사항 (한 줄에 하나)</label>
+          <textarea data-edit="event.notice" rows="4" data-array="true"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Images -->
+    <section class="panel" id="panel-images">
+      <h1 class="panel-title">이미지 업로드</h1>
+      <p class="panel-desc">각 페이지의 이미지를 업로드하세요. 업로드 후 상단 "전체 저장"을 눌러야 반영됩니다.</p>
+
+      <div class="group">
+        <div class="group-title">메인 페이지</div>
+        <div class="group-sub">Index Hero / Story / Tech / Acc / Dealers / Journal</div>
+        <div class="image-grid" id="imageGrid-home"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Products 상세 — Pink Stone</div>
+        <div class="image-grid" id="imageGrid-pink"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Products 상세 — Blanc Stone</div>
+        <div class="image-grid" id="imageGrid-blanc"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Technology</div>
+        <div class="image-grid" id="imageGrid-tech"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Accessories 상세</div>
+        <div class="image-grid" id="imageGrid-acc"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Journal / Event</div>
+        <div class="image-grid" id="imageGrid-extras"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/site.js"></script>
+<script>
+// ===== 이미지 슬롯 정의 =====
+const IMAGE_SLOTS = {
+  'imageGrid-home': [
+    { id: 'hero-main', label: '메인 히어로 (PROVEN)' },
+    { id: 'home-story', label: '브랜드 스토리' },
+    { id: 'home-tech-1', label: '테크 카드 1 (MOI)' },
+    { id: 'home-tech-2', label: '테크 카드 2 (Face)' },
+    { id: 'home-tech-3', label: '테크 카드 3 (Shaft)' },
+    { id: 'home-acc-1', label: '악세사리 1 (Stand Bag)' },
+    { id: 'home-acc-2', label: '악세사리 2 (Companion)' },
+    { id: 'home-acc-3', label: '악세사리 3 (Pouch)' },
+    { id: 'home-acc-4', label: '악세사리 4 (Ball)' },
+    { id: 'home-dealers', label: '대리점 섹션' },
+    { id: 'home-journal-1', label: '저널 1' },
+    { id: 'home-journal-2', label: '저널 2' },
+    { id: 'home-journal-3', label: '저널 3' }
+  ],
+  'imageGrid-pink': [
+    { id: 'product-pink-main', label: 'Pink — 메인' },
+    { id: 'product-pink-detail-1', label: 'Pink — 디테일 1' },
+    { id: 'product-pink-detail-2', label: 'Pink — 디테일 2' },
+    { id: 'product-pink-detail-3', label: 'Pink — 디테일 3' },
+    { id: 'product-pink-gallery-1', label: 'Pink — 갤러리 1' },
+    { id: 'product-pink-gallery-2', label: 'Pink — 갤러리 2' }
+  ],
+  'imageGrid-blanc': [
+    { id: 'product-blanc-main', label: 'Blanc — 메인' },
+    { id: 'product-blanc-detail-1', label: 'Blanc — 디테일 1' },
+    { id: 'product-blanc-detail-2', label: 'Blanc — 디테일 2' },
+    { id: 'product-blanc-detail-3', label: 'Blanc — 디테일 3' },
+    { id: 'product-blanc-gallery-1', label: 'Blanc — 갤러리 1' },
+    { id: 'product-blanc-gallery-2', label: 'Blanc — 갤러리 2' }
+  ],
+  'imageGrid-tech': [
+    { id: 'tech-moi', label: 'MOI 시각화' },
+    { id: 'tech-face', label: 'Forged Face' },
+    { id: 'tech-shaft', label: 'Balanced Shaft' }
+  ],
+  'imageGrid-acc': [
+    { id: 'acc-bag-stand-main', label: 'Stand Bag 메인' },
+    { id: 'acc-bag-stand-detail-1', label: 'Stand Bag D1' },
+    { id: 'acc-bag-stand-detail-2', label: 'Stand Bag D2' },
+    { id: 'acc-bag-stand-detail-3', label: 'Stand Bag D3' },
+    { id: 'acc-bag-small-main', label: 'Companion 메인' },
+    { id: 'acc-bag-small-detail-1', label: 'Companion D1' },
+    { id: 'acc-bag-small-detail-2', label: 'Companion D2' },
+    { id: 'acc-bag-small-detail-3', label: 'Companion D3' },
+    { id: 'acc-pouch-main', label: 'Pouch 메인' },
+    { id: 'acc-pouch-detail-1', label: 'Pouch D1' },
+    { id: 'acc-pouch-detail-2', label: 'Pouch D2' },
+    { id: 'acc-pouch-detail-3', label: 'Pouch D3' },
+    { id: 'acc-ball-main', label: 'Ball 메인' },
+    { id: 'acc-ball-detail-1', label: 'Ball D1' },
+    { id: 'acc-ball-detail-2', label: 'Ball D2' },
+    { id: 'acc-ball-detail-3', label: 'Ball D3' }
+  ],
+  'imageGrid-extras': [
+    { id: 'journal-1-feature', label: 'Journal #1 메인 이미지' },
+    { id: 'journal-2-feature', label: 'Journal #2 메인 이미지' },
+    { id: 'journal-3-feature', label: 'Journal #3 메인 이미지' },
+    { id: 'event-main', label: 'Event 페이지 메인 이미지' }
+  ]
+};
+
+let content = getContent();
+
+// 사이드바 패널 전환
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    const panel = document.getElementById('panel-' + item.dataset.panel);
+    if (panel) panel.classList.add('active');
+  });
+});
+
+function getByPathLocal(obj, path) {
+  return path.split('.').reduce((acc, key) => acc && acc[key], obj);
+}
+function setByPath(obj, path, value) {
+  const keys = path.split('.');
+  const last = keys.pop();
+  const target = keys.reduce((acc, key) => {
+    if (!acc[key]) acc[key] = {};
+    return acc[key];
+  }, obj);
+  target[last] = value;
+}
+
+function populateFields() {
+  document.querySelectorAll('[data-edit]').forEach(el => {
+    const path = el.dataset.edit;
+    const value = getByPathLocal(content, path);
+    if (value === undefined || value === null) return;
+    if (el.dataset.array === 'true' && Array.isArray(value)) {
+      el.value = value.join('\n');
+    } else {
+      el.value = value;
+    }
+  });
+}
+
+function collectFields() {
+  document.querySelectorAll('[data-edit]').forEach(el => {
+    const path = el.dataset.edit;
+    let value = el.value;
+    if (el.dataset.array === 'true') {
+      value = value.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    setByPath(content, path, value);
+  });
+}
+
+function renderImageGrids() {
+  Object.keys(IMAGE_SLOTS).forEach(gridId => {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    grid.innerHTML = '';
+    IMAGE_SLOTS[gridId].forEach(slot => {
+      const card = document.createElement('div');
+      card.className = 'image-card';
+      const hasImg = content.images && content.images[slot.id];
+      card.innerHTML = `
+        <div class="image-card-label">${slot.label}</div>
+        <div class="image-card-slot">${slot.id}</div>
+        <div class="image-preview">
+          ${hasImg ? `<img src="${hasImg}" alt="">` : `<span class="image-preview-empty">기본 이미지 사용 중</span>`}
+        </div>
+        <div class="image-actions">
+          <label>업로드<input type="file" accept="image/*" data-slot-id="${slot.id}" onchange="handleImageUpload(event)"></label>
+          ${hasImg ? `<button class="remove-btn" onclick="removeImage('${slot.id}')">제거</button>` : ''}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  });
+}
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const slotId = event.target.dataset.slotId;
+  if (file.size > 2.5 * 1024 * 1024) {
+    if (!confirm(`이미지가 큽니다 (${(file.size/1024/1024).toFixed(1)}MB). 저장 시 용량 초과될 수 있습니다. 계속할까요?`)) return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (!content.images) content.images = {};
+    content.images[slotId] = e.target.result;
+    renderImageGrids();
+    showToast('이미지 업로드됨 — "전체 저장" 필요', 'warn');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(slotId) {
+  if (!confirm('이미지를 제거하시겠습니까? 기본 이미지로 돌아갑니다.')) return;
+  if (content.images) delete content.images[slotId];
+  renderImageGrids();
+  showToast('이미지 제거됨 — 저장 필요', 'warn');
+}
+
+function saveAll() {
+  collectFields();
+  try {
+    localStorage.setItem('laurellai_cms_v3', JSON.stringify(content));
+    showToast('저장 완료', 'ok');
+    updateStorageInfo();
+  } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      showToast('저장 용량 초과 — 이미지 크기 축소 필요', 'warn');
+      alert('브라우저 저장 용량(약 5MB) 초과. 이미지를 더 작게 업로드하거나 일부를 제거해주세요.');
+    } else {
+      showToast('저장 실패: ' + e.message, 'warn');
+    }
+  }
+}
+
+function resetAll() {
+  if (!confirm('정말 모든 콘텐츠를 초기화하시겠습니까?')) return;
+  if (!confirm('한 번 더 확인합니다. 정말 초기화?')) return;
+  localStorage.removeItem('laurellai_cms_v3');
+  content = JSON.parse(JSON.stringify(DEFAULT_CONTENT));
+  populateFields();
+  renderImageGrids();
+  updateStorageInfo();
+  showToast('초기화 완료', 'ok');
+}
+
+function exportJSON() {
+  collectFields();
+  const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().slice(0, 10);
+  a.download = `laurellai-content-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON 파일 다운로드', 'ok');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!confirm('현재 콘텐츠를 가져온 파일로 교체할까요?')) { event.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      content = deepMerge(JSON.parse(JSON.stringify(DEFAULT_CONTENT)), imported);
+      populateFields();
+      renderImageGrids();
+      showToast('불러오기 완료 — 저장하세요', 'warn');
+    } catch (err) {
+      showToast('파일 형식 오류', 'warn');
+      alert('JSON 파일을 읽을 수 없습니다: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function updateStorageInfo() {
+  const stored = localStorage.getItem('laurellai_cms_v3');
+  const status = document.getElementById('storageStatus');
+  const size = document.getElementById('storageSize');
+  if (stored) {
+    const kb = (stored.length / 1024).toFixed(1);
+    status.textContent = '저장됨';
+    size.textContent = kb + ' KB / 5,000 KB';
+  } else {
+    status.textContent = '저장된 데이터 없음';
+    size.textContent = '0 KB';
+  }
+}
+
+populateFields();
+renderImageGrids();
+updateStorageInfo();
+</script>
+
+</body>
+</html>

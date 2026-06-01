@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium Park Golf | LAURELLAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.hero {
+  min-height: auto;
+  padding-top: 120px;
+  padding-bottom: 40px;
+  background: var(--offwhite);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hero-headline-top {
+  text-align: center;
+  padding: 24px 20px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px 20px;
+}
+.hero-headline-top h1 {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(40px, 8vw, 96px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-transform: none;
+  color: var(--ink);
+}
+.hero-image-wrap { width: 100%; max-width: 520px; padding: 0 20px; aspect-ratio: 3/4; }
+.hero-image-wrap .img-slot { background: var(--offwhite); }
+.hero-headline-bottom { text-align: center; padding: 16px 20px 12px; }
+.hero-headline-bottom h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(36px, 6vw, 80px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+.hero-caption { text-align: center; padding: 12px 20px; }
+.hero-caption .name {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 28px; margin-bottom: 8px;
+}
+.hero-caption .role {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 22px; color: var(--graphite);
+}
+.hero-product {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 42px; font-weight: 500; letter-spacing: 0.08em;
+  font-style: italic;
+  padding: 20px 0 48px;
+}
+.brand-story .section-eyebrow:empty { display: none; }
+.tech-item-desc-only .tech-item-num-big {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.tech-item-desc-only .tech-item-label,
+.tech-item-desc-only .tech-item-title,
+.tech-item-desc-only .tech-item-desc { display: none; }
+.hero-product::after { content: '®'; font-size: 14px; vertical-align: super; margin-left: 4px; }
+
+.brand-story { background: var(--charcoal); color: var(--offwhite); padding: 130px 40px; }
+.brand-story-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 80px; align-items: center;
+}
+.brand-story .section-eyebrow { color: var(--gold-soft); }
+.brand-story h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 800; letter-spacing: 0.02em;
+  text-transform: uppercase; line-height: 1.05;
+  color: var(--offwhite); margin-bottom: 28px;
+}
+.brand-story p { font-size: 15px; line-height: 1.9; color: var(--silver); margin-bottom: 16px; }
+.brand-story-img { aspect-ratio: 4/5; overflow: hidden; }
+
+.lineup { background: var(--offwhite); }
+.card-grid {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+}
+.card {
+  background: white; overflow: hidden; cursor: pointer;
+  transition: transform 0.5s ease; display: block;
+}
+.card:hover { transform: translateY(-6px); }
+.card-img { aspect-ratio: 4/3; overflow: hidden; background: var(--paper); }
+.card-img img { transition: transform 0.8s; }
+.card:hover .card-img img { transform: scale(1.04); }
+.card-body { padding: 36px 32px 40px; }
+.card-cat {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  color: var(--gold); font-size: 13px;
+  letter-spacing: 0.2em; margin-bottom: 10px; text-transform: uppercase;
+}
+.card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px; font-weight: 700;
+  margin-bottom: 14px; text-transform: uppercase;
+}
+.card-desc { font-size: 13px; line-height: 1.8; color: var(--graphite); margin-bottom: 24px; }
+
+.tech-highlight { background: white; }
+.tech-highlight .section-head { max-width: 880px; }
+.tech-grid {
+  max-width: 960px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 48px;
+}
+.tech-item { text-align: center; padding: 32px 24px; }
+.tech-item-img { aspect-ratio: 1; margin-bottom: 28px; overflow: hidden; background: var(--paper); }
+.tech-item-num-big {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 48px; font-weight: 400; color: var(--gold);
+  line-height: 1; margin-bottom: 6px;
+}
+.tech-item-label {
+  font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--stone);
+}
+.tech-item-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  margin: 18px 0 14px;
+}
+.tech-item-desc { font-size: 13px; line-height: 1.8; color: var(--graphite); }
+
+.stats {
+  background: var(--offwhite); padding: 100px 40px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.stats-grid {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(48px, 6vw, 84px);
+  font-weight: 400; line-height: 1; margin-bottom: 12px;
+}
+.stat-num em { font-style: italic; color: var(--gold); }
+.stat-label {
+  font-size: 11px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--graphite);
+}
+
+/* ===== COMPARE SECTION ===== */
+.compare { background: white; padding: 130px 40px; }
+.compare-inner { max-width: 1200px; margin: 0 auto; }
+.compare-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.compare-col {
+  background: white;
+  padding: 50px 40px;
+  text-align: center;
+}
+.compare-col-img {
+  aspect-ratio: 1;
+  margin: 0 auto 32px;
+  max-width: 320px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.compare-col-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.compare-col-tag {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--gold);
+  margin-bottom: 32px;
+}
+.compare-col-link {
+  display: inline-block;
+  margin-top: 24px;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: var(--line);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.compare-cell {
+  background: white;
+  padding: 22px 40px;
+  text-align: center;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.compare-row-label {
+  background: var(--offwhite);
+  text-align: center;
+  padding: 14px;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--stone);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.compare-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-top: none;
+}
+
+.accessories { background: var(--paper); }
+.acc-grid {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+}
+.acc-card { background: white; cursor: pointer; transition: transform 0.5s; display: block; }
+.acc-card:hover { transform: translateY(-4px); }
+.acc-card-img { aspect-ratio: 1; overflow: hidden; background: var(--offwhite); }
+.acc-card-body { padding: 20px 22px 26px; }
+.acc-card-cat {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  color: var(--gold); font-size: 12px;
+  letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 6px;
+}
+.acc-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.acc-card-desc { font-size: 11px; color: var(--stone); margin-top: 6px; }
+
+.event-banner {
+  background: var(--ink); color: white;
+  padding: 100px 40px; text-align: center;
+}
+.event-logo {
+  font-family: 'Inter', sans-serif;
+  font-size: 64px; font-weight: 800; letter-spacing: 0.15em;
+  margin-bottom: 30px; color: var(--silver);
+}
+.event-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 28px; font-weight: 700; margin-bottom: 14px;
+}
+.event-period { font-size: 15px; color: #999; margin-bottom: 36px; }
+
+.dealers-home { background: white; padding: 130px 40px; }
+.dealers-home-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+  align-items: center;
+}
+.dealers-img { aspect-ratio: 5/4; overflow: hidden; }
+.dealers-text h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 800; text-transform: uppercase;
+  line-height: 1.05; margin-bottom: 24px;
+}
+.dealers-text p { font-size: 14px; line-height: 1.9; color: var(--graphite); margin-bottom: 24px; }
+.dealers-list { list-style: none; margin-bottom: 36px; }
+.dealers-list li {
+  padding: 12px 0; border-bottom: 1px solid var(--paper);
+  font-size: 13px; display: flex; align-items: baseline; gap: 14px;
+}
+.dealers-list li::before { content: '—'; color: var(--gold); }
+
+.journal { background: var(--paper); padding: 110px 40px; }
+.journal-grid {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+}
+.journal-item { background: white; cursor: pointer; transition: transform 0.5s; display: block; }
+.journal-item:hover { transform: translateY(-4px); }
+.journal-img { aspect-ratio: 3/2; overflow: hidden; background: var(--offwhite); }
+.journal-body { padding: 28px 28px 32px; }
+.journal-date {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 13px; color: var(--gold);
+  margin-bottom: 10px; letter-spacing: 0.1em;
+}
+.journal-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px; font-weight: 600;
+  margin-bottom: 8px; line-height: 1.4;
+}
+.journal-excerpt { font-size: 13px; color: var(--graphite); line-height: 1.7; }
+
+@media (max-width: 1100px) {
+  .brand-story-inner, .dealers-home-inner { grid-template-columns: 1fr; gap: 40px; }
+  .tech-grid, .journal-grid { grid-template-columns: 1fr; }
+  .acc-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .card-grid { grid-template-columns: 1fr; gap: 16px; }
+}
+@media (max-width: 768px) {
+  .brand-story, .dealers-home { padding: 70px 24px; }
+  .event-banner { padding: 70px 20px; }
+  .event-logo { font-size: 42px; }
+  .hero-product { font-size: 30px; padding: 24px 0 50px; }
+  .compare { padding: 70px 16px; }
+  .compare-col { padding: 32px 20px; }
+  .compare-col-name { font-size: 22px; }
+  .compare-cell { padding: 16px 20px; font-size: 13px; }
+  .compare-row-label { padding: 10px; font-size: 9px; letter-spacing: 0.2em; }
+}
+@media (max-width: 480px) {
+  .acc-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .hero { padding-top: 110px; }
+  .hero-headline-top { padding: 30px 16px 16px; }
+  .hero-headline-top h1 { font-size: clamp(50px, 16vw, 90px); }
+  .hero-image-wrap { padding: 0 16px; }
+  .hero-headline-bottom { padding: 16px 16px 12px; }
+  .hero-headline-bottom h2 { font-size: clamp(36px, 11vw, 64px); }
+  .hero-caption { padding: 14px 16px; }
+  .hero-caption .name { font-size: 24px; }
+  .hero-caption .role { font-size: 18px; }
+  .hero-product { font-size: 28px; padding: 20px 0 40px; }
+  .brand-story { padding: 60px 16px; }
+  .brand-story h2 { font-size: 32px; }
+  .lineup, .tech-highlight, .accessories, .journal { padding: 60px 16px; }
+  .card-grid { grid-template-columns: 1fr; gap: 16px; }
+  .card-body { padding: 24px 20px; }
+  .card-title { font-size: 26px; }
+  .tech-grid { grid-template-columns: 1fr; gap: 24px; }
+  .tech-item { padding: 20px 16px; }
+  .stats { padding: 50px 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .stat-num { font-size: 48px; }
+  .acc-grid { grid-template-columns: 1fr; gap: 16px; }
+  .event-banner { padding: 60px 16px; }
+  .event-logo { font-size: 38px; letter-spacing: 0.1em; }
+  .event-title { font-size: 22px; }
+  .event-period { font-size: 13px; }
+  .dealers-home { padding: 60px 16px; }
+  .dealers-text h2 { font-size: 32px; }
+  .journal-grid { grid-template-columns: 1fr; gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-side">
+      <button class="icon-btn" id="menuToggle" aria-label="Open menu" style="background:none;border:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <a href="index.html" class="logo">Laurellai</a>
+    <div class="header-side right">
+      <a href="dealers.html" class="header-cta" style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink);">매장 찾기</a>
+    </div>
+  </div>
+  <nav class="header-nav">
+      <a href="products.html">CLUBS</a>
+      <a href="accessories.html">ACCESSORIES</a>
+      <a href="technology.html">TECHNOLOGY</a>
+      <a href="dealers.html">DEALERS</a>
+  </nav>
+</header>
+
+<!-- Side Menu -->
+<div class="side-menu-overlay" id="sideMenuOverlay"></div>
+<aside class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <a href="index.html" class="logo">Laurellai</a>
+    <button class="side-menu-close" id="sideMenuClose" aria-label="Close menu">×</button>
+  </div>
+  <nav class="side-menu-nav">
+    <div class="side-menu-section">Collection</div>
+    <a href="products.html" class="side-menu-item">Clubs</a>
+    <a href="product-pink.html" class="side-menu-item sub">— Pink Stone</a>
+    <a href="product-blanc.html" class="side-menu-item sub">— Blanc Stone</a>
+
+    <div class="side-menu-section">Technology</div>
+    <a href="technology.html" class="side-menu-item">Technology</a>
+
+    <div class="side-menu-section">Accessories</div>
+    <a href="accessories.html" class="side-menu-item">Accessories</a>
+    <a href="acc-bag-stand.html" class="side-menu-item sub">— Heritage Stand Bag</a>
+    <a href="acc-bag-small.html" class="side-menu-item sub">— Companion Bag</a>
+    <a href="acc-pouch.html" class="side-menu-item sub">— Atelier Pouch</a>
+    <a href="acc-ball.html" class="side-menu-item sub">— Signature Ball</a>
+
+    <div class="side-menu-section">Dealers</div>
+    <a href="dealers.html" class="side-menu-item">매장 찾기 / 파트너 신청</a>
+  </nav>
+  <div class="side-menu-footer">
+    Orient Golf Co., Ltd.<br>
+    Premium Park Golf
+  </div>
+</aside>
+
+<!-- 1. HERO -->
+<section class="hero">
+  <div class="hero-headline-top">
+    <h1 data-cms="home.heroTop">사각의 마법</h1>
+  </div>
+  <div class="hero-image-wrap">
+    <div class="img-slot" data-slot="hero-main" data-default-src="images/pink-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Hero</div><div class="filename">hero-main</div></div>
+      </div>
+  </div>
+  <div class="hero-headline-bottom"><h2 data-cms="home.heroBottom">AT THE FIELD</h2></div>
+  <div class="hero-caption">
+    <div class="name" data-cms="home.heroName">Pink Stone</div>
+    <div class="role" data-cms="home.heroRole">Premium Park Golf Driver</div>
+  </div>
+  <div class="hero-product" data-cms="home.heroProduct">LAURELLAI</div>
+</section>
+
+<!-- 2. BRAND STORY -->
+<section class="brand-story">
+  <div class="brand-story-inner">
+    <div class="reveal">
+      <div class="section-eyebrow" data-cms="home.storyEyebrow"></div>
+      <h2 data-cms="home.storyTitle">The Art of<br>Park Golf.</h2>
+      <p data-cms="home.storyP1"></p>
+      <p data-cms="home.storyP2"></p>
+      <a href="#" class="link-arrow" style="color:var(--gold-soft);border-color:var(--gold-soft);margin-top:24px;">Learn More</a>
+    </div>
+    <div class="brand-story-img reveal">
+      <div class="img-slot" data-slot="home-story" data-default-src="images/blanc-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Brand Story</div><div class="filename">home-story</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. PRODUCT LINEUP -->
+<section class="row lineup">
+  <div class="section-head reveal">
+    <div class="section-eyebrow" data-cms="home.lineupEyebrow">Collection</div>
+    <h2 class="section-title" data-cms="home.lineupTitle">Two Stones,<br>One Standard.</h2>
+    <p class="section-desc" data-cms="home.lineupDesc"></p>
+  </div>
+  <div class="card-grid">
+    <a href="product-pink.html" class="card reveal">
+      <div class="card-img"><div class="img-slot" data-slot="product-pink-main" data-default-src="images/pink-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Pink Stone</div><div class="filename">product-pink-main</div></div>
+      </div></div>
+      <div class="card-body">
+        <div class="card-cat">No. 01 · <span data-cms="products.items.pink.meta">Pink Edition</span></div>
+        <h3 class="card-title" data-cms="products.items.pink.name">Pink Stone</h3>
+        <p class="card-desc" data-cms="products.items.pink.short"></p>
+        <span class="link-arrow">View Detail</span>
+      </div>
+    </a>
+    <a href="product-blanc.html" class="card reveal">
+      <div class="card-img"><div class="img-slot" data-slot="product-blanc-main" data-default-src="images/blanc-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Blanc Stone</div><div class="filename">product-blanc-main</div></div>
+      </div></div>
+      <div class="card-body">
+        <div class="card-cat">No. 02 · <span data-cms="products.items.blanc.meta">Blanc Edition</span></div>
+        <h3 class="card-title" data-cms="products.items.blanc.name">Blanc Stone</h3>
+        <p class="card-desc" data-cms="products.items.blanc.short"></p>
+        <span class="link-arrow">View Detail</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- 4. TECHNOLOGY -->
+<section class="row tech-highlight">
+  <div class="section-head reveal">
+    <div class="section-eyebrow" data-cms="home.techEyebrow">Technology</div>
+    <h2 class="section-title section-title-ko" data-cms="home.techTitle">극한의 MOI</h2>
+    <p class="section-desc" data-cms="home.techDesc"></p>
+  </div>
+  <div class="tech-grid">
+    <div class="tech-item reveal">
+      <div class="tech-item-img"><div class="img-slot" data-slot="home-tech-1" data-default-src="images/blanc-head.jpg">
+        <div class="img-slot-guide"><div class="label">MOI</div><div class="filename">home-tech-1</div></div>
+      </div></div>
+      <div class="tech-item-num-big">MAX</div>
+      <div class="tech-item-label">MOI</div>
+    </div>
+    <div class="tech-item reveal tech-item-desc-only">
+      <div class="tech-item-img"><div class="img-slot" data-slot="home-tech-3" data-default-src="images/both-stones-wide.jpg">
+        <div class="img-slot-guide"><div class="label">Weight</div><div class="filename">home-tech-3</div></div>
+      </div></div>
+      <div class="tech-item-num-big">후방 웨이트 시스템</div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. ACCESSORIES -->
+<section class="row accessories">
+  <div class="section-head reveal">
+    <div class="section-eyebrow" data-cms="home.accEyebrow"></div>
+    <h2 class="section-title section-title-xl" data-cms="home.accTitle">ACCESSORIES</h2>
+    <p class="section-tagline" data-cms="home.accSubtitle"></p>
+    <p class="section-desc" data-cms="home.accDesc"></p>
+  </div>
+  <div class="acc-showcase reveal">
+    <div class="img-slot" data-slot="acc-showcase-pink" data-default-src="images/both-stones.jpg"></div>
+    <div class="img-slot" data-slot="acc-showcase-blanc" data-default-src="images/blanc-head.jpg"></div>
+  </div>
+  <div class="acc-grid">
+    <a href="acc-bag-stand.html" class="acc-card reveal">
+      <div class="acc-card-img"><div class="img-slot" data-slot="home-acc-1" data-default-src="images/both-stones.jpg">
+        <div class="img-slot-guide"><div class="label">Stand Bag</div><div class="filename">home-acc-1</div></div>
+      </div></div>
+      <div class="acc-card-body">
+        <div class="acc-card-cat">— No. 01</div>
+        <div class="acc-card-title" data-cms="accessories.items.bag-stand.name">Stand Bag</div>
+        <div class="acc-card-desc" data-cms="accessories.items.bag-stand.short">정통 스탠드 백</div>
+      </div>
+    </a>
+    <a href="acc-bag-small.html" class="acc-card reveal">
+      <div class="acc-card-img"><div class="img-slot" data-slot="home-acc-2" data-default-src="images/blanc-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Companion</div><div class="filename">home-acc-2</div></div>
+      </div></div>
+      <div class="acc-card-body">
+        <div class="acc-card-cat">— No. 02</div>
+        <div class="acc-card-title" data-cms="accessories.items.bag-small.name">Companion Bag</div>
+        <div class="acc-card-desc" data-cms="accessories.items.bag-small.short">컴팩트 라이트 백</div>
+      </div>
+    </a>
+    <a href="acc-pouch.html" class="acc-card reveal">
+      <div class="acc-card-img"><div class="img-slot" data-slot="home-acc-3" data-default-src="images/pink-head.jpg">
+        <div class="img-slot-guide"><div class="label">Pouch</div><div class="filename">home-acc-3</div></div>
+      </div></div>
+      <div class="acc-card-body">
+        <div class="acc-card-cat">— No. 03</div>
+        <div class="acc-card-title" data-cms="accessories.items.pouch.name">Atelier Pouch</div>
+        <div class="acc-card-desc" data-cms="accessories.items.pouch.short">멀티 포켓 파우치</div>
+      </div>
+    </a>
+    <a href="acc-ball.html" class="acc-card reveal">
+      <div class="acc-card-img"><div class="img-slot" data-slot="home-acc-4" data-default-src="images/both-stones-wide.jpg">
+        <div class="img-slot-guide"><div class="label">Ball</div><div class="filename">home-acc-4</div></div>
+      </div></div>
+      <div class="acc-card-body">
+        <div class="acc-card-cat">— No. 04</div>
+        <div class="acc-card-title" data-cms="accessories.items.ball.name">Signature Ball</div>
+        <div class="acc-card-desc" data-cms="accessories.items.ball.short">3 Colors</div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- 7. EVENT BANNER -->
+<section class="event-banner">
+  <div class="event-logo" data-cms="home.eventLogo">LRL</div>
+  <div class="event-title" data-cms="home.eventTitle">신제품 사전 등록 이벤트</div>
+  <div class="event-period" data-cms="home.eventPeriod"></div>
+  <a href="event.html" class="btn-pill" data-cms="home.eventCta">이벤트 자세히 보기</a>
+</section>
+
+<!-- 8. DEALERS -->
+<section class="dealers-home">
+  <div class="dealers-home-inner">
+    <div class="dealers-img reveal"><div class="img-slot" data-slot="home-dealers" data-default-src="images/both-stones-wide.jpg">
+        <div class="img-slot-guide"><div class="label">Dealers</div><div class="filename">home-dealers</div></div>
+      </div></div>
+    <div class="dealers-text reveal">
+      <div class="section-eyebrow" data-cms="home.dealerEyebrow">Dealers</div>
+      <h2 data-cms="home.dealerTitle">Find Your<br>Store.</h2>
+      <p data-cms="home.dealerDesc"></p>
+      <ul class="dealers-list" data-cms="home.dealerBenefits"></ul>
+      <a href="dealers.html" class="btn-solid">Partnership Inquiry</a>
+    </div>
+  </div>
+</section>
+
+<!-- 9. JOURNAL -->
+<section class="row journal">
+  <div class="section-head reveal">
+    <div class="section-eyebrow" data-cms="home.journalEyebrow">Journal</div>
+    <h2 class="section-title" data-cms="home.journalTitle">News &amp;<br>Stories.</h2>
+    <p class="section-desc" data-cms="home.journalDesc"></p>
+  </div>
+  <div class="journal-grid">
+    <a href="journal-1.html" class="journal-item reveal">
+      <div class="journal-img"><div class="img-slot" data-slot="home-journal-1" data-default-src="images/pink-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Story 1</div><div class="filename">home-journal-1</div></div>
+      </div></div>
+      <div class="journal-body">
+        <div class="journal-date" data-cms="home.journal1Date">May 2026</div>
+        <div class="journal-title" data-cms="home.journal1Title"></div>
+        <div class="journal-excerpt" data-cms="home.journal1Excerpt"></div>
+      </div>
+    </a>
+    <a href="journal-2.html" class="journal-item reveal">
+      <div class="journal-img"><div class="img-slot" data-slot="home-journal-2" data-default-src="images/blanc-head.jpg">
+        <div class="img-slot-guide"><div class="label">Story 2</div><div class="filename">home-journal-2</div></div>
+      </div></div>
+      <div class="journal-body">
+        <div class="journal-date" data-cms="home.journal2Date"></div>
+        <div class="journal-title" data-cms="home.journal2Title"></div>
+        <div class="journal-excerpt" data-cms="home.journal2Excerpt"></div>
+      </div>
+    </a>
+    <a href="journal-3.html" class="journal-item reveal">
+      <div class="journal-img"><div class="img-slot" data-slot="home-journal-3" data-default-src="images/both-stones.jpg">
+        <div class="img-slot-guide"><div class="label">Story 3</div><div class="filename">home-journal-3</div></div>
+      </div></div>
+      <div class="journal-body">
+        <div class="journal-date" data-cms="home.journal3Date"></div>
+        <div class="journal-title" data-cms="home.journal3Title"></div>
+        <div class="journal-excerpt" data-cms="home.journal3Excerpt"></div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand" data-cms="brand.name">Laurellai</div>
+        <p class="footer-desc" data-cms="brand.footerDesc"></p>
+        <div class="newsletter">
+          <input type="email" placeholder="EMAIL">
+          <button>SUBSCRIBE</button>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Collection</h5>
+        <ul>
+          <li><a href="product-pink.html">Pink Stone</a></li>
+          <li><a href="product-blanc.html">Blanc Stone</a></li>
+          <li><a href="accessories.html">Bags</a></li>
+          <li><a href="accessories.html">Pouch &amp; Ball</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Information</h5>
+        <ul>
+          <li><a href="technology.html">Technology</a></li>
+          <li><a href="dealers.html">Dealers</a></li>
+          <li><a href="#">Brand Story</a></li>
+          <li><a href="journal.html">Journal</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Support</h5>
+        <ul>
+          <li><a href="#">고객센터</a></li>
+          <li><a href="#">A/S 안내</a></li>
+          <li><a href="#">매장 찾기</a></li>
+          <li><a href="#">FAQ</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div data-cms="brand.copyright">© 2026 LAURELLAI · Orient Golf Co., Ltd.</div>
+      <div>이용약관 · 개인정보처리방침</div>
+    </div>
+  </div>
+</footer>
+
+<a href="admin.html" class="admin-banner">Admin</a>
+<script src="assets/site.js"></script>
+</body>
+</html>

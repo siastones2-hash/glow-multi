@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journal | LAURELLAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.journal-list {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  padding: 0 40px 110px;
+}
+.journal-card { background: white; cursor: pointer; transition: transform 0.5s; display: block; }
+.journal-card:hover { transform: translateY(-4px); }
+.journal-card-img { aspect-ratio: 3/2; overflow: hidden; background: var(--paper); }
+.journal-card-body { padding: 28px 28px 32px; }
+.journal-card-date {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 13px; color: var(--gold);
+  margin-bottom: 10px; letter-spacing: 0.1em;
+}
+.journal-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px; font-weight: 600;
+  margin-bottom: 10px; line-height: 1.4;
+}
+.journal-card-excerpt { font-size: 13px; color: var(--graphite); line-height: 1.7; }
+@media (max-width: 1100px) {
+  .journal-list { grid-template-columns: 1fr; gap: 16px; padding: 0 24px 70px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <div class="header-side">
+      <button class="icon-btn" id="menuToggle" aria-label="Open menu" style="background:none;border:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <a href="index.html" class="logo">Laurellai</a>
+    <div class="header-side right">
+      <a href="dealers.html" class="header-cta" style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink);">매장 찾기</a>
+    </div>
+  </div>
+  <nav class="header-nav">
+      <a href="products.html">CLUBS</a>
+      <a href="accessories.html">ACCESSORIES</a>
+      <a href="technology.html">TECHNOLOGY</a>
+      <a href="dealers.html">DEALERS</a>
+  </nav>
+</header>
+
+<!-- Side Menu -->
+<div class="side-menu-overlay" id="sideMenuOverlay"></div>
+<aside class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <a href="index.html" class="logo">Laurellai</a>
+    <button class="side-menu-close" id="sideMenuClose" aria-label="Close menu">×</button>
+  </div>
+  <nav class="side-menu-nav">
+    <div class="side-menu-section">Collection</div>
+    <a href="products.html" class="side-menu-item">Clubs</a>
+    <a href="product-pink.html" class="side-menu-item sub">— Pink Stone</a>
+    <a href="product-blanc.html" class="side-menu-item sub">— Blanc Stone</a>
+
+    <div class="side-menu-section">Technology</div>
+    <a href="technology.html" class="side-menu-item">Technology</a>
+
+    <div class="side-menu-section">Accessories</div>
+    <a href="accessories.html" class="side-menu-item">Accessories</a>
+    <a href="acc-bag-stand.html" class="side-menu-item sub">— Heritage Stand Bag</a>
+    <a href="acc-bag-small.html" class="side-menu-item sub">— Companion Bag</a>
+    <a href="acc-pouch.html" class="side-menu-item sub">— Atelier Pouch</a>
+    <a href="acc-ball.html" class="side-menu-item sub">— Signature Ball</a>
+
+    <div class="side-menu-section">Dealers</div>
+    <a href="dealers.html" class="side-menu-item">매장 찾기 / 파트너 신청</a>
+  </nav>
+  <div class="side-menu-footer">
+    Orient Golf Co., Ltd.<br>
+    Premium Park Golf
+  </div>
+</aside>
+<div class="breadcrumb">
+  <a href="index.html">Home</a><span class="sep">/</span><span class="current">Journal</span>
+</div>
+<section class="page-hero">
+  <h1>JOURNAL</h1>
+  <div class="subtitle">News &amp; Stories</div>
+</section>
+<section style="padding-top: 60px;">
+  <div class="journal-list">
+    <a href="journal-1.html" class="journal-card">
+      <div class="journal-card-img"><div class="img-slot" data-slot="home-journal-1" data-default-src="images/pink-stone.jpg">
+        <div class="img-slot-guide"><div class="label">Story 1</div><div class="filename">home-journal-1</div></div>
+      </div></div>
+      <div class="journal-card-body">
+        <div class="journal-card-date" data-cms="home.journal1Date">May 2026</div>
+        <div class="journal-card-title" data-cms="home.journal1Title"></div>
+        <div class="journal-card-excerpt" data-cms="home.journal1Excerpt"></div>
+      </div>
+    </a>
+    <a href="journal-2.html" class="journal-card">
+      <div class="journal-card-img"><div class="img-slot" data-slot="home-journal-2" data-default-src="images/blanc-head.jpg">
+        <div class="img-slot-guide"><div class="label">Story 2</div><div class="filename">home-journal-2</div></div>
+      </div></div>
+      <div class="journal-card-body">
+        <div class="journal-card-date" data-cms="home.journal2Date"></div>
+        <div class="journal-card-title" data-cms="home.journal2Title"></div>
+        <div class="journal-card-excerpt" data-cms="home.journal2Excerpt"></div>
+      </div>
+    </a>
+    <a href="journal-3.html" class="journal-card">
+      <div class="journal-card-img"><div class="img-slot" data-slot="home-journal-3" data-default-src="images/both-stones.jpg">
+        <div class="img-slot-guide"><div class="label">Story 3</div><div class="filename">home-journal-3</div></div>
+      </div></div>
+      <div class="journal-card-body">
+        <div class="journal-card-date" data-cms="home.journal3Date"></div>
+        <div class="journal-card-title" data-cms="home.journal3Title"></div>
+        <div class="journal-card-excerpt" data-cms="home.journal3Excerpt"></div>
+      </div>
+    </a>
+  </div>
+</section>
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand" data-cms="brand.name">Laurellai</div>
+        <p class="footer-desc" data-cms="brand.footerDesc"></p>
+        <div class="newsletter">
+          <input type="email" placeholder="EMAIL">
+          <button>SUBSCRIBE</button>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Collection</h5>
+        <ul>
+          <li><a href="product-pink.html">Pink Stone</a></li>
+          <li><a href="product-blanc.html">Blanc Stone</a></li>
+          <li><a href="accessories.html">Bags</a></li>
+          <li><a href="accessories.html">Pouch &amp; Ball</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Information</h5>
+        <ul>
+          <li><a href="technology.html">Technology</a></li>
+          <li><a href="dealers.html">Dealers</a></li>
+          <li><a href="#">Brand Story</a></li>
+          <li><a href="journal.html">Journal</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Support</h5>
+        <ul>
+          <li><a href="#">고객센터</a></li>
+          <li><a href="#">A/S 안내</a></li>
+          <li><a href="#">매장 찾기</a></li>
+          <li><a href="#">FAQ</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div data-cms="brand.copyright">© 2026 LAURELLAI · Orient Golf Co., Ltd.</div>
+      <div>이용약관 · 개인정보처리방침</div>
+    </div>
+  </div>
+</footer>
+
+<a href="admin.html" class="admin-banner">Admin</a>
+<script src="assets/site.js"></script>
+</body>
+</html>

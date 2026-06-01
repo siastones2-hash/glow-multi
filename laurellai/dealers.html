@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dealers | LAURELLAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.dealer-content {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+  padding: 60px 40px 110px;
+  align-items: start;
+}
+.dealer-left h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(36px, 4.5vw, 56px); font-weight: 800;
+  text-transform: uppercase; line-height: 1.05; margin-bottom: 28px;
+}
+.dealer-left p { font-size: 14px; line-height: 1.9; color: var(--graphite); margin-bottom: 24px; }
+.dealer-benefits { list-style: none; margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--line); }
+.dealer-benefits li {
+  padding: 12px 0; font-size: 13px;
+  display: flex; align-items: baseline; gap: 14px;
+}
+.dealer-benefits li::before { content: '—'; color: var(--gold); }
+.dealer-form {
+  background: var(--paper); padding: 56px 48px;
+}
+.dealer-form h3 {
+  font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
+  margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--line);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.field { margin-bottom: 24px; }
+.field label {
+  display: block;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--stone); margin-bottom: 10px;
+}
+.field input, .field select, .field textarea {
+  width: 100%; padding: 10px 0;
+  border: none; border-bottom: 1px solid var(--line);
+  background: transparent;
+  font-family: inherit; font-size: 13px;
+  color: var(--ink); outline: none;
+}
+.field textarea { resize: none; min-height: 70px; }
+.dealer-map { background: white; padding: 100px 40px; border-top: 1px solid var(--line); }
+.dealer-map-inner { max-width: 1400px; margin: 0 auto; }
+.dealer-map-inner h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 400; margin-bottom: 40px;
+}
+.dealer-list {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+}
+.dealer-item { padding: 28px; background: var(--offwhite); border: 1px solid var(--line); }
+.dealer-region {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 12px; color: var(--gold);
+  margin-bottom: 12px; letter-spacing: 0.1em;
+}
+.dealer-name { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
+.dealer-addr { font-size: 12px; color: var(--graphite); line-height: 1.7; margin-bottom: 8px; }
+.dealer-tel { font-size: 12px; color: var(--stone); }
+@media (max-width: 1100px) {
+  .dealer-content { grid-template-columns: 1fr; gap: 40px; padding: 40px 24px 70px; }
+  .dealer-list { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .dealer-content { gap: 30px; padding: 30px 16px 60px; }
+  .dealer-left h2 { font-size: 32px; }
+  .dealer-form { padding: 32px 24px; }
+  .dealer-map { padding: 60px 16px; }
+  .dealer-map-inner h3 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <div class="header-side">
+      <button class="icon-btn" id="menuToggle" aria-label="Open menu" style="background:none;border:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <a href="index.html" class="logo">Laurellai</a>
+    <div class="header-side right">
+      <a href="dealers.html" class="header-cta" style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink);">매장 찾기</a>
+    </div>
+  </div>
+  <nav class="header-nav">
+      <a href="products.html">CLUBS</a>
+      <a href="accessories.html">ACCESSORIES</a>
+      <a href="technology.html">TECHNOLOGY</a>
+      <a href="dealers.html" class="active">DEALERS</a>
+  </nav>
+</header>
+
+<!-- Side Menu -->
+<div class="side-menu-overlay" id="sideMenuOverlay"></div>
+<aside class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <a href="index.html" class="logo">Laurellai</a>
+    <button class="side-menu-close" id="sideMenuClose" aria-label="Close menu">×</button>
+  </div>
+  <nav class="side-menu-nav">
+    <div class="side-menu-section">Collection</div>
+    <a href="products.html" class="side-menu-item">Clubs</a>
+    <a href="product-pink.html" class="side-menu-item sub">— Pink Stone</a>
+    <a href="product-blanc.html" class="side-menu-item sub">— Blanc Stone</a>
+
+    <div class="side-menu-section">Technology</div>
+    <a href="technology.html" class="side-menu-item">Technology</a>
+
+    <div class="side-menu-section">Accessories</div>
+    <a href="accessories.html" class="side-menu-item">Accessories</a>
+    <a href="acc-bag-stand.html" class="side-menu-item sub">— Heritage Stand Bag</a>
+    <a href="acc-bag-small.html" class="side-menu-item sub">— Companion Bag</a>
+    <a href="acc-pouch.html" class="side-menu-item sub">— Atelier Pouch</a>
+    <a href="acc-ball.html" class="side-menu-item sub">— Signature Ball</a>
+
+    <div class="side-menu-section">Dealers</div>
+    <a href="dealers.html" class="side-menu-item">매장 찾기 / 파트너 신청</a>
+  </nav>
+  <div class="side-menu-footer">
+    Orient Golf Co., Ltd.<br>
+    Premium Park Golf
+  </div>
+</aside>
+<div class="breadcrumb">
+  <a href="index.html">Home</a><span class="sep">/</span><span class="current">Dealers</span>
+</div>
+<section class="page-hero">
+  <h1>DEALERS</h1>
+  <div class="subtitle">Find your nearest store</div>
+</section>
+
+<section>
+  <div class="dealer-content">
+    <div class="dealer-left">
+      <h2 data-cms="dealers.partnerTitle">Become an<br>Official Partner.</h2>
+      <p data-cms="dealers.partnerDesc"></p>
+      <ul class="dealer-benefits" data-cms="dealers.benefits"></ul>
+    </div>
+    <div class="dealer-form">
+      <h3>Partnership Inquiry</h3>
+      <div class="form-row">
+        <div class="field"><label>대표자명</label><input type="text" placeholder="홍길동"></div>
+        <div class="field"><label>연락처</label><input type="text" placeholder="010-0000-0000"></div>
+      </div>
+      <div class="field"><label>상호 / 매장명</label><input type="text" placeholder="(주)○○골프"></div>
+      <div class="form-row">
+        <div class="field"><label>희망 지역</label>
+          <select><option>서울 / 경기</option><option>인천</option><option>강원</option><option>충청</option><option>경상</option><option>전라</option><option>제주</option></select>
+        </div>
+        <div class="field"><label>업태</label>
+          <select><option>골프 전문점</option><option>스포츠 용품점</option><option>파크골프장 운영</option><option>기타</option></select>
+        </div>
+      </div>
+      <div class="field"><label>문의 내용</label><textarea rows="3" placeholder="간단한 사업 소개 및 문의사항"></textarea></div>
+      <button class="btn-solid" style="width: 100%; margin-top: 12px;">Submit Inquiry</button>
+    </div>
+  </div>
+</section>
+
+<section class="dealer-map">
+  <div class="dealer-map-inner">
+    <h3>Official Stores</h3>
+    <div class="dealer-list">
+      <div class="dealer-item">
+        <div class="dealer-region"><em>Seoul</em></div>
+        <div class="dealer-name">매장 정보 등록 예정</div>
+        <div class="dealer-addr">서울특별시 ○○구 ○○로 ○○</div>
+        <div class="dealer-tel">02-0000-0000</div>
+      </div>
+      <div class="dealer-item">
+        <div class="dealer-region"><em>Gyeonggi</em></div>
+        <div class="dealer-name">매장 정보 등록 예정</div>
+        <div class="dealer-addr">경기도 ○○시 ○○로 ○○</div>
+        <div class="dealer-tel">031-0000-0000</div>
+      </div>
+      <div class="dealer-item">
+        <div class="dealer-region"><em>Incheon</em></div>
+        <div class="dealer-name">매장 정보 등록 예정</div>
+        <div class="dealer-addr">인천광역시 ○○구 ○○로 ○○</div>
+        <div class="dealer-tel">032-0000-0000</div>
+      </div>
+    </div>
+  </div>
+</section>
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand" data-cms="brand.name">Laurellai</div>
+        <p class="footer-desc" data-cms="brand.footerDesc"></p>
+        <div class="newsletter">
+          <input type="email" placeholder="EMAIL">
+          <button>SUBSCRIBE</button>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Collection</h5>
+        <ul>
+          <li><a href="product-pink.html">Pink Stone</a></li>
+          <li><a href="product-blanc.html">Blanc Stone</a></li>
+          <li><a href="accessories.html">Bags</a></li>
+          <li><a href="accessories.html">Pouch &amp; Ball</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Information</h5>
+        <ul>
+          <li><a href="technology.html">Technology</a></li>
+          <li><a href="dealers.html">Dealers</a></li>
+          <li><a href="#">Brand Story</a></li>
+          <li><a href="journal.html">Journal</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Support</h5>
+        <ul>
+          <li><a href="#">고객센터</a></li>
+          <li><a href="#">A/S 안내</a></li>
+          <li><a href="#">매장 찾기</a></li>
+          <li><a href="#">FAQ</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div data-cms="brand.copyright">© 2026 LAURELLAI · Orient Golf Co., Ltd.</div>
+      <div>이용약관 · 개인정보처리방침</div>
+    </div>
+  </div>
+</footer>
+
+<a href="admin.html" class="admin-banner">Admin</a>
+<script src="assets/site.js"></script>
+</body>
+</html>
