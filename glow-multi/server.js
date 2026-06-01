@@ -1158,6 +1158,8 @@ app.get('/api/site-config', async (req, res) => {
   }
 
   res.json({
+    siteId: site.id,
+    isDefault: site.id === 'default',
     name: site.name, logo: site.logo,
     primaryColor: site.primary_color, accentColor: site.accent_color,
     kakao: site.kakao, bank: site.bank,

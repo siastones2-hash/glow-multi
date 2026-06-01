@@ -217,6 +217,34 @@ tr:last-child td{border-bottom:none}
 .hero-panel{display:none}
 .lcta{padding:48px 16px;text-align:center;background:linear-gradient(160deg,var(--w),var(--bg))}
 .lfoot{background:color-mix(in srgb,var(--tx) 88%, var(--p2));padding:20px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.land-svc{padding:48px 16px 40px;background:var(--w);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}
+.land-svc-inner{max-width:920px;margin:0 auto}
+.land-svc h2{font-size:clamp(20px,4.5vw,28px);font-weight:800;text-align:center;margin-bottom:8px;letter-spacing:-.02em}
+.land-svc-sub{text-align:center;font-size:14px;color:var(--tm);margin:0 auto 28px;line-height:1.7;max-width:520px;font-weight:300}
+.land-svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(min-width:640px){.land-svc-grid{grid-template-columns:repeat(4,1fr);gap:14px}}
+.lsvc-card{background:linear-gradient(160deg,#fff,#faf5ff);border:1px solid var(--bd);border-radius:16px;padding:18px 14px;text-align:center;transition:transform .15s,box-shadow .15s}
+.lsvc-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(114,9,183,.12)}
+.lsvc-ico{font-size:32px;margin-bottom:10px;line-height:1}
+.lsvc-pl{font-size:14px;font-weight:800;margin-bottom:8px;color:var(--tx)}
+.lsvc-tags{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.lsvc-tag{font-size:10px;font-weight:700;padding:4px 8px;border-radius:100px;background:rgba(114,9,183,.08);color:var(--p2);white-space:nowrap}
+.land-svc-note{text-align:center;margin-top:22px;font-size:12px;color:var(--tl);line-height:1.6}
+.land-tasks{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.land-task{display:flex;align-items:flex-start;gap:12px;background:var(--w);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;text-align:left}
+.land-task-ico{font-size:22px;line-height:1;flex-shrink:0;margin-top:2px}
+.land-task-body{flex:1;min-width:0}
+.land-task-title{font-size:14px;font-weight:800;margin-bottom:3px;color:var(--tx)}
+.land-task-desc{font-size:12px;color:var(--tm);line-height:1.55;font-weight:300}
+.land-how{padding:40px 16px 48px;background:linear-gradient(180deg,#faf5ff,var(--w));border-bottom:1px solid var(--bd)}
+.land-how-inner{max-width:720px;margin:0 auto;text-align:center}
+.land-how h2{font-size:clamp(18px,4vw,24px);font-weight:800;margin-bottom:24px}
+.land-steps{display:grid;grid-template-columns:1fr;gap:12px;text-align:left}
+@media(min-width:560px){.land-steps{grid-template-columns:repeat(3,1fr);gap:14px;text-align:center}}
+.land-step{background:var(--w);border:1px solid var(--bd);border-radius:14px;padding:18px 14px}
+.land-step-num{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--g);color:#fff;font-size:13px;font-weight:800;align-items:center;justify-content:center;margin-bottom:10px}
+.land-step-title{font-size:14px;font-weight:800;margin-bottom:6px}
+.land-step-desc{font-size:12px;color:var(--tm);line-height:1.55;font-weight:300}
 .hero-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
 [data-layout="card"] .hero{padding:72px 16px 56px;background:linear-gradient(180deg,var(--w),var(--bg))}
@@ -268,7 +296,7 @@ tr:last-child td{border-bottom:none}
     <div class="hero-inner">
     <div class="htag"><div class="tdot"></div><span id="heroBadge">채널 성장 · 마케팅 플랫폼</span></div>
     <h1 id="heroSlogan"><span id="heroPrefix">콘텐츠가</span> <span class="gt" id="heroSloganSpan">빛나도록</span><br><span id="heroSloganSub">우리가 성장시킵니다</span></h1>
-    <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:460px;margin:0 auto 28px;font-weight:300" id="heroDesc">유튜브·인스타·틱톡부터 아마존·쿠팡까지, 모든 채널의 성장을 지원합니다</p>
+    <p style="font-size:15px;color:var(--tm);line-height:1.8;max-width:520px;margin:0 auto 28px;font-weight:300" id="heroDesc">인스타 팔로워·좋아요, 유튜브 구독자·조회수까지 — 링크만 넣으면 바로 성장 시작</p>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:32px" class="hero-cta">
       <button class="bp bplg" onclick="goAuth('register')">✨ 지금 무료로 시작하기</button>
       <button class="bo" style="padding:15px 28px;font-size:14px;border-radius:14px" onclick="goAuth('login')">기존 계정 로그인</button>
@@ -280,15 +308,97 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="hero-panel" id="heroPanel">✨</div>
   </div>
-  <div class="sts">
+  <div class="land-svc" id="landServices" style="display:none">
+    <div class="land-svc-inner">
+      <h2>GLOW에서 <span class="gt">이렇게 작업</span>됩니다</h2>
+      <p class="land-svc-sub">SNS 계정·게시물 링크만 넣으면, 아래 작업이 자동으로 진행됩니다</p>
+      <div class="land-tasks">
+        <div class="land-task">
+          <div class="land-task-ico">📷</div>
+          <div class="land-task-body">
+            <div class="land-task-title">인스타그램 — 팔로워 · 좋아요 · 릴스 조회 · 댓글</div>
+            <div class="land-task-desc">프로필 주소나 게시물·릴스 링크를 입력하면 팔로워 수, 좋아요, 조회수를 올릴 수 있습니다</div>
+          </div>
+        </div>
+        <div class="land-task">
+          <div class="land-task-ico">▶</div>
+          <div class="land-task-body">
+            <div class="land-task-title">유튜브 — 구독자 · 조회수 · 좋아요 · 댓글</div>
+            <div class="land-task-desc">채널·영상 링크를 넣으면 구독자, 조회수, 좋아요를 늘리는 작업이 진행됩니다</div>
+          </div>
+        </div>
+        <div class="land-task">
+          <div class="land-task-ico">🎵</div>
+          <div class="land-task-body">
+            <div class="land-task-title">틱톡 · X · 스레드 — 팔로워 · 좋아요 · 조회수</div>
+            <div class="land-task-desc">틱톡, X(트위터), 스레드 등 다른 SNS도 같은 방식으로 성장 작업이 가능합니다</div>
+          </div>
+        </div>
+      </div>
+      <div class="land-svc-grid">
+        <div class="lsvc-card">
+          <div class="lsvc-ico">📷</div>
+          <div class="lsvc-pl">Instagram</div>
+          <div class="lsvc-tags">
+            <span class="lsvc-tag">팔로워</span><span class="lsvc-tag">좋아요</span><span class="lsvc-tag">릴스</span>
+          </div>
+        </div>
+        <div class="lsvc-card">
+          <div class="lsvc-ico">▶</div>
+          <div class="lsvc-pl">YouTube</div>
+          <div class="lsvc-tags">
+            <span class="lsvc-tag">구독자</span><span class="lsvc-tag">조회수</span><span class="lsvc-tag">좋아요</span>
+          </div>
+        </div>
+        <div class="lsvc-card">
+          <div class="lsvc-ico">🎵</div>
+          <div class="lsvc-pl">TikTok</div>
+          <div class="lsvc-tags">
+            <span class="lsvc-tag">팔로워</span><span class="lsvc-tag">좋아요</span><span class="lsvc-tag">조회수</span>
+          </div>
+        </div>
+        <div class="lsvc-card">
+          <div class="lsvc-ico">𝕏</div>
+          <div class="lsvc-pl">X · Threads</div>
+          <div class="lsvc-tags">
+            <span class="lsvc-tag">팔로워</span><span class="lsvc-tag">좋아요</span><span class="lsvc-tag">조회수</span>
+          </div>
+        </div>
+      </div>
+      <p class="land-svc-note">가입 → 충전 → 링크 입력 → 자동 처리 (24시간)</p>
+    </div>
+  </div>
+  <div class="land-how" id="landHow" style="display:none">
+    <div class="land-how-inner">
+      <h2>이용 방법 <span class="gt">3단계</span></h2>
+      <div class="land-steps">
+        <div class="land-step">
+          <div class="land-step-num">1</div>
+          <div class="land-step-title">무료 가입</div>
+          <div class="land-step-desc">이메일로 30초 만에 가입합니다</div>
+        </div>
+        <div class="land-step">
+          <div class="land-step-num">2</div>
+          <div class="land-step-title">잔액 충전</div>
+          <div class="land-step-desc">원하는 금액을 충전합니다</div>
+        </div>
+        <div class="land-step">
+          <div class="land-step-num">3</div>
+          <div class="land-step-title">링크 입력 · 주문</div>
+          <div class="land-step-desc">SNS 링크와 수량을 넣으면 작업 시작</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sts" id="landStats">
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat1Num">10K+</div><div style="font-size:11px;color:var(--tm)" id="stat1Label">서비스 종류</div></div>
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat2Num">24H</div><div style="font-size:11px;color:var(--tm)" id="stat2Label">빠른 처리</div></div>
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat3Num">50%+</div><div style="font-size:11px;color:var(--tm)" id="stat3Label">마진 보장</div></div>
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat4Num">100%</div><div style="font-size:11px;color:var(--tm)" id="stat4Label">안전 보장</div></div>
   </div>
-  <div class="lcta">
-    <h2 style="font-size:clamp(20px,5vw,30px);font-weight:800;margin-bottom:8px">채널 성장, 오늘부터 <span class="gt">시작하세요</span></h2>
-    <p style="font-size:13px;color:var(--tl);margin:0 auto 22px">가입은 무료입니다.</p>
+  <div class="lcta" id="landCta">
+    <h2 style="font-size:clamp(20px,5vw,30px);font-weight:800;margin-bottom:8px" id="lctaTitle">채널 성장, 오늘부터 <span class="gt">시작하세요</span></h2>
+    <p style="font-size:13px;color:var(--tl);margin:0 auto 22px" id="lctaSub">가입은 무료입니다.</p>
     <button class="bp bplg" onclick="goAuth('register')">✨ 무료로 시작하기 →</button>
   </div>
   <footer class="lfoot">
@@ -1232,6 +1342,33 @@ function showPg(id){
 }
 
 // ── 3. 동적 테마 적용 ──
+// ── GLOW 본사 랜딩 전용 (첫 방문 — 무슨 서비스인지 바로 이해) ──
+function applyGlowLanding(isGlow){
+  var ls=ge('landServices'),lh=ge('landHow');
+  if(ls)ls.style.display=isGlow?'block':'none';
+  if(lh)lh.style.display=isGlow?'block':'none';
+  if(!isGlow)return;
+
+  var hb=ge('heroBadge');if(hb)hb.textContent='SNS 팔로워 · 좋아요 · 조회수 서비스';
+  var hpf=ge('heroPrefix');if(hpf)hpf.textContent='인스타 · 유튜브 · 틱톡';
+  var hs=ge('heroSloganSpan');if(hs)hs.textContent='숫자 올리는 곳';
+  var hss=ge('heroSloganSub');if(hss)hss.textContent='팔로워, 좋아요, 구독자, 조회수 — 링크만 넣으면 됩니다';
+  var hd=ge('heroDesc');if(hd)hd.textContent='처음 오셨나요? GLOW는 SNS 계정·게시물 링크를 넣으면 팔로워·좋아요·조회수·구독자를 올려주는 서비스입니다.';
+
+  var chips=ge('pg-land')?.querySelector('.hero-chips');
+  if(chips){
+    chips.innerHTML='<div class="chip">📷 인스타 팔로워</div><div class="chip">❤️ 좋아요</div><div class="chip">▶ 유튜브 구독자</div><div class="chip">👁 조회수</div><div class="chip">⚡ 자동 처리</div>';
+  }
+
+  var s3n=ge('stat3Num');if(s3n)s3n.textContent='링크';
+  var s3l=ge('stat3Label');if(s3l)s3l.textContent='만 입력';
+  var s4n=ge('stat4Num');if(s4n)s4n.textContent='24H';
+  var s4l=ge('stat4Label');if(s4l)s4l.textContent='자동 처리';
+
+  var ct=ge('lctaTitle');if(ct)ct.innerHTML='지금 가입하고 <span class="gt">바로 시작</span>하세요';
+  var cs=ge('lctaSub');if(cs)cs.textContent='인스타·유튜브·틱톡 성장 작업, 가입은 무료입니다.';
+}
+
 async function loadSiteConfig(){
   var d=await api('/api/site-config');
   if(d.error)return;
@@ -1292,13 +1429,18 @@ async function loadSiteConfig(){
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
   var hp=ge('heroPanel');if(hp)hp.textContent=logo;
-  var hpf=ge('heroPrefix');if(hpf)hpf.textContent=d.heroPrefix||'콘텐츠가';
+  var hpf=ge('heroPrefix');
 
-  // 커스텀 텍스트 적용
-  var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'채널 성장 · 마케팅 플랫폼';
-  var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'빛나도록';
-  var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'우리가 성장시킵니다';
-  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'유튜브·인스타·틱톡부터 아마존·쿠팡까지, 모든 채널의 성장을 지원합니다';
+  var isGlow=d.isDefault||d.siteId==='default'||/^(localhost|glow-0wdh\.onrender\.com)$/i.test(location.hostname.replace(/^www\./,''));
+
+  // 커스텀 텍스트 적용 (지인 사이트 — GLOW 본사는 applyGlowLanding에서 처리)
+  if(!isGlow){
+    if(hpf)hpf.textContent=d.heroPrefix||'콘텐츠가';
+    var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'채널 성장 · 마케팅 플랫폼';
+    var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'빛나도록';
+    var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'우리가 성장시킵니다';
+    var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'유튜브·인스타·틱톡부터 아마존·쿠팡까지, 모든 채널의 성장을 지원합니다';
+  }
   var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
 
   // 통계 숫자
@@ -1306,10 +1448,14 @@ async function loadSiteConfig(){
   var s1l=ge('stat1Label');if(s1l)s1l.textContent=d.stat1Label||'서비스 종류';
   var s2n=ge('stat2Num');if(s2n)s2n.textContent=d.stat2Num||'24H';
   var s2l=ge('stat2Label');if(s2l)s2l.textContent=d.stat2Label||'빠른 처리';
-  var s3n=ge('stat3Num');if(s3n)s3n.textContent=d.stat3Num||'50%+';
-  var s3l=ge('stat3Label');if(s3l)s3l.textContent=d.stat3Label||'마진 보장';
-  var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
-  var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
+  if(!isGlow){
+    var s3n=ge('stat3Num');if(s3n)s3n.textContent=d.stat3Num||'50%+';
+    var s3l=ge('stat3Label');if(s3l)s3l.textContent=d.stat3Label||'마진 보장';
+    var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
+    var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
+  }
+
+  applyGlowLanding(isGlow);
 
   // 충전 보너스 표시 — 금액 구간별 보너스율에 따라 프리셋 버튼에 동적 표시
   (function(){
