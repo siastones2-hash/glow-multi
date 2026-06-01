@@ -167,35 +167,49 @@ const api = {
   }
 };
 
-// ─── 5대 채널 구조 ───────────────────────────────────────
-const CH_KEYS = ["blog", "insta", "youtube", "receipt", "cafe"];
+// ─── 채널: 네이버 플레이스 자동 + 별도(점주 입력) ─────────
+const NAVER_AUTO_CH = ["blog", "visitor", "receipt"];
+const MANUAL_CH = ["insta", "youtube", "cafe"];
+const CH_KEYS = [...NAVER_AUTO_CH, ...MANUAL_CH];
 const CH_INFO = {
   blog: {
     label: "블로그",
     icon: "📝",
-    color: "#f59e0b"
+    color: "#f59e0b",
+    auto: true
+  },
+  visitor: {
+    label: "방문리뷰",
+    icon: "👣",
+    color: "#818cf8",
+    auto: true
+  },
+  receipt: {
+    label: "영수증",
+    icon: "⭐",
+    color: "#10b981",
+    auto: true
   },
   insta: {
     label: "인스타",
     icon: "📸",
-    color: "#c084fc"
+    color: "#c084fc",
+    auto: false
   },
   youtube: {
     label: "유튜브",
     icon: "🎬",
-    color: "#ef4444"
-  },
-  receipt: {
-    label: "영수증리뷰",
-    icon: "⭐",
-    color: "#10b981"
+    color: "#ef4444",
+    auto: false
   },
   cafe: {
-    label: "카페",
+    label: "네이버카페",
     icon: "☕",
-    color: "#60a5fa"
+    color: "#60a5fa",
+    auto: false
   }
 };
+const chSourceSub = (k, ch) => ch?.count_source === "place_header" || ch?.count_source === "receipt_tab" ? "플레이스 실측" : CH_INFO[k]?.auto ? "플레이스 실측" : ch?.source === "manual" ? "점주 입력" : "미연동";
 const mkCh = (today = 0, week = 0, month = 0) => ({
   today,
   week,
@@ -1779,9 +1793,19 @@ const mergeDailyIntoStore = (s, row) => {
         today: t?.today_on_page ?? 0,
         week: delta ?? 0,
         count_source: t?.count_source,
-        unavailable: t?.unavailable
+        unavailable: t?.unavailable,
+        auto: true
       };
     }
+  });
+  MANUAL_CH.forEach(k => {
+    if (!ch[k] || !ch[k].source) ch[k] = {
+      today: 0,
+      week: 0,
+      month: 0,
+      source: "manual",
+      auto: false
+    };
   });
   const rd = row.rank_detail || {};
   const pr = row.keyword_rank ?? rd.place_rank;
@@ -1973,7 +1997,8 @@ const getMktAdvice = (store, top5avg) => {
   const gaps = [];
   const ch = store.channels || {};
   const avg = top5avg || {};
-  CH_KEYS.forEach(k => {
+  NAVER_AUTO_CH.forEach(k => {
+    if (k === "receipt" && ch.receipt?.unavailable) return;
     const mine = ch[k]?.week || 0;
     const bench = avg[k]?.week || 0;
     if (bench > 0 && mine < bench * 0.5) {
@@ -2436,7 +2461,12 @@ function StoreListRow({
     style: {
       color: rc.color
     }
-  }, rc.text))), actionText && el("div", {
+  }, rc.text)), store.lastSynced && el("span", {
+    className: "fc-pill",
+    style: {
+      color: "var(--accent)"
+    }
+  }, "실측 " + String(store.lastSynced).slice(0, 10))), actionText && el("div", {
     className: "fc-action",
     style: {
       color: a.color,
@@ -2928,8 +2958,8 @@ function ChannelTable({
     return el("div", {
       style: {
         display: "grid",
-        gridTemplateColumns: "repeat(5,1fr)",
-        gap: 4
+        gridTemplateColumns: "repeat(6,1fr)",
+        gap: 3
       }
     }, CH_KEYS.map(k => {
       const info = CH_INFO[k];
@@ -2969,10 +2999,15 @@ function ChannelTable({
   }, el("div", {
     className: "fc-h1",
     style: {
-      marginBottom: 8,
+      marginBottom: 4,
       color: "var(--muted)"
     }
-  }, "📣 5대 채널 활동량"), el("div", {
+  }, "📣 채널 (플레이스 자동 + 점주 입력)"), el("div", {
+    className: "fc-muted",
+    style: {
+      marginBottom: 8
+    }
+  }, "블로그·방문·영수증 = 네이버 실측 · 인스타·유튜브·카페 = 점주 입력"), el("div", {
     style: {
       overflowX: "auto"
     }
@@ -3047,7 +3082,8 @@ function ChannelTable({
       style: {
         display: "flex",
         alignItems: "center",
-        gap: 5
+        gap: 5,
+        flexWrap: "wrap"
       }
     }, el("span", {
       style: {
@@ -3058,7 +3094,12 @@ function ChannelTable({
       style: {
         fontWeight: 600
       }
-    }, info.label))), el("td", {
+    }, info.label), el("span", {
+      className: "fc-muted",
+      style: {
+        fontSize: ".65rem"
+      }
+    }, info.auto ? "자동" : "입력"))), el("td", {
       style: {
         padding: "6px",
         textAlign: "center"
@@ -8075,12 +8116,22 @@ function Root() {
           setStores(p => p.map(s => {
             const row = rows.find(r => r.store_id === s.id);
             if (!row) return s;
+            const ch = {
+              ...s.channels
+            };
+            if (row.channels) {
+              MANUAL_CH.forEach(k => {
+                if (row.channels[k]) ch[k] = {
+                  ...ch[k],
+                  ...row.channels[k],
+                  source: "manual",
+                  auto: false
+                };
+              });
+            }
             return {
               ...s,
-              channels: row.channels ? {
-                ...s.channels,
-                ...row.channels
-              } : s.channels,
+              channels: ch,
               keywordRank: row.keyword_rank ?? s.keywordRank,
               receiptReviewAge: row.receipt_age ?? s.receiptReviewAge,
               externalSignal: row.external_signal ?? s.externalSignal,
