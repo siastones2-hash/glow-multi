@@ -244,6 +244,16 @@
   .field input:focus,.field select:focus{outline:none;border-color:var(--cyan);background:rgba(0,229,255,.05);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
   .field select option{background:var(--bg-soft);}
   .auth-body .btn{width:100%;padding:15px;margin-top:6px;}
+  .auth-sub{margin-top:8px;font-size:.88rem;color:var(--txt-dim);line-height:1.5;}
+  .signup-more{margin:6px 0 14px;border:1px solid var(--glass-bd);border-radius:12px;background:rgba(255,255,255,.02);}
+  .signup-more summary{padding:12px 14px;font-size:.84rem;color:var(--txt-dim);cursor:pointer;list-style:none;}
+  .signup-more summary::-webkit-details-marker{display:none;}
+  .signup-more[open] summary{color:var(--cyan);border-bottom:1px solid var(--glass-bd);}
+  .signup-more .field{padding:0 14px 12px;margin-bottom:0;}
+  .signup-more .field:first-of-type{padding-top:12px;}
+  .agree-single{display:flex;align-items:flex-start;gap:9px;font-size:.82rem;color:var(--txt-dim);margin:4px 0 16px;cursor:pointer;line-height:1.5;}
+  .agree-single input{margin-top:3px;accent-color:var(--cyan);width:16px;height:16px;flex-shrink:0;}
+  .agree-single a{color:var(--cyan);text-decoration:underline;}
   .auth-foot{text-align:center;margin-top:18px;font-size:.84rem;color:var(--txt-dim);}
   .req{color:var(--cyan);font-size:.85em;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -837,7 +847,7 @@
     <div class="wrap">
       <div class="sec-head reveal"><h2>FAQ</h2><p>자주 묻는 질문을 정리했습니다.</p></div>
       <div class="faq-list reveal">
-        <details class="faq"><summary>회원 가입은 어떻게 하나요?</summary><div class="fa">상단 JOIN 버튼을 통해 이름·연락처·지역만 입력하면 즉시 가입됩니다. 가입 후 마이페이지에서 연회비를 납부하면 정회원으로 전환되어 회원 우대가와 우선 예약권이 적용됩니다.</div></details>
+        <details class="faq"><summary>회원 가입은 어떻게 하나요?</summary><div class="fa">상단 JOIN 버튼에서 이름·휴대폰·비밀번호만 입력하면 즉시 가입됩니다. 가입 후 마이페이지에서 연회비를 납부하면 정회원으로 전환되어 회원 우대가와 우선 예약권이 적용됩니다.</div></details>
         <details class="faq"><summary>투어 참가비에는 무엇이 포함되나요?</summary><div class="fa">투어별로 다르지만 기본적으로 왕복 항공, 라운드(그린피·캐디·카트), 호텔 숙박, 차량 의전이 포함됩니다. 각 투어 카드의 '예약하기'를 누르면 상세 포함 내역을 확인할 수 있습니다.</div></details>
         <details class="faq"><summary>ISO 인증은 어떤 절차로 진행되나요?</summary><div class="fa">신청 접수 → 서류 심사 → 현장 실사 → 인증 발급의 4단계로 진행됩니다. 회원으로 로그인해 신청하면 마이페이지에서 실시간 진행 상태를 추적할 수 있습니다.</div></details>
         <details class="faq"><summary>회원 등급은 어떻게 올라가나요?</summary><div class="fa">가입 시 일반 회원으로 시작하며, 연회비 납부 시 정회원으로 전환됩니다. 정회원이 되면 투어·대회 예약, 회원 우대가, 골프장 할인 등 모든 회원 혜택이 열립니다.</div></details>
@@ -867,26 +877,20 @@
 
 <!-- SIGNUP -->
 <div class="page" id="pgSignup"><div class="auth-wrap"><div class="auth-card">
-  <div class="auth-head"><span class="label">Membership</span><h2>회원 가입</h2></div>
+  <div class="auth-head"><span class="label">Membership</span><h2>회원 가입</h2><p class="auth-sub">이름 · 휴대폰 · 비밀번호만 입력하면 끝납니다.</p></div>
   <div class="auth-body">
-    <div class="field"><label>이름 <span class="req">*</span></label><input id="suName" placeholder="성함"></div>
-    <div class="field"><label>아이디 (이메일) <span class="req">*</span></label><input id="suId" placeholder="example@email.com"></div>
-    <div class="field"><label>연락처 <span class="req">*</span></label><input id="suPhone" placeholder="010-0000-0000" inputmode="numeric"></div>
-    <div class="grid2">
-      <div class="field"><label>생년월일</label><input id="suBirth" placeholder="YYYY-MM-DD" inputmode="numeric"></div>
-      <div class="field"><label>성별</label><select id="suGender"><option value="">선택</option><option>남성</option><option>여성</option></select></div>
-    </div>
-    <div class="field"><label>지역 <span class="req">*</span></label><select id="suRegion"><option>서울/경기</option><option>충청</option><option>영남</option><option>호남</option><option>강원/제주</option><option>해외</option></select></div>
-    <div class="field"><label>추천인 <span style="color:var(--txt-faint);font-size:.85em">(선택 · 소개한 임원 이름)</span></label><input id="suReferrer" placeholder="예: 김일두 부총재 (없으면 비워두세요)"></div>
-    <div class="field"><label>비밀번호 <span class="req">*</span></label><input id="suPw" type="password" placeholder="6자 이상 입력"></div>
-    <div class="field"><label>비밀번호 확인 <span class="req">*</span></label><input id="suPw2" type="password" placeholder="비밀번호 재입력"><span class="pw-msg" id="pwMsg"></span></div>
+    <div class="field"><label>이름 <span class="req">*</span></label><input id="suName" placeholder="성함" autocomplete="name"></div>
+    <div class="field"><label>휴대폰 <span class="req">*</span></label><input id="suPhone" placeholder="010-0000-0000" inputmode="tel" autocomplete="tel"></div>
+    <div class="field"><label>비밀번호 <span class="req">*</span></label><input id="suPw" type="password" placeholder="6자 이상" autocomplete="new-password"></div>
 
-    <div class="agree-box">
-      <label class="agree-all"><input type="checkbox" id="suAgreeAll" onchange="toggleAgreeAll()"> <b>전체 동의</b></label>
-      <label class="agree"><input type="checkbox" class="agree-item" id="suAgree1"> <span>[필수] 이용약관 동의</span> <a class="agree-view" onclick="showTerms('이용약관')">보기</a></label>
-      <label class="agree"><input type="checkbox" class="agree-item" id="suAgree2"> <span>[필수] 개인정보 수집·이용 동의</span> <a class="agree-view" onclick="showTerms('개인정보')">보기</a></label>
-      <label class="agree"><input type="checkbox" class="agree-item" id="suAgree3"> <span>[선택] 마케팅·이벤트 정보 수신 동의</span></label>
-    </div>
+    <details class="signup-more">
+      <summary>추가 정보 (선택)</summary>
+      <div class="field"><label>이메일</label><input id="suEmail" placeholder="안내 수신용 (선택)" autocomplete="email"></div>
+      <div class="field"><label>지역</label><select id="suRegion"><option>서울/경기</option><option>충청</option><option>영남</option><option>호남</option><option>강원/제주</option><option>해외</option></select></div>
+      <div class="field"><label>추천인</label><input id="suReferrer" placeholder="소개한 임원 이름"></div>
+    </details>
+
+    <label class="agree-single"><input type="checkbox" id="suAgree"> <span>[필수] <a onclick="showTerms('이용약관')">이용약관</a> 및 <a onclick="showTerms('개인정보')">개인정보 처리</a>에 동의합니다</span></label>
 
     <button class="btn btn-gold" onclick="doSignup()">JOIN ASPA →</button>
     <div class="auth-foot">이미 회원이신가요? <a onclick="go('login')">로그인</a></div>
@@ -897,7 +901,7 @@
 <div class="page" id="pgLogin"><div class="auth-wrap"><div class="auth-card">
   <div class="auth-head"><span class="label">Sign In</span><h2>로그인</h2></div>
   <div class="auth-body">
-    <div class="field"><label>아이디</label><input id="liId" placeholder="이메일 또는 관리자 아이디"></div>
+    <div class="field"><label>아이디</label><input id="liId" placeholder="휴대폰 번호 또는 이메일"></div>
     <div class="field"><label>비밀번호</label><input id="liPw" type="password" placeholder="비밀번호"></div>
     <button class="btn btn-gold" onclick="doLogin()">SIGN IN →</button>
     <div class="divider-or">또는 간편 로그인 <span style="color:var(--txt-faint);font-size:.62rem">(준비 중)</span></div>
@@ -1526,30 +1530,34 @@ function closeMenu(){$('mDrawer').classList.remove('open');$('mBackdrop').classL
 function mGo(v){closeMenu();go(v);}
 function mGoBook(){closeMenu();goBook();}
 function mAction(fn){closeMenu();if(fn==='openCard')openCard();else if(fn==='logout')logout();}
+function normPhone(v){return String(v||'').replace(/\D/g,'');}
+function memberLoginId(m){return normPhone(m.phone||m.mid||'');}
 async function doSignup(){
-  const name=$('suName').value.trim(),mid=$('suId').value.trim(),phone=$('suPhone').value.trim(),
-        pw=$('suPw').value.trim(),pw2=$('suPw2').value.trim(),region=$('suRegion').value,
-        birth=$('suBirth').value.trim(),gender=$('suGender').value,referrer=$('suReferrer')?$('suReferrer').value.trim():'';
-  if(!name||!mid||!phone||!pw){toast('필수 항목(*)을 모두 입력해주세요');return;}
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mid)){toast('올바른 이메일 형식이 아닙니다');return;}
+  const name=$('suName').value.trim(),phone=$('suPhone').value.trim(),pw=$('suPw').value.trim(),
+        email=$('suEmail')?$('suEmail').value.trim():'',
+        region=$('suRegion')?$('suRegion').value:'서울/경기',
+        referrer=$('suReferrer')?$('suReferrer').value.trim():'';
+  const mid=normPhone(phone);
+  if(!name||!phone||!pw){toast('이름, 휴대폰, 비밀번호를 입력해주세요');return;}
+  if(mid.length<10||!/^01/.test(mid)){toast('올바른 휴대폰 번호를 입력해주세요');return;}
   if(pw.length<6){toast('비밀번호는 6자 이상이어야 합니다');return;}
-  if(pw!==pw2){toast('비밀번호가 일치하지 않습니다');return;}
-  if(!$('suAgree1').checked||!$('suAgree2').checked){toast('필수 약관에 동의해주세요');return;}
-  if(state.members.some(m=>m.mid===mid)){toast('이미 가입된 아이디입니다');return;}
-  const m={id:nid(),name,mid,pw,phone,region,birth,gender,referrer,marketing:$('suAgree3').checked,status:'active',tier:'norm',fee_paid:false,fee_status:'none',fee_until:null,joined:today()};
+  if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('이메일 형식을 확인해주세요');return;}
+  if(!$('suAgree').checked){toast('약관에 동의해주세요');return;}
+  if(state.members.some(m=>m.mid===mid||memberLoginId(m)===mid)){toast('이미 가입된 번호입니다');return;}
+  const m={id:nid(),name,mid,pw,phone,email,region,referrer,marketing:false,status:'active',tier:'norm',fee_paid:false,fee_status:'none',fee_until:null,joined:today()};
   state.members.push(m);await api.up('members',m);notify(`신규 회원: ${name} (${region})${referrer?' · 추천: '+referrer:''}`);state.session={role:'member',mid:m.id};renderNav();renderAll();
-  ['suName','suId','suPhone','suPw','suPw2','suBirth','suReferrer'].forEach(id=>{if($(id))$(id).value='';});
-  ['suAgreeAll','suAgree1','suAgree2','suAgree3'].forEach(id=>{if($(id))$(id).checked=false;});
+  ['suName','suPhone','suPw','suEmail','suReferrer'].forEach(id=>{if($(id))$(id).value='';});
+  if($('suAgree'))$('suAgree').checked=false;
   showOk('가입을 환영합니다',`${name}님, 아스파골프 회원이 되셨습니다.\\n연회비 납부 후 정회원이 되면 회원 단톡방과 모든 혜택이 열립니다.`,'마이페이지로 이동 →',()=>go('member'));}
-function toggleAgreeAll(){const on=$('suAgreeAll').checked;document.querySelectorAll('.agree-item').forEach(c=>c.checked=on);}
 function showTerms(kind){
   const txt=kind==='이용약관'
     ?'제1조(목적) 본 약관은 아스파골프(ASPA) 회원 서비스 이용에 관한 조건을 규정합니다.\\n제2조(회원) 가입 신청 후 승인된 자를 회원으로 합니다.\\n제3조(서비스) 투어 예약, 골프장 부킹, 아카데미, ISO 인증 등을 제공합니다.\\n제4조(회비) 정회원 전환 시 연회비가 부과되며, 입금 확인 후 관리자 승인으로 전환됩니다.\\n※ 정식 약관 전문은 추후 게시됩니다.'
-    :'1. 수집 항목: 이름, 이메일, 연락처, 지역, 생년월일, 성별\\n2. 수집 목적: 회원 관리, 서비스 제공, 예약·결제 처리\\n3. 보유 기간: 회원 탈퇴 시까지\\n4. 동의를 거부할 수 있으나, 필수 항목 미동의 시 가입이 제한됩니다.\\n※ 정식 방침 전문은 추후 게시됩니다.';
+    :'1. 수집 항목: 이름, 휴대폰, 비밀번호 (선택: 이메일, 지역, 추천인)\\n2. 수집 목적: 회원 관리, 서비스 제공, 예약·결제 처리\\n3. 보유 기간: 회원 탈퇴 시까지\\n4. 동의를 거부할 수 있으나, 필수 항목 미동의 시 가입이 제한됩니다.\\n※ 정식 방침 전문은 추후 게시됩니다.';
   showOk(kind+' 안내',txt,'확인',null);}
 function doLogin(){const id=$('liId').value.trim(),pw=$('liPw').value.trim();
   if(id===ADMIN.id&&pw===ADMIN.pw){state.session={role:'admin',mid:null};renderNav();$('liId').value=$('liPw').value='';toast('총괄 관리자 로그인');go('admin');return;}
-  const m=state.members.find(x=>x.mid===id&&x.pw===pw);if(m){state.session={role:'member',mid:m.id};renderNav();renderTours();$('liId').value=$('liPw').value='';toast(`${m.name}님 환영합니다`);go('member');return;}
+  const pid=normPhone(id);
+  const m=state.members.find(x=>x.pw===pw&&(x.mid===id||x.mid===pid||memberLoginId(x)===pid));if(m){state.session={role:'member',mid:m.id};renderNav();renderTours();$('liId').value=$('liPw').value='';toast(`${m.name}님 환영합니다`);go('member');return;}
   toast('아이디 또는 비밀번호가 일치하지 않습니다');}
 function logout(){state.session={role:'guest',mid:null};renderNav();renderTours();toast('로그아웃 되었습니다');go('home');}
 
@@ -2044,12 +2052,6 @@ function initBanner(){
   setTimeout(()=>b.classList.add('show'),1600);
 }
 initPromo();initBanner();
-// 비밀번호 확인 실시간 표시
-(function(){const p2=document.getElementById('suPw2'),msg=document.getElementById('pwMsg');if(!p2)return;
-  function chk(){const a=document.getElementById('suPw').value,b=p2.value;if(!b){msg.textContent='';return;}
-    if(a===b){msg.textContent='✓ 일치';msg.className='pw-msg ok';}else{msg.textContent='✗ 불일치';msg.className='pw-msg no';}}
-  p2.addEventListener('input',chk);document.getElementById('suPw').addEventListener('input',chk);
-})();
 </script>
 </body>
 </html>
