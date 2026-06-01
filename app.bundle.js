@@ -1622,7 +1622,7 @@ const naverRankForStore = s => {
     main: "—",
     unit: "",
     color: "#64748b",
-    sub: "네이버 순위 미측정",
+    sub: "실측 로딩 중",
     kind: "wait",
     sort: 9999
   };
@@ -8015,10 +8015,18 @@ function Root() {
         if (rows?.length) {
           setStores(p => p.map(s => {
             const row = rows.find(r => r.store_id === s.id);
-            return row ? {
+            if (!row) return s;
+            return {
               ...s,
-              ...row
-            } : s;
+              channels: row.channels ? {
+                ...s.channels,
+                ...row.channels
+              } : s.channels,
+              keywordRank: row.keyword_rank ?? s.keywordRank,
+              receiptReviewAge: row.receipt_age ?? s.receiptReviewAge,
+              externalSignal: row.external_signal ?? s.externalSignal,
+              sales: row.sales ?? s.sales
+            };
           }));
         }
       } catch (e) {}
