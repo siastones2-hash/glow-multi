@@ -3,7 +3,7 @@
 
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta name="theme-color" content="#070d1a">
-<title>FRANCHAIN v5.9.2 — 소림사 마케팅 관제</title>
+<title>FRANCHAIN v5.9.3 — 소림사 마케팅 관제</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -16,10 +16,11 @@
   --accent:#e8a317;--accent-soft:rgba(232,163,23,.12);
   --ok:#34d399;--warn:#fbbf24;--bad:#f87171;
   --radius:12px;--shadow:0 4px 20px rgba(0,0,0,.35);
-  --fs-xs:.7rem;--fs-sm:.8125rem;--fs-base:.9375rem;--fs-md:1rem;--fs-lg:1.0625rem;
-  --fs-title:1.125rem;--fs-rank:1.5rem;--fs-rank-lg:1.75rem;
+  --fs-xs:.75rem;--fs-sm:.875rem;--fs-base:1rem;--fs-md:1.0625rem;--fs-lg:1.125rem;
+  --fs-title:1.2rem;--fs-rank:1.625rem;--fs-rank-lg:2rem;
+  --text-muted:#b0bcc9;
   --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;
-  --page-max:480px;
+  --page-max:520px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:16px;-webkit-text-size-adjust:100%}
@@ -36,13 +37,17 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .fc-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
 .fc-label{font-size:var(--fs-xs);font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .fc-h1{font-size:var(--fs-title);font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.3}
-.fc-muted{color:var(--muted);font-size:var(--fs-sm)}
-.fc-body{font-size:var(--fs-base);line-height:1.45}
+.fc-muted{color:var(--text-muted);font-size:var(--fs-sm);line-height:1.4}
+.fc-body{font-size:var(--fs-base);line-height:1.5;color:var(--text)}
 .fc-rank{font-family:'Space Mono',ui-monospace,monospace;font-size:var(--fs-rank);font-weight:800;line-height:1.1}
 .fc-rank--lg{font-size:var(--fs-rank-lg)}
 .fc-stat{font-family:'Space Mono',ui-monospace,monospace;font-size:var(--fs-lg);font-weight:800;line-height:1.1}
-.fc-list-name{font-size:var(--fs-base);font-weight:600;color:var(--text)}
-.fc-chip{font-size:var(--fs-sm);font-weight:700;padding:2px 6px;border-radius:99px}
+.fc-list-name{font-size:var(--fs-md);font-weight:700;color:var(--text);line-height:1.35}
+.fc-pill{font-size:var(--fs-sm);color:var(--text-muted);background:var(--bg-elevated);padding:4px 8px;border-radius:6px;line-height:1.3}
+.fc-pill b{font-weight:800;color:var(--text)}
+.fc-action{font-size:var(--fs-sm);line-height:1.45;font-weight:500;padding:6px 8px;margin-top:6px;border-radius:6px;background:rgba(255,255,255,.04)}
+.fc-badge-core{font-size:var(--fs-xs);font-weight:700;color:var(--accent);border:1px solid rgba(232,163,23,.4);padding:2px 6px;border-radius:4px}
+.fc-chip{font-size:var(--fs-sm);font-weight:700;padding:3px 7px;border-radius:99px}
 .apulse{animation:pulse 2s ease-in-out infinite}
 .sia-credit{opacity:.5;transition:opacity .3s}
 .sia-credit:hover{opacity:.9}
@@ -50,6 +55,6 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 </head>
 <body>
 <div id="root"></div>
-<script src="app.bundle.js?v=1780275568565"></script>
+<script src="app.bundle.js?v=1780276038603"></script>
 
 </body></html>

@@ -2345,20 +2345,21 @@ function StoreListRow({
   const rc = receiptDisplay(store);
   const kw = matjibKwForStore(store);
   const url = purl(store.placeId);
+  const actionText = a.text ? a.text.replace(/^[^\s]+\s*/, "") : "";
   return el("div", {
     onClick: () => onDetail(store.id),
     style: {
       display: "grid",
       gridTemplateColumns: "1fr auto",
-      gap: 8,
-      alignItems: "center",
-      padding: "10px 12px",
-      marginBottom: 6,
+      gap: 12,
+      alignItems: "stretch",
+      padding: "14px 14px",
+      marginBottom: 8,
       cursor: "pointer",
       background: "var(--bg-card)",
       border: "1px solid var(--border)",
-      borderRadius: 10,
-      borderLeft: "3px solid " + (isPri ? "var(--accent)" : SC[store.status])
+      borderRadius: 12,
+      borderLeft: "4px solid " + (isPri ? "var(--accent)" : SC[store.status])
     }
   }, el("div", {
     style: {
@@ -2368,83 +2369,64 @@ function StoreListRow({
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 6,
-      marginBottom: 3
+      gap: 8,
+      marginBottom: 6,
+      flexWrap: "wrap"
     }
   }, isPri && el("span", {
-    style: {
-      fontSize: ".6rem",
-      fontWeight: 700,
-      color: "var(--accent)",
-      border: "1px solid rgba(232,163,23,.35)",
-      padding: "1px 5px",
-      borderRadius: 4
-    }
+    className: "fc-badge-core"
   }, "핵심"), el("span", {
     className: "fc-list-name",
     style: {
       overflow: "hidden",
       textOverflow: "ellipsis",
-      whiteSpace: "nowrap"
+      whiteSpace: "nowrap",
+      flex: 1,
+      minWidth: 0
     }
   }, priLabel || store.name)), el("div", {
-    className: "fc-muted"
+    className: "fc-muted",
+    style: {
+      marginBottom: 8
+    }
   }, store.region, " · ", kw), el("div", {
     style: {
       display: "flex",
-      gap: 4,
-      marginTop: 4,
+      gap: 6,
       flexWrap: "wrap"
     }
   }, el("span", {
-    className: "fc-muted",
-    style: {
-      background: "var(--bg)",
-      padding: "2px 5px",
-      borderRadius: 4
-    }
+    className: "fc-pill"
   }, "방문 ", el("b", {
     style: {
       color: "#a5b4fc"
     }
   }, v)), el("span", {
-    className: "fc-muted",
-    style: {
-      background: "var(--bg)",
-      padding: "2px 5px",
-      borderRadius: 4
-    }
+    className: "fc-pill"
   }, "블로그 ", el("b", {
     style: {
       color: "var(--ok)"
     }
   }, b)), el("span", {
-    className: "fc-muted",
-    style: {
-      background: "var(--bg)",
-      padding: "2px 5px",
-      borderRadius: 4
-    }
+    className: "fc-pill"
   }, "영수증 ", el("b", {
     style: {
       color: rc.color
     }
-  }, rc.text))), a.text && el("div", {
-    className: "fc-muted",
+  }, rc.text))), actionText && el("div", {
+    className: "fc-action",
     style: {
       color: a.color,
-      marginTop: 4,
-      paddingLeft: 6,
-      borderLeft: "2px solid " + a.color,
-      lineHeight: 1.3,
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap"
+      borderLeft: "3px solid " + a.color
     }
-  }, a.text.replace(/^[^\s]+\s*/, ""))), el("div", {
+  }, actionText)), el("div", {
     style: {
       textAlign: "right",
-      flexShrink: 0
+      flexShrink: 0,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      minWidth: 72
     }
   }, el("div", {
     className: "fc-rank",
@@ -2453,22 +2435,24 @@ function StoreListRow({
     }
   }, d.main, el("span", {
     style: {
-      fontSize: FC.type.xs,
-      fontWeight: 600
+      fontSize: FC.type.sm,
+      fontWeight: 700
     }
   }, d.unit || "")), el("div", {
     className: "fc-muted",
     style: {
-      marginTop: 2,
-      maxWidth: 72,
+      marginTop: 4,
+      fontSize: FC.type.xs,
+      maxWidth: 88,
       marginLeft: "auto"
     }
-  }, (d.sub || "").slice(0, 20)), el("div", {
-    className: "fc-muted",
+  }, (d.sub || "").slice(0, 22)), el("div", {
+    className: "fc-body",
     style: {
       color: "var(--accent)",
-      marginTop: 4,
-      fontWeight: 600
+      marginTop: 8,
+      fontWeight: 700,
+      fontSize: FC.type.sm
     }
   }, "상세 ›")));
 }
@@ -2685,13 +2669,13 @@ function AllStoresNaverRankPanel({
       style: {
         display: "grid",
         gridTemplateColumns: "1fr auto",
-        gap: 8,
+        gap: 10,
         alignItems: "center",
-        padding: "8px 10px",
+        padding: "12px 12px",
         cursor: "pointer",
         background: "var(--bg-card)",
         border: "1px solid var(--border)",
-        borderRadius: 8
+        borderRadius: 10
       }
     }, el("div", {
       style: {
@@ -2707,7 +2691,7 @@ function AllStoresNaverRankPanel({
     }, (s.name || "").replace(/^소림사\s*/, "")), el("div", {
       className: "fc-muted",
       style: {
-        marginTop: 1
+        marginTop: 4
       }
     }, kw)), el("div", {
       style: {
@@ -4461,10 +4445,10 @@ function App({
         padding: "0 12px 8px"
       }
     }, el("div", {
-      className: "fc-muted",
+      className: "fc-body",
       style: {
-        fontSize: ".75rem",
-        marginBottom: 6
+        color: "var(--text-muted)",
+        marginBottom: 8
       }
     }, "탭하면 상세 · 순위·리뷰는 네이버 실측"), filtered.map(s => {
       const pri = PRIORITY_TOP3.find(p => p.placeId === s.placeId || p.storeId === s.id);
