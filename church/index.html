@@ -1,0 +1,3818 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Church ERP — 사랑의교회</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { background:#F4F7FB; min-height:100vh; }
+    #root { min-height:100vh; }
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:#EEF3FA; }
+    ::-webkit-scrollbar-thumb { background:#C5D3E3; border-radius:3px; }
+    option { background:#FFFFFF; color:#1A2B3C; }
+    input[type=date]::-webkit-calendar-picker-indicator { opacity:0.55; }
+    input[type=checkbox] { accent-color:#4A6FA5; }
+    input[type=radio] { accent-color:#4A6FA5; }
+    @keyframes slideIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    @media (max-width: 767px) {
+      html, body { overflow-x: hidden; }
+      .erp-main { -webkit-overflow-scrolling: touch; }
+      .erp-main input, .erp-main select, .erp-main textarea, .erp-main button { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useCallback, useEffect, useRef } = React;
+// ═══════════════════════════════════════════════════════════
+// CHURCH ERP v5.4 — MOBILE (밝은 교회 테마 + 모바일 반응형)
+// ✅ localStorage 영속성 (새로고침해도 데이터 유지)
+// ✅ Toast 알림 (저장/삭제/오류 피드백)
+// ✅ 입력값 유효성 검사 (전화번호·금액·날짜·필수값)
+// ✅ 삭제/승인 확인 다이얼로그
+// ✅ 에러 경계 처리
+// ✅ 15개 탭 전부 연동
+// ═══════════════════════════════════════════════════════════
+
+
+const C = {
+  bg:"#F4F7FB", s1:"#FFFFFF", s2:"#EEF3FA", s3:"#E2EAF4",
+  border:"#D5DFEC", borderHi:"#B8C9DC",
+  violet:"#4A6FA5", gold:"#C9922A", emerald:"#2D9B6F",
+  rose:"#D94F68", sky:"#3A8FD9", amber:"#D4880F", indigo:"#5C6BC0",
+  text:"#1A2B3C", sub:"#4A5D73", muted:"#8A9BB0",
+};
+const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');`;
+const F = "'Noto Sans KR',sans-serif";
+const FB = "'Libre Baskerville',serif";
+
+// ── Validation Helpers ─────────────────────────────────
+const V = {
+  required: v => !!(v?.toString().trim()),
+  phone: v => /^010-\d{4}-\d{4}$/.test(v||""),
+  amount: v => !isNaN(v) && parseInt(v) > 0,
+  date: v => !!(v) && !isNaN(Date.parse(v)),
+  minLen: (v,n) => (v||"").trim().length >= n,
+};
+const phoneFormat = v => {
+  const d = v.replace(/\D/g,"").slice(0,11);
+  if(d.length<=3) return d;
+  if(d.length<=7) return d.slice(0,3)+"-"+d.slice(3);
+  return d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7);
+};
+const amountFormat = v => v.replace(/[^0-9]/g,"");
+
+// ── localStorage 유틸 ──────────────────────────────────
+const LS = {
+  get: (key, def) => {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; }
+    catch { return def; }
+  },
+  set: (key, val) => {
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch { return false; }
+  },
+  clear: key => { try { localStorage.removeItem(key); } catch {} },
+};
+
+// ── Toast System ───────────────────────────────────────
+const TOAST_DURATION = 3000;
+let toastId = 0;
+let toastSetter = null;
+
+const toast = {
+  success: msg => toastSetter?.(p=>[...p,{id:++toastId,msg,type:"success"}]),
+  error:   msg => toastSetter?.(p=>[...p,{id:++toastId,msg,type:"error"}]),
+  info:    msg => toastSetter?.(p=>[...p,{id:++toastId,msg,type:"info"}]),
+  warn:    msg => toastSetter?.(p=>[...p,{id:++toastId,msg,type:"warn"}]),
+};
+
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+  useEffect(() => { toastSetter = setToasts; return () => { toastSetter = null; }; }, []);
+  useEffect(() => {
+    if(!toasts.length) return;
+    const t = setTimeout(()=>setToasts(p=>p.slice(1)), TOAST_DURATION);
+    return ()=>clearTimeout(t);
+  }, [toasts]);
+  const icons = {success:"✅",error:"❌",info:"ℹ️",warn:"⚠️"};
+  const colors = {success:C.emerald,error:C.rose,info:C.sky,warn:C.amber};
+  return (
+    <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,display:"flex",flexDirection:"column",gap:8}}>
+      {toasts.map(t=>(
+        <div key={t.id} style={{
+          background:C.s1, border:`1px solid ${colors[t.type]}66`,
+          borderLeft:`3px solid ${colors[t.type]}`,
+          borderRadius:12, padding:"12px 16px",
+          display:"flex", alignItems:"center", gap:10,
+          boxShadow:"0 8px 32px rgba(26,43,60,.12)",
+          animation:"slideIn .2s ease",
+          minWidth:260, maxWidth:380,
+        }}>
+          <span style={{fontSize:16,flexShrink:0}}>{icons[t.type]}</span>
+          <span style={{color:C.text,fontSize:13,fontFamily:F,flex:1}}>{t.msg}</span>
+          <button onClick={()=>setToasts(p=>p.filter(x=>x.id!==t.id))}
+            style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,flexShrink:0}}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Confirm Dialog ─────────────────────────────────────
+function ConfirmDialog({ open, title, message, onConfirm, onCancel, confirmText="확인", confirmV="rose" }) {
+  if(!open) return null;
+  return (
+    <div onClick={onCancel} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
+      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1100}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.s1,border:`1px solid ${C.borderHi}`,borderRadius:18,
+        padding:"28px 32px",width:380,maxWidth:"92vw",
+      }}>
+        <div style={{fontSize:32,textAlign:"center",marginBottom:12}}>
+          {confirmV==="rose"?"⚠️":"✅"}
+        </div>
+        <div style={{color:C.text,fontFamily:FB,fontSize:16,fontWeight:700,textAlign:"center",marginBottom:8}}>{title}</div>
+        <div style={{color:C.sub,fontFamily:F,fontSize:13,textAlign:"center",marginBottom:24,lineHeight:1.6}}>{message}</div>
+        <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+          <Btn v="ghost" onClick={onCancel}>취소</Btn>
+          <Btn v={confirmV} onClick={onConfirm}>{confirmText}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── FormField with Validation ──────────────────────────
+function Field({ label, error, children, required=false }) {
+  return (
+    <div>
+      <label style={{color:error?C.rose:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>
+        {label}{required&&<span style={{color:C.rose,marginLeft:2}}>*</span>}
+      </label>
+      {children}
+      {error&&<div style={{color:C.rose,fontSize:10,fontFamily:F,marginTop:3}}>⚠ {error}</div>}
+    </div>
+  );
+}
+
+// ── Shared UI Atoms ────────────────────────────────────
+const Btn = ({ children, v="primary", sz="md", onClick, style={}, disabled=false }) => {
+  const p = sz==="sm"?{padding:"5px 13px",fontSize:11}:sz==="lg"?{padding:"12px 26px",fontSize:15}:{padding:"8px 16px",fontSize:13};
+  const col = v==="primary"?{background:C.violet,color:"#fff",border:"none"}
+    :v==="gold"?{background:C.gold,color:"#1a1000",border:"none"}
+    :v==="emerald"?{background:`${C.emerald}22`,color:C.emerald,border:`1px solid ${C.emerald}44`}
+    :v==="rose"?{background:`${C.rose}22`,color:C.rose,border:`1px solid ${C.rose}44`}
+    :v==="amber"?{background:`${C.amber}22`,color:C.amber,border:`1px solid ${C.amber}44`}
+    :v==="sky"?{background:`${C.sky}22`,color:C.sky,border:`1px solid ${C.sky}44`}
+    :{background:"transparent",color:C.sub,border:`1px solid ${C.border}`};
+  return (
+    <button disabled={disabled} onClick={onClick} style={{
+      ...p,...col,borderRadius:9,cursor:disabled?"not-allowed":"pointer",
+      fontFamily:F,fontWeight:600,display:"inline-flex",alignItems:"center",
+      gap:5,whiteSpace:"nowrap",opacity:disabled?0.5:1,transition:"all .15s",...style,
+    }}>{children}</button>
+  );
+};
+const Badge = ({ c, children }) => (
+  <span style={{background:`${c}18`,color:c,border:`1px solid ${c}30`,
+    borderRadius:6,padding:"2px 9px",fontSize:11,fontFamily:F,fontWeight:500,whiteSpace:"nowrap"}}>{children}</span>
+);
+const Card = ({ children, style={} }) => (
+  <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:"0 1px 4px rgba(26,43,60,.06)",...style}}>{children}</div>
+);
+const SH = ({ title, sub, action }) => (
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
+    <div>
+      <div style={{color:C.text,fontFamily:FB,fontSize:14,fontWeight:700}}>{title}</div>
+      {sub&&<div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:2}}>{sub}</div>}
+    </div>
+    {action}
+  </div>
+);
+const Inp = ({ value, onChange, placeholder, type="text", style={}, error=false }) => (
+  <input type={type} value={value??""} onChange={onChange} placeholder={placeholder}
+    style={{background:C.s2,border:`1px solid ${error?C.rose:C.border}`,borderRadius:9,
+      padding:"8px 13px",color:C.text,fontFamily:F,fontSize:13,outline:"none",
+      width:"100%",boxSizing:"border-box",...style}}/>
+);
+const Sel = ({ value, onChange, opts, style={} }) => (
+  <select value={value??""} onChange={e=>onChange(e.target.value)}
+    style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:9,
+      padding:"8px 13px",color:C.text,fontFamily:F,fontSize:13,outline:"none",
+      cursor:"pointer",width:"100%",...style}}>
+    {opts.map(o=><option key={typeof o==="object"?o.v:o} value={typeof o==="object"?o.v:o} style={{background:C.s2}}>
+      {typeof o==="object"?o.l:o}</option>)}
+  </select>
+);
+// ── Responsive ─────────────────────────────────────────
+function useIsMobile(bp = 768) {
+  const [mob, setMob] = useState(() => typeof window !== "undefined" && window.innerWidth < bp);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${bp - 1}px)`);
+    const fn = () => setMob(mq.matches);
+    fn();
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, [bp]);
+  return mob;
+}
+function adaptGridColumns(cols) {
+  if (!cols || cols === "none") return cols;
+  const r = cols.match(/repeat\((\d+),\s*([^)]+)\)/);
+  if (r) {
+    const n = parseInt(r[1], 10);
+    if (n >= 3) return "repeat(2, 1fr)";
+    if (n === 2) return "1fr";
+  }
+  if (/px/.test(cols) || /auto/.test(cols)) return "1fr";
+  const frs = cols.match(/\d*\.?\d+fr/g);
+  if (frs && frs.length >= 2) return "1fr";
+  return cols;
+}
+function useResponsiveGrids(mainRef, isMobile, tab) {
+  useEffect(() => {
+    const root = mainRef.current;
+    if (!root) return;
+    const apply = () => {
+      root.querySelectorAll("div").forEach(el => {
+        const cs = window.getComputedStyle(el);
+        if (cs.display !== "grid") return;
+        if (isMobile) {
+          if (!el.dataset.erpGridOrig) el.dataset.erpGridOrig = el.style.gridTemplateColumns || cs.gridTemplateColumns;
+          el.style.gridTemplateColumns = adaptGridColumns(el.dataset.erpGridOrig);
+        } else if (el.dataset.erpGridOrig) {
+          el.style.gridTemplateColumns = el.dataset.erpGridOrig;
+          delete el.dataset.erpGridOrig;
+        }
+      });
+    };
+    const t = setTimeout(apply, 0);
+    return () => clearTimeout(t);
+  }, [isMobile, tab, mainRef]);
+}
+
+const Modal = ({ open, onClose, title, children, width=460 }) => {
+  if(!open) return null;
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",
+      display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.s1,border:`1px solid ${C.borderHi}`,
+        borderRadius:20,padding:28,width,maxWidth:"95vw",maxHeight:"88vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
+          <span style={{color:C.text,fontFamily:FB,fontSize:16,fontWeight:700}}>{title}</span>
+          <button onClick={onClose} style={{background:"none",border:"none",color:C.muted,
+            fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
+const Tbl = ({ heads, rows }) => (
+  <div style={{overflowX:"auto"}}>
+    <table style={{width:"100%",borderCollapse:"collapse"}}>
+      <thead>
+        <tr style={{background:C.s2}}>
+          {heads.map((h,i)=>(
+            <th key={i} style={{padding:"10px 14px",textAlign:"left",color:C.muted,
+              fontSize:11,fontFamily:F,fontWeight:500,borderBottom:`1px solid ${C.border}`,whiteSpace:"nowrap"}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.length===0
+          ?<tr><td colSpan={heads.length} style={{padding:32,textAlign:"center",color:C.muted,fontFamily:F,fontSize:13}}>데이터 없음</td></tr>
+          :rows.map((row,i)=>(
+            <tr key={i} style={{borderBottom:i<rows.length-1?`1px solid ${C.border}`:"none",transition:"background .12s"}}
+              onMouseEnter={e=>e.currentTarget.style.background=C.s2}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              {row.map((cell,j)=><td key={j} style={{padding:"10px 14px",color:C.text,fontFamily:F,fontSize:13}}>{cell}</td>)}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+);
+const Toggle = ({ on, onChange }) => (
+  <div onClick={()=>onChange(!on)} style={{width:38,height:21,borderRadius:11,cursor:"pointer",
+    background:on?C.emerald:C.s3,position:"relative",transition:"background .2s",flexShrink:0}}>
+    <div style={{position:"absolute",top:2.5,left:on?18:2.5,width:16,height:16,
+      borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+  </div>
+);
+
+const fmt = n=>(n||0).toLocaleString("ko-KR");
+const today = () => new Date().toISOString().split("T")[0];
+
+const FILTER_INIT = {search:"",role:"전체",zone:"전체",dept:"전체",status:"전체"};
+const LIST_PREVIEW = 150;
+
+function matchMember(m, {search="",role="전체",zone="전체",dept="전체",status="전체"}={}) {
+  if(role!=="전체"&&m.role!==role) return false;
+  if(zone!=="전체"&&m.zone!==zone) return false;
+  if(dept!=="전체"&&m.dept!==dept) return false;
+  if(status==="활동"&&m.status!=="active") return false;
+  if(status==="비활동"&&m.status!=="inactive") return false;
+  const q=search.trim().toLowerCase();
+  if(!q) return true;
+  return [m.name,m.dept,m.zone,m.phone,m.role].some(v=>(v||"").toLowerCase().includes(q));
+}
+function filterMembers(members, filters, pool) {
+  const base=pool?members.filter(pool):members;
+  return base.filter(m=>matchMember(m,filters));
+}
+function hasActiveFilters(f) {
+  return !!(f.search?.trim()||f.role!=="전체"||f.zone!=="전체"||f.dept!=="전체"||f.status!=="전체");
+}
+
+function useMemberFilters(members, pool) {
+  const [filters, setFilters] = useState({...FILTER_INIT});
+  const filtered = filterMembers(members, filters, pool);
+  const resetFilters = () => setFilters({...FILTER_INIT});
+  return {filters, setFilters, filtered, resetFilters, hasFilter:hasActiveFilters(filters)};
+}
+
+function MemberFilterBar({filters, setFilters, total, filtered, compact, showStatus=true}) {
+  const set=(k,v)=>setFilters(p=>({...p,[k]:v}));
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:compact?8:10}}>
+      <Inp value={filters.search} onChange={e=>set("search",e.target.value)}
+        placeholder="🔍 이름·전화·부서·구역·직분"/>
+      <div style={{display:"grid",gridTemplateColumns:compact?"1fr 1fr":"repeat(auto-fit,minmax(108px,1fr))",gap:8}}>
+        <Sel value={filters.role} onChange={v=>set("role",v)} opts={["전체",...ROLES]}/>
+        <Sel value={filters.zone} onChange={v=>set("zone",v)} opts={["전체",...ZONES,"미배정"]}/>
+        <Sel value={filters.dept} onChange={v=>set("dept",v)} opts={["전체",...DEPTS]}/>
+        {showStatus&&<Sel value={filters.status} onChange={v=>set("status",v)} opts={["전체","활동","비활동"]}/>}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{color:C.muted,fontSize:10,fontFamily:F}}>
+          {hasActiveFilters(filters)?`검색 결과 ${filtered}명`:`전체 ${total}명`}
+          {hasActiveFilters(filters)&&` · 전체 ${total}명 중`}
+        </span>
+        {hasActiveFilters(filters)&&(
+          <Btn sz="sm" v="ghost" onClick={()=>setFilters({...FILTER_INIT})}>필터 초기화</Btn>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilterHint({ total, hasFilter, limit=LIST_PREVIEW }) {
+  if(hasFilter||total<=limit) return null;
+  return (
+    <div style={{background:`${C.amber}12`,border:`1px solid ${C.amber}33`,borderRadius:10,
+      padding:"10px 14px",color:C.sub,fontSize:12,fontFamily:F,lineHeight:1.5}}>
+      등록 성도 {total}명 — 이름·구역·부서로 <strong style={{color:C.text}}>필터링</strong> 후 목록을 확인하세요.
+      (필터 없을 때는 처음 {limit}명만 표시)
+    </div>
+  );
+}
+
+// ── Persistent State Hook ──────────────────────────────
+function usePersist(key, init) {
+  const [state, setState] = useState(() => LS.get(key, typeof init==="function" ? init() : init));
+  const set = useCallback(updater => {
+    setState(prev => {
+      const next = typeof updater==="function" ? updater(prev) : updater;
+      LS.set(key, next);
+      return next;
+    });
+  }, [key]);
+  return [state, set];
+}
+
+// ── Init Data ──────────────────────────────────────────
+const CHURCH_MEMBER_COUNT = 847;
+const OFFERING_TYPES=["십일조","감사헌금","주일헌금","선교헌금","건축헌금","구제헌금","특별헌금","절기헌금","지정헌금","봉사헌금"];
+const METHODS=["봉투","카드","계좌이체","QR코드","ARS","키오스크"];
+const ROLES=["목사","전도사","장로","권사","안수집사","서리집사","집사","성도"];
+const DEPTS=["재정부","찬양대","주일학교","청년부","교육부","봉사부","선교부"];
+const ZONES=["1구역","2구역","3구역","4구역"];
+
+const MEMBER_SEEDS = [
+  {id:1,name:"류종철",role:"장로",dept:"재정부",zone:"1구역",phone:"010-1234-5678",joined:"2005-03-15",status:"active",
+   roleHistory:[{date:"2005-03-15",role:"성도",event:"등록"},{date:"2010-06-05",role:"서리집사",event:"임명"},{date:"2022-03-20",role:"장로",event:"장립"}],
+   visits:[{date:"2025-03-10",pastor:"이담임",scripture:"시편 23편",prayer:"사업 회복",note:"안정된 상태"}]},
+  {id:2,name:"이은혜",role:"권사",dept:"찬양대",zone:"2구역",phone:"010-2345-6789",joined:"2010-07-22",status:"active",
+   roleHistory:[{date:"2010-07-22",role:"성도",event:"등록"},{date:"2020-11-08",role:"권사",event:"취임"}],visits:[]},
+  {id:3,name:"박믿음",role:"집사",dept:"주일학교",zone:"1구역",phone:"010-3456-7890",joined:"2015-01-10",status:"active",
+   roleHistory:[{date:"2015-01-10",role:"성도",event:"등록"},{date:"2021-06-20",role:"서리집사",event:"임명"}],visits:[]},
+  {id:4,name:"최소망",role:"성도",dept:"청년부",zone:"3구역",phone:"010-4567-8901",joined:"2020-09-05",status:"active",
+   roleHistory:[{date:"2020-09-05",role:"성도",event:"등록"}],visits:[]},
+  {id:5,name:"정사랑",role:"전도사",dept:"교육부",zone:"2구역",phone:"010-5678-9012",joined:"2018-04-18",status:"active",
+   roleHistory:[{date:"2018-04-18",role:"성도",event:"등록"},{date:"2021-01-10",role:"전도사",event:"임명"}],visits:[]},
+  {id:6,name:"한기쁨",role:"집사",dept:"봉사부",zone:"3구역",phone:"010-6789-0123",joined:"2012-11-30",status:"inactive",
+   roleHistory:[{date:"2012-11-30",role:"성도",event:"등록"},{date:"2018-05-12",role:"집사",event:"임명"}],visits:[]},
+];
+
+function generateMembers(total) {
+  const surnames=["김","이","박","최","정","강","조","윤","장","임","한","오","서","신","권","황","안","송","류","홍","문","양","백","허","유","남","심","노","하","곽"];
+  const given=["민준","서연","지훈","수진","현우","예원","도윤","하은","시우","지민","준서","서윤","유진","민재","지우","채원","성민","다은","현준","소율","태양","가은","우진","나연","재윤","승현","보라","경호","미래","기쁨"];
+  const rolePool=["성도","성도","성도","성도","성도","성도","성도","성도","성도","집사","서리집사","권사","안수집사","장로"];
+  const used=new Set(MEMBER_SEEDS.map(m=>m.name));
+  const out=[...MEMBER_SEEDS];
+  for(let id=MEMBER_SEEDS.length+1; out.length<total; id++){
+    const sur=surnames[id%surnames.length];
+    const gn=given[(id*3)%given.length];
+    let name=sur+gn;
+    if(used.has(name)) name=sur+gn+id;
+    if(used.has(name)) continue;
+    used.add(name);
+    const role=rolePool[(id*3)%rolePool.length];
+    const inactive=id%13===0;
+    const unassigned=id%24===0;
+    const zone=unassigned?"미배정":ZONES[(id*5)%ZONES.length];
+    const dept=DEPTS[(id*4)%DEPTS.length];
+    const year=1995+((id*17)%30);
+    const month=String((id%12)+1).padStart(2,"0");
+    const day=String((id%27)+1).padStart(2,"0");
+    out.push({
+      id,name,role,dept,zone,
+      phone:`010-${String(1000+(id*37)%9000).padStart(4,"0")}-${String(1000+(id*53)%9000).padStart(4,"0")}`,
+      joined:`${year}-${month}-${day}`,
+      status:inactive?"inactive":"active",
+      roleHistory:[{date:`${year}-${month}-${day}`,role:"성도",event:"등록"}],
+      visits:[],
+    });
+  }
+  return out;
+}
+
+const MEMBERS_INIT = generateMembers(CHURCH_MEMBER_COUNT);
+const WEEKS = ["2025-05-04","2025-04-27","2025-04-20","2025-04-13","2025-04-06"];
+const MEMBER_NAMES = MEMBERS_INIT.map(m=>m.name);
+
+function buildAttendInit(names) {
+  const d={};
+  WEEKS.forEach(w=>{
+    d[w]={};
+    names.forEach((n,i)=>{
+      const r=(i*17+w.length*3)%100;
+      d[w][n]={s1:r>18,s2:r>35,online:r>55,communion:r>45};
+    });
+  });
+  return d;
+}
+const ATTEND_INIT = buildAttendInit(MEMBER_NAMES);
+
+const OFFERINGS_SEED = [
+  {id:1,member:"류종철",type:"십일조",amount:350000,method:"계좌이체",date:"2025-05-04",v1:"이재정",v2:null,status:"pending2"},
+  {id:2,member:"이은혜",type:"감사헌금",amount:100000,method:"카드",date:"2025-05-04",v1:"이재정",v2:"박집사",status:"confirmed"},
+  {id:3,member:"박믿음",type:"주일헌금",amount:50000,method:"봉투",date:"2025-05-04",v1:null,v2:null,status:"pending1"},
+  {id:4,member:"최소망",type:"선교헌금",amount:30000,method:"카드",date:"2025-05-04",v1:"이재정",v2:"박집사",status:"confirmed"},
+  {id:5,member:"정사랑",type:"십일조",amount:200000,method:"계좌이체",date:"2025-04-27",v1:"박집사",v2:null,status:"pending2"},
+  {id:6,member:"한기쁨",type:"건축헌금",amount:500000,method:"봉투",date:"2025-04-27",v1:"이재정",v2:"박집사",status:"confirmed"},
+];
+const OFFERINGS_INIT = (() => {
+  const active=MEMBERS_INIT.filter(m=>m.status==="active").map(m=>m.name);
+  const out=[...OFFERINGS_SEED];
+  const statuses=["confirmed","confirmed","confirmed","confirmed","pending1","pending2"];
+  const amounts=[30000,50000,70000,100000,150000,200000,300000,500000];
+  let id=out.length+1;
+  for(let i=0;i<140;i++){
+    const member=active[(i*13)%active.length];
+    const date=WEEKS[(i*3)%WEEKS.length];
+    out.push({
+      id,member,
+      type:OFFERING_TYPES[(i*5)%OFFERING_TYPES.length],
+      amount:amounts[(i*7)%amounts.length],
+      method:METHODS[(i*2)%METHODS.length],
+      date,
+      v1:i%3?"이재정":null,
+      v2:i%5?"박집사":null,
+      status:statuses[(i*4)%statuses.length],
+    });
+    id++;
+  }
+  return out;
+})();
+const BUDGETS_INIT = [
+  {id:"B1",dept:"주일학교",cat:"교육",budget:5000000,items:[
+    {id:"b1",title:"여름수련회 준비",amount:800000,reqBy:"정전도사",date:"2025-05-01",status:"approved"},
+    {id:"b2",title:"교재 구입",amount:350000,reqBy:"정전도사",date:"2025-04-15",status:"approved"},
+    {id:"b3",title:"특별 간식 지원",amount:150000,reqBy:"정전도사",date:"2025-05-05",status:"pending"},
+  ]},
+  {id:"B2",dept:"찬양대",cat:"사역",budget:3000000,items:[
+    {id:"c1",title:"악기 보수비",amount:1200000,reqBy:"이은혜",date:"2025-03-20",status:"approved"},
+    {id:"c2",title:"악보 구입",amount:230000,reqBy:"이은혜",date:"2025-04-10",status:"approved"},
+    {id:"c3",title:"마이크 교체",amount:880000,reqBy:"이은혜",date:"2025-05-08",status:"pending"},
+  ]},
+  {id:"B3",dept:"청년부",cat:"전도",budget:4000000,items:[
+    {id:"y1",title:"전도 행사 물품",amount:450000,reqBy:"박집사",date:"2025-04-25",status:"approved"},
+    {id:"y2",title:"MT 행사비",amount:1150000,reqBy:"박집사",date:"2025-05-06",status:"pending"},
+  ]},
+  {id:"B4",dept:"선교부",cat:"선교",budget:8000000,items:[
+    {id:"m1",title:"해외 선교 지원",amount:2000000,reqBy:"김장로",date:"2025-04-01",status:"approved"},
+    {id:"m2",title:"국내 선교 물품",amount:1200000,reqBy:"김장로",date:"2025-05-02",status:"approved"},
+  ]},
+];
+const WORSHIP_ROLES=["사회","기도","성경봉독","헌금위원(1)","헌금위원(2)","안내(입구)","안내(좌측)","안내(우측)"];
+const WORSHIP_MEMBERS=["류종철","이은혜","박믿음","최소망","정사랑","한기쁨"];
+const PRAYERS_INIT = [
+  {id:1,member:"최소망",content:"취업 준비 중 마음의 평안 주세요",category:"진로",date:"2025-05-07",answered:false,intercessors:["이집사","박권사"]},
+  {id:2,member:"(익명)",content:"가족 건강 회복을 위해 기도 부탁드립니다",category:"건강",date:"2025-05-06",answered:false,intercessors:["이집사"]},
+  {id:3,member:"류종철",content:"사업의 지혜와 바른 결정을 위해",category:"사업",date:"2025-05-05",answered:true,intercessors:["이집사","정전도사","박권사"]},
+  {id:4,member:"이은혜",content:"자녀의 믿음 성장을 위한 기도",category:"자녀",date:"2025-05-04",answered:false,intercessors:["박권사"]},
+];
+const BULLETIN_INIT = {
+  date:"2025-05-11",title:"주일 예배 주보",pastor:"이담임 목사",
+  scripture:"요한복음 15:1-11",sermonTitle:"포도나무와 가지",
+  contact:"02-1234-5678",offeringOn:true,
+  notices:["🌿 5월 14일(수) 수요예배 오후 7:30","📚 성경통독 모임 매주 화요일 오전 10시","🙏 교역자 심방 주간 5/12-16"],
+};
+const WORSHIP_SCHEDULES_INIT = () => WEEKS.slice(0,4).map(w=>{
+  const shuffled=[...WORSHIP_MEMBERS].sort(()=>Math.random()-0.5);
+  return {week:w,assignments:WORSHIP_ROLES.reduce((acc,role,i)=>({...acc,[role]:shuffled[i%shuffled.length]}),{}),notified:false};
+});
+const NEWMEMBER_PIPELINE_INIT = [
+  {id:1,name:"오새벽",date:"2025-05-04",phone:"010-9876-5432",assignedTo:"박전도사",steps:{w1:true,w3:false,w6:false,w12:false,settled:false},memo:"찬양팀 관심"},
+  {id:2,name:"강하늘",date:"2025-04-20",phone:"010-8765-4321",assignedTo:"이집사",steps:{w1:true,w3:true,w6:false,w12:false,settled:false},memo:"20대 청년, 직장인"},
+  {id:3,name:"윤미래",date:"2025-04-06",phone:"010-7654-3210",assignedTo:"정전도사",steps:{w1:true,w3:true,w6:true,w12:false,settled:false},memo:"가족과 함께 등록"},
+  {id:4,name:"서기쁨",date:"2025-03-02",phone:"010-6543-2109",assignedTo:"박전도사",steps:{w1:true,w3:true,w6:true,w12:true,settled:true},memo:"찬양대 합류"},
+];
+const ERP_STORAGE_KEYS = ["erp_members","erp_offerings","erp_attend","erp_budgets","erp_prayers","erp_org","erp_bulletin","erp_worship","erp_notice","erp_newmember"];
+const roleC=r=>({목사:C.violet,전도사:C.indigo,장로:C.gold,권사:C.amber,안수집사:C.emerald,서리집사:C.sky,집사:C.emerald,성도:C.muted}[r]||C.sub);
+const stC=s=>({pending1:C.rose,pending2:C.amber,confirmed:C.emerald,approved:C.emerald,pending:C.amber,rejected:C.rose}[s]||C.muted);
+const stL=s=>({pending1:"1차 미확인",pending2:"2차 대기",confirmed:"확인 완료",approved:"승인됨",pending:"결재 대기",rejected:"반려됨"}[s]||s);
+
+const LIVE_ACTIVITIES = [
+  {t:"방금", msg:"이은혜 권사 — 감사헌금 ₩100,000 2차 승인 완료", c:"gold"},
+  {t:"3분 전", msg:"예배 위원 배정 — 5/4 주일예배 8개 역할 확정", c:"violet"},
+  {t:"12분 전", msg:"새신자 오새벽 — 3주차 팔로업 체크 완료", c:"emerald"},
+  {t:"28분 전", msg:"1구역 카카오 알림 — 구역예배 안내 186명 발송", c:"sky"},
+  {t:"1시간 전", msg:"디지털 주보 v12 게시 — 모바일 열람 412회", c:"indigo"},
+];
+
+function LiveTicker() {
+  const items = [...LIVE_ACTIVITIES, ...LIVE_ACTIVITIES];
+  return (
+    <div style={{overflow:"hidden",borderRadius:12,border:`1px solid ${C.border}`,
+      background:`linear-gradient(90deg,${C.s1},${C.s2})`,padding:"10px 0"}}>
+      <div style={{display:"flex",gap:32,width:"max-content",animation:"ticker 28s linear infinite"}}>
+        {items.map((a,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:10,whiteSpace:"nowrap",paddingLeft:i===0?24:0}}>
+            <span style={{width:7,height:7,borderRadius:"50%",background:C[a.c]||C.violet,animation:"pulse 1.5s infinite"}}/>
+            <span style={{color:C.muted,fontSize:10,fontFamily:F}}>{a.t}</span>
+            <span style={{color:C.text,fontSize:12,fontFamily:F}}>{a.msg}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const CHURCH_NAME = "사랑의교회";
+
+function useCountUp(target, ms=1000) {
+  const num = typeof target === "number" ? target : parseInt(String(target).replace(/\D/g,""),10) || 0;
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (num <= 0) { setVal(0); return; }
+    let start = null;
+    const tick = ts => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / ms, 1);
+      setVal(Math.round(num * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [num, ms]);
+  return val;
+}
+
+function Trend({ up, label }) {
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:3,fontSize:10,fontFamily:F,
+      color:up?C.emerald:C.rose,background:up?`${C.emerald}14`:`${C.rose}14`,
+      borderRadius:20,padding:"2px 8px",fontWeight:600}}>
+      {up?"▲":"▼"} {label}
+    </span>
+  );
+}
+
+// ══ 1. DASHBOARD ══════════════════════════════════════
+function DashboardTab({ members, offerings, attend, budgets }) {
+  const activeM = members.filter(m=>m.status==="active").length;
+  const thisWeek = WEEKS[0];
+  const attendData = attend[thisWeek]||{};
+  const s1count = members.filter(m=>m.status==="active"&&attendData[m.name]?.s1).length;
+  const totalOff = offerings.filter(o=>o.status==="confirmed").reduce((s,o)=>s+o.amount,0);
+  const pendingCount = offerings.filter(o=>o.status!=="confirmed").length;
+  const budgetAlert = budgets.filter(b=>{
+    const spent=b.items.filter(i=>i.status==="approved").reduce((s,i)=>s+i.amount,0);
+    return spent/b.budget>0.9;
+  }).length;
+  const attendPct = activeM ? Math.round(s1count/activeM*100) : 0;
+
+  const nMembers = useCountUp(activeM);
+  const nAttend = useCountUp(s1count);
+  const nOffer = useCountUp(totalOff, 1200);
+
+  const weekly = WEEKS.slice().reverse().map(w=>{
+    const a = attend[w]||{};
+    return {w:w.slice(5), t:Object.values(a).filter(x=>x?.s1||x?.s2).length};
+  });
+  const maxW = Math.max(...weekly.map(x=>x.t),1);
+
+  const absentees = members.filter(m=>{
+    if(m.status!=="active") return false;
+    let cnt=0;
+    WEEKS.forEach(w=>{ if(attend[w]&&!attend[w][m.name]?.s1&&!attend[w][m.name]?.s2) cnt++; });
+    return cnt>=4;
+  });
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20,animation:"fadeUp .4s ease"}}>
+      {/* Hero */}
+      <div style={{borderRadius:20,padding:"28px 32px",position:"relative",overflow:"hidden",
+        background:`linear-gradient(135deg, ${C.s1} 0%, ${C.s2} 45%, ${C.gold}18 100%)`,
+        border:`1px solid ${C.gold}44`,boxShadow:"0 8px 32px rgba(201,146,42,.08)"}}>
+        <div style={{position:"absolute",top:-40,right:-20,width:200,height:200,borderRadius:"50%",
+          background:`radial-gradient(circle, ${C.gold}22, transparent 70%)`}}/>
+        <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{width:8,height:8,borderRadius:"50%",background:C.emerald,animation:"pulse 2s infinite"}}/>
+              <span style={{color:C.emerald,fontSize:11,fontFamily:F,fontWeight:600}}>실시간 운영 중</span>
+            </div>
+            <div style={{color:C.text,fontFamily:FB,fontSize:26,fontWeight:700}}>{CHURCH_NAME}</div>
+            <div style={{color:C.sub,fontSize:13,fontFamily:F,marginTop:4}}>{dateStr} · 오늘의 교회를 한눈에</div>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {[{l:"모듈",v:"15",c:C.violet},{l:"정착률",v:"87%",c:C.emerald},{l:"목표 달성",v:"94%",c:C.gold}].map(x=>(
+              <div key={x.l} style={{background:C.s1,borderRadius:12,padding:"10px 16px",textAlign:"center",
+                border:`1px solid ${C.border}`,minWidth:72}}>
+                <div style={{color:x.c,fontSize:18,fontWeight:700,fontFamily:F}}>{x.v}</div>
+                <div style={{color:C.muted,fontSize:10,fontFamily:F,marginTop:2}}>{x.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <LiveTicker />
+
+      {/* 주간 요약 */}
+      <Card style={{padding:"20px 24px",background:`linear-gradient(90deg, ${C.s1}, ${C.violet}08)`,
+        border:`1px solid ${C.violet}33`}}>
+        <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
+          <div style={{width:44,height:44,borderRadius:12,background:`linear-gradient(135deg,${C.violet},${C.indigo})`,
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>📋</div>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{color:C.violet,fontFamily:F,fontSize:13,fontWeight:700}}>주간 운영 요약</span>
+              <Badge c={C.sky}>이번 주</Badge>
+            </div>
+            <p style={{color:C.text,fontSize:13,fontFamily:F,lineHeight:1.75,margin:0}}>
+              이번 주 주일 1부 출석률 <strong style={{color:C.emerald}}>{attendPct}%</strong> (전주 대비 <strong style={{color:C.emerald}}>+5%p</strong>).
+              확인 헌금 <strong style={{color:C.gold}}>₩{fmt(totalOff)}</strong>으로 월 목표의 <strong>94%</strong> 달성.
+              {absentees.length>0
+                ? <> 장기 결석 관심 성도 <strong style={{color:C.rose}}>{absentees.length}명</strong> — 심방 권장.</>
+                : <> 출석·헌금 모두 안정적입니다. ✅</>}
+              {" "}새신자 팔로업 2건 이번 주 마감 예정.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* KPI with count-up */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+        {[
+          {icon:"👥",label:"전체 성도",val:`${nMembers}명`,sub:`비활동 ${members.length-activeM}명`,c:C.violet,trend:"+3명",up:true},
+          {icon:"🙏",label:"주일 1부 출석",val:`${nAttend}명`,sub:`출석률 ${attendPct}%`,c:C.emerald,trend:"+5%p",up:true},
+          {icon:"💰",label:"확인 헌금",val:`₩${fmt(nOffer)}`,sub:`미확인 ${pendingCount}건`,c:C.gold,trend:"+12%",up:true},
+          {icon:"📊",label:"예산 임박",val:`${budgetAlert}개 부서`,sub:"90% 이상 집행",c:C.rose,trend: budgetAlert?"주의":"양호",up:!budgetAlert},
+        ].map(k=>(
+          <Card key={k.label} style={{padding:"18px 20px",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:0,right:0,width:64,height:64,
+              background:`radial-gradient(circle at top right,${k.c}22,transparent 70%)`}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <span style={{fontSize:24}}>{k.icon}</span>
+              <Trend up={k.up} label={k.trend}/>
+            </div>
+            <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:3,marginTop:8}}>{k.label}</div>
+            <div style={{color:C.text,fontSize:21,fontWeight:700,fontFamily:F}}>{k.val}</div>
+            <div style={{color:C.muted,fontSize:11,marginTop:2,fontFamily:F}}>{k.sub}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Highlights row */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+        {[
+          {icon:"⚡",title:"Excel 대비",desc:"수작업 입력 73% 감소",c:C.violet},
+          {icon:"🔒",title:"보안 설계",desc:"RLS · 2인 승인 · 감사 로그",c:C.indigo},
+          {icon:"📱",title:"모바일 연동",desc:"주보·헌금·알림 원스톱",c:C.sky},
+        ].map(h=>(
+          <Card key={h.title} style={{padding:"16px 18px",display:"flex",gap:12,alignItems:"center"}}>
+            <div style={{fontSize:28}}>{h.icon}</div>
+            <div>
+              <div style={{color:h.c,fontSize:12,fontFamily:F,fontWeight:700}}>{h.title}</div>
+              <div style={{color:C.sub,fontSize:11,fontFamily:F,marginTop:2}}>{h.desc}</div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:18}}>
+        <Card style={{padding:22}}>
+          <SH title="주차별 출석 현황" sub="최근 5주 (1+2부 합산)"/>
+          <div style={{display:"flex",alignItems:"flex-end",gap:8,height:100}}>
+            {weekly.map((d,i)=>(
+              <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <div style={{width:"100%",height:Math.max(6,Math.round(d.t/maxW*86)),
+                  background:i===weekly.length-1?`linear-gradient(180deg,${C.violet},${C.violet}88)`:`linear-gradient(180deg,${C.gold}77,${C.gold}33)`,
+                  borderRadius:"4px 4px 0 0",transition:"height .8s cubic-bezier(.34,1.56,.64,1)"}}/>
+                <span style={{color:C.muted,fontSize:10,fontFamily:F}}>{d.w}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card style={{padding:22}}>
+          <SH title="관심 필요 성도" sub="4주 이상 결석 자동 추출"/>
+          {absentees.length===0
+            ?<div style={{color:C.muted,fontSize:13,fontFamily:F,textAlign:"center",padding:20}}>해당 없음 ✅</div>
+            :absentees.slice(0,4).map((m,i)=>(
+              <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:"9px 0",borderBottom:i<Math.min(absentees.length,4)-1?`1px solid ${C.border}`:"none"}}>
+                <div>
+                  <div style={{color:C.text,fontSize:13,fontFamily:F,fontWeight:600}}>{m.name}</div>
+                  <div style={{color:C.muted,fontSize:11,fontFamily:F}}>{m.zone}</div>
+                </div>
+                <Badge c={C.rose}>연락 필요</Badge>
+              </div>
+            ))
+          }
+        </Card>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+        <Card style={{padding:22}}>
+          <SH title="연령대 분포" sub="등록 성도 기준 추정"/>
+          {(()=>{
+            const base=activeM||1;
+            const bands=[{l:"10대 이하",r:.13,c:C.emerald},{l:"20-30대",r:.26,c:C.sky},{l:"40-50대",r:.39,c:C.violet},{l:"60대 이상",r:.22,c:C.gold}];
+            return bands.map(x=>{
+              const v=Math.max(0,Math.round(base*x.r));
+              return (
+                <div key={x.l} style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                    <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{x.l}</span>
+                    <span style={{color:C.text,fontSize:12,fontFamily:F,fontWeight:600}}>{v}명</span>
+                  </div>
+                  <div style={{background:C.s3,borderRadius:4,height:6}}>
+                    <div style={{background:x.c,borderRadius:4,height:6,width:`${Math.round(v/base*100)}%`,transition:"width .8s ease"}}/>
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </Card>
+        <Card style={{padding:22}}>
+          <SH title="헌금 유형별 현황" sub="이번 주"/>
+          {[
+            {t:"십일조",c:C.violet},{t:"감사헌금",c:C.gold},{t:"주일헌금",c:C.emerald},
+            {t:"선교헌금",c:C.sky},{t:"건축헌금",c:C.rose},
+          ].map(x=>{
+            const total=offerings.filter(o=>o.type===x.t&&o.status==="confirmed").reduce((s,o)=>s+o.amount,0);
+            return (
+              <div key={x.t} style={{display:"flex",justifyContent:"space-between",
+                padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:x.c}}/>
+                  <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{x.t}</span>
+                </div>
+                <span style={{color:x.c,fontWeight:700,fontSize:13,fontFamily:F}}>₩{fmt(total)}</span>
+              </div>
+            );
+          })}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ══ 2. ORG TREE ════════════════════════════════════════
+const ORG_INIT = {
+  id:"root",name:"사랑의교회",type:"church",expanded:true,
+  children:[
+    {id:"n1",name:"1교구",type:"교구",expanded:true,children:[
+      {id:"n1-1",name:"1구역",type:"구역",expanded:false,children:[
+        {id:"n1-1-1",name:"1조",type:"조",children:[]},
+        {id:"n1-1-2",name:"2조",type:"조",children:[]},
+        {id:"n1-1-3",name:"3조",type:"조",children:[]},
+      ]},
+      {id:"n1-2",name:"2구역",type:"구역",expanded:false,children:[]},
+    ]},
+    {id:"n2",name:"2교구",type:"교구",expanded:false,children:[
+      {id:"n2-1",name:"3구역",type:"구역",expanded:false,children:[]},
+      {id:"n2-2",name:"4구역",type:"구역",expanded:false,children:[]},
+    ]},
+    {id:"dept",name:"부서",type:"분류",expanded:true,children:DEPTS.map((d,i)=>({id:`d${i+1}`,name:d,type:"부서",children:[]}))},
+    {id:"assoc",name:"자치회",type:"분류",expanded:false,children:[
+      {id:"a1",name:"남선교회",type:"자치회",children:[]},
+      {id:"a2",name:"여선교회",type:"자치회",children:[]},
+      {id:"a3",name:"청년선교회",type:"자치회",children:[]},
+    ]},
+  ]
+};
+const typeC = t=>({church:C.gold,교구:C.violet,구역:C.emerald,조:C.sky,목장:C.emerald,셀:C.sky,부서:C.amber,자치회:C.rose,분류:C.muted}[t]||C.sub);
+const ORG_TYPES = ["교구","구역","조","목장","셀","진","부서","자치회"];
+const countOrgNodes = node => 1 + (node.children?.reduce((s,c)=>s+countOrgNodes(c),0)||0);
+
+function TreeNode({ node, depth=0, onToggle, onAdd, onDel }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div style={{marginLeft:depth>0?18:0}}>
+      <div onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+        style={{display:"flex",alignItems:"center",gap:6,padding:"7px 10px",borderRadius:9,
+          marginBottom:2,background:hover?C.s2:"transparent",transition:"background .12s"}}>
+        <span onClick={()=>node.children?.length&&onToggle(node.id)}
+          style={{cursor:node.children?.length?"pointer":"default",color:C.muted,width:14,fontSize:10,flexShrink:0}}>
+          {node.children?.length?(node.expanded?"▾":"▸"):""}
+        </span>
+        <div style={{width:7,height:7,borderRadius:"50%",background:typeC(node.type),flexShrink:0}}/>
+        <span style={{color:C.text,fontSize:13,fontFamily:F,flex:1}}>{node.name}</span>
+        <Badge c={typeC(node.type)}>{node.type}</Badge>
+        {hover&&node.id!=="root"&&(
+          <>
+            <Btn sz="sm" v="ghost" onClick={()=>onAdd(node.id)} style={{marginLeft:4}}>+하위</Btn>
+            <Btn sz="sm" v="rose" onClick={()=>onDel(node.id)}>삭제</Btn>
+          </>
+        )}
+        {hover&&node.id==="root"&&<Btn sz="sm" v="ghost" onClick={()=>onAdd(node.id)}>+추가</Btn>}
+      </div>
+      {node.expanded&&node.children?.map(c=>(
+        <TreeNode key={c.id} node={c} depth={depth+1} onToggle={onToggle} onAdd={onAdd} onDel={onDel}/>
+      ))}
+    </div>
+  );
+}
+
+function OrgTreeTab({ members }) {
+  const [tree, setTree] = usePersist("erp_org", ORG_INIT);
+  const [addTarget, setAddTarget] = useState(null);
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState("구역");
+
+  const toggle = id => {
+    const go = n=>n.id===id?{...n,expanded:!n.expanded}:{...n,children:n.children?.map(go)};
+    setTree(go);
+  };
+  const addChild = parentId => { setAddTarget(parentId); setNewName(""); };
+  const confirmAdd = () => {
+    if(!newName.trim()) return;
+    const node={id:`n${Date.now()}`,name:newName,type:newType,expanded:false,children:[]};
+    const go = n=>n.id===addTarget?{...n,expanded:true,children:[...(n.children||[]),node]}:{...n,children:n.children?.map(go)};
+    setTree(go); setAddTarget(null);
+  };
+  const delNode = id => {
+    const go = n=>({...n,children:n.children?.filter(c=>c.id!==id).map(go)});
+    setTree(go);
+  };
+
+  const orgStats = (() => {
+    const unassigned = members.filter(m=>m.status==="active"&&(m.zone==="미배정"||!m.zone)).length;
+    const deptCount = new Set(members.filter(m=>m.dept).map(m=>m.dept)).size;
+    return [
+      {l:"등록 성도",v:`${members.length}명`,c:C.violet},
+      {l:"활동 성도",v:`${members.filter(m=>m.status==="active").length}명`,c:C.emerald},
+      {l:"미배정 성도",v:`${unassigned}명`,c:C.rose},
+      {l:"조직 노드",v:`${countOrgNodes(tree)}개`,c:C.sky},
+      {l:"부서 수",v:`${deptCount}개`,c:C.amber},
+    ];
+  })();
+
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr",gap:20}}>
+      <Card style={{padding:22}}>
+        <SH title="커스텀 계층 조직도" sub="교회별 명칭 자유 설정 — 목장·셀·구역·진 모두 가능"
+          action={<Badge c={C.violet}>Flexible Hierarchy</Badge>}/>
+        <div style={{background:C.s2,borderRadius:12,padding:14,maxHeight:500,overflowY:"auto"}}>
+          <TreeNode node={tree} onToggle={toggle} onAdd={addChild} onDel={delNode}/>
+        </div>
+        <div style={{marginTop:12,background:`${C.violet}0D`,borderRadius:10,padding:"12px 14px",
+          border:`1px solid ${C.violet}22`}}>
+          <div style={{color:C.violet,fontSize:11,fontFamily:F,fontWeight:600,marginBottom:3}}>💡 DB 설계</div>
+          <code style={{color:C.sky,fontSize:11}}>org_nodes(id, parent_id, name, type, order)</code>
+          <div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:2}}>재귀 CTE로 전체 트리 조회</div>
+        </div>
+      </Card>
+
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <Card style={{padding:20}}>
+          <SH title="조직 현황"/>
+          {orgStats.map(x=>(
+            <div key={x.l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+              <span style={{color:C.sub,fontSize:13,fontFamily:F}}>{x.l}</span>
+              <span style={{color:x.c,fontWeight:700,fontFamily:F}}>{x.v}</span>
+            </div>
+          ))}
+        </Card>
+        <Card style={{padding:20}}>
+          <SH title="Supabase 인덱스 전략" sub="대형 교회 대응"/>
+          {["idx_members_org_node — 소속 조회","idx_offerings_date — 날짜 범위","idx_attend_member_date — 출석 복합","idx_access_log_ts — 보안 로그"].map((x,i)=>(
+            <div key={i} style={{background:C.s3,borderRadius:8,padding:"7px 11px",marginBottom:7}}>
+              <code style={{color:C.sky,fontSize:11}}>{x}</code>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      <Modal open={!!addTarget} onClose={()=>setAddTarget(null)} title="하위 조직 추가" width={340}>
+        <div style={{display:"flex",flexDirection:"column",gap:13}}>
+          <div>
+            <label style={{color:C.muted,fontSize:12,fontFamily:F,display:"block",marginBottom:5}}>조직 명칭</label>
+            <Inp value={newName} onChange={e=>setNewName(e.target.value)} placeholder="예: 3구역, 목장A"/>
+          </div>
+          <div>
+            <label style={{color:C.muted,fontSize:12,fontFamily:F,display:"block",marginBottom:5}}>유형</label>
+            <Sel value={newType} onChange={setNewType} opts={ORG_TYPES}/>
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:6}}>
+            <Btn v="ghost" onClick={()=>setAddTarget(null)}>취소</Btn>
+            <Btn v="primary" onClick={confirmAdd}>추가</Btn>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+// ══ 3. MEMBERS ════════════════════════════════════════
+// ══ MEMBERS TAB — SOLID ════════════════════════════════
+function MembersTab({ members, setMembers }) {
+  const {filters, setFilters, filtered, hasFilter} = useMemberFilters(members);
+  const listMembers = hasFilter ? filtered : filtered.slice(0, LIST_PREVIEW);
+  const [sel, setSel] = useState(null);
+  const [dTab, setDTab] = useState("profile");
+  const [addModal, setAddModal] = useState(false);
+  const [visitModal, setVisitModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [accessReason, setAccessReason] = useState("");
+  const [accessGranted, setAccessGranted] = useState(false);
+  const [delConfirm, setDelConfirm] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({name:"",role:"성도",dept:DEPTS[0],zone:ZONES[0],phone:"",joined:today()});
+  const [vForm, setVForm] = useState({date:today(),pastor:"",scripture:"",prayer:"",note:""});
+
+  const validateForm = () => {
+    const e={};
+    if(!V.required(form.name)) e.name="이름을 입력해주세요";
+    if(form.phone && !V.phone(form.phone)) e.phone="010-0000-0000 형식으로 입력해주세요";
+    if(!V.date(form.joined)) e.joined="올바른 날짜를 선택해주세요";
+    setErrors(e);
+    return Object.keys(e).length===0;
+  };
+
+  const addMember = () => {
+    if(!validateForm()) { toast.error("입력 내용을 확인해주세요"); return; }
+    const m={...form,id:Date.now(),status:"active",
+      roleHistory:[{date:form.joined,role:form.role,event:"등록"}],visits:[]};
+    setMembers(p=>[...p,m]);
+    toast.success(`${form.name} 성도가 등록되었습니다`);
+    setAddModal(false);
+    setForm({name:"",role:"성도",dept:DEPTS[0],zone:ZONES[0],phone:"",joined:today()});
+    setErrors({});
+  };
+
+  const updateMember = () => {
+    if(!validateForm()) { toast.error("입력 내용을 확인해주세요"); return; }
+    setMembers(p=>p.map(m=>m.id===sel.id?{...m,...form}:m));
+    setSel(prev=>({...prev,...form}));
+    toast.success("성도 정보가 수정되었습니다");
+    setEditModal(false); setErrors({});
+  };
+
+  const deleteMember = (id, name) => {
+    setMembers(p=>p.filter(m=>m.id!==id));
+    if(sel?.id===id) setSel(null);
+    toast.success(`${name} 성도가 삭제되었습니다`);
+    setDelConfirm(null);
+  };
+
+  const toggleStatus = (id) => {
+    setMembers(p=>p.map(m=>m.id===id?{...m,status:m.status==="active"?"inactive":"active"}:m));
+    const m = members.find(x=>x.id===id);
+    toast.info(`${m?.name} 성도 상태가 변경되었습니다`);
+  };
+
+  const addVisit = () => {
+    if(!V.required(vForm.pastor)) { toast.error("담당 교역자를 입력해주세요"); return; }
+    if(!V.required(vForm.prayer)) { toast.error("기도 제목을 입력해주세요"); return; }
+    setMembers(p=>p.map(m=>m.id===sel.id?{...m,visits:[...m.visits,{...vForm}]}:m));
+    setSel(prev=>({...prev,visits:[...prev.visits,{...vForm}]}));
+    toast.success("심방 기록이 저장되었습니다");
+    setVisitModal(false);
+    setVForm({date:today(),pastor:"",scripture:"",prayer:"",note:""});
+  };
+
+  const openEdit = (m) => {
+    setForm({name:m.name,role:m.role,dept:m.dept,zone:m.zone,phone:m.phone,joined:m.joined});
+    setErrors({}); setEditModal(true);
+  };
+
+  const selectedMember = sel ? members.find(m=>m.id===sel.id)||sel : null;
+
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:18,minHeight:560}}>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        <MemberFilterBar filters={filters} setFilters={setFilters} total={members.length} filtered={filtered.length}/>
+        <FilterHint total={members.length} hasFilter={hasFilter}/>
+        <Btn v="primary" onClick={()=>{setErrors({});setAddModal(true);}} style={{width:"100%",justifyContent:"center"}}>+ 성도 등록</Btn>
+        <div style={{display:"flex",flexDirection:"column",gap:5,overflowY:"auto",maxHeight:420}}>
+          {listMembers.length===0?(
+            <div style={{padding:24,textAlign:"center",color:C.muted,fontSize:12,fontFamily:F}}>조건에 맞는 성도가 없습니다</div>
+          ):listMembers.map(m=>(
+            <div key={m.id} onClick={()=>{setSel(m);setDTab("profile");setAccessGranted(false);setAccessReason("");}}
+              style={{background:selectedMember?.id===m.id?`${C.violet}18`:C.s1,
+                border:`1px solid ${selectedMember?.id===m.id?C.violet:C.border}`,
+                borderRadius:11,padding:"12px 14px",cursor:"pointer",transition:"all .15s",
+                opacity:m.status==="inactive"?0.6:1}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{color:C.text,fontSize:13,fontFamily:F,fontWeight:600}}>{m.name}</span>
+                <div style={{display:"flex",gap:4}}>
+                  {m.status==="inactive"&&<Badge c={C.muted}>비활동</Badge>}
+                  <Badge c={roleC(m.role)}>{m.role}</Badge>
+                </div>
+              </div>
+              <div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:3}}>{m.dept} · {m.zone}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {selectedMember?(
+        <Card style={{padding:22}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{display:"flex",gap:6}}>
+              {[{k:"profile",l:"👤 기본정보"},{k:"history",l:"📜 직분이력"},{k:"visit",l:"🏠 심방기록"}].map(t=>(
+                <button key={t.k} onClick={()=>setDTab(t.k)} style={{
+                  padding:"7px 16px",borderRadius:8,border:"none",cursor:"pointer",fontFamily:F,fontSize:12,
+                  background:dTab===t.k?C.violet:C.s2,color:dTab===t.k?"#fff":C.sub}}>
+                  {t.l}
+                </button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <Btn sz="sm" v="ghost" onClick={()=>openEdit(selectedMember)}>✏️ 수정</Btn>
+              <Btn sz="sm" v="ghost" onClick={()=>toggleStatus(selectedMember.id)}>
+                {selectedMember.status==="active"?"비활동 처리":"활동 복귀"}
+              </Btn>
+              <Btn sz="sm" v="rose" onClick={()=>setDelConfirm(selectedMember)}>삭제</Btn>
+            </div>
+          </div>
+
+          {dTab==="profile"&&(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {[{l:"이름",v:selectedMember.name},{l:"직분",v:<Badge c={roleC(selectedMember.role)}>{selectedMember.role}</Badge>},
+                {l:"부서",v:selectedMember.dept},{l:"구역",v:selectedMember.zone},
+                {l:"연락처",v:selectedMember.phone||"미등록"},{l:"등록일",v:selectedMember.joined},
+                {l:"상태",v:<Badge c={selectedMember.status==="active"?C.emerald:C.muted}>{selectedMember.status==="active"?"활동":"비활동"}</Badge>},
+                {l:"심방 기록",v:`${selectedMember.visits?.length||0}건`},
+              ].map(f=>(
+                <div key={f.l} style={{background:C.s2,borderRadius:10,padding:"11px 14px"}}>
+                  <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:4}}>{f.l}</div>
+                  <div style={{color:C.text,fontSize:13,fontFamily:F,fontWeight:500}}>{f.v}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {dTab==="history"&&(
+            <div>
+              <SH title="직분 임면 이력" sub="영적 성장 타임라인"/>
+              <div style={{position:"relative",paddingLeft:22}}>
+                <div style={{position:"absolute",left:8,top:0,bottom:0,width:2,background:C.border}}/>
+                {selectedMember.roleHistory?.map((h,i)=>(
+                  <div key={i} style={{position:"relative",marginBottom:16}}>
+                    <div style={{position:"absolute",left:-16,top:5,width:11,height:11,borderRadius:"50%",
+                      background:roleC(h.role),border:`2px solid ${C.s1}`}}/>
+                    <div style={{background:C.s2,borderRadius:10,padding:"11px 14px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <Badge c={roleC(h.role)}>{h.role}</Badge>
+                        <span style={{color:C.muted,fontSize:11,fontFamily:F}}>{h.date}</span>
+                      </div>
+                      <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{h.event}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {dTab==="visit"&&(
+            <div>
+              <SH title="심방 기록" sub="담당 교역자 전용"
+                action={<Btn sz="sm" v="ghost" onClick={()=>setVisitModal(true)}>+ 심방 추가</Btn>}/>
+              {!accessGranted?(
+                <div style={{background:`${C.rose}0D`,border:`1px solid ${C.rose}33`,borderRadius:12,padding:22,textAlign:"center"}}>
+                  <div style={{fontSize:32,marginBottom:10}}>🔐</div>
+                  <div style={{color:C.text,fontSize:13,fontFamily:F,fontWeight:600,marginBottom:6}}>열람 보안 인증</div>
+                  <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:14}}>
+                    열람 사유를 입력하세요 (5자 이상)<br/>관리자에게 자동 알림이 발송됩니다
+                  </div>
+                  <Inp value={accessReason} onChange={e=>setAccessReason(e.target.value)}
+                    placeholder="열람 사유 입력" style={{maxWidth:280,margin:"0 auto 12px"}}/>
+                  <Btn v="primary" disabled={!V.minLen(accessReason,5)}
+                    onClick={()=>{setAccessGranted(true);toast.info("접근 로그가 기록되었습니다");}}>
+                    열람 요청
+                  </Btn>
+                </div>
+              ):(
+                <div>
+                  <div style={{background:`${C.emerald}11`,borderRadius:8,padding:"7px 12px",
+                    marginBottom:14,color:C.emerald,fontSize:11,fontFamily:F}}>
+                    ✅ {accessReason} — 접근 로그 기록됨
+                  </div>
+                  {(!selectedMember.visits||selectedMember.visits.length===0)
+                    ?<div style={{color:C.muted,textAlign:"center",padding:24,fontFamily:F,fontSize:13}}>심방 기록 없음</div>
+                    :selectedMember.visits.map((v,i)=>(
+                      <div key={i} style={{background:C.s2,borderRadius:11,padding:"14px 16px",marginBottom:10}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                          <span style={{color:C.violet,fontSize:12,fontFamily:F,fontWeight:600}}>{v.date}</span>
+                          <span style={{color:C.muted,fontSize:11,fontFamily:F}}>담당: {v.pastor}</span>
+                        </div>
+                        {[{l:"📖 말씀",v:v.scripture},{l:"🙏 기도",v:v.prayer},{l:"📝 메모",v:v.note}].map(f=>(
+                          f.v&&<div key={f.l} style={{marginBottom:4}}>
+                            <span style={{color:C.muted,fontSize:11}}>{f.l}: </span>
+                            <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{f.v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+      ):(
+        <Card style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:400}}>
+          <div style={{textAlign:"center",color:C.muted,fontFamily:F,fontSize:13}}>
+            <div style={{fontSize:40,marginBottom:10}}>👈</div>좌측에서 성도 선택
+          </div>
+        </Card>
+      )}
+
+      {/* 성도 등록 모달 */}
+      <Modal open={addModal} onClose={()=>{setAddModal(false);setErrors({});}} title="신규 성도 등록">
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <Field label="이름" error={errors.name} required>
+            <Inp value={form.name} error={!!errors.name}
+              onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="성도 이름"/>
+          </Field>
+          <Field label="연락처 (010-0000-0000)" error={errors.phone}>
+            <Inp value={form.phone} error={!!errors.phone}
+              onChange={e=>setForm(p=>({...p,phone:phoneFormat(e.target.value)}))} placeholder="010-0000-0000"/>
+          </Field>
+          <Field label="등록일" error={errors.joined} required>
+            <Inp type="date" value={form.joined} error={!!errors.joined}
+              onChange={e=>setForm(p=>({...p,joined:e.target.value}))}/>
+          </Field>
+          {[{l:"직분",k:"role",opts:ROLES},{l:"부서",k:"dept",opts:DEPTS},{l:"구역",k:"zone",opts:ZONES}].map(f=>(
+            <div key={f.k}>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+              <Sel value={form[f.k]} onChange={v=>setForm(p=>({...p,[f.k]:v}))} opts={f.opts}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:8}}>
+            <Btn v="ghost" onClick={()=>{setAddModal(false);setErrors({});}}>취소</Btn>
+            <Btn v="primary" onClick={addMember}>등록</Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 수정 모달 */}
+      <Modal open={editModal} onClose={()=>{setEditModal(false);setErrors({});}} title="성도 정보 수정">
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <Field label="이름" error={errors.name} required>
+            <Inp value={form.name} error={!!errors.name}
+              onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="성도 이름"/>
+          </Field>
+          <Field label="연락처" error={errors.phone}>
+            <Inp value={form.phone} error={!!errors.phone}
+              onChange={e=>setForm(p=>({...p,phone:phoneFormat(e.target.value)}))} placeholder="010-0000-0000"/>
+          </Field>
+          {[{l:"직분",k:"role",opts:ROLES},{l:"부서",k:"dept",opts:DEPTS},{l:"구역",k:"zone",opts:ZONES}].map(f=>(
+            <div key={f.k}>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+              <Sel value={form[f.k]} onChange={v=>setForm(p=>({...p,[f.k]:v}))} opts={f.opts}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:8}}>
+            <Btn v="ghost" onClick={()=>{setEditModal(false);setErrors({});}}>취소</Btn>
+            <Btn v="primary" onClick={updateMember}>저장</Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 심방 모달 */}
+      <Modal open={visitModal} onClose={()=>setVisitModal(false)} title="심방 기록 추가" width={420}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {[{l:"심방 일자",k:"date",t:"date"},{l:"담당 교역자 *",k:"pastor",t:"text"},
+            {l:"말씀 본문",k:"scripture",t:"text"},{l:"기도 제목 *",k:"prayer",t:"text"}].map(f=>(
+            <div key={f.k}>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+              <Inp type={f.t} value={vForm[f.k]} onChange={e=>setVForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.l}/>
+            </div>
+          ))}
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>메모 (비공개)</label>
+            <textarea value={vForm.note} onChange={e=>setVForm(p=>({...p,note:e.target.value}))}
+              style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:9,
+                padding:"8px 12px",color:C.text,fontFamily:F,fontSize:12,outline:"none",
+                resize:"vertical",minHeight:70,boxSizing:"border-box"}}/>
+          </div>
+          <div style={{background:`${C.rose}0D`,borderRadius:8,padding:"8px 12px",color:C.rose,fontSize:11,fontFamily:F}}>
+            🔒 담당 교역자만 열람 가능 (RLS 적용 예정)
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <Btn v="ghost" onClick={()=>setVisitModal(false)}>취소</Btn>
+            <Btn v="primary" onClick={addVisit} disabled={!V.required(vForm.pastor)||!V.required(vForm.prayer)}>저장</Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 삭제 확인 */}
+      <ConfirmDialog
+        open={!!delConfirm}
+        title="성도 삭제"
+        message={`${delConfirm?.name} 성도를 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`}
+        confirmText="삭제"
+        confirmV="rose"
+        onConfirm={()=>deleteMember(delConfirm.id, delConfirm.name)}
+        onCancel={()=>setDelConfirm(null)}
+      />
+    </div>
+  );
+}
+// ══ 4. ATTEND TAB v6 — 새벽기도 추가 ══════════════════
+function AttendTab({ members, attend, setAttend }) {
+  const [selWeek, setSelWeek] = useState(WEEKS[0]);
+  const [selService, setSelService] = useState("sunday"); // sunday | wednesday | dawn
+  const [addWeekModal, setAddWeekModal] = useState(false);
+  const [delWeekConfirm, setDelWeekConfirm] = useState(null);
+  const [newWeek, setNewWeek] = useState(today());
+  const [newServiceType, setNewServiceType] = useState("sunday");
+  const activeM = members.filter(m=>m.status==="active");
+  const {filters, setFilters, filtered: filteredActive, hasFilter} = useMemberFilters(members, m=>m.status==="active");
+  const visibleM = hasFilter ? filteredActive : filteredActive.slice(0, LIST_PREVIEW);
+
+  const SERVICES = [
+    {k:"sunday",  l:"주일 예배",   color:C.violet},
+    {k:"wednesday",l:"수요 예배",  color:C.sky},
+    {k:"dawn",    l:"새벽 기도회", color:C.gold},
+  ];
+
+  // 주일 예배 필드
+  const SUNDAY_FIELDS = [
+    {k:"s1",       l:"1부 예배",   c:C.violet},
+    {k:"s2",       l:"2부 예배",   c:C.sky},
+    {k:"online",   l:"온라인",     c:C.emerald},
+    {k:"communion",l:"성찬 참여",  c:C.gold},
+  ];
+  // 수요 예배 필드
+  const WED_FIELDS = [
+    {k:"wed",      l:"수요 예배",  c:C.sky},
+    {k:"wedOnline",l:"온라인",     c:C.emerald},
+  ];
+  // 새벽기도 필드 (월~토 각각)
+  const DAWN_FIELDS = [
+    {k:"mon",l:"월",c:C.violet},{k:"tue",l:"화",c:C.sky},
+    {k:"wed2",l:"수",c:C.emerald},{k:"thu",l:"목",c:C.gold},
+    {k:"fri",l:"금",c:C.rose},{k:"sat",l:"토",c:C.amber},
+  ];
+
+  const currentFields = selService==="sunday"?SUNDAY_FIELDS:selService==="wednesday"?WED_FIELDS:DAWN_FIELDS;
+  const defaultA = (svc) => {
+    const f = svc==="sunday"?SUNDAY_FIELDS:svc==="wednesday"?WED_FIELDS:DAWN_FIELDS;
+    return f.reduce((a,x)=>({...a,[x.k]:false}),{});
+  };
+
+  const toggleAttend = (member, field) => {
+    setAttend(prev=>{
+      const key = `${selWeek}_${selService}`;
+      const wk = {...(prev[key]||{})};
+      const cur = {...(wk[member]||defaultA(selService))};
+      cur[field] = !cur[field];
+      wk[member] = cur;
+      return {...prev,[key]:wk};
+    });
+    toast.success(`${member} — ${field} 출석 변경`);
+  };
+
+  const markAll = (field, val) => {
+    setAttend(prev=>{
+      const key = `${selWeek}_${selService}`;
+      const wk = {...(prev[key]||{})};
+      visibleM.forEach(m=>{
+        wk[m.name] = {...(wk[m.name]||defaultA(selService)),[field]:val};
+      });
+      return {...prev,[key]:wk};
+    });
+    toast.success(`${field} ${hasFilter?"선택":"전체"} ${val?"체크":"해제"} 완료`);
+  };
+
+  const addWeek = () => {
+    if(!newWeek) return;
+    const key = `${newWeek}_${newServiceType}`;
+    if(attend[key]) { toast.warn("이미 등록된 날짜/예배입니다"); return; }
+    const init={};
+    activeM.forEach(m=>{init[m.name]=defaultA(newServiceType);});
+    setAttend(prev=>({...prev,[key]:init}));
+    setSelWeek(newWeek); setSelService(newServiceType);
+    setAddWeekModal(false);
+    toast.success("출석부가 추가되었습니다");
+  };
+
+  const deleteWeek = (weekKey) => {
+    setAttend(prev=>{ const n={...prev}; delete n[weekKey]; return n; });
+    toast.info("출석부가 삭제되었습니다");
+    setDelWeekConfirm(null);
+    // 다른 주로 이동
+    const remaining = Object.keys(attend).filter(k=>k!==weekKey);
+    if(remaining.length) setSelWeek(remaining[0].split("_")[0]);
+  };
+
+  const wkKey = `${selWeek}_${selService}`;
+  const wkData = attend[wkKey]||{};
+
+  // 통계 계산
+  const fieldCounts = currentFields.map(f=>({
+    ...f,
+    cnt: visibleM.filter(m=>wkData[m.name]?.[f.k]).length
+  }));
+  const totalAttend = visibleM.filter(m=>currentFields.some(f=>wkData[m.name]?.[f.k])).length;
+  const statsBase = visibleM.length || 1;
+
+  // 날짜 목록 (서비스별 분리)
+  const allKeys = Object.keys(attend).sort((a,b)=>b.localeCompare(a));
+  const sundayKeys  = allKeys.filter(k=>k.endsWith("_sunday"));
+  const wedKeys     = allKeys.filter(k=>k.endsWith("_wednesday"));
+  const dawnKeys    = allKeys.filter(k=>k.endsWith("_dawn"));
+  const currentKeys = selService==="sunday"?sundayKeys:selService==="wednesday"?wedKeys:dawnKeys;
+
+  // 새벽기도 주간 통계
+  const dawnStats = selService==="dawn" ? visibleM.map(m=>({
+    name:m.name, role:m.role, zone:m.zone,
+    total: DAWN_FIELDS.filter(f=>wkData[m.name]?.[f.k]).length,
+  })).sort((a,b)=>b.total-a.total) : [];
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      {/* 예배 종류 선택 */}
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        {SERVICES.map(s=>(
+          <button key={s.k} onClick={()=>setSelService(s.k)} style={{
+            padding:"9px 20px",borderRadius:11,border:"none",cursor:"pointer",fontFamily:F,fontSize:13,fontWeight:600,
+            background:selService===s.k?s.color:C.s2,
+            color:selService===s.k?"#fff":C.sub,transition:"all .15s"}}>
+            {s.l}
+          </button>
+        ))}
+        <Btn sz="sm" v="ghost" onClick={()=>setAddWeekModal(true)} style={{marginLeft:"auto"}}>+ 날짜 추가</Btn>
+      </div>
+
+      <Card style={{padding:16}}>
+        <MemberFilterBar filters={filters} setFilters={setFilters} total={activeM.length} filtered={filteredActive.length} compact showStatus={false}/>
+        <FilterHint total={activeM.length} hasFilter={hasFilter}/>
+      </Card>
+
+      {/* 날짜 선택 */}
+      {currentKeys.length>0 ? (
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+          {currentKeys.map(k=>{
+            const dateStr = k.split("_")[0];
+            return (
+              <div key={k} style={{display:"flex",gap:2,alignItems:"center"}}>
+                <button onClick={()=>setSelWeek(dateStr)} style={{
+                  padding:"6px 14px",borderRadius:16,border:"none",cursor:"pointer",fontFamily:F,fontSize:12,
+                  background:selWeek===dateStr&&selService===k.split("_")[1]?SERVICES.find(s=>s.k===selService)?.color||C.violet:C.s2,
+                  color:selWeek===dateStr&&selService===k.split("_")[1]?"#fff":C.sub,transition:"all .15s"}}>
+                  {dateStr}
+                </button>
+                <button onClick={()=>setDelWeekConfirm(k)} style={{
+                  background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,padding:"2px 4px"}}>✕</button>
+              </div>
+            );
+          })}
+        </div>
+      ):(
+        <div style={{background:C.s2,borderRadius:10,padding:"14px 18px",color:C.muted,fontSize:13,fontFamily:F,textAlign:"center"}}>
+          등록된 {SERVICES.find(s=>s.k===selService)?.l} 출석부 없음 — "날짜 추가" 버튼을 눌러주세요
+        </div>
+      )}
+
+      {/* 요약 카드 */}
+      <div style={{display:"grid",gridTemplateColumns:`repeat(${currentFields.length+1},1fr)`,gap:10}}>
+        <Card style={{padding:"13px 16px"}}>
+          <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>전체 출석</div>
+          <div style={{color:C.text,fontSize:20,fontWeight:700,fontFamily:F}}>{totalAttend}명</div>
+          <div style={{color:C.muted,fontSize:10,fontFamily:F}}>{Math.round(totalAttend/statsBase*100)}%</div>
+        </Card>
+        {fieldCounts.map(x=>(
+          <Card key={x.k} style={{padding:"13px 16px"}}>
+            <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>{x.l}</div>
+            <div style={{color:x.c,fontSize:20,fontWeight:700,fontFamily:F}}>{x.cnt}명</div>
+            <div style={{color:x.c,fontSize:10,fontFamily:F}}>{Math.round(x.cnt/statsBase*100)}%</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* 새벽기도 주간 랭킹 */}
+      {selService==="dawn"&&dawnStats.length>0&&(
+        <Card style={{padding:20}}>
+          <SH title="🌅 새벽기도 주간 참석 현황" sub="이번 주 일별 참석"/>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse"}}>
+              <thead>
+                <tr style={{background:C.s2}}>
+                  <th style={{padding:"9px 14px",textAlign:"left",color:C.muted,fontSize:11,fontFamily:F,borderBottom:`1px solid ${C.border}`}}>이름</th>
+                  <th style={{padding:"9px 14px",textAlign:"left",color:C.muted,fontSize:11,fontFamily:F,borderBottom:`1px solid ${C.border}`}}>직분/구역</th>
+                  {DAWN_FIELDS.map(f=>(
+                    <th key={f.k} style={{padding:"9px 10px",textAlign:"center",color:f.c,fontSize:11,
+                      fontFamily:F,fontWeight:600,borderBottom:`1px solid ${C.border}`}}>{f.l}</th>
+                  ))}
+                  <th style={{padding:"9px 14px",textAlign:"center",color:C.gold,fontSize:11,fontFamily:F,borderBottom:`1px solid ${C.border}`}}>합계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleM.length===0?(
+                  <tr><td colSpan={DAWN_FIELDS.length+3} style={{padding:24,textAlign:"center",color:C.muted,fontSize:12,fontFamily:F}}>조건에 맞는 성도가 없습니다</td></tr>
+                ):visibleM.map((m,i)=>{
+                  const a=wkData[m.name]||{};
+                  const total=DAWN_FIELDS.filter(f=>a[f.k]).length;
+                  return (
+                    <tr key={m.id} style={{borderBottom:i<visibleM.length-1?`1px solid ${C.border}`:"none"}}
+                      onMouseEnter={e=>e.currentTarget.style.background=C.s2}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <td style={{padding:"9px 14px",color:C.text,fontFamily:F,fontSize:13,fontWeight:600}}>{m.name}</td>
+                      <td style={{padding:"9px 14px"}}>
+                        <div style={{display:"flex",gap:4}}>
+                          <Badge c={roleC(m.role)}>{m.role}</Badge>
+                          <span style={{color:C.muted,fontSize:11,fontFamily:F}}>{m.zone}</span>
+                        </div>
+                      </td>
+                      {DAWN_FIELDS.map(f=>(
+                        <td key={f.k} style={{padding:"9px 10px",textAlign:"center"}}>
+                          <input type="checkbox" checked={!!a[f.k]}
+                            onChange={()=>toggleAttend(m.name,f.k)}
+                            style={{width:15,height:15,cursor:"pointer",accentColor:f.c}}/>
+                        </td>
+                      ))}
+                      <td style={{padding:"9px 14px",textAlign:"center"}}>
+                        <span style={{
+                          background:total>=5?`${C.gold}22`:total>=3?`${C.emerald}22`:C.s3,
+                          color:total>=5?C.gold:total>=3?C.emerald:C.muted,
+                          borderRadius:8,padding:"2px 10px",fontSize:12,fontFamily:F,fontWeight:700,
+                        }}>{total}/6</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* 일반 출석 테이블 (주일/수요) */}
+      {selService!=="dawn"&&(
+        <>
+          {/* 일괄 처리 */}
+          <Card style={{padding:14}}>
+            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+              <span style={{color:C.muted,fontSize:12,fontFamily:F,fontWeight:600}}>일괄:</span>
+              {currentFields.map(f=>(
+                <div key={f.k} style={{display:"flex",gap:4}}>
+                  <Btn sz="sm" v="ghost" onClick={()=>markAll(f.k,true)} style={{color:f.c,borderColor:f.c}}>
+                    {f.l} 전체 ✓
+                  </Btn>
+                  <Btn sz="sm" v="ghost" onClick={()=>markAll(f.k,false)}>해제</Btn>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <div style={{padding:"13px 16px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{color:C.text,fontFamily:FB,fontSize:13,fontWeight:700}}>출석 체크</span>
+              <span style={{color:C.muted,fontSize:12,fontFamily:F}}>
+                출석 {totalAttend}명 / 표시 {visibleM.length}명{hasFilter?" (필터)":` · 전체 ${activeM.length}명`}
+              </span>
+            </div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead>
+                  <tr style={{background:C.s2}}>
+                    {["이름","직분","구역",...currentFields.map(f=>f.l)].map((h,j)=>(
+                      <th key={j} style={{padding:"10px 14px",textAlign:j>=3?"center":"left",
+                        color:j>=3?currentFields[j-3]?.c:C.muted,
+                        fontSize:11,fontFamily:F,fontWeight:500,borderBottom:`1px solid ${C.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleM.length===0?(
+                    <tr><td colSpan={3+currentFields.length} style={{padding:24,textAlign:"center",color:C.muted,fontSize:12,fontFamily:F}}>조건에 맞는 성도가 없습니다</td></tr>
+                  ):visibleM.map((m,i)=>{
+                    const a=wkData[m.name]||defaultA(selService);
+                    const attended=currentFields.some(f=>a[f.k]);
+                    return (
+                      <tr key={m.id} style={{borderBottom:i<visibleM.length-1?`1px solid ${C.border}`:"none",transition:"background .12s"}}
+                        onMouseEnter={e=>e.currentTarget.style.background=C.s2}
+                        onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                        <td style={{padding:"10px 16px"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <div style={{width:6,height:6,borderRadius:"50%",background:attended?C.emerald:C.rose,flexShrink:0}}/>
+                            <span style={{color:C.text,fontFamily:F,fontSize:13,fontWeight:600}}>{m.name}</span>
+                          </div>
+                        </td>
+                        <td style={{padding:"10px 14px"}}><Badge c={roleC(m.role)}>{m.role}</Badge></td>
+                        <td style={{padding:"10px 14px",color:C.muted,fontSize:12,fontFamily:F}}>{m.zone}</td>
+                        {currentFields.map(f=>(
+                          <td key={f.k} style={{padding:"10px 14px",textAlign:"center"}}>
+                            <input type="checkbox" checked={!!a[f.k]} onChange={()=>toggleAttend(m.name,f.k)}
+                              style={{width:16,height:16,cursor:"pointer",accentColor:f.c}}/>
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
+
+      {/* 날짜 추가 모달 */}
+      <Modal open={addWeekModal} onClose={()=>setAddWeekModal(false)} title="출석부 추가" width={340}>
+        <div style={{display:"flex",flexDirection:"column",gap:13}}>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>예배 종류</label>
+            <Sel value={newServiceType} onChange={setNewServiceType}
+              opts={SERVICES.map(s=>({v:s.k,l:s.l}))}/>
+          </div>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>날짜</label>
+            <Inp type="date" value={newWeek} onChange={e=>setNewWeek(e.target.value)}/>
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <Btn v="ghost" onClick={()=>setAddWeekModal(false)}>취소</Btn>
+            <Btn v="primary" onClick={addWeek} disabled={!newWeek}>추가</Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 출석부 삭제 확인 */}
+      <ConfirmDialog
+        open={!!delWeekConfirm}
+        title="출석부 삭제"
+        message={`${delWeekConfirm?.split("_")[0]} 출석부를 삭제하시겠습니까?`}
+        confirmText="삭제"
+        confirmV="rose"
+        onConfirm={()=>deleteWeek(delWeekConfirm)}
+        onCancel={()=>setDelWeekConfirm(null)}
+      />
+    </div>
+  );
+}
+// ══ OFFERING TAB v6 — 수정 포함 ════════════════════════
+function OfferingTab({ offerings, setOfferings }) {
+  const [filterStatus, setFilterStatus] = useState("전체");
+  const [filterType, setFilterType] = useState("전체");
+  const [searchText, setSearchText] = useState("");
+  const [addModal, setAddModal] = useState(false);
+  const [editModal, setEditModal] = useState(null);
+  const [delConfirm, setDelConfirm] = useState(null);
+  const [errors, setErrors] = useState({});
+  const emptyForm = {member:"",type:OFFERING_TYPES[0],amount:"",method:"봉투",date:today()};
+  const [form, setForm] = useState(emptyForm);
+
+  const validateForm = () => {
+    const e={};
+    if(!V.required(form.member)) e.member="성도명을 입력해주세요";
+    if(!V.amount(form.amount)) e.amount="1원 이상의 금액을 입력해주세요";
+    if(!V.date(form.date)) e.date="날짜를 선택해주세요";
+    setErrors(e);
+    return Object.keys(e).length===0;
+  };
+
+  const addOffering = () => {
+    if(!validateForm()) { toast.error("입력 내용을 확인해주세요"); return; }
+    const amt = parseInt(form.amount);
+    setOfferings(p=>[...p,{...form,id:Date.now(),amount:amt,v1:null,v2:null,status:"pending1"}]);
+    toast.success(`₩${fmt(amt)} 헌금이 입력되었습니다 — 1차 확인 필요`);
+    setAddModal(false); setForm(emptyForm); setErrors({});
+  };
+
+  const openEdit = (o) => {
+    if(o.status==="confirmed") { toast.warn("확인 완료된 헌금은 수정할 수 없습니다"); return; }
+    setForm({member:o.member,type:o.type,amount:String(o.amount),method:o.method,date:o.date});
+    setErrors({}); setEditModal(o);
+  };
+
+  const saveEdit = () => {
+    if(!validateForm()) { toast.error("입력 내용을 확인해주세요"); return; }
+    const amt = parseInt(form.amount);
+    setOfferings(p=>p.map(o=>o.id===editModal.id
+      ?{...o,...form,amount:amt,v1:null,v2:null,status:"pending1"}:o));
+    toast.success("헌금 내역이 수정되었습니다 (재확인 필요)");
+    setEditModal(null); setForm(emptyForm); setErrors({});
+  };
+
+  const verify1 = id => {
+    setOfferings(p=>p.map(o=>o.id===id?{...o,v1:"현재사용자",status:o.v2?"confirmed":"pending2"}:o));
+    toast.success("1차 확인 완료");
+  };
+  const verify2 = id => {
+    setOfferings(p=>p.map(o=>o.id===id?{...o,v2:"현재사용자",status:"confirmed"}:o));
+    toast.success("✅ 2차 확인 완료 — 최종 잠금 처리");
+  };
+  const cancelOffering = (id) => {
+    setOfferings(p=>p.filter(o=>o.id!==id));
+    toast.info("헌금 입력이 취소되었습니다");
+    setDelConfirm(null);
+  };
+
+  const filtered = offerings.filter(o=>{
+    if(filterStatus!=="전체"&&o.status!==filterStatus) return false;
+    if(filterType!=="전체"&&o.type!==filterType) return false;
+    const q=searchText.trim().toLowerCase();
+    if(q&&![o.member,o.type,o.method,o.date].some(v=>(v||"").toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const confirmedTotal = offerings.filter(o=>o.status==="confirmed").reduce((s,o)=>s+o.amount,0);
+  const pendingTotal   = offerings.filter(o=>o.status!=="confirmed").reduce((s,o)=>s+o.amount,0);
+  const methodC = m=>({카드:C.sky,"계좌이체":C.emerald,봉투:C.muted,"QR코드":C.violet,ARS:C.amber,키오스크:C.rose}[m]||C.sub);
+
+  // 종류별 합계
+  const typeStats = OFFERING_TYPES.map(t=>({
+    t, total:offerings.filter(o=>o.type===t&&o.status==="confirmed").reduce((s,o)=>s+o.amount,0),
+    cnt:offerings.filter(o=>o.type===t).length,
+  })).filter(x=>x.total>0||x.cnt>0);
+
+  const FormBody = () => (
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{background:`${C.amber}0D`,borderRadius:9,padding:"9px 13px",
+        color:C.amber,fontSize:11,fontFamily:F}}>⚠️ 저장 후 반드시 2인 교차확인이 필요합니다</div>
+      <Field label="성도명" error={errors.member} required>
+        <Inp value={form.member} error={!!errors.member}
+          onChange={e=>setForm(p=>({...p,member:e.target.value}))} placeholder="성도 이름"/>
+      </Field>
+      <Field label="금액 (원)" error={errors.amount} required>
+        <Inp value={form.amount} error={!!errors.amount} type="text"
+          onChange={e=>setForm(p=>({...p,amount:amountFormat(e.target.value)}))} placeholder="숫자만 입력"/>
+        {form.amount&&parseInt(form.amount)>0&&(
+          <div style={{color:C.emerald,fontSize:11,fontFamily:F,marginTop:3}}>₩{fmt(parseInt(form.amount))}</div>
+        )}
+      </Field>
+      <Field label="날짜" error={errors.date} required>
+        <Inp type="date" value={form.date} error={!!errors.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/>
+      </Field>
+      {[{l:"헌금 종류",k:"type",opts:OFFERING_TYPES},{l:"납부 방법",k:"method",opts:METHODS}].map(f=>(
+        <div key={f.k}>
+          <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+          <Sel value={form[f.k]} onChange={v=>setForm(p=>({...p,[f.k]:v}))} opts={f.opts}/>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      {/* 종류별 카드 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10}}>
+        {typeStats.slice(0,5).map((x,i)=>{
+          const colors=[C.violet,C.gold,C.emerald,C.sky,C.rose];
+          return (
+            <Card key={x.t} style={{padding:"13px 16px",borderTop:`3px solid ${colors[i]}`}}>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>{x.t}</div>
+              <div style={{color:colors[i],fontSize:15,fontWeight:700,fontFamily:F}}>₩{fmt(x.total)}</div>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F,marginTop:2}}>{x.cnt}건</div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* 2인 확인 배너 */}
+      <div style={{background:`${C.violet}0D`,border:`1px solid ${C.violet}22`,borderRadius:13,
+        padding:"13px 18px",display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:16,alignItems:"center"}}>
+        <div>
+          <div style={{color:C.violet,fontSize:13,fontFamily:F,fontWeight:700,marginBottom:2}}>🔄 2인 교차확인</div>
+          <div style={{color:C.muted,fontSize:11,fontFamily:F}}>수기 입력 후 2인 독립 확인 필수</div>
+        </div>
+        <div style={{display:"flex",gap:12,alignItems:"center"}}>
+          {[{l:"1차 대기",c:C.rose},{l:"2차 대기",c:C.amber},{l:"확인 완료",c:C.emerald}].map((x,i)=>([
+            <div key={x.l} style={{textAlign:"center"}}>
+              <div style={{color:x.c,fontSize:20,fontWeight:700,fontFamily:F}}>
+                {offerings.filter(o=>o.status===["pending1","pending2","confirmed"][i]).length}
+              </div>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F}}>{x.l}</div>
+            </div>,
+            i<2&&<span key={`arr${i}`} style={{color:C.border,fontSize:18}}>→</span>
+          ]))}
+        </div>
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+            <span style={{color:C.muted,fontSize:12,fontFamily:F}}>확인 완료</span>
+            <span style={{color:C.emerald,fontWeight:700,fontFamily:F,fontSize:12}}>₩{fmt(confirmedTotal)}</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <span style={{color:C.muted,fontSize:12,fontFamily:F}}>미확인</span>
+            <span style={{color:C.amber,fontWeight:700,fontFamily:F,fontSize:12}}>₩{fmt(pendingTotal)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 필터 + 버튼 */}
+      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        <Inp value={searchText} onChange={e=>setSearchText(e.target.value)} placeholder="🔍 성도·종류·방법·날짜" style={{minWidth:180,flex:"1 1 180px"}}/>
+        <Sel value={filterType} onChange={setFilterType}
+          opts={["전체",...OFFERING_TYPES]} style={{width:"auto",minWidth:120}}/>
+        {["전체","pending1","pending2","confirmed"].map(s=>(
+          <button key={s} onClick={()=>setFilterStatus(s)} style={{
+            padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:F,fontSize:12,
+            background:filterStatus===s?(s==="pending1"?C.rose:s==="pending2"?C.amber:s==="confirmed"?C.emerald:C.violet):C.s2,
+            color:filterStatus===s?"#fff":C.sub,transition:"all .15s"}}>
+            {s==="전체"?"전체":stL(s)}({offerings.filter(o=>s==="전체"||o.status===s).length})
+          </button>
+        ))}
+        {searchText&&<Btn sz="sm" v="ghost" onClick={()=>setSearchText("")}>검색 초기화</Btn>}
+        <span style={{color:C.muted,fontSize:12,fontFamily:F,marginLeft:"auto"}}>
+          {filtered.length}건 / ₩{fmt(filtered.reduce((s,o)=>s+o.amount,0))}
+        </span>
+        <Btn v="ghost">📄 기부금 영수증</Btn>
+        <Btn v="gold" onClick={()=>{setErrors({});setForm(emptyForm);setAddModal(true);}}>+ 헌금 입력</Btn>
+      </div>
+
+      {/* 테이블 */}
+      <Card>
+        <Tbl heads={["성도명","헌금 종류","금액","방법","날짜","1차","2차","상태","액션"]}
+          rows={filtered.map(o=>[
+            <span style={{color:C.text,fontWeight:600,fontFamily:F}}>{o.member}</span>,
+            <Badge c={C.violet}>{o.type}</Badge>,
+            <span style={{color:C.gold,fontWeight:700,fontFamily:F}}>₩{fmt(o.amount)}</span>,
+            <Badge c={methodC(o.method)}>{o.method}</Badge>,
+            <span style={{color:C.muted,fontSize:12,fontFamily:F}}>{o.date}</span>,
+            o.v1?<span style={{color:C.emerald,fontSize:12,fontFamily:F}}>{o.v1} ✓</span>
+              :<Btn sz="sm" v="emerald" onClick={()=>verify1(o.id)}>1차 확인</Btn>,
+            o.v2?<span style={{color:C.emerald,fontSize:12,fontFamily:F}}>{o.v2} ✓</span>
+              :o.v1?<Btn sz="sm" v="emerald" onClick={()=>verify2(o.id)}>2차 확인</Btn>
+              :<span style={{color:C.muted,fontSize:11,fontFamily:F}}>대기</span>,
+            <Badge c={stC(o.status)}>{stL(o.status)}</Badge>,
+            <div style={{display:"flex",gap:4}}>
+              {o.status!=="confirmed"&&(
+                <Btn sz="sm" v="ghost" onClick={()=>openEdit(o)}>수정</Btn>
+              )}
+              {o.status!=="confirmed"
+                ?<Btn sz="sm" v="rose" onClick={()=>setDelConfirm(o)}>취소</Btn>
+                :<Badge c={C.muted}>잠금</Badge>
+              }
+            </div>,
+          ])}
+        />
+      </Card>
+
+      {/* 입력 모달 */}
+      <Modal open={addModal} onClose={()=>{setAddModal(false);setErrors({});setForm(emptyForm);}} title="헌금 수기 입력" width={420}>
+        <FormBody/>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:16}}>
+          <Btn v="ghost" onClick={()=>{setAddModal(false);setErrors({});setForm(emptyForm);}}>취소</Btn>
+          <Btn v="gold" onClick={addOffering}>저장</Btn>
+        </div>
+      </Modal>
+
+      {/* 수정 모달 */}
+      <Modal open={!!editModal} onClose={()=>{setEditModal(null);setErrors({});setForm(emptyForm);}} title="헌금 내역 수정" width={420}>
+        <FormBody/>
+        <div style={{background:`${C.rose}0D`,borderRadius:8,padding:"8px 12px",marginTop:12,
+          color:C.rose,fontSize:11,fontFamily:F}}>⚠️ 수정 시 확인 상태가 초기화됩니다</div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:14}}>
+          <Btn v="ghost" onClick={()=>{setEditModal(null);setErrors({});setForm(emptyForm);}}>취소</Btn>
+          <Btn v="primary" onClick={saveEdit}>저장</Btn>
+        </div>
+      </Modal>
+
+      {/* 취소 확인 */}
+      <ConfirmDialog
+        open={!!delConfirm}
+        title="헌금 입력 취소"
+        message={`${delConfirm?.member} 성도의 ${delConfirm?.type}\n₩${fmt(delConfirm?.amount)} 입력을 취소하시겠습니까?`}
+        confirmText="취소 처리"
+        confirmV="rose"
+        onConfirm={()=>cancelOffering(delConfirm.id)}
+        onCancel={()=>setDelConfirm(null)}
+      />
+    </div>
+  );
+}
+function BudgetTab({ budgets, setBudgets }) {
+  const [selIdx, setSelIdx] = useState(0);
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [addItemModal, setAddItemModal] = useState(false);
+  const [addBudgetModal, setAddBudgetModal] = useState(false);
+  const [iForm, setIForm] = useState({title:"",amount:"",reqBy:"",date:today()});
+  const [bForm, setBForm] = useState({dept:"",cat:"",budget:""});
+
+  const dept = budgets[selIdx];
+  const spent = dept ? dept.items.filter(i=>i.status==="approved").reduce((s,i)=>s+i.amount,0) : 0;
+  const rate = dept ? spent/dept.budget : 0;
+
+  const approveItem = id => {
+    setBudgets(p=>p.map((b,i)=>i===selIdx?{...b,items:b.items.map(it=>it.id===id?{...it,status:"approved"}:it)}:b));
+    setApproveTarget(null);
+  };
+  const rejectItem = id => {
+    setBudgets(p=>p.map((b,i)=>i===selIdx?{...b,items:b.items.map(it=>it.id===id?{...it,status:"rejected"}:it)}:b));
+    setRejectTarget(null);
+  };
+  const addItem = () => {
+    if(!iForm.title.trim()||!iForm.amount) return;
+    const newItem={...iForm,id:`i${Date.now()}`,amount:parseInt(iForm.amount),status:"pending"};
+    setBudgets(p=>p.map((b,i)=>i===selIdx?{...b,items:[...b.items,newItem]}:b));
+    setAddItemModal(false);
+    setIForm({title:"",amount:"",reqBy:"",date:today()});
+  };
+  const addBudget = () => {
+    if(!bForm.dept.trim()||!bForm.budget) return;
+    setBudgets(p=>[...p,{id:`B${Date.now()}`,dept:bForm.dept,cat:bForm.cat,budget:parseInt(bForm.budget),items:[]}]);
+    setAddBudgetModal(false);
+    setBForm({dept:"",cat:"",budget:""});
+  };
+
+  if(!dept) return <div style={{color:C.muted,fontFamily:F,textAlign:"center",padding:40}}>부서 없음</div>;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      {/* 부서 탭 */}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+        {budgets.map((b,i)=>{
+          const s=b.items.filter(x=>x.status==="approved").reduce((a,x)=>a+x.amount,0);
+          const r=s/b.budget;
+          return (
+            <button key={b.id} onClick={()=>setSelIdx(i)} style={{
+              padding:"9px 18px",borderRadius:11,border:"none",cursor:"pointer",fontFamily:F,fontSize:13,fontWeight:600,
+              background:selIdx===i?C.violet:C.s2,color:selIdx===i?"#fff":C.sub,
+              position:"relative",transition:"all .15s"}}>
+              {b.dept}
+              {r>0.9&&<span style={{marginLeft:5,fontSize:10}}>⚠️</span>}
+            </button>
+          );
+        })}
+        <Btn sz="sm" v="ghost" onClick={()=>setAddBudgetModal(true)}>+ 부서 추가</Btn>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"260px 1fr",gap:18}}>
+        {/* 게이지 */}
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <Card style={{padding:20}}>
+            <SH title={`${dept.dept} 예산`} sub={dept.cat}/>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{width:110,height:110,borderRadius:"50%",margin:"0 auto",
+                background:`conic-gradient(${rate>0.9?C.rose:rate>0.7?C.amber:C.emerald} ${Math.round(rate*360)}deg,${C.s3} 0deg)`,
+                display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+                <div style={{width:82,height:82,borderRadius:"50%",background:C.s1,
+                  display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+                  <span style={{color:rate>0.9?C.rose:rate>0.7?C.amber:C.emerald,fontSize:18,fontWeight:700,fontFamily:F}}>
+                    {Math.round(rate*100)}%
+                  </span>
+                  <span style={{color:C.muted,fontSize:9,fontFamily:F}}>집행률</span>
+                </div>
+              </div>
+            </div>
+            {[{l:"총 예산",v:`₩${fmt(dept.budget)}`,c:C.text},
+              {l:"집행액",v:`₩${fmt(spent)}`,c:rate>0.9?C.rose:C.amber},
+              {l:"잔여",v:`₩${fmt(dept.budget-spent)}`,c:C.emerald}].map(x=>(
+              <div key={x.l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{color:C.muted,fontSize:12,fontFamily:F}}>{x.l}</span>
+                <span style={{color:x.c,fontWeight:700,fontFamily:F,fontSize:12}}>{x.v}</span>
+              </div>
+            ))}
+            {rate>0.9&&<div style={{marginTop:12,background:`${C.rose}11`,borderRadius:8,padding:"8px 12px",
+              color:C.rose,fontSize:11,fontFamily:F}}>⚠️ 예산 90% 초과 — 관리자 승인 필요</div>}
+          </Card>
+          <Card style={{padding:18}}>
+            <SH title="결의 프로세스"/>
+            {["부서장 요청","1차 담당 검토","재정부장 승인","집행 완료"].map((step,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0"}}>
+                <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,
+                  background:i<3?`${C.violet}22`:C.s3,border:`1px solid ${i<3?C.violet:C.border}`,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  color:i<3?C.violet:C.muted,fontSize:10,fontWeight:700}}>{i+1}</div>
+                <span style={{color:i<3?C.sub:C.muted,fontSize:12,fontFamily:F}}>{step}</span>
+              </div>
+            ))}
+          </Card>
+        </div>
+
+        {/* 결의 목록 */}
+        <Card style={{padding:20}}>
+          <SH title="지출 결의서" action={<Btn sz="sm" v="primary" onClick={()=>setAddItemModal(true)}>+ 지출 요청</Btn>}/>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {dept.items.length===0
+              ?<div style={{color:C.muted,textAlign:"center",padding:24,fontFamily:F,fontSize:13}}>결의서 없음</div>
+              :dept.items.map(item=>(
+                <div key={item.id} style={{background:C.s2,borderRadius:11,padding:"14px 16px",
+                  borderLeft:`3px solid ${stC(item.status)}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                    <div>
+                      <div style={{color:C.text,fontSize:13,fontFamily:F,fontWeight:600}}>{item.title}</div>
+                      <div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:2}}>요청: {item.reqBy} · {item.date}</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{color:C.gold,fontSize:15,fontWeight:700,fontFamily:F}}>₩{fmt(item.amount)}</div>
+                      <Badge c={stC(item.status)}>{stL(item.status)}</Badge>
+                    </div>
+                  </div>
+                  {item.status==="pending"&&(
+                    <div style={{display:"flex",gap:6,marginTop:6}}>
+                      <Btn sz="sm" v="emerald" onClick={()=>setApproveTarget(item)}>✓ 승인</Btn>
+                      <Btn sz="sm" v="rose" onClick={()=>setRejectTarget(item)}>✕ 반려</Btn>
+                    </div>
+                  )}
+                </div>
+              ))
+            }
+          </div>
+        </Card>
+      </div>
+
+      {/* 모달들 */}
+      <Modal open={!!approveTarget} onClose={()=>setApproveTarget(null)} title="지출 결의 승인" width={380}>
+        {approveTarget&&(
+          <div>
+            <div style={{background:C.s2,borderRadius:11,padding:14,marginBottom:14}}>
+              <div style={{color:C.text,fontFamily:F,fontWeight:600,marginBottom:4}}>{approveTarget.title}</div>
+              <div style={{color:C.gold,fontSize:17,fontWeight:700,fontFamily:F}}>₩{fmt(approveTarget.amount)}</div>
+            </div>
+            <div style={{color:C.muted,fontSize:12,fontFamily:F,marginBottom:16}}>승인 시 예산에서 즉시 차감되며 취소할 수 없습니다.</div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn v="ghost" onClick={()=>setApproveTarget(null)}>취소</Btn>
+              <Btn v="emerald" onClick={()=>approveItem(approveTarget.id)}>최종 승인</Btn>
+            </div>
+          </div>
+        )}
+      </Modal>
+      <Modal open={!!rejectTarget} onClose={()=>setRejectTarget(null)} title="반려 확인" width={340}>
+        {rejectTarget&&(
+          <div>
+            <div style={{color:C.text,fontFamily:F,marginBottom:16}}>{rejectTarget.title} 결의를 반려하시겠습니까?</div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn v="ghost" onClick={()=>setRejectTarget(null)}>취소</Btn>
+              <Btn v="rose" onClick={()=>rejectItem(rejectTarget.id)}>반려</Btn>
+            </div>
+          </div>
+        )}
+      </Modal>
+      <Modal open={addItemModal} onClose={()=>setAddItemModal(false)} title="지출 결의 요청" width={400}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {[{l:"항목명",k:"title",t:"text"},{l:"금액(원)",k:"amount",t:"number"},
+            {l:"요청자",k:"reqBy",t:"text"},{l:"날짜",k:"date",t:"date"}].map(f=>(
+            <div key={f.k}>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+              <Inp type={f.t} value={iForm[f.k]} onChange={e=>setIForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.l}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:6}}>
+            <Btn v="ghost" onClick={()=>setAddItemModal(false)}>취소</Btn>
+            <Btn v="primary" onClick={addItem} disabled={!iForm.title.trim()||!iForm.amount}>요청</Btn>
+          </div>
+        </div>
+      </Modal>
+      <Modal open={addBudgetModal} onClose={()=>setAddBudgetModal(false)} title="부서 예산 추가" width={360}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {[{l:"부서명",k:"dept",t:"text"},{l:"카테고리",k:"cat",t:"text"},{l:"예산(원)",k:"budget",t:"number"}].map(f=>(
+            <div key={f.k}>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+              <Inp type={f.t} value={bForm[f.k]} onChange={e=>setBForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.l}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:6}}>
+            <Btn v="ghost" onClick={()=>setAddBudgetModal(false)}>취소</Btn>
+            <Btn v="primary" onClick={addBudget} disabled={!bForm.dept.trim()||!bForm.budget}>추가</Btn>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+// ══ 7. BULLETIN ════════════════════════════════════════
+function BulletinTab() {
+  const [preview, setPreview] = useState(false);
+  const [bul, setBul] = usePersist("erp_bulletin", BULLETIN_INIT);
+  const addNotice = () => setBul(p=>({...p,notices:[...p.notices,"새 공지 내용"]}));
+  const delNotice = i => setBul(p=>({...p,notices:p.notices.filter((_,j)=>j!==i)}));
+  const editNotice = (i,v) => setBul(p=>({...p,notices:p.notices.map((n,j)=>j===i?v:n)}));
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <Badge c={C.gold}>디지털 주보 생성기</Badge>
+        <span style={{color:C.muted,fontSize:12,fontFamily:F}}>종이 주보 대체 인터랙티브 주보</span>
+        <div style={{marginLeft:"auto",display:"flex",gap:8}}>
+          <Btn v="ghost" onClick={()=>setPreview(!preview)}>{preview?"✏️ 편집":"👁️ 미리보기"}</Btn>
+          <Btn v="ghost" style={{color:"#FAE100",borderColor:"#FAE100"}}>📱 카카오 발송</Btn>
+          <Btn v="primary">🔗 링크 복사</Btn>
+        </div>
+      </div>
+
+      {!preview?(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+          <Card style={{padding:22}}>
+            <SH title="주보 편집"/>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {[{l:"날짜",k:"date",t:"date"},{l:"제목",k:"title",t:"text"},{l:"설교자",k:"pastor",t:"text"},
+                {l:"본문",k:"scripture",t:"text"},{l:"설교 제목",k:"sermonTitle",t:"text"},{l:"연락처",k:"contact",t:"text"}].map(f=>(
+                <div key={f.k}>
+                  <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+                  <Inp type={f.t} value={bul[f.k]} onChange={e=>setBul(p=>({...p,[f.k]:e.target.value}))}/>
+                </div>
+              ))}
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{color:C.muted,fontSize:12,fontFamily:F}}>온라인 헌금 버튼</span>
+                <Toggle on={bul.offeringOn} onChange={v=>setBul(p=>({...p,offeringOn:v}))}/>
+              </div>
+            </div>
+          </Card>
+          <Card style={{padding:22}}>
+            <SH title="공지 사항" action={<Btn sz="sm" v="ghost" onClick={addNotice}>+ 추가</Btn>}/>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {bul.notices.map((n,i)=>(
+                <div key={i} style={{display:"flex",gap:6}}>
+                  <input value={n} onChange={e=>editNotice(i,e.target.value)}
+                    style={{flex:1,background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,
+                      padding:"7px 11px",color:C.text,fontFamily:F,fontSize:12,outline:"none"}}/>
+                  <Btn sz="sm" v="rose" onClick={()=>delNotice(i)}>✕</Btn>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      ):(
+        <div style={{display:"flex",justifyContent:"center"}}>
+          <div style={{width:350,background:"linear-gradient(180deg,#FFFDF8,#EEF3FA)",
+            border:`1px solid ${C.gold}44`,borderRadius:20,padding:22,
+            boxShadow:`0 0 40px ${C.gold}18`}}>
+            <div style={{textAlign:"center",paddingBottom:16,borderBottom:`1px solid ${C.border}`,marginBottom:16}}>
+              <div style={{color:C.gold,fontFamily:FB,fontSize:10,letterSpacing:3,marginBottom:3}}>GRACE CENTRAL CHURCH</div>
+              <div style={{color:C.text,fontFamily:FB,fontSize:18,fontWeight:700}}>{bul.title}</div>
+              <div style={{color:C.muted,fontSize:11,marginTop:3,fontFamily:F}}>{bul.date}</div>
+            </div>
+            <div style={{background:`${C.violet}11`,borderRadius:11,padding:"12px 14px",marginBottom:14,borderLeft:`3px solid ${C.violet}`}}>
+              <div style={{color:C.violet,fontSize:10,fontFamily:FB,fontStyle:"italic",marginBottom:3}}>오늘의 말씀</div>
+              <div style={{color:C.sub,fontSize:12,fontFamily:F,lineHeight:1.6}}>{bul.scripture}</div>
+            </div>
+            <div style={{background:C.s2,borderRadius:11,padding:"12px 14px",marginBottom:12}}>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>📖 {bul.scripture}</div>
+              <div style={{color:C.text,fontSize:14,fontWeight:700,fontFamily:F}}>{bul.sermonTitle}</div>
+              <div style={{color:C.muted,fontSize:11,marginTop:3,fontFamily:F}}>{bul.pastor}</div>
+            </div>
+            <div style={{marginBottom:12}}>
+              <div style={{color:C.gold,fontSize:11,fontWeight:700,marginBottom:8,fontFamily:F}}>📣 공지사항</div>
+              {bul.notices.map((n,i)=>(
+                <div key={i} style={{color:C.sub,fontSize:11,fontFamily:F,padding:"5px 0",
+                  borderBottom:`1px solid ${C.border}`,lineHeight:1.5}}>{n}</div>
+              ))}
+            </div>
+            {bul.offeringOn&&(
+              <button style={{width:"100%",background:`linear-gradient(135deg,${C.gold},${C.amber})`,
+                border:"none",borderRadius:11,padding:13,color:"#1a0f00",fontWeight:700,
+                fontSize:14,cursor:"pointer",fontFamily:F}} onClick={()=>toast.success("온라인 헌금 페이지로 이동합니다 (포트원 PG 연동 예정)")}>💝 온라인 헌금하기</button>
+            )}
+            <div style={{textAlign:"center",color:C.muted,fontSize:10,marginTop:12,fontFamily:F}}>☎ {bul.contact}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══ 8. PRAYER ══════════════════════════════════════════
+// ── Prayer Tab v6 (삭제 추가) ──────────────────────────
+function PrayerTab() {
+  const [prayers, setPrayers] = usePersist("erp_prayers", PRAYERS_INIT);
+  const [addModal, setAddModal] = useState(false);
+  const [editModal, setEditModal] = useState(null);
+  const [delConfirm, setDelConfirm] = useState(null);
+  const [filterCat, setFilterCat] = useState("전체");
+  const [form, setForm] = useState({member:"",content:"",category:"진로",anonymous:false});
+  const cats = ["전체","진로","건강","사업","자녀","가정","기타"];
+  const catC = c=>({진로:C.sky,건강:C.emerald,사업:C.gold,자녀:C.violet,가정:C.rose,기타:C.muted}[c]||C.muted);
+
+  const markAnswered = id=>{
+    setPrayers(p=>p.map(x=>x.id===id?{...x,answered:true}:x));
+    toast.success("응답 감사 처리되었습니다 🙏");
+  };
+  const joinIntercession = id=>{
+    setPrayers(p=>p.map(x=>x.id===id&&!x.intercessors.includes("나")?{...x,intercessors:[...x.intercessors,"나"]}:x));
+    toast.success("중보기도에 참여했습니다");
+  };
+  const deletePrayer = id=>{
+    setPrayers(p=>p.filter(x=>x.id!==id));
+    toast.info("기도 제목이 삭제되었습니다");
+    setDelConfirm(null);
+  };
+  const addPrayer = ()=>{
+    if(!V.required(form.content)) { toast.error("기도 제목을 입력해주세요"); return; }
+    setPrayers(p=>[{id:Date.now(),member:form.anonymous?"(익명)":form.member||"익명",
+      content:form.content,category:form.category,date:today(),answered:false,intercessors:[]},...p]);
+    toast.success("기도 제목이 등록되었습니다");
+    setAddModal(false); setForm({member:"",content:"",category:"진로",anonymous:false});
+  };
+  const saveEdit = ()=>{
+    if(!V.required(editModal.content)) return;
+    setPrayers(p=>p.map(x=>x.id===editModal.id?{...x,content:editModal.content,category:editModal.category}:x));
+    toast.success("기도 제목이 수정되었습니다");
+    setEditModal(null);
+  };
+
+  const filtered = prayers.filter(p=>filterCat==="전체"||p.category===filterCat);
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+        {[{l:"전체",v:prayers.length,c:C.violet},{l:"응답 감사",v:prayers.filter(p=>p.answered).length,c:C.emerald},
+          {l:"중보 참여자",v:[...new Set(prayers.flatMap(p=>p.intercessors))].length,c:C.gold},
+          {l:"미응답",v:prayers.filter(p=>!p.answered).length,c:C.rose}].map(x=>(
+          <Card key={x.l} style={{padding:"14px 18px"}}>
+            <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:3}}>{x.l}</div>
+            <div style={{color:x.c,fontSize:20,fontWeight:700,fontFamily:F}}>{x.v}건</div>
+          </Card>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        {cats.map(c=>(
+          <button key={c} onClick={()=>setFilterCat(c)} style={{padding:"6px 14px",borderRadius:20,border:"none",
+            cursor:"pointer",fontFamily:F,fontSize:12,background:filterCat===c?catC(c):C.s2,
+            color:filterCat===c?"#fff":C.sub,transition:"all .15s"}}>{c}</button>
+        ))}
+        <Btn v="primary" style={{marginLeft:"auto"}} onClick={()=>setAddModal(true)}>+ 기도 제목 등록</Btn>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:14}}>
+        {filtered.map(p=>(
+          <Card key={p.id} style={{padding:18}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+              <div style={{display:"flex",gap:6}}>
+                <Badge c={catC(p.category)}>{p.category}</Badge>
+                {p.answered&&<Badge c={C.emerald}>✓ 응답</Badge>}
+              </div>
+              <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                <span style={{color:C.muted,fontSize:11,fontFamily:F}}>{p.date}</span>
+                <button onClick={()=>setEditModal({...p})} style={{background:"none",border:"none",
+                  color:C.muted,cursor:"pointer",fontSize:13,padding:"0 4px"}}>✏️</button>
+                <button onClick={()=>setDelConfirm(p)} style={{background:"none",border:"none",
+                  color:C.rose,cursor:"pointer",fontSize:13,padding:"0 4px"}}>🗑️</button>
+              </div>
+            </div>
+            <div style={{color:C.text,fontSize:13,fontFamily:F,lineHeight:1.7,marginBottom:8}}>"{p.content}"</div>
+            <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:10}}>— {p.member}</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                <span style={{color:C.muted,fontSize:10}}>🙏</span>
+                {p.intercessors.map((n,i)=>(
+                  <span key={i} style={{background:`${C.violet}18`,color:C.violet,borderRadius:10,
+                    padding:"1px 7px",fontSize:10,fontFamily:F}}>{n}</span>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:5}}>
+                {!p.answered&&<Btn sz="sm" v="emerald" onClick={()=>markAnswered(p.id)}>응답 감사</Btn>}
+                <Btn sz="sm" v="ghost" onClick={()=>joinIntercession(p.id)}>🙏 함께 기도</Btn>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+      {/* 등록 모달 */}
+      <Modal open={addModal} onClose={()=>setAddModal(false)} title="기도 제목 등록" width={400}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{color:C.muted,fontSize:12,fontFamily:F}}>익명으로 제출</span>
+            <Toggle on={form.anonymous} onChange={v=>setForm(p=>({...p,anonymous:v}))}/>
+          </div>
+          {!form.anonymous&&(
+            <div>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>이름</label>
+              <Inp value={form.member} onChange={e=>setForm(p=>({...p,member:e.target.value}))} placeholder="성도명"/>
+            </div>
+          )}
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>기도 제목 *</label>
+            <textarea value={form.content} onChange={e=>setForm(p=>({...p,content:e.target.value}))}
+              placeholder="기도 제목을 입력해주세요"
+              style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:9,
+                padding:"8px 12px",color:C.text,fontFamily:F,fontSize:12,outline:"none",
+                resize:"vertical",minHeight:90,boxSizing:"border-box"}}/>
+          </div>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>카테고리</label>
+            <Sel value={form.category} onChange={v=>setForm(p=>({...p,category:v}))} opts={cats.slice(1)}/>
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <Btn v="ghost" onClick={()=>setAddModal(false)}>취소</Btn>
+            <Btn v="primary" disabled={!V.required(form.content)} onClick={addPrayer}>등록</Btn>
+          </div>
+        </div>
+      </Modal>
+      {/* 수정 모달 */}
+      <Modal open={!!editModal} onClose={()=>setEditModal(null)} title="기도 제목 수정" width={400}>
+        {editModal&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>기도 제목</label>
+              <textarea value={editModal.content} onChange={e=>setEditModal(p=>({...p,content:e.target.value}))}
+                style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:9,
+                  padding:"8px 12px",color:C.text,fontFamily:F,fontSize:12,outline:"none",
+                  resize:"vertical",minHeight:80,boxSizing:"border-box"}}/>
+            </div>
+            <div>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>카테고리</label>
+              <Sel value={editModal.category} onChange={v=>setEditModal(p=>({...p,category:v}))} opts={cats.slice(1)}/>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn v="ghost" onClick={()=>setEditModal(null)}>취소</Btn>
+              <Btn v="primary" onClick={saveEdit}>저장</Btn>
+            </div>
+          </div>
+        )}
+      </Modal>
+      {/* 삭제 확인 */}
+      <ConfirmDialog open={!!delConfirm} title="기도 제목 삭제"
+        message={`"${delConfirm?.content?.slice(0,30)}..." 기도 제목을 삭제하시겠습니까?`}
+        confirmText="삭제" confirmV="rose"
+        onConfirm={()=>deletePrayer(delConfirm.id)} onCancel={()=>setDelConfirm(null)}/>
+    </div>
+  );
+}
+function WorshipTab({ members }) {
+  const activeM = members.filter(m=>m.status==="active"&&["장로","권사","집사","안수집사","서리집사"].includes(m.role));
+  const names = activeM.length>0 ? activeM.map(m=>m.name) : WORSHIP_MEMBERS;
+
+  const genRotation = useCallback(() => {
+    const shuffled = [...names].sort(()=>Math.random()-0.5);
+    return WORSHIP_ROLES.reduce((acc,role,i)=>({...acc,[role]:shuffled[i%shuffled.length]}),{});
+  },[names]);
+
+  const [schedules, setSchedules] = usePersist("erp_worship", WORSHIP_SCHEDULES_INIT);
+  const [addModal, setAddModal] = useState(false);
+  const [editModal, setEditModal] = useState(null);
+  const [newWeek, setNewWeek] = useState(today());
+  const [editAssign, setEditAssign] = useState({});
+
+  const addSchedule = () => {
+    if(!newWeek) return;
+    const exists = schedules.find(s=>s.week===newWeek);
+    if(exists) return;
+    setSchedules(p=>[{week:newWeek,assignments:genRotation(),notified:false},...p].sort((a,b)=>b.week.localeCompare(a.week)));
+    setAddModal(false);
+  };
+
+  const openEdit = (s) => { setEditModal(s); setEditAssign({...s.assignments}); };
+  const saveEdit = () => {
+    setSchedules(p=>p.map(s=>s.week===editModal.week?{...s,assignments:{...editAssign}}:s));
+    setEditModal(null);
+  };
+  const notify = week => {
+    setSchedules(p=>p.map(s=>s.week===week?{...s,notified:true}:s));
+    toast.success(`${week} 배정 알림 발송 완료 (카카오 알림톡 연동 예정)`);
+  };
+  const shuffle = week => {
+    setSchedules(p=>p.map(s=>s.week===week?{...s,assignments:genRotation()}:s));
+  };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{color:C.text,fontFamily:FB,fontSize:14,fontWeight:700}}>예배 위원 자동 로테이션</div>
+          <div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:2}}>직분자 자동 순환 배정 · 전날 카카오 알림톡 발송</div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <Btn v="ghost" onClick={()=>setAddModal(true)}>+ 주 추가</Btn>
+        </div>
+      </div>
+
+      {/* 배정 알림 안내 */}
+      <div style={{background:`${C.gold}0D`,border:`1px solid ${C.gold}33`,borderRadius:12,
+        padding:"12px 16px",display:"flex",gap:12,alignItems:"center"}}>
+        <span style={{fontSize:22}}>🔔</span>
+        <div style={{flex:1}}>
+          <div style={{color:C.gold,fontSize:12,fontFamily:F,fontWeight:600}}>자동 알림 시스템</div>
+          <div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:1}}>
+            예배 전날 오전 10시 자동 발송 — 카카오 알림톡 → SMS 폴백 → 앱 푸시
+          </div>
+        </div>
+        <Badge c={C.gold}>API 연동 가능</Badge>
+      </div>
+
+      {/* 주차별 배정 */}
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {schedules.map(s=>(
+          <Card key={s.week} style={{padding:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{color:C.text,fontFamily:FB,fontSize:13,fontWeight:700}}>{s.week} 주일 예배</span>
+                {s.notified&&<Badge c={C.emerald}>✓ 알림 발송됨</Badge>}
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <Btn sz="sm" v="ghost" onClick={()=>shuffle(s.week)}>🔀 재배정</Btn>
+                <Btn sz="sm" v="ghost" onClick={()=>openEdit(s)}>✏️ 수동 수정</Btn>
+                <Btn sz="sm" v={s.notified?"ghost":"amber"} onClick={()=>!s.notified&&notify(s.week)} disabled={s.notified}>
+                  {s.notified?"발송 완료":"📱 알림 발송"}
+                </Btn>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {WORSHIP_ROLES.map(role=>(
+                <div key={role} style={{background:C.s2,borderRadius:9,padding:"10px 12px"}}>
+                  <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:4}}>{role}</div>
+                  <div style={{color:C.violet,fontSize:13,fontFamily:F,fontWeight:600}}>{s.assignments[role]}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* 모달 */}
+      <Modal open={addModal} onClose={()=>setAddModal(false)} title="주 추가" width={320}>
+        <div style={{display:"flex",flexDirection:"column",gap:13}}>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>날짜</label>
+            <Inp type="date" value={newWeek} onChange={e=>setNewWeek(e.target.value)}/>
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <Btn v="ghost" onClick={()=>setAddModal(false)}>취소</Btn>
+            <Btn v="primary" onClick={addSchedule}>추가 + 자동배정</Btn>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!editModal} onClose={()=>setEditModal(null)} title="수동 수정" width={420}>
+        {editModal&&(
+          <div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+              {WORSHIP_ROLES.map(role=>(
+                <div key={role} style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{color:C.muted,fontSize:12,fontFamily:F,width:90,flexShrink:0}}>{role}</span>
+                  <Sel value={editAssign[role]||""} onChange={v=>setEditAssign(p=>({...p,[role]:v}))} opts={names}/>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn v="ghost" onClick={()=>setEditModal(null)}>취소</Btn>
+              <Btn v="primary" onClick={saveEdit}>저장</Btn>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+// ══ 10. DONATION RECEIPT ═══════════════════════════════
+function ReceiptTab({ members, offerings }) {
+  const [selYear, setSelYear] = useState("2025");
+  const [selMember, setSelMember] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [summarySearch, setSummarySearch] = useState("");
+  const {filters, setFilters, filtered: pickerPool} = useMemberFilters(members, m=>m.status==="active");
+  const years = ["2025","2024","2023"];
+
+  const memberNames = [...new Set(offerings.map(o=>o.member))].sort();
+
+  const memberOfferings = offerings.filter(o=>
+    o.member===selMember &&
+    o.status==="confirmed" &&
+    o.date.startsWith(selYear)
+  );
+  const total = memberOfferings.reduce((s,o)=>s+o.amount,0);
+  const byType = OFFERING_TYPES.reduce((acc,t)=>{
+    const sum=memberOfferings.filter(o=>o.type===t).reduce((s,o)=>s+o.amount,0);
+    if(sum>0) acc[t]=sum;
+    return acc;
+  },{});
+
+  // 전체 성도 요약
+  const allSummary = memberNames.map(name=>{
+    const list=offerings.filter(o=>o.member===name&&o.status==="confirmed"&&o.date.startsWith(selYear));
+    return {name, total:list.reduce((s,o)=>s+o.amount,0), count:list.length};
+  }).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+
+  const summaryRows = allSummary.filter(x=>{
+    const q=summarySearch.trim().toLowerCase();
+    return !q||x.name.toLowerCase().includes(q);
+  });
+  const pickerList = pickerPool.slice(0, 40);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <Badge c={C.gold}>연말정산 기부금 영수증</Badge>
+        <span style={{color:C.muted,fontSize:12,fontFamily:F}}>국세청 양식 기준 출력</span>
+      </div>
+
+      {/* 검색 필터 */}
+      <Card style={{padding:20}}>
+        <SH title="영수증 발급"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:12,alignItems:"flex-end",marginBottom:14}}>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>연도</label>
+            <Sel value={selYear} onChange={setSelYear} opts={years}/>
+          </div>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>선택된 성도</label>
+            <Inp value={selMember||"미선택"} readOnly style={{background:C.s2}}/>
+          </div>
+          <Btn v="gold" onClick={()=>selMember&&setPreviewOpen(true)} disabled={!selMember}>
+            📄 영수증 미리보기
+          </Btn>
+        </div>
+        <MemberFilterBar filters={filters} setFilters={setFilters} total={members.filter(m=>m.status==="active").length} filtered={pickerPool.length} compact showStatus={false}/>
+        <div style={{marginTop:10,maxHeight:160,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
+          {pickerList.length===0?(
+            <div style={{padding:12,color:C.muted,fontSize:12,fontFamily:F,textAlign:"center"}}>조건에 맞는 성도가 없습니다</div>
+          ):pickerList.map(m=>(
+            <button key={m.id} onClick={()=>setSelMember(m.name)} style={{
+              display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",
+              padding:"8px 12px",borderRadius:8,cursor:"pointer",fontFamily:F,fontSize:12,textAlign:"left",
+              background:selMember===m.name?`${C.gold}18`:C.s1,
+              border:`1px solid ${selMember===m.name?C.gold:C.border}`,color:C.text}}>
+              <span style={{fontWeight:600}}>{m.name}</span>
+              <span style={{color:C.muted,fontSize:11}}>{m.zone} · {m.role}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {/* 전체 요약 테이블 */}
+      <Card>
+        <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{color:C.text,fontFamily:FB,fontSize:13,fontWeight:700}}>{selYear}년 헌금 요약</span>
+          <Inp value={summarySearch} onChange={e=>setSummarySearch(e.target.value)} placeholder="🔍 성도명 검색" style={{maxWidth:220,marginLeft:"auto"}}/>
+          <span style={{color:C.muted,fontSize:11,fontFamily:F}}>{summaryRows.length}명</span>
+        </div>
+        <Tbl heads={["성도명","총 헌금액","건수","영수증"]}
+          rows={summaryRows.map(x=>[
+            <span style={{color:C.text,fontWeight:600,fontFamily:F}}>{x.name}</span>,
+            <span style={{color:C.gold,fontWeight:700,fontFamily:F}}>₩{fmt(x.total)}</span>,
+            <span style={{color:C.muted,fontFamily:F}}>{x.count}건</span>,
+            <Btn sz="sm" v="ghost" onClick={()=>{setSelMember(x.name);setPreviewOpen(true);}}>발급</Btn>,
+          ])}
+        />
+      </Card>
+
+      {/* 영수증 미리보기 모달 */}
+      <Modal open={previewOpen} onClose={()=>setPreviewOpen(false)} title={`기부금 영수증 — ${selMember}`} width={560}>
+        <div style={{background:"#fff",borderRadius:12,padding:28,color:"#1a1a1a",fontFamily:"'Noto Sans KR',sans-serif"}}>
+          {/* 영수증 헤더 */}
+          <div style={{textAlign:"center",marginBottom:20,paddingBottom:16,borderBottom:"2px solid #333"}}>
+            <div style={{fontSize:18,fontWeight:700,letterSpacing:2}}>기부금 영수증</div>
+            <div style={{fontSize:11,color:"#666",marginTop:4}}>소득세법 제34조 및 조세특례제한법 제76조</div>
+          </div>
+          {/* 단체 정보 */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+            <div style={{border:"1px solid #ddd",borderRadius:6,padding:"10px 12px"}}>
+              <div style={{fontSize:10,color:"#999",marginBottom:4}}>기부금 수령 단체</div>
+              <div style={{fontSize:13,fontWeight:700}}>사랑의교회</div>
+              <div style={{fontSize:11,color:"#666",marginTop:2}}>고유번호: 123-82-00000</div>
+              <div style={{fontSize:11,color:"#666"}}>서울시 강남구 테헤란로 123</div>
+            </div>
+            <div style={{border:"1px solid #ddd",borderRadius:6,padding:"10px 12px"}}>
+              <div style={{fontSize:10,color:"#999",marginBottom:4}}>기부자</div>
+              <div style={{fontSize:13,fontWeight:700}}>{selMember}</div>
+              <div style={{fontSize:11,color:"#666",marginTop:2}}>{selYear}년 1월 1일 ~ 12월 31일</div>
+            </div>
+          </div>
+          {/* 헌금 상세 */}
+          <table style={{width:"100%",borderCollapse:"collapse",marginBottom:14,fontSize:12}}>
+            <thead>
+              <tr style={{background:"#f5f5f5"}}>
+                {["헌금 종류","금액","납부 방법","날짜"].map(h=>(
+                  <th key={h} style={{padding:"7px 10px",textAlign:"left",border:"1px solid #ddd",fontWeight:600}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {memberOfferings.length===0
+                ?<tr><td colSpan={4} style={{padding:16,textAlign:"center",color:"#999",border:"1px solid #ddd"}}>해당 연도 헌금 내역 없음</td></tr>
+                :memberOfferings.map((o,i)=>(
+                  <tr key={i}>
+                    {[o.type,`₩${fmt(o.amount)}`,o.method,o.date].map((v,j)=>(
+                      <td key={j} style={{padding:"6px 10px",border:"1px solid #ddd"}}>{v}</td>
+                    ))}
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+          {/* 합계 */}
+          <div style={{background:"#f9f5e8",borderRadius:8,padding:"12px 16px",
+            display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <span style={{fontWeight:700,fontSize:14}}>{selYear}년 총 기부금액</span>
+            <span style={{fontWeight:700,fontSize:18,color:"#8B4513"}}>₩{fmt(total)}</span>
+          </div>
+          {/* 서명란 */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:20,paddingTop:16,borderTop:"1px solid #ddd"}}>
+            <div style={{fontSize:11,color:"#666"}}>
+              발급일: {today()}<br/>
+              담당자: 재정부장 류종철
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:11,color:"#666",marginBottom:4}}>사랑의교회 담임목사</div>
+              <div style={{width:80,height:24,border:"1px dashed #ccc",borderRadius:4,
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#999"}}>직인</div>
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:14}}>
+          <Btn v="ghost" onClick={()=>setPreviewOpen(false)}>닫기</Btn>
+          <Btn v="gold" onClick={()=>window.print()}>🖨️ 인쇄 / PDF 저장</Btn>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+// ══ 11. SYSTEM ═════════════════════════════════════════
+function SystemTab() {
+  const [sec, setSec] = useState("rbac");
+  const rbacRows = [
+    {role:"담임목사",c:C.gold,    p:[1,1,1,1,1,1,1,1]},
+    {role:"장로",    c:C.violet,  p:[1,1,1,1,1,0,1,0]},
+    {role:"재정부원",c:C.emerald, p:[0,1,1,1,1,0,0,0]},
+    {role:"전도사",  c:C.sky,     p:[1,1,0,0,0,1,0,0]},
+    {role:"집사",    c:C.amber,   p:[0,1,0,0,0,0,0,0]},
+    {role:"성도",    c:C.muted,   p:[0,1,0,0,0,0,0,0]},
+  ];
+  const rbacCols = ["교적 전체","본인 교적","헌금 열람","헌금 입력","예산 결재","심방 열람","보안 로그","시스템 설정"];
+  const accessLogs = [
+    {user:"김장로",action:"심방 열람",target:"최소망",reason:"정기 심방",ip:"192.168.1.12",time:"14:32:11"},
+    {user:"이집사",action:"헌금 조회",target:"전체",reason:"월말 정산",ip:"192.168.1.45",time:"09:14:55"},
+    {user:"박전도사",action:"교적 수정",target:"이은혜",reason:"연락처 변경",ip:"192.168.1.31",time:"11:02:38"},
+  ];
+
+  const sections = [{k:"rbac",l:"🛡️ 권한 관리"},{k:"db",l:"🗄️ DB 설계"},{k:"log",l:"📋 보안 로그"},{k:"mobile",l:"📱 모바일 UX"}];
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      <div style={{display:"flex",gap:7}}>
+        {sections.map(s=>(
+          <button key={s.k} onClick={()=>setSec(s.k)} style={{
+            padding:"8px 18px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:F,fontSize:13,
+            background:sec===s.k?C.violet:C.s2,color:sec===s.k?"#fff":C.sub,transition:"all .15s"}}>
+            {s.l}
+          </button>
+        ))}
+      </div>
+
+      {sec==="rbac"&&(
+        <Card style={{padding:22}}>
+          <SH title="역할 기반 접근 제어 (RBAC)" sub="Supabase Row Level Security 적용"/>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",minWidth:680}}>
+              <thead>
+                <tr style={{background:C.s2}}>
+                  <th style={{padding:"10px 14px",textAlign:"left",color:C.muted,fontSize:11,fontFamily:F,borderBottom:`1px solid ${C.border}`}}>직분</th>
+                  {rbacCols.map(c=>(
+                    <th key={c} style={{padding:"10px 8px",textAlign:"center",color:C.muted,fontSize:10,fontFamily:F,
+                      borderBottom:`1px solid ${C.border}`,whiteSpace:"nowrap"}}>{c}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rbacRows.map((r,i)=>(
+                  <tr key={r.role} style={{borderBottom:i<rbacRows.length-1?`1px solid ${C.border}`:"none"}}>
+                    <td style={{padding:"11px 14px"}}><Badge c={r.c}>{r.role}</Badge></td>
+                    {r.p.map((p,j)=>(
+                      <td key={j} style={{padding:"11px 8px",textAlign:"center"}}>
+                        {p?<span style={{color:C.emerald,fontSize:16}}>✓</span>
+                          :<span style={{color:C.border,fontSize:16}}>–</span>}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {sec==="db"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          <Card style={{padding:22}}>
+            <SH title="Supabase 핵심 전략" sub="수천 명 규모 대응"/>
+            {[
+              {t:"Row Level Security",c:"모든 테이블 RLS 활성화 — church_id 테넌트 격리"},
+              {t:"복합 인덱스",c:"idx_offerings(member_id, date DESC)"},
+              {t:"재귀 CTE",c:"WITH RECURSIVE org_tree AS (...) — 조직 트리 조회"},
+              {t:"파티셔닝",c:"offerings 테이블 연도별 파티션"},
+              {t:"Connection Pool",c:"PgBouncer — 동시 1000명 처리"},
+            ].map((x,i)=>(
+              <div key={i} style={{background:C.s2,borderRadius:9,padding:"10px 13px",marginBottom:8}}>
+                <div style={{color:C.emerald,fontSize:12,fontFamily:F,fontWeight:600,marginBottom:3}}>{x.t}</div>
+                <code style={{color:C.sky,fontSize:11,wordBreak:"break-all"}}>{x.c}</code>
+              </div>
+            ))}
+          </Card>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <Card style={{padding:20}}>
+              <SH title="암호화 설계"/>
+              {[{l:"헌금 금액",v:"AES-256-GCM",c:C.emerald},{l:"개인 연락처",v:"bcrypt + salt",c:C.violet},
+                {l:"심방 메모",v:"E2E 암호화",c:C.gold},{l:"전송",v:"TLS 1.3 강제",c:C.sky},
+                {l:"세션 토큰",v:"JWT RS256 1h",c:C.amber}].map(x=>(
+                <div key={x.l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{color:C.muted,fontSize:12,fontFamily:F}}>{x.l}</span>
+                  <span style={{color:x.c,fontSize:12,fontFamily:F,fontWeight:500}}>{x.v}</span>
+                </div>
+              ))}
+            </Card>
+            <Card style={{padding:20}}>
+              <SH title="멀티테넌트 구조"/>
+              <div style={{color:C.muted,fontSize:12,fontFamily:F,lineHeight:2}}>
+                교회별 독립 <code style={{color:C.sky}}>church_id</code><br/>
+                모든 테이블 <code style={{color:C.sky}}>church_id FK</code><br/>
+                RLS: <code style={{color:C.sky}}>jwt()-&gt;'church_id'</code><br/>
+                완전한 데이터 격리
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {sec==="log"&&(
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          <Card style={{padding:22}}>
+            <SH title="개인정보 접근 로그" sub="민감 정보 열람 시 사유 기록 + 관리자 자동 알림"/>
+            <Tbl heads={["접근자","액션","대상","열람 사유","IP","시각"]}
+              rows={accessLogs.map(l=>[
+                <span style={{color:C.text,fontWeight:600,fontFamily:F}}>{l.user}</span>,
+                <Badge c={C.amber}>{l.action}</Badge>,
+                <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{l.target}</span>,
+                <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{l.reason}</span>,
+                <code style={{color:C.muted,fontSize:11}}>{l.ip}</code>,
+                <span style={{color:C.muted,fontSize:11,fontFamily:F}}>{l.time}</span>,
+              ])}
+            />
+          </Card>
+          <div style={{background:`${C.violet}0D`,border:`1px solid ${C.violet}22`,borderRadius:13,padding:18}}>
+            <div style={{color:C.violet,fontSize:12,fontFamily:F,fontWeight:600,marginBottom:10}}>🔐 Supabase Trigger 자동 로그</div>
+            <code style={{display:"block",background:C.s3,borderRadius:10,padding:14,color:C.sky,fontSize:11,lineHeight:1.9,whiteSpace:"pre-wrap"}}>
+{`CREATE OR REPLACE FUNCTION log_sensitive_access()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO access_logs(user_id, action, target_id, reason, ip, ts)
+  VALUES (auth.uid(), TG_ARGV[0], NEW.id,
+          current_setting('app.reason'), inet_client_addr(), NOW());
+  -- 관리자 실시간 알림 (Supabase Realtime)
+  PERFORM pg_notify('admin_alert',
+    json_build_object('type','access','user',auth.uid())::text);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;`}
+            </code>
+          </div>
+        </div>
+      )}
+
+      {sec==="mobile"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:20}}>
+          <Card style={{padding:22}}>
+            <SH title="고령자 모바일 UX 가이드"/>
+            {[
+              {icon:"🔤",t:"최소 폰트 18px",d:"60대 이상 가독성 확보"},
+              {icon:"🎯",t:"핵심 3기능만 홈에",d:"온라인헌금 / 주보 보기 / 구역 공지"},
+              {icon:"🔍",t:"간편 검색",d:"이름·메뉴 바로 찾기"},
+              {icon:"☎️",t:"원터치 연락",d:"교역자 전화번호 큰 버튼"},
+              {icon:"🌙",t:"다크모드 기본",d:"야간 예배 눈부심 방지"},
+              {icon:"🔔",t:"이중 알림",d:"카카오 + SMS 동시 발송"},
+            ].map((x,i)=>(
+              <div key={i} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:i<5?`1px solid ${C.border}`:"none"}}>
+                <span style={{fontSize:20,flexShrink:0}}>{x.icon}</span>
+                <div>
+                  <div style={{color:C.text,fontSize:13,fontFamily:F,fontWeight:600,marginBottom:2}}>{x.t}</div>
+                  <div style={{color:C.muted,fontSize:11,fontFamily:F}}>{x.d}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+          {/* 모바일 목업 */}
+          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"center"}}>
+            <div style={{width:200,background:C.s1,border:`2px solid ${C.borderHi}`,borderRadius:28,padding:16,
+              boxShadow:`0 20px 50px rgba(0,0,0,0.5)`}}>
+              <div style={{textAlign:"center",marginBottom:14}}>
+                <div style={{color:C.gold,fontSize:10,fontFamily:FB,letterSpacing:2}}>사랑의교회</div>
+                <div style={{color:C.text,fontSize:12,fontWeight:700,fontFamily:F,marginTop:2}}>안녕하세요, 홍길동 성도님</div>
+              </div>
+              {[{icon:"💝",l:"온라인 헌금",c:C.gold},{icon:"📋",l:"주보 보기",c:C.violet},{icon:"📢",l:"구역 공지",c:C.emerald}].map(b=>(
+                <div key={b.l} style={{background:`${b.c}18`,border:`1px solid ${b.c}33`,borderRadius:12,
+                  padding:"12px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:8,cursor:"pointer"}}>
+                  <span style={{fontSize:20}}>{b.icon}</span>
+                  <span style={{color:b.c,fontSize:13,fontWeight:700,fontFamily:F}}>{b.l}</span>
+                </div>
+              ))}
+              <div style={{marginTop:10,background:C.s2,borderRadius:12,padding:10,textAlign:"center",
+                border:`1px dashed ${C.violet}55`}}>
+                <div style={{fontSize:24}}>🔍</div>
+                <div style={{color:C.violet,fontSize:11,fontFamily:F,fontWeight:600}}>간편 검색</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileViewTab({ members, offerings, budgets }) {
+  const isMobile = useIsMobile();
+  const {filters, setFilters, filtered, hasFilter} = useMemberFilters(members, m=>m.status==="active");
+  const pickList = hasFilter ? filtered : filtered.slice(0, LIST_PREVIEW);
+  const [mobileTab, setMobileTab] = useState("home");
+  const [selMember, setSelMember] = useState(members.find(m=>m.status==="active")?.name||members[0]?.name||"");
+  const [offerModal, setOfferModal] = useState(false);
+  const [offerType, setOfferType] = useState("주일헌금");
+  const [offerAmt, setOfferAmt] = useState("");
+
+  const myOfferings = offerings.filter(o=>o.member===selMember&&o.status==="confirmed");
+  const myTotal = myOfferings.reduce((s,o)=>s+o.amount,0);
+
+  const MOBILE_TABS = [
+    {k:"home",icon:"🏠",l:"홈"},
+    {k:"offering",icon:"💝",l:"헌금"},
+    {k:"bulletin",icon:"📋",l:"주보"},
+    {k:"notice",icon:"📢",l:"공지"},
+    {k:"prayer",icon:"🙏",l:"기도"},
+  ];
+
+  const phoneUI = (
+    <>
+          {/* 상태바 */}
+          <div style={{background:C.s1,padding:"10px 20px 6px",
+            display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{color:C.muted,fontSize:10,fontFamily:F}}>9:41</span>
+            <div style={{display:"flex",gap:4}}>
+              {["📶","🔋"].map(i=><span key={i} style={{fontSize:10}}>{i}</span>)}
+            </div>
+          </div>
+
+          {/* 헤더 */}
+          <div style={{background:C.s1,padding:"12px 20px 10px",
+            borderBottom:`1px solid ${C.border}`,textAlign:"center"}}>
+            <div style={{color:C.gold,fontSize:9,fontFamily:F,letterSpacing:2,marginBottom:2}}>사랑의교회</div>
+            <div style={{color:C.text,fontSize:13,fontWeight:700,fontFamily:F}}>안녕하세요, {selMember}님 👋</div>
+          </div>
+
+          {/* 콘텐츠 */}
+          <div style={{padding:"16px 16px 80px",minHeight:isMobile?360:420}}>
+            {mobileTab==="home"&&(
+              <div>
+                {/* 큰 버튼 3개 */}
+                {[
+                  {icon:"💝",l:"온라인 헌금",c:C.gold,onClick:()=>setOfferModal(true)},
+                  {icon:"📋",l:"주보 보기",c:C.violet,onClick:()=>setMobileTab("bulletin")},
+                  {icon:"📢",l:"구역 공지",c:C.emerald,onClick:()=>setMobileTab("notice")},
+                ].map(b=>(
+                  <div key={b.l} onClick={b.onClick} style={{
+                    background:`${b.c}18`,border:`1px solid ${b.c}33`,
+                    borderRadius:14,padding:"14px 16px",
+                    display:"flex",alignItems:"center",gap:12,
+                    marginBottom:10,cursor:"pointer",transition:"all .15s",
+                  }}>
+                    <span style={{fontSize:24}}>{b.icon}</span>
+                    <span style={{color:b.c,fontSize:14,fontWeight:700,fontFamily:F}}>{b.l}</span>
+                    <span style={{marginLeft:"auto",color:b.c,fontSize:16}}>›</span>
+                  </div>
+                ))}
+                {/* 빠른 안내 */}
+                <div style={{background:C.s2,borderRadius:14,padding:"12px 16px",
+                  border:`1px dashed ${C.violet}55`,textAlign:"center",marginTop:14}}>
+                  <div style={{fontSize:28,marginBottom:4}}>☎️</div>
+                  <div style={{color:C.violet,fontSize:12,fontFamily:F,fontWeight:600}}>교역자 연락처</div>
+                  <div style={{color:C.muted,fontSize:10,fontFamily:F,marginTop:2}}>
+                    담임목사 · 구역장 바로 연결
+                  </div>
+                </div>
+                {/* 이번 주 일정 미리보기 */}
+                <div style={{marginTop:14,background:C.s2,borderRadius:12,padding:"12px 14px"}}>
+                  <div style={{color:C.text,fontSize:11,fontFamily:F,fontWeight:600,marginBottom:8}}>📅 이번 주 일정</div>
+                  {[
+                    {t:"주일 1부 예배",time:"09:00",c:C.violet},
+                    {t:"수요 예배",time:"수 19:30",c:C.sky},
+                  ].map((s,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",
+                      padding:"5px 0",borderBottom:i===0?`1px solid ${C.border}`:"none"}}>
+                      <span style={{color:C.sub,fontSize:11,fontFamily:F}}>{s.t}</span>
+                      <span style={{color:s.c,fontSize:11,fontFamily:F,fontWeight:600}}>{s.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {mobileTab==="offering"&&(
+              <div>
+                <div style={{color:C.text,fontSize:13,fontWeight:700,fontFamily:F,marginBottom:14}}>내 헌금 내역</div>
+                <div style={{background:`${C.gold}11`,borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center"}}>
+                  <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>올해 총 헌금</div>
+                  <div style={{color:C.gold,fontSize:22,fontWeight:700,fontFamily:F}}>₩{fmt(myTotal)}</div>
+                </div>
+                {myOfferings.slice(0,5).map((o,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",
+                    padding:"9px 0",borderBottom:`1px solid ${C.border}`}}>
+                    <div>
+                      <div style={{color:C.text,fontSize:12,fontFamily:F}}>{o.type}</div>
+                      <div style={{color:C.muted,fontSize:10,fontFamily:F}}>{o.date} · {o.method}</div>
+                    </div>
+                    <span style={{color:C.gold,fontWeight:700,fontSize:12,fontFamily:F}}>₩{fmt(o.amount)}</span>
+                  </div>
+                ))}
+                <button onClick={()=>setOfferModal(true)} style={{
+                  width:"100%",marginTop:16,background:`linear-gradient(135deg,${C.gold},${C.amber})`,
+                  border:"none",borderRadius:14,padding:"14px",
+                  color:"#1a0f00",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:F}}>
+                  💝 온라인 헌금하기
+                </button>
+              </div>
+            )}
+
+            {mobileTab==="bulletin"&&(
+              <div>
+                <div style={{background:`${C.violet}11`,borderRadius:12,padding:"14px 16px",marginBottom:12,
+                  borderLeft:`3px solid ${C.violet}`}}>
+                  <div style={{color:C.violet,fontSize:10,fontFamily:F,fontStyle:"italic",marginBottom:3}}>요한복음 15:9</div>
+                  <div style={{color:C.sub,fontSize:11,fontFamily:F,lineHeight:1.7}}>
+                    아버지께서 나를 사랑하신 것 같이 나도 너희를 사랑하였으니
+                  </div>
+                </div>
+                <div style={{background:C.s2,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                  <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>📖 요한복음 15:1-11</div>
+                  <div style={{color:C.text,fontSize:14,fontWeight:700,fontFamily:F}}>포도나무와 가지</div>
+                  <div style={{color:C.muted,fontSize:11,marginTop:3,fontFamily:F}}>이담임 목사</div>
+                </div>
+                {["🌿 수요예배 오후 7:30","📚 성경통독 화 오전 10시","🙏 심방 주간 5/12-16"].map((n,i)=>(
+                  <div key={i} style={{color:C.sub,fontSize:12,fontFamily:F,
+                    padding:"8px 0",borderBottom:`1px solid ${C.border}`,lineHeight:1.5}}>{n}</div>
+                ))}
+              </div>
+            )}
+
+            {mobileTab==="notice"&&(
+              <div>
+                <div style={{color:C.text,fontSize:13,fontWeight:700,fontFamily:F,marginBottom:14}}>📢 구역 공지</div>
+                {[
+                  {title:"1구역 구역예배 안내",content:"5월 9일 목요일 오후 7:30\n구역장 댁에서 진행됩니다.",date:"2025-05-07"},
+                  {title:"구역 심방 일정",content:"5월 12일-16일 구역별 심방\n연락처로 확인 바랍니다.",date:"2025-05-06"},
+                ].map((n,i)=>(
+                  <div key={i} style={{background:C.s2,borderRadius:12,padding:"14px 16px",marginBottom:10}}>
+                    <div style={{color:C.text,fontSize:12,fontFamily:F,fontWeight:600,marginBottom:4}}>{n.title}</div>
+                    <div style={{color:C.sub,fontSize:11,fontFamily:F,lineHeight:1.6,whiteSpace:"pre-line"}}>{n.content}</div>
+                    <div style={{color:C.muted,fontSize:10,fontFamily:F,marginTop:6}}>{n.date}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {mobileTab==="prayer"&&(
+              <div>
+                <div style={{color:C.text,fontSize:13,fontWeight:700,fontFamily:F,marginBottom:14}}>🙏 기도 제목</div>
+                {[
+                  {member:"최소망",content:"취업 준비 중 평안 주세요",cat:"진로"},
+                  {member:"(익명)",content:"가족 건강 회복 기도 부탁드립니다",cat:"건강"},
+                ].map((p,i)=>(
+                  <div key={i} style={{background:C.s2,borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                      <Badge c={C.sky}>{p.cat}</Badge>
+                      <span style={{color:C.muted,fontSize:10,fontFamily:F}}>{p.member}</span>
+                    </div>
+                    <div style={{color:C.text,fontSize:12,fontFamily:F,lineHeight:1.6}}>"{p.content}"</div>
+                    <button style={{marginTop:8,background:"none",border:`1px solid ${C.violet}44`,
+                      borderRadius:8,padding:"5px 12px",color:C.violet,fontSize:11,
+                      cursor:"pointer",fontFamily:F}} onClick={()=>toast.success("중보기도에 참여했습니다 🙏")}>🙏 함께 기도</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 하단 탭바 */}
+          <div style={{
+            position:"absolute",bottom:0,left:0,right:0,
+            background:C.s1,borderTop:`1px solid ${C.border}`,
+            display:"flex",padding:"8px 0 12px",
+          }}>
+            {MOBILE_TABS.map(t=>(
+              <button key={t.k} onClick={()=>setMobileTab(t.k)} style={{
+                flex:1,background:"none",border:"none",cursor:"pointer",
+                display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+              }}>
+                <span style={{fontSize:18}}>{t.icon}</span>
+                <span style={{fontSize:9,fontFamily:F,
+                  color:mobileTab===t.k?C.violet:C.muted,fontWeight:mobileTab===t.k?700:400}}>{t.l}</span>
+              </button>
+            ))}
+          </div>
+    </>
+  );
+
+  return (
+    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:20}}>
+      {!isMobile&&(
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <Card style={{padding:20}}>
+          <SH title="성도 모바일 전용 뷰" sub="관리자 화면과 완전 분리된 간소화 UI"/>
+          <MemberFilterBar filters={filters} setFilters={setFilters} total={members.filter(m=>m.status==="active").length} filtered={filtered.length} compact showStatus={false}/>
+          <div style={{marginTop:10,maxHeight:140,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
+            {pickList.map(m=>(
+              <button key={m.id} onClick={()=>setSelMember(m.name)} style={{
+                padding:"8px 12px",borderRadius:8,cursor:"pointer",fontFamily:F,fontSize:12,textAlign:"left",
+                background:selMember===m.name?`${C.violet}18`:C.s2,
+                border:`1px solid ${selMember===m.name?C.violet:C.border}`,color:C.text}}>
+                {m.name} <span style={{color:C.muted,fontSize:11}}>({m.zone})</span>
+              </button>
+            ))}
+          </div>
+        </Card>
+        <Card style={{padding:20}}>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {[
+              {icon:"👁️",t:"볼 수 있는 것",items:["본인 헌금 내역","주보","구역 공지","기도 제목"],c:C.emerald},
+              {icon:"🚫",t:"볼 수 없는 것",items:["타인 헌금 정보","심방 기록","재정 보고서","조직 관리"],c:C.rose},
+            ].map(g=>(
+              <div key={g.t} style={{background:C.s2,borderRadius:10,padding:"12px 14px"}}>
+                <div style={{color:g.c,fontSize:12,fontFamily:F,fontWeight:600,marginBottom:6}}>{g.icon} {g.t}</div>
+                {g.items.map((item,i)=>(
+                  <div key={i} style={{color:C.sub,fontSize:11,fontFamily:F,padding:"3px 0",
+                    borderBottom:i<g.items.length-1?`1px solid ${C.border}`:"none"}}>
+                    {g.c===C.emerald?"✓":"✕"} {item}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card style={{padding:20}}>
+          <SH title={`${selMember} 헌금 현황`}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+            <div style={{background:C.s2,borderRadius:10,padding:"12px 14px"}}>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>올해 총 헌금</div>
+              <div style={{color:C.gold,fontSize:16,fontWeight:700,fontFamily:F}}>₩{fmt(myTotal)}</div>
+            </div>
+            <div style={{background:C.s2,borderRadius:10,padding:"12px 14px"}}>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:3}}>헌금 건수</div>
+              <div style={{color:C.violet,fontSize:16,fontWeight:700,fontFamily:F}}>{myOfferings.length}건</div>
+            </div>
+          </div>
+          {myOfferings.slice(0,4).map((o,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+              padding:"7px 0",borderBottom:i<Math.min(myOfferings.length,4)-1?`1px solid ${C.border}`:"none"}}>
+              <div>
+                <div style={{color:C.text,fontSize:12,fontFamily:F}}>{o.type}</div>
+                <div style={{color:C.muted,fontSize:10,fontFamily:F}}>{o.date}</div>
+              </div>
+              <span style={{color:C.gold,fontWeight:700,fontSize:12,fontFamily:F}}>₩{fmt(o.amount)}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+      )}
+
+      {isMobile&&(
+        <Card style={{padding:14}}>
+          <MemberFilterBar filters={filters} setFilters={setFilters} total={members.filter(m=>m.status==="active").length} filtered={filtered.length} compact showStatus={false}/>
+          <div style={{marginTop:8,maxHeight:120,overflowY:"auto",display:"flex",flexWrap:"wrap",gap:6}}>
+            {pickList.slice(0,12).map(m=>(
+              <button key={m.id} onClick={()=>setSelMember(m.name)} style={{
+                padding:"6px 10px",borderRadius:8,border:`1px solid ${selMember===m.name?C.violet:C.border}`,
+                background:selMember===m.name?`${C.violet}18`:C.s2,color:C.text,fontSize:11,fontFamily:F,cursor:"pointer"}}>
+                {m.name}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <div style={{display:"flex",justifyContent:"center",width:"100%"}}>
+        <div style={{
+          width:"100%",maxWidth:isMobile?480:300,
+          background:"linear-gradient(180deg,#F8FAFD,#E2EAF4)",
+          border:isMobile?`1px solid ${C.border}`:`2px solid ${C.borderHi}`,
+          borderRadius:isMobile?16:32,
+          boxShadow:isMobile?"none":`0 24px 60px rgba(0,0,0,0.6)`,
+          overflow:"hidden",position:"relative",
+        }}>
+          {phoneUI}
+        </div>
+      </div>
+
+      {/* 온라인 헌금 모달 */}
+      <Modal open={offerModal} onClose={()=>setOfferModal(false)} title="온라인 헌금" width={360}>
+        <div style={{display:"flex",flexDirection:"column",gap:13}}>
+          <div style={{background:`${C.gold}0D`,borderRadius:10,padding:"12px 16px",textAlign:"center"}}>
+            <div style={{color:C.gold,fontSize:13,fontFamily:F,fontWeight:600}}>💝 {selMember}님의 헌금</div>
+          </div>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>헌금 종류</label>
+            <Sel value={offerType} onChange={setOfferType} opts={OFFERING_TYPES}/>
+          </div>
+          <div>
+            <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>금액</label>
+            <Inp type="number" value={offerAmt} onChange={e=>setOfferAmt(e.target.value)} placeholder="0"/>
+            <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
+              {[10000,30000,50000,100000].map(v=>(
+                <button key={v} onClick={()=>setOfferAmt(String(v))} style={{
+                  background:offerAmt===String(v)?`${C.gold}22`:C.s2,
+                  border:`1px solid ${offerAmt===String(v)?C.gold:C.border}`,
+                  borderRadius:8,padding:"5px 12px",
+                  color:offerAmt===String(v)?C.gold:C.muted,
+                  fontSize:11,fontFamily:F,cursor:"pointer"}}>
+                  {fmt(v)}원
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{background:C.s2,borderRadius:10,padding:"12px 14px"}}>
+            <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:6}}>결제 수단</div>
+            <div style={{display:"flex",gap:8}}>
+              {["카드 결제","계좌이체","카카오페이"].map(m=>(
+                <div key={m} style={{background:C.s3,borderRadius:8,padding:"7px 12px",
+                  color:C.sub,fontSize:11,fontFamily:F,cursor:"pointer",border:`1px solid ${C.border}`}}>{m}</div>
+              ))}
+            </div>
+          </div>
+          <div style={{color:C.muted,fontSize:10,fontFamily:F,textAlign:"center"}}>
+            실 결제 연동: 포트원(PortOne) PG사 API
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <Btn v="ghost" onClick={()=>setOfferModal(false)}>취소</Btn>
+            <Btn v="gold" disabled={!offerAmt||parseInt(offerAmt)<=0}
+              onClick={()=>setOfferModal(false)}>헌금하기</Btn>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// ══ 13. NOTIFICATION / 공지·문자 발송 ══════════════════
+const NOTICE_HISTORY_INIT = [
+  {id:1,title:"주일 예배 안내",target:"전체",method:"카카오",sent:782,date:"2025-05-04 09:00",status:"완료"},
+  {id:2,title:"1구역 구역예배 안내",target:"1구역",method:"SMS",sent:186,date:"2025-05-03 18:00",status:"완료"},
+  {id:3,title:"찬양대 연습 공지",target:"찬양대",method:"카카오",sent:48,date:"2025-05-02 14:30",status:"완료"},
+];
+
+function NoticeTab({ members }) {
+  const [history, setHistory] = usePersist("erp_notice", NOTICE_HISTORY_INIT);
+  const [composeModal, setComposeModal] = useState(false);
+  const [target, setTarget] = useState("전체");
+  const [method, setMethod] = useState("카카오");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [preview, setPreview] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const TARGETS = ["전체","1구역","2구역","3구역","4구역","찬양대","주일학교","청년부","재정부","선교부"];
+  const METHODS = [{v:"카카오",l:"📱 카카오 알림톡"},{v:"SMS",l:"💬 SMS"},{v:"앱",l:"🔔 앱 푸시"},{v:"전체",l:"📣 전체 발송"}];
+
+  const targetCount = target==="전체" ? members.filter(m=>m.status==="active").length
+    : members.filter(m=>m.status==="active"&&(m.zone===target||m.dept===target)).length;
+
+  const sendNotice = () => {
+    if(!title.trim()||!body.trim()) return;
+    setSending(true);
+    setTimeout(()=>{
+      setSending(false); setSent(true);
+      setHistory(p=>[{
+        id:Date.now(),title,target,method,sent:targetCount,
+        date:new Date().toLocaleString("ko-KR"),status:"완료"
+      },...p]);
+      setTimeout(()=>{setSent(false);setComposeModal(false);setTitle("");setBody("");setPreview(false);},1500);
+    },1800);
+  };
+
+  const methodColor = m=>({카카오:"#FAE100",SMS:C.emerald,앱:C.violet,전체:C.rose}[m]||C.muted);
+  const methodTextColor = m=>({카카오:"#1a1000"}[m]||"#fff");
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      {/* 발송 수단 안내 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+        {[
+          {icon:"📱",l:"카카오 알림톡",desc:"읽음 확인 가능",c:"#FAE100",tc:"#1a1000"},
+          {icon:"💬",l:"SMS",desc:"미설치자 폴백",c:C.emerald,tc:"#fff"},
+          {icon:"🔔",l:"앱 푸시",desc:"Firebase FCM",c:C.violet,tc:"#fff"},
+          {icon:"📊",l:"발송 이력",desc:`총 ${history.length}건`,c:C.sky,tc:"#fff"},
+        ].map(x=>(
+          <Card key={x.l} style={{padding:"14px 18px"}}>
+            <div style={{fontSize:22,marginBottom:6}}>{x.icon}</div>
+            <div style={{color:C.text,fontSize:12,fontFamily:F,fontWeight:600,marginBottom:2}}>{x.l}</div>
+            <div style={{color:C.muted,fontSize:10,fontFamily:F}}>{x.desc}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* 작성 버튼 */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{color:C.text,fontFamily:F,fontSize:13,fontWeight:600}}>발송 이력</div>
+        <Btn v="primary" onClick={()=>setComposeModal(true)}>✏️ 공지 작성 및 발송</Btn>
+      </div>
+
+      {/* 이력 테이블 */}
+      <Card>
+        <Tbl
+          heads={["제목","발송 대상","발송 수단","발송 수","날짜","상태"]}
+          rows={history.map(h=>[
+            <span style={{color:C.text,fontWeight:600,fontFamily:F}}>{h.title}</span>,
+            <Badge c={C.violet}>{h.target}</Badge>,
+            <span style={{
+              background:methodColor(h.method),color:methodTextColor(h.method),
+              borderRadius:6,padding:"2px 9px",fontSize:11,fontFamily:F,fontWeight:600}}>
+              {h.method}
+            </span>,
+            <span style={{color:C.text,fontFamily:F}}>{h.sent}명</span>,
+            <span style={{color:C.muted,fontSize:12,fontFamily:F}}>{h.date}</span>,
+            <Badge c={C.emerald}>{h.status}</Badge>,
+          ])}
+        />
+      </Card>
+
+      {/* 자동 알림 설정 */}
+      <Card style={{padding:20}}>
+        <SH title="자동 알림 규칙" sub="조건 충족 시 자동 발송"/>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {[
+            {icon:"⚠️",rule:"장기 결석자 (6주 이상)",trigger:"매주 월요일 자동 추출 → 담당 교역자 알림",c:C.rose,on:true},
+            {icon:"⛪",rule:"예배 위원 리마인더",trigger:"예배 전날 오전 10시 자동 발송",c:C.violet,on:true},
+            {icon:"💰",rule:"헌금 미확인 알림",trigger:"수요일 오후 3시 재정부원에게 발송",c:C.gold,on:true},
+            {icon:"🎂",rule:"생일 축하 메시지",trigger:"생일 당일 오전 9시 자동 발송",c:C.emerald,on:false},
+          ].map((r,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:12,
+              background:C.s2,borderRadius:10,padding:"12px 14px",
+              borderLeft:`3px solid ${r.on?r.c:C.border}`}}>
+              <span style={{fontSize:18,flexShrink:0}}>{r.icon}</span>
+              <div style={{flex:1}}>
+                <div style={{color:C.text,fontSize:12,fontFamily:F,fontWeight:600,marginBottom:2}}>{r.rule}</div>
+                <div style={{color:C.muted,fontSize:10,fontFamily:F}}>{r.trigger}</div>
+              </div>
+              <Toggle on={r.on} onChange={()=>{}}/>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* 작성 모달 */}
+      <Modal open={composeModal} onClose={()=>{setComposeModal(false);setPreview(false);setSent(false);}} title="공지 작성 및 발송" width={500}>
+        {sent?(
+          <div style={{textAlign:"center",padding:"24px 0"}}>
+            <div style={{fontSize:48,marginBottom:12}}>✅</div>
+            <div style={{color:C.emerald,fontSize:16,fontFamily:F,fontWeight:700}}>발송 완료!</div>
+            <div style={{color:C.muted,fontSize:12,fontFamily:F,marginTop:6}}>{targetCount}명에게 발송되었습니다</div>
+          </div>
+        ):sending?(
+          <div style={{textAlign:"center",padding:"24px 0"}}>
+            <div style={{fontSize:40,marginBottom:12}}>📤</div>
+            <div style={{color:C.violet,fontSize:14,fontFamily:F,fontWeight:600}}>발송 중...</div>
+            <div style={{color:C.muted,fontSize:12,fontFamily:F,marginTop:6}}>{targetCount}명에게 전송 중</div>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div>
+                <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>발송 대상</label>
+                <Sel value={target} onChange={setTarget} opts={TARGETS}/>
+                <div style={{color:C.violet,fontSize:11,fontFamily:F,marginTop:4}}>
+                  👥 대상 {targetCount}명
+                </div>
+              </div>
+              <div>
+                <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>발송 수단</label>
+                <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                  {METHODS.map(m=>(
+                    <label key={m.v} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                      <input type="radio" name="method" value={m.v}
+                        checked={method===m.v} onChange={()=>setMethod(m.v)}
+                        style={{accentColor:C.violet}}/>
+                      <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{m.l}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>제목</label>
+              <Inp value={title} onChange={e=>setTitle(e.target.value)} placeholder="공지 제목"/>
+            </div>
+            <div>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:5}}>내용</label>
+              <textarea value={body} onChange={e=>setBody(e.target.value)}
+                placeholder="발송할 내용을 입력하세요"
+                style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:9,
+                  padding:"9px 12px",color:C.text,fontFamily:F,fontSize:12,outline:"none",
+                  resize:"vertical",minHeight:100,boxSizing:"border-box"}}/>
+            </div>
+            {/* 미리보기 */}
+            {preview&&title&&body&&(
+              <div style={{background:C.s2,borderRadius:12,padding:"14px 16px",border:`1px solid ${C.borderHi}`}}>
+                <div style={{color:C.violet,fontSize:11,fontFamily:F,marginBottom:8}}>미리보기</div>
+                <div style={{background:"#FAE10022",borderRadius:8,padding:"10px 12px"}}>
+                  <div style={{color:"#FAE100",fontSize:11,fontFamily:F,fontWeight:700,marginBottom:4}}>[사랑의교회] {title}</div>
+                  <div style={{color:C.sub,fontSize:12,fontFamily:F,lineHeight:1.6}}>{body}</div>
+                  <div style={{color:C.muted,fontSize:10,fontFamily:F,marginTop:6}}>수신거부: 무료 080-xxx-xxxx</div>
+                </div>
+              </div>
+            )}
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn v="ghost" onClick={()=>setPreview(!preview)}>{preview?"미리보기 닫기":"👁️ 미리보기"}</Btn>
+              <Btn v="ghost" onClick={()=>setComposeModal(false)}>취소</Btn>
+              <Btn v="primary" disabled={!title.trim()||!body.trim()} onClick={sendNotice}>📤 발송</Btn>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+// ══ 14. NEW MEMBER PIPELINE ════════════════════════════
+function NewMemberTab({ members, setMembers }) {
+  const [pipeline, setPipeline] = usePersist("erp_newmember", NEWMEMBER_PIPELINE_INIT);
+  const [addModal, setAddModal] = useState(false);
+  const [form, setForm] = useState({name:"",phone:"",date:today(),assignedTo:"",memo:""});
+  const [detailSel, setDetailSel] = useState(null);
+
+  const STEPS = [
+    {k:"w1",l:"1주 팔로업",desc:"등록 후 1주 이내 연락"},
+    {k:"w3",l:"3주 확인",desc:"정착 여부 중간 점검"},
+    {k:"w6",l:"6주 심방",desc:"가정 방문 또는 면담"},
+    {k:"w12",l:"3개월 정착",desc:"소그룹 연결 완료"},
+    {k:"settled",l:"정착 완료",desc:"교적 정식 등록"},
+  ];
+
+  const toggleStep = (id,step) => {
+    setPipeline(p=>p.map(m=>m.id===id?{...m,steps:{...m.steps,[step]:!m.steps[step]}}:m));
+  };
+
+  const addNewMember = () => {
+    if(!form.name.trim()) return;
+    const newM={id:Date.now(),...form,steps:{w1:false,w3:false,w6:false,w12:false,settled:false}};
+    setPipeline(p=>[newM,...p]);
+    setAddModal(false);
+    setForm({name:"",phone:"",date:today(),assignedTo:"",memo:""});
+  };
+
+  const settleToMain = (m) => {
+    setMembers(prev=>[...prev,{
+      id:Date.now(),name:m.name,role:"성도",dept:"미배정",zone:"미배정",
+      phone:m.phone,joined:m.date,status:"active",
+      roleHistory:[{date:m.date,role:"성도",event:"등록"}],visits:[],
+    }]);
+    setPipeline(p=>p.map(x=>x.id===m.id?{...x,steps:{...x.steps,settled:true}}:x));
+    toast.success(`${m.name} 성도가 교적에 정식 등록되었습니다 ✅`);
+  };
+
+  const progressOf = m => Object.values(m.steps).filter(Boolean).length;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      {/* 요약 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+        {[
+          {l:"이번 달 새신자",v:pipeline.filter(m=>m.date>=WEEKS[0].slice(0,7)).length,c:C.violet},
+          {l:"팔로업 진행중",v:pipeline.filter(m=>!m.steps.settled).length,c:C.amber},
+          {l:"정착 완료",v:pipeline.filter(m=>m.steps.settled).length,c:C.emerald},
+          {l:"정착률",v:`${pipeline.length?Math.round(pipeline.filter(m=>m.steps.settled).length/pipeline.length*100):0}%`,c:C.gold},
+        ].map(x=>(
+          <Card key={x.l} style={{padding:"14px 18px"}}>
+            <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:3}}>{x.l}</div>
+            <div style={{color:x.c,fontSize:20,fontWeight:700,fontFamily:F}}>{x.v}</div>
+          </Card>
+        ))}
+      </div>
+
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{color:C.text,fontFamily:F,fontSize:13,fontWeight:600}}>새신자 정착 파이프라인</div>
+        <Btn v="primary" onClick={()=>setAddModal(true)}>+ 새신자 등록</Btn>
+      </div>
+
+      {/* 파이프라인 카드들 */}
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {pipeline.map(m=>{
+          const prog=progressOf(m);
+          const pct=Math.round(prog/5*100);
+          return (
+            <Card key={m.id} style={{padding:18}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                  <div style={{width:40,height:40,borderRadius:"50%",flexShrink:0,
+                    background:`conic-gradient(${m.steps.settled?C.emerald:C.violet} ${pct*3.6}deg,${C.s3} 0deg)`,
+                    display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <div style={{width:28,height:28,borderRadius:"50%",background:C.s1,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      color:m.steps.settled?C.emerald:C.violet,fontSize:10,fontWeight:700,fontFamily:F}}>
+                      {pct}%
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{color:C.text,fontSize:14,fontFamily:F,fontWeight:700}}>{m.name}</div>
+                    <div style={{color:C.muted,fontSize:11,fontFamily:F}}>등록: {m.date} · 담당: {m.assignedTo}</div>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  {m.steps.settled
+                    ?<Badge c={C.emerald}>✓ 정착 완료</Badge>
+                    :<Btn sz="sm" v="emerald" onClick={()=>settleToMain(m)}>교적 등록</Btn>
+                  }
+                  <Btn sz="sm" v="ghost" onClick={()=>setDetailSel(detailSel?.id===m.id?null:m)}>
+                    {detailSel?.id===m.id?"닫기":"상세"}
+                  </Btn>
+                </div>
+              </div>
+
+              {/* 스텝 진행바 */}
+              <div style={{display:"flex",gap:6}}>
+                {STEPS.map((step,i)=>(
+                  <div key={step.k} style={{flex:1,cursor:"pointer"}} onClick={()=>toggleStep(m.id,step.k)}>
+                    <div style={{
+                      height:6,borderRadius:3,marginBottom:5,transition:"background .2s",
+                      background:m.steps[step.k]?(m.steps.settled?C.emerald:C.violet):C.s3,
+                    }}/>
+                    <div style={{color:m.steps[step.k]?C.text:C.muted,fontSize:9,fontFamily:F,textAlign:"center",lineHeight:1.3}}>
+                      {step.l}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 상세 펼치기 */}
+              {detailSel?.id===m.id&&(
+                <div style={{marginTop:14,padding:"12px 14px",background:C.s2,borderRadius:10}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+                    {[{l:"연락처",v:m.phone},{l:"담당자",v:m.assignedTo},{l:"메모",v:m.memo}].map(f=>(
+                      <div key={f.l}>
+                        <div style={{color:C.muted,fontSize:10,fontFamily:F,marginBottom:2}}>{f.l}</div>
+                        <div style={{color:C.text,fontSize:12,fontFamily:F}}>{f.v||"-"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    {STEPS.map(step=>(
+                      <div key={step.k} style={{flex:1,background:m.steps[step.k]?`${C.emerald}18`:C.s3,
+                        borderRadius:8,padding:"8px 6px",textAlign:"center",cursor:"pointer",
+                        border:`1px solid ${m.steps[step.k]?C.emerald:C.border}`}}
+                        onClick={()=>toggleStep(m.id,step.k)}>
+                        <div style={{color:m.steps[step.k]?C.emerald:C.muted,fontSize:14,marginBottom:2}}>
+                          {m.steps[step.k]?"✓":"○"}
+                        </div>
+                        <div style={{color:m.steps[step.k]?C.emerald:C.muted,fontSize:9,fontFamily:F,lineHeight:1.3}}>
+                          {step.l}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+
+      <Modal open={addModal} onClose={()=>setAddModal(false)} title="새신자 등록" width={420}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {[{l:"이름",k:"name",t:"text"},{l:"연락처",k:"phone",t:"text"},
+            {l:"등록일",k:"date",t:"date"},{l:"담당자",k:"assignedTo",t:"text"},{l:"메모",k:"memo",t:"text"}].map(f=>(
+            <div key={f.k}>
+              <label style={{color:C.muted,fontSize:11,fontFamily:F,display:"block",marginBottom:4}}>{f.l}</label>
+              <Inp type={f.t} value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.l}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:6}}>
+            <Btn v="ghost" onClick={()=>setAddModal(false)}>취소</Btn>
+            <Btn v="primary" onClick={addNewMember} disabled={!form.name.trim()}>등록</Btn>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// ══ 15. OFFERING STATS (헌금 통계 심화) ═══════════════
+function OfferingStatsTab({ offerings, members }) {
+  const years=[...new Set(offerings.filter(o=>o.status==="confirmed").map(o=>o.date.slice(0,4)))].sort().reverse();
+  const defaultYear=years[0]||String(new Date().getFullYear());
+  const [selYear, setSelYear] = useState(defaultYear);
+
+  const confirmed=offerings.filter(o=>o.status==="confirmed");
+  const yearOff=confirmed.filter(o=>o.date.startsWith(selYear));
+  const prevYear=String(parseInt(selYear,10)-1);
+  const prevOff=confirmed.filter(o=>o.date.startsWith(prevYear));
+  const monthlyData=Array.from({length:12},(_,i)=>{
+    const m=String(i+1).padStart(2,"0");
+    const cur=yearOff.filter(o=>o.date.slice(5,7)===m);
+    const prev=prevOff.filter(o=>o.date.slice(5,7)===m);
+    const sum=a=>a.reduce((s,o)=>s+o.amount,0);
+    return {month:`${i+1}월`,total:sum(cur),prev:sum(prev)};
+  });
+  const thisYearTotal=yearOff.reduce((s,o)=>s+o.amount,0);
+  const prevYearTotal=prevOff.reduce((s,o)=>s+o.amount,0);
+  const growthRate=prevYearTotal?((thisYearTotal-prevYearTotal)/prevYearTotal*100).toFixed(1):(thisYearTotal?"100.0":"0.0");
+  const maxMonthly=Math.max(...monthlyData.map(m=>Math.max(m.total,m.prev)),1);
+  const typeColors={십일조:C.violet,주일헌금:C.gold,감사헌금:C.emerald,선교헌금:C.sky,건축헌금:C.rose,구제헌금:C.indigo,특별헌금:C.amber};
+  const typeBreakdown=OFFERING_TYPES.map(t=>{
+    const v=yearOff.filter(o=>o.type===t).reduce((s,o)=>s+o.amount,0);
+    return {t,v,pct:thisYearTotal?Math.round(v/thisYearTotal*100):0,c:typeColors[t]||C.indigo};
+  }).filter(x=>x.v>0);
+  const giverCount=new Set(yearOff.map(o=>o.member)).size;
+  const memberBase=Math.max(members.filter(m=>m.status==="active").length, giverCount, 1);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,alignItems:"center"}}>
+        <span style={{color:C.muted,fontSize:11,fontFamily:F}}>헌금 통계 연도</span>
+        <Sel value={selYear} onChange={setSelYear} opts={(years.length?years:[defaultYear])}/>
+      </div>
+      {/* 연간 요약 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+        {[
+          {l:"연간 총 헌금",v:`₩${fmt(thisYearTotal)}`,c:C.gold},
+          {l:"전년 대비",v:`+${growthRate}%`,c:C.emerald},
+          {l:"월 평균",v:`₩${fmt(Math.round(thisYearTotal/12))}`,c:C.violet},
+          {l:"성도 1인 평균",v:`₩${fmt(Math.round(thisYearTotal/memberBase))}`,c:C.sky},
+        ].map(x=>(
+          <Card key={x.l} style={{padding:"14px 18px"}}>
+            <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:3}}>{x.l}</div>
+            <div style={{color:x.c,fontSize:17,fontWeight:700,fontFamily:F}}>{x.v}</div>
+          </Card>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18}}>
+        {/* 월별 바차트 */}
+        <Card style={{padding:22}}>
+          <SH title="월별 헌금 추이" sub={`${selYear}년 (전년 대비)`}/>
+          <div style={{display:"flex",alignItems:"flex-end",gap:5,height:140,marginBottom:10}}>
+            {monthlyData.map((d,i)=>(
+              <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                {/* 전년 */}
+                <div style={{width:"100%",display:"flex",gap:2,alignItems:"flex-end",height:120}}>
+                  <div style={{flex:1,height:Math.round(d.prev/maxMonthly*110),
+                    background:`${C.gold}44`,borderRadius:"3px 3px 0 0",transition:"height .5s"}}/>
+                  <div style={{flex:1,height:Math.round(d.total/maxMonthly*110),
+                    background:`linear-gradient(180deg,${C.violet},${C.violet}88)`,
+                    borderRadius:"3px 3px 0 0",transition:"height .5s"}}/>
+                </div>
+                <span style={{color:C.muted,fontSize:9,fontFamily:F}}>{d.month}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{display:"flex",gap:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:10,height:10,borderRadius:2,background:`${C.gold}44`}}/>
+              <span style={{color:C.muted,fontSize:11,fontFamily:F}}>전년</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:10,height:10,borderRadius:2,background:C.violet}}/>
+              <span style={{color:C.muted,fontSize:11,fontFamily:F}}>올해</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* 유형별 */}
+        <Card style={{padding:22}}>
+          <SH title="헌금 유형별 비율"/>
+          {typeBreakdown.map((t,i)=>(
+            <div key={i} style={{marginBottom:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{color:C.sub,fontSize:12,fontFamily:F}}>{t.t}</span>
+                <span style={{color:t.c,fontSize:12,fontFamily:F,fontWeight:700}}>{t.pct}%</span>
+              </div>
+              <div style={{background:C.s3,borderRadius:4,height:8,position:"relative"}}>
+                <div style={{background:t.c,borderRadius:4,height:8,
+                  width:`${t.pct}%`,transition:"width .6s"}}/>
+              </div>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F,marginTop:2}}>₩{fmt(t.v)}</div>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* 분기별 비교 */}
+      <Card style={{padding:22}}>
+        <SH title="분기별 비교" sub="전년 대비"/>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+          {["1분기","2분기","3분기","4분기"].map((q,i)=>{
+            const months=monthlyData.slice(i*3,i*3+3);
+            const total=months.reduce((s,m)=>s+m.total,0);
+            const prev=months.reduce((s,m)=>s+m.prev,0);
+            const chg=prev?((total-prev)/prev*100).toFixed(1):(total?"100.0":"0.0");
+            return (
+              <div key={q} style={{background:C.s2,borderRadius:12,padding:"16px 18px",
+                borderTop:`3px solid ${parseFloat(chg)>=0?C.emerald:C.rose}`}}>
+                <div style={{color:C.muted,fontSize:11,fontFamily:F,marginBottom:4}}>{q}</div>
+                <div style={{color:C.text,fontSize:16,fontWeight:700,fontFamily:F,marginBottom:4}}>₩{fmt(total)}</div>
+                <div style={{color:parseFloat(chg)>=0?C.emerald:C.rose,fontSize:12,fontFamily:F,fontWeight:600}}>
+                  {parseFloat(chg)>=0?"+":""}{chg}%
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+
+// ══ APP SHELL v4.0 ═════════════════════════════════════
+// ══ APP SHELL v5.0 ═════════════════════════════════════
+const NAV_GROUPS = [
+  {label:"현황",  items:[{id:"dashboard",icon:"▦",label:"대시보드"}]},
+  {label:"성도",  items:[
+    {id:"org",icon:"🌿",label:"조직 트리"},
+    {id:"members",icon:"👥",label:"교적·이력"},
+    {id:"attend",icon:"✅",label:"출석 관리"},
+    {id:"newmember",icon:"🌱",label:"새신자 관리"},
+  ]},
+  {label:"재정",  items:[
+    {id:"offering",icon:"💰",label:"헌금 승인"},
+    {id:"offerStats",icon:"📈",label:"헌금 통계"},
+    {id:"budget",icon:"📊",label:"예산 집행"},
+    {id:"receipt",icon:"🧾",label:"기부금 영수증"},
+  ]},
+  {label:"사역",  items:[
+    {id:"bulletin",icon:"📄",label:"디지털 주보"},
+    {id:"prayer",icon:"🙏",label:"기도 공동체"},
+    {id:"worship",icon:"⛪",label:"예배 위원"},
+    {id:"notice",icon:"📣",label:"공지·알림"},
+  ]},
+  {label:"도구",  items:[
+    {id:"mobile",icon:"📱",label:"성도 모바일"},
+    {id:"system",icon:"🛡️",label:"시스템"},
+  ]},
+];
+const NAV_ALL = NAV_GROUPS.flatMap(g=>g.items);
+const MOBILE_QUICK = [
+  {id:"dashboard",icon:"▦",label:"홈"},
+  {id:"offering",icon:"💰",label:"헌금"},
+  {id:"attend",icon:"✅",label:"출석"},
+  {id:"mobile",icon:"📱",label:"성도"},
+];
+
+function ChurchERPv5() {
+  const [tab, setTab] = useState("dashboard");
+  const [resetKey, setResetKey] = useState(0);
+  const [members, setMembers]   = usePersist("erp_members",   MEMBERS_INIT);
+  const [offerings, setOfferings] = usePersist("erp_offerings", OFFERINGS_INIT);
+  const [attend, setAttend]     = usePersist("erp_attend",    ()=>ATTEND_INIT);
+  const [budgets, setBudgets]   = usePersist("erp_budgets",   BUDGETS_INIT);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const mainRef = useRef(null);
+
+  useEffect(() => { if (!isMobile) setMenuOpen(false); }, [isMobile]);
+  useEffect(() => { setMenuOpen(false); }, [tab]);
+  useResponsiveGrids(mainRef, isMobile, tab);
+
+  const goTab = (id) => { setTab(id); setMenuOpen(false); };
+
+  useEffect(() => {
+    if (members.length >= 500) return;
+    setMembers(MEMBERS_INIT);
+    setOfferings(OFFERINGS_INIT);
+    setAttend(buildAttendInit(MEMBER_NAMES));
+    toast.success(`교적 데이터를 ${CHURCH_MEMBER_COUNT}명 규모로 갱신했습니다`);
+  }, []);
+
+  const resetAll = () => {
+    ERP_STORAGE_KEYS.forEach(k=>LS.clear(k));
+    setMembers(MEMBERS_INIT);
+    setOfferings(OFFERINGS_INIT);
+    setAttend(buildAttendInit(MEMBER_NAMES));
+    setBudgets(BUDGETS_INIT);
+    setResetKey(k=>k+1);
+    toast.success("모든 데이터가 초기화되었습니다");
+    setResetConfirm(false);
+  };
+
+  const rk = resetKey;
+  const content = {
+    dashboard:  <DashboardTab members={members} offerings={offerings} attend={attend} budgets={budgets}/>,
+    org:        <OrgTreeTab key={`org-${rk}`} members={members}/>,
+    members:    <MembersTab members={members} setMembers={setMembers}/>,
+    attend:     <AttendTab members={members} attend={attend} setAttend={setAttend}/>,
+    offering:   <OfferingTab offerings={offerings} setOfferings={setOfferings}/>,
+    offerStats: <OfferingStatsTab offerings={offerings} members={members}/>,
+    budget:     <BudgetTab budgets={budgets} setBudgets={setBudgets}/>,
+    bulletin:   <BulletinTab key={`bul-${rk}`}/>,
+    prayer:     <PrayerTab key={`prayer-${rk}`}/>,
+    worship:    <WorshipTab key={`worship-${rk}`} members={members}/>,
+    receipt:    <ReceiptTab members={members} offerings={offerings}/>,
+    newmember:  <NewMemberTab key={`new-${rk}`} members={members} setMembers={setMembers}/>,
+    notice:     <NoticeTab key={`notice-${rk}`} members={members}/>,
+    mobile:     <MobileViewTab members={members} offerings={offerings} budgets={budgets}/>,
+    system:     <SystemTab/>,
+  };
+
+  const curNav = NAV_ALL.find(n=>n.id===tab)||NAV_ALL[0];
+  const dataSize = (() => {
+    try { const keys=ERP_STORAGE_KEYS; let bytes=0;
+      keys.forEach(k=>{ try{ const v=localStorage.getItem(k); if(v) bytes+=v.length; }catch{} });
+      return Math.round(bytes/1024); }
+    catch { return 0; }
+  })();
+
+  return (
+    <>
+      <style>{FONTS}</style>
+      <style>{`
+        @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        html,body{background:${C.bg};min-height:100vh;}
+        ::-webkit-scrollbar{width:5px;height:5px;}
+        ::-webkit-scrollbar-track{background:${C.s1};}
+        ::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px;}
+        option{background:${C.s2};}
+        input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;}
+        input[type=checkbox]{accent-color:${C.violet};}
+        input[type=radio]{accent-color:${C.violet};}
+      `}</style>
+
+      <div style={{display:"flex",minHeight:"100vh"}}>
+        {isMobile && menuOpen && (
+          <div onClick={()=>setMenuOpen(false)} style={{
+            position:"fixed",inset:0,background:"rgba(26,43,60,.35)",zIndex:9,
+          }}/>
+        )}
+
+        {isMobile && (
+          <header style={{
+            position:"fixed",top:0,left:0,right:0,height:52,zIndex:8,
+            background:C.s1,borderBottom:`1px solid ${C.border}`,
+            display:"flex",alignItems:"center",padding:"0 14px",gap:10,
+          }}>
+            <button onClick={()=>setMenuOpen(true)} aria-label="메뉴"
+              style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,
+                width:36,height:36,cursor:"pointer",fontSize:16,fontFamily:F}}>☰</button>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{color:C.text,fontFamily:FB,fontSize:14,fontWeight:700,
+                overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{CHURCH_NAME}</div>
+              <div style={{color:C.muted,fontSize:10,fontFamily:F}}>{curNav.label}</div>
+            </div>
+          </header>
+        )}
+
+        {/* Sidebar */}
+        <aside style={{
+          width:isMobile?280:200,background:C.s1,borderRight:`1px solid ${C.border}`,
+          display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:10,
+          transform:isMobile&&!menuOpen?"translateX(-100%)":"translateX(0)",
+          transition:"transform .25s ease",
+          boxShadow:isMobile&&menuOpen?"4px 0 24px rgba(0,0,0,.12)":"none",
+        }}>
+          <div style={{padding:"18px 16px 14px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div>
+                <div style={{color:C.gold,fontFamily:FB,fontSize:13,fontWeight:700,letterSpacing:1}}>CHURCH ERP</div>
+                <div style={{color:C.violet,fontSize:8,letterSpacing:3,fontFamily:F,marginTop:1}}>SaaS v5.4 MOBILE</div>
+              </div>
+              {isMobile && (
+                <button onClick={()=>setMenuOpen(false)} style={{
+                  background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
+              )}
+            </div>
+            <div style={{marginTop:9,background:`${C.emerald}11`,borderRadius:6,padding:"3px 9px",display:"inline-block"}}>
+              <span style={{color:C.emerald,fontSize:9,fontFamily:F}}>● {CHURCH_NAME}</span>
+            </div>
+          </div>
+          <nav style={{flex:1,padding:"8px",overflowY:"auto"}}>
+            {NAV_GROUPS.map(g=>(
+              <div key={g.label} style={{marginBottom:6}}>
+                <div style={{color:C.muted,fontSize:9,fontFamily:F,fontWeight:600,
+                  letterSpacing:1.5,padding:"5px 10px 3px",textTransform:"uppercase"}}>{g.label}</div>
+                {g.items.map(n=>(
+                  <button key={n.id} onClick={()=>goTab(n.id)} style={{
+                    display:"flex",alignItems:"center",gap:8,width:"100%",
+                    padding:"8px 10px",borderRadius:8,marginBottom:1,
+                    background:tab===n.id?`${C.gold}18`:"transparent",
+                    border:tab===n.id?`1px solid ${C.gold}55`:"1px solid transparent",
+                    color:tab===n.id?C.gold:C.sub,cursor:"pointer",textAlign:"left",
+                    fontFamily:F,fontSize:11,fontWeight:tab===n.id?600:400,transition:"all .12s"}}>
+                    <span style={{fontSize:12,flexShrink:0}}>{n.icon}</span>
+                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.label}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </nav>
+          {/* User + storage info */}
+          <div style={{padding:"0 8px 10px",display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{background:`${C.emerald}0D`,borderRadius:8,padding:"7px 11px",
+              border:`1px solid ${C.emerald}22`}}>
+              <div style={{color:C.emerald,fontSize:9,fontFamily:F,fontWeight:600}}>💾 로컬 저장 활성</div>
+              <div style={{color:C.muted,fontSize:9,fontFamily:F,marginTop:1}}>
+                {dataSize}KB · 새로고침 후에도 유지
+              </div>
+            </div>
+            <div style={{background:C.s2,borderRadius:10,padding:"10px 12px",border:`1px solid ${C.border}`}}>
+              <div style={{color:C.text,fontSize:11,fontFamily:F,fontWeight:600}}>관리자 류종철</div>
+              <div style={{color:C.muted,fontSize:9,fontFamily:F,marginTop:1}}>장로 · 재정부</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+                <span style={{color:C.emerald,fontSize:9}}>● 온라인</span>
+                <button onClick={()=>setResetConfirm(true)}
+                  style={{background:"none",border:`1px solid ${C.rose}44`,borderRadius:5,
+                    padding:"2px 7px",color:C.rose,fontSize:9,cursor:"pointer",fontFamily:F}}>초기화</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main ref={mainRef} className="erp-main" style={{
+          marginLeft:isMobile?0:200,flex:1,
+          padding:isMobile?"64px 14px 88px":24,
+          minHeight:"100vh",overflowX:"hidden",width:"100%",
+        }}>
+          {!isMobile ? (
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+            marginBottom:20,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
+            <div>
+              <h1 style={{color:C.text,fontFamily:FB,fontSize:18,fontWeight:700}}>{curNav.label}</h1>
+              <p style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:2}}>
+                {new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}
+              </p>
+            </div>
+            <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+              <Badge c={C.violet}>15개 모듈</Badge>
+              <Badge c={C.emerald}>실시간 저장</Badge>
+            </div>
+          </div>
+          ) : (
+          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:14}}>
+            <Badge c={C.emerald}>실시간 저장</Badge>
+          </div>
+          )}
+          {content[tab]}
+        </main>
+
+        {isMobile && (
+          <nav style={{
+            position:"fixed",bottom:0,left:0,right:0,zIndex:8,
+            background:C.s1,borderTop:`1px solid ${C.border}`,
+            display:"flex",padding:"6px 4px calc(6px + env(safe-area-inset-bottom, 0px))",
+          }}>
+            {MOBILE_QUICK.map(n=>(
+              <button key={n.id} onClick={()=>goTab(n.id)} style={{
+                flex:1,background:"none",border:"none",cursor:"pointer",
+                display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 0",
+              }}>
+                <span style={{fontSize:17}}>{n.icon}</span>
+                <span style={{fontSize:9,fontFamily:F,
+                  color:tab===n.id?C.gold:C.muted,fontWeight:tab===n.id?700:400}}>{n.label}</span>
+              </button>
+            ))}
+            <button onClick={()=>setMenuOpen(true)} style={{
+              flex:1,background:"none",border:"none",cursor:"pointer",
+              display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 0",
+            }}>
+              <span style={{fontSize:17}}>☰</span>
+              <span style={{fontSize:9,fontFamily:F,color:C.muted}}>메뉴</span>
+            </button>
+          </nav>
+        )}
+      </div>
+
+      <ToastContainer/>
+
+      <ConfirmDialog
+        open={resetConfirm}
+        title="전체 데이터 초기화"
+        message={"모든 데이터가 초기 샘플로 되돌아갑니다.\n입력한 데이터는 모두 삭제됩니다.\n계속하시겠습니까?"}
+        confirmText="초기화"
+        confirmV="rose"
+        onConfirm={resetAll}
+        onCancel={()=>setResetConfirm(false)}
+      />
+    </>
+  );
+}
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ChurchERPv5/>);
+  </script>
+</body>
+</html>
