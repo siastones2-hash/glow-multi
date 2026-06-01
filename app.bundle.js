@@ -3095,64 +3095,66 @@ function MktAdvicePanel({
     style: {
       background: "rgba(16,185,129,.06)",
       borderRadius: 10,
-      padding: "11px 13px",
+      padding: "10px 12px",
       border: "1px solid rgba(16,185,129,.2)",
       marginBottom: 10
     }
   }, el("div", {
     style: {
-      fontSize: 19,
+      fontSize: 13,
       fontWeight: 700,
       color: "#10b981",
-      marginBottom: 3
+      marginBottom: 2
     }
   }, "✅ 채널 활동량 양호"), el("div", {
     style: {
-      fontSize: 19,
-      color: "#64748b"
+      fontSize: 12,
+      color: "#64748b",
+      lineHeight: 1.4
     }
   }, "5대 채널 모두 상위 5% 대비 50% 이상 달성 중입니다."));
   return el("div", {
     style: {
       background: "#0c1629",
       borderRadius: 11,
-      padding: "13px",
+      padding: "10px 12px",
       border: "1px solid rgba(245,158,11,.2)",
       marginBottom: 10
     }
   }, el("div", {
     style: {
-      fontSize: 19,
+      fontSize: 13,
       fontWeight: 800,
       color: "#f59e0b",
-      marginBottom: 4
+      marginBottom: 3
     }
   }, "📌 1위 추격을 위해 부족한 채널"), el("div", {
     style: {
-      fontSize: 19,
+      fontSize: 12,
       color: "#64748b",
-      marginBottom: 10
+      marginBottom: 8,
+      lineHeight: 1.4
     }
   }, "상위 5% 평균 대비 50% 미만 채널 — 점주가 직접 보완해야 할 항목입니다."), el("div", {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 6
+      gap: 5
     }
   }, gaps.map((g, i) => el("div", {
     key: i,
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 9,
-      padding: "10px 11px",
+      gap: 8,
+      padding: "8px 10px",
       background: "rgba(239,68,68,.05)",
       borderRadius: 8,
       border: "1px solid rgba(239,68,68,.15)"
     }
   }, el("span", {
     style: {
-      fontSize: 26,
+      fontSize: 18,
       flexShrink: 0
     }
   }, g.icon), el("div", {
@@ -3162,33 +3164,33 @@ function MktAdvicePanel({
   }, el("div", {
     style: {
       display: "flex",
-      gap: 8,
+      gap: 6,
       alignItems: "center",
-      marginBottom: 3,
+      marginBottom: 2,
       flexWrap: "wrap"
     }
   }, el("span", {
     style: {
-      fontSize: 20,
+      fontSize: 13,
       fontWeight: 700,
       color: "#e2e8f0"
     }
   }, "[" + g.label + "]"), el("span", {
     className: "mono",
     style: {
-      fontSize: 19,
+      fontSize: 12,
       color: "#ef4444",
       fontWeight: 700
     }
   }, "내 매장: 주" + g.mine + "건"), el("span", {
     style: {
-      fontSize: 19,
+      fontSize: 12,
       color: "#334155"
     }
   }, "vs"), el("span", {
     className: "mono",
     style: {
-      fontSize: 19,
+      fontSize: 12,
       color: "#10b981",
       fontWeight: 700
     }
@@ -3197,10 +3199,11 @@ function MktAdvicePanel({
     color: "#ef4444"
   }), el("div", {
     style: {
-      fontSize: 18,
+      fontSize: 12,
       color: "#ef4444",
       fontWeight: 600,
-      marginTop: 3
+      marginTop: 2,
+      lineHeight: 1.4
     }
   }, g.label + " " + g.diff + "건 추가 필요 → 블로그 체험단 / 자체 콘텐츠 제작 권장"))))));
 }
@@ -3215,50 +3218,51 @@ function RankLog({
     style: {
       background: "#0c1629",
       borderRadius: 10,
-      padding: "11px 13px",
+      padding: "10px 12px",
       border: "1px solid #1e3a5f",
       marginBottom: 10
     }
   }, el("div", {
     style: {
-      fontSize: 19,
+      fontSize: 13,
       fontWeight: 700,
       color: "#64748b",
-      marginBottom: 3
+      marginBottom: 2
     }
   }, "📋 활동량 → 순위 변동 로그"), el("div", {
     style: {
-      fontSize: 19,
-      color: "#334155"
+      fontSize: 12,
+      color: "#334155",
+      lineHeight: 1.4
     }
   }, "아직 로그가 없습니다. 채널 활동 후 자동으로 기록됩니다."));
   return el("div", {
     style: {
       background: "#0c1629",
       borderRadius: 11,
-      padding: "13px",
+      padding: "10px 12px",
       border: "1px solid #1e3a5f",
       marginBottom: 10
     }
   }, el("div", {
     style: {
-      fontSize: 19,
+      fontSize: 13,
       fontWeight: 700,
       color: "#64748b",
-      marginBottom: 10
+      marginBottom: 8
     }
   }, "📋 활동량 → 순위 변동 로그"), el("div", {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 6
+      gap: 5
     }
   }, logs.map((log, i) => el("div", {
     key: i,
     style: {
       display: "flex",
-      gap: 9,
-      padding: "8px 10px",
+      gap: 8,
+      padding: "7px 9px",
       background: "rgba(0,0,0,.2)",
       borderRadius: 7,
       border: "1px solid " + (log.rankChange > 0 ? "rgba(16,185,129,.15)" : log.rankChange < 0 ? "rgba(239,68,68,.15)" : "rgba(71,85,105,.3)")
@@ -3267,18 +3271,18 @@ function RankLog({
     style: {
       flexShrink: 0,
       textAlign: "center",
-      minWidth: 32
+      minWidth: 28
     }
   }, el("div", {
     style: {
-      fontSize: 17,
+      fontSize: 11,
       color: "#475569",
       fontWeight: 600
     }
   }, log.date), el("div", {
     className: "mono",
     style: {
-      fontSize: 21,
+      fontSize: 14,
       fontWeight: 700,
       color: log.rankChange > 0 ? "#10b981" : log.rankChange < 0 ? "#ef4444" : "#64748b",
       lineHeight: 1.2,
@@ -3290,16 +3294,16 @@ function RankLog({
     }
   }, el("div", {
     style: {
-      fontSize: 19,
+      fontSize: 13,
       color: "#e2e8f0",
       fontWeight: 600,
-      marginBottom: 2
+      marginBottom: 1
     }
   }, log.event), el("div", {
     style: {
-      fontSize: 18,
+      fontSize: 12,
       color: "#64748b",
-      lineHeight: 1.5
+      lineHeight: 1.45
     }
   }, log.detail))))));
 }
@@ -3311,11 +3315,11 @@ function SalesChart({
 }) {
   const el = React.createElement;
   const W = 320,
-    H = 130,
-    PL = 38,
-    PR = 12,
-    PT = 18,
-    PB = 24;
+    H = 118,
+    PL = 34,
+    PR = 10,
+    PT = 14,
+    PB = 22;
   const cw = W - PL - PR,
     ch = H - PT - PB;
   const myH = (store.history || []).map((d, i, a) => i === a.length - 1 ? {
@@ -3338,7 +3342,7 @@ function SalesChart({
       points: pts,
       fill: "none",
       stroke: c,
-      strokeWidth: 2.2,
+      strokeWidth: 2,
       strokeDasharray: dash ? "5 3" : undefined,
       strokeLinecap: "round",
       strokeLinejoin: "round"
@@ -3347,16 +3351,16 @@ function SalesChart({
     }, el("circle", {
       cx: xp(i, data.length),
       cy: yp(d.v),
-      r: 4.5,
+      r: 3.5,
       fill: c,
       stroke: "#070d1a",
-      strokeWidth: 2
+      strokeWidth: 1.5
     }), el("text", {
       x: xp(i, data.length),
-      y: yp(d.v) - 8,
+      y: yp(d.v) - 6,
       textAnchor: "middle",
-      fontSize: 16,
-      fontWeight: "700",
+      fontSize: 10,
+      fontWeight: "600",
       fill: c
     }, (d.v >= 0 ? "+" : "") + d.v + "%"))));
   };
@@ -3365,7 +3369,7 @@ function SalesChart({
     style: {
       background: "#0c1629",
       borderRadius: 10,
-      padding: "12px",
+      padding: "10px 12px",
       border: "1px solid #1e3a5f",
       marginBottom: 9
     }
@@ -3374,18 +3378,20 @@ function SalesChart({
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8
+      marginBottom: 6,
+      flexWrap: "wrap",
+      gap: 4
     }
   }, el("span", {
     style: {
-      fontSize: 18,
+      fontSize: 13,
       fontWeight: 700,
       color: "#64748b"
     }
   }, "📊 최근 3개월 매출 추이"), el("div", {
     style: {
       display: "flex",
-      gap: 9
+      gap: 8
     }
   }, [{
     c: "#f59e0b",
@@ -3403,21 +3409,21 @@ function SalesChart({
       gap: 3
     }
   }, el("svg", {
-    width: 15,
-    height: 7
+    width: 12,
+    height: 6
   }, el("line", {
     x1: 0,
-    y1: 3.5,
-    x2: 15,
-    y2: 3.5,
+    y1: 3,
+    x2: 12,
+    y2: 3,
     stroke: x.c,
-    strokeWidth: "2",
-    strokeDasharray: x.d ? "4 2" : undefined
+    strokeWidth: "1.5",
+    strokeDasharray: x.d ? "3 2" : undefined
   })), el("span", {
     style: {
-      fontSize: 16,
+      fontSize: 11,
       color: x.c,
-      fontWeight: 700
+      fontWeight: 600
     }
   }, x.l))))), el("svg", {
     width: "100%",
@@ -3437,19 +3443,19 @@ function SalesChart({
     strokeWidth: v === 0 ? 1.5 : 1,
     strokeDasharray: v === 0 ? "4 2" : undefined
   }), el("text", {
-    x: PL - 4,
+    x: PL - 3,
     y: yp(v) + 3,
     textAnchor: "end",
-    fontSize: 15,
-    fill: "#334155"
+    fontSize: 10,
+    fill: "#475569"
   }, v + "%"))), myH.map((d, i) => el("text", {
     key: i,
     x: xp(i, myH.length),
-    y: H - 5,
+    y: H - 6,
     textAnchor: "middle",
-    fontSize: 16,
+    fontSize: 11,
     fontWeight: i === myH.length - 1 ? "700" : "400",
-    fill: i === myH.length - 1 ? "#f59e0b" : "#334155"
+    fill: i === myH.length - 1 ? "#f59e0b" : "#475569"
   }, d.m)), store.id !== topStore.id && ln(tpH, "#10b981", true), ln(myH, "#f59e0b", false)));
 }
 
