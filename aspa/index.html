@@ -714,7 +714,8 @@
   /* FOOTER */
   footer .foot-cols{display:grid;grid-template-columns:1.7fr 1fr 1fr 1.2fr;gap:30px;}
   @media(max-width:760px){footer .foot-cols{grid-template-columns:1fr 1fr;gap:24px;}}
-  .foot-logo{font-family:var(--disp);font-weight:800;font-size:1.5rem;color:#fff;letter-spacing:.06em;}
+  .foot-logo{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:800;font-size:1.5rem;color:#fff;letter-spacing:.06em;}
+  .foot-logo .brand-logo{width:34px;height:34px;}
   .foot-desc{color:var(--txt-dim);font-size:.84rem;margin-top:10px;max-width:280px;line-height:1.6;}
   .foot-pres{color:var(--txt-faint);font-size:.82rem;margin-top:10px;font-family:var(--mono);}
   .foot-links{display:flex;flex-direction:column;gap:8px;}
