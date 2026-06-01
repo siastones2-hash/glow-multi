@@ -54,8 +54,9 @@
   nav{position:fixed;top:0;left:0;right:0;z-index:50;}
   nav .inner{max-width:1240px;margin:16px auto;padding:0 14px 0 22px;height:60px;display:flex;align-items:center;justify-content:space-between;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--glass-bd);border-radius:18px;transition:.4s;}
   nav.scrolled .inner{background:rgba(18,18,18,.72);box-shadow:0 12px 44px -18px rgba(0,0,0,.7);}
-  .brand{display:flex;align-items:center;gap:11px;}
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px var(--cyan-glow);}
+  .brand{display:flex;align-items:center;gap:11px;cursor:pointer;text-decoration:none;color:inherit;}
+  .brand-logo{width:38px;height:38px;flex-shrink:0;display:block;filter:drop-shadow(0 0 10px rgba(0,229,255,.35));transition:transform .3s var(--ease),filter .3s;}
+  .brand:hover .brand-logo{transform:scale(1.04);filter:drop-shadow(0 0 14px rgba(0,229,255,.5));}
   .brand b{font-family:var(--disp);font-weight:800;font-size:1.3rem;letter-spacing:.04em;line-height:1;}
   .brand small{font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;color:var(--txt-dim);}
   .nav-menu{display:flex;align-items:center;gap:26px;list-style:none;}
@@ -73,7 +74,8 @@
   .m-drawer{position:fixed;top:0;right:0;width:80%;max-width:320px;height:100%;background:rgba(18,18,18,.98);backdrop-filter:blur(20px);border-left:1px solid var(--glass-bd);z-index:120;padding:24px;transform:translateX(100%);transition:transform .35s var(--ease-lux);display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
   .m-drawer.open{transform:translateX(0);}
   .m-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--glass-bd);}
-  .m-drawer-head .brand{display:flex;align-items:center;gap:8px;}.m-drawer-head .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);}
+  .m-drawer-head .brand{display:flex;align-items:center;gap:8px;}
+  .m-drawer-head .brand-logo{width:32px;height:32px;}
   .m-drawer-head b{font-family:var(--disp);font-weight:800;font-size:1.2rem;letter-spacing:.04em;}
   .m-close{background:none;border:none;color:var(--txt-dim);font-size:1.8rem;cursor:pointer;line-height:1;}
   .m-drawer > a{padding:14px 10px;font-family:var(--kr);font-size:1rem;color:var(--txt-2);border-radius:10px;transition:.2s;}
@@ -732,7 +734,7 @@
 <div class="shell">
 
 <nav id="nav"><div class="inner">
-  <a class="brand" onclick="go('home')"><span class="dot"></span><span><b>ASPA</b><br><small>ASIA GOLF FEDERATION</small></span></a>
+  <a class="brand" onclick="go('home')"><img class="brand-logo" src="logo.svg" alt="ASPA" width="38" height="38"><span><b>ASPA</b><br><small>ASIA GOLF FEDERATION</small></span></a>
   <ul class="nav-menu">
     <li><a onclick="go('home')">홈</a></li>
     <li><a onclick="go('about')">연맹 소개</a></li>
@@ -749,7 +751,7 @@
 
 <!-- 모바일 드로어 -->
 <div class="m-drawer" id="mDrawer">
-  <div class="m-drawer-head"><span class="brand"><span class="dot"></span><b>ASPA</b></span><button class="m-close" onclick="toggleMenu()">×</button></div>
+  <div class="m-drawer-head"><span class="brand"><img class="brand-logo" src="logo.svg" alt="ASPA" width="32" height="32"><b>ASPA</b></span><button class="m-close" onclick="toggleMenu()">×</button></div>
   <a onclick="mGo('home')">홈</a>
   <a onclick="mGo('about')">연맹 소개</a>
   <a onclick="mGo('org')">조직도</a>
@@ -1314,7 +1316,7 @@
 
 <footer><div class="wrap">
   <div class="foot-cols">
-    <div><div class="foot-logo">ASPA</div><p class="foot-desc">아시아생활체육골프연맹 · 글로벌 투어 · ISO 국제인증 · 프리미엄 멤버십</p><p class="foot-pres">조정영 총재</p></div>
+    <div><div class="foot-logo"><img class="brand-logo" src="logo.svg" alt="" width="34" height="34" aria-hidden="true"><span>ASPA</span></div><p class="foot-desc">아시아생활체육골프연맹 · 글로벌 투어 · ISO 국제인증 · 프리미엄 멤버십</p><p class="foot-pres">조정영 총재</p></div>
     <div class="foot-links"><h5>바로가기</h5><a onclick="goBook()">투어 예약</a><a onclick="go('course')">골프장 부킹</a><a onclick="go('academy')">아카데미</a><a onclick="go('benefits')">회원 혜택</a></div>
     <div class="foot-links"><h5>연맹</h5><a onclick="go('about')">연맹 소개</a><a onclick="go('org')">조직도</a><a onclick="go('notice')">공지사항</a><a onclick="go('sponsor')">공식 후원</a><a onclick="go('cert')">ISO 인증</a></div>
     <div class="foot-links"><h5>연락처</h5><span>T. 02-462-2553</span><span>F. 070-7500-8370</span><span style="line-height:1.6">경기 성남시 분당구 황새울로335번길 8<br>4-21 (서현동, 덕산빌딩)</span></div>
