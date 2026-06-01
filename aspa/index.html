@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASPA — 아스파골프 · 아시아생활체육골프연맹</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#121212;--bg-soft:#181818;--cyan:#00e5ff;--cyan-2:#22d3ee;--cyan-glow:rgba(0,229,255,.5);
+    --glass:rgba(255,255,255,.045);--glass-2:rgba(255,255,255,.08);--glass-bd:rgba(255,255,255,.09);--glass-bd-hi:rgba(0,229,255,.45);
+    --txt:#f4f6f8;--txt-2:#e2e8f0;--txt-dim:#9aa0a8;--txt-faint:#5f6168;
+    --amber:#f0b340;--red:#ff6a5a;--blue:#5aa9ff;--emerald:#34d399;
+    --ease:cubic-bezier(.4,0,.2,1);--ease-lux:cubic-bezier(.16,1,.3,1);
+    --disp:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;--kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--txt);font-family:var(--kr);font-weight:300;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;word-break:keep-all;}
+  a{text-decoration:none;color:inherit;cursor:pointer;}
+  .bg-fx{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .glow{position:absolute;border-radius:50%;filter:blur(120px);}
+  .g1{width:560px;height:560px;background:radial-gradient(circle,var(--cyan-glow),transparent 70%);opacity:.4;top:-160px;right:-120px;}
+  .g2{width:480px;height:480px;background:radial-gradient(circle,rgba(0,229,255,.2),transparent 70%);opacity:.3;bottom:5%;left:-160px;}
+  .grid-lines{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(circle at 50% 20%,#000,transparent 80%);}
+  .shell{position:relative;z-index:2;}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 26px;}
+  .page{display:none;}.page.active{display:block;}
+  .mono{font-family:var(--mono);}
+  .label{font-family:var(--mono);font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan);font-weight:500;}
+
+  /* BUTTONS — 3D depth click feedback */
+  .btn{font-family:var(--mono);font-size:.8rem;font-weight:500;letter-spacing:.02em;padding:14px 24px;border-radius:13px;cursor:pointer;border:none;transition:all .2s var(--ease);display:inline-flex;align-items:center;justify-content:center;gap:9px;will-change:transform;}
+  .btn:active{transform:scale(.96);}
+  .btn-gold{background:var(--cyan);color:var(--bg);font-weight:700;}
+  .btn-gold:hover{box-shadow:0 0 28px var(--cyan-glow);transform:translateY(-2px);}
+  .btn-gold:active{transform:scale(.96);box-shadow:0 0 18px var(--cyan-glow);}
+  .btn-ghost{background:var(--glass);border:1px solid var(--glass-bd);color:var(--txt);backdrop-filter:blur(12px);}
+  .btn-ghost:hover{border-color:var(--glass-bd-hi);color:var(--cyan);}
+  .btn-dark{background:rgba(255,255,255,.08);color:var(--txt);border:1px solid var(--glass-bd);}
+  .btn-dark:hover{background:rgba(0,229,255,.12);color:var(--cyan);border-color:var(--glass-bd-hi);}
+  .btn-blue{background:rgba(90,169,255,.12);color:var(--blue);border:1px solid rgba(90,169,255,.3);}
+  .btn-blue:hover{background:rgba(90,169,255,.25);}
+  .btn-danger{background:rgba(255,106,90,.12);color:var(--red);border:1px solid rgba(255,106,90,.3);}
+  .btn-danger:hover{background:rgba(255,106,90,.25);}
+  .btn-sm{padding:7px 13px;font-size:.7rem;border-radius:9px;}
+  .btn:disabled{opacity:.4;cursor:default;transform:none!important;}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:50;}
+  nav .inner{max-width:1240px;margin:16px auto;padding:0 14px 0 22px;height:60px;display:flex;align-items:center;justify-content:space-between;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--glass-bd);border-radius:18px;transition:.4s;}
+  nav.scrolled .inner{background:rgba(18,18,18,.72);box-shadow:0 12px 44px -18px rgba(0,0,0,.7);}
+  .brand{display:flex;align-items:center;gap:11px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px var(--cyan-glow);}
+  .brand b{font-family:var(--disp);font-weight:800;font-size:1.3rem;letter-spacing:.04em;line-height:1;}
+  .brand small{font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;color:var(--txt-dim);}
+  .nav-menu{display:flex;align-items:center;gap:26px;list-style:none;}
+  .nav-menu a{font-size:.84rem;color:var(--txt-dim);transition:.25s;}.nav-menu a:hover{color:var(--txt);}
+  .navuser{display:flex;align-items:center;gap:12px;font-size:.82rem;}
+  .navuser .who{color:var(--cyan-2);font-family:var(--mono);font-size:.74rem;}.navuser .who b{color:var(--txt);}
+  .navuser a{color:var(--txt-dim);font-size:.82rem;}.navuser a:hover{color:var(--cyan);}
+  .mode-badge{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;padding:3px 9px;border-radius:20px;}
+  .mode-local{background:rgba(240,179,64,.14);color:var(--amber);}.mode-cloud{background:rgba(0,229,255,.14);color:var(--cyan);}
+  .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;margin-left:4px;}
+  .hamburger span{display:block;width:22px;height:2px;background:var(--txt);border-radius:2px;transition:.3s;}
+  nav.menu-open .hamburger span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+  nav.menu-open .hamburger span:nth-child(2){opacity:0;}
+  nav.menu-open .hamburger span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+  .m-drawer{position:fixed;top:0;right:0;width:80%;max-width:320px;height:100%;background:rgba(18,18,18,.98);backdrop-filter:blur(20px);border-left:1px solid var(--glass-bd);z-index:120;padding:24px;transform:translateX(100%);transition:transform .35s var(--ease-lux);display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+  .m-drawer.open{transform:translateX(0);}
+  .m-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--glass-bd);}
+  .m-drawer-head .brand{display:flex;align-items:center;gap:8px;}.m-drawer-head .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);}
+  .m-drawer-head b{font-family:var(--disp);font-weight:800;font-size:1.2rem;letter-spacing:.04em;}
+  .m-close{background:none;border:none;color:var(--txt-dim);font-size:1.8rem;cursor:pointer;line-height:1;}
+  .m-drawer > a{padding:14px 10px;font-family:var(--kr);font-size:1rem;color:var(--txt-2);border-radius:10px;transition:.2s;}
+  .m-drawer > a:hover,.m-drawer > a:active{background:rgba(0,229,255,.08);color:var(--cyan);}
+  .m-drawer-user{margin-top:auto;padding-top:18px;border-top:1px solid var(--glass-bd);display:flex;flex-direction:column;gap:10px;}
+  .m-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:110;opacity:0;visibility:hidden;transition:.3s;}
+  .m-backdrop.open{opacity:1;visibility:visible;}
+  @media(max-width:880px){.nav-menu{display:none;}.brand small{display:none;}.hamburger{display:flex;}.navuser .who{display:none;}.navuser a{display:none;}}
+  @media(max-width:600px){
+    .wrap{padding:0 16px;}
+    .hero{padding:130px 0 50px;}
+    .dash{padding:104px 0 60px;}
+    .page-head{padding:104px 0 20px;}
+    .sec-head{flex-direction:column;align-items:flex-start;}
+    .dash-head{flex-direction:column;align-items:flex-start;}
+    section{padding:60px 0;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+    .panel{padding:18px 16px;}
+    .modal{max-height:88vh;}
+    nav .inner{margin:10px;padding:0 10px 0 16px;height:54px;}
+  }
+
+  /* HERO */
+  .hero{position:relative;padding:170px 0 70px;overflow:hidden;}
+  .hero .wrap{position:relative;z-index:2;}
+  .hero .spot{position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,.13),transparent 60%);left:var(--mx,72%);top:var(--my,24%);transform:translate(-50%,-50%);pointer-events:none;transition:left .3s,top .3s;z-index:1;}
+  /* 움직이는 오로라 배경 */
+  .hero-aurora{position:absolute;inset:-20% -10% auto -10%;height:140%;z-index:0;pointer-events:none;opacity:.55;
+    background:
+      radial-gradient(40% 50% at 20% 30%,rgba(0,229,255,.22),transparent 70%),
+      radial-gradient(45% 55% at 80% 25%,rgba(34,211,238,.16),transparent 70%),
+      radial-gradient(50% 45% at 60% 70%,rgba(0,180,220,.14),transparent 70%);
+    filter:blur(20px);animation:aurora 16s ease-in-out infinite;}
+  @keyframes aurora{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(-4%,3%) scale(1.08);}66%{transform:translate(3%,-2%) scale(1.04);}}
+  /* 궤도 링 */
+  .hero-orbit{position:absolute;top:50%;right:-120px;width:680px;height:680px;transform:translateY(-50%);z-index:0;pointer-events:none;opacity:.5;}
+  .hero-orbit span{position:absolute;inset:0;border:1px solid rgba(0,229,255,.12);border-radius:50%;animation:spin 28s linear infinite;}
+  .hero-orbit span:nth-child(2){inset:70px;border-color:rgba(0,229,255,.18);animation-duration:20s;animation-direction:reverse;}
+  .hero-orbit span:nth-child(3){inset:150px;border-color:rgba(0,229,255,.1);animation-duration:36s;}
+  .hero-orbit span::before{content:"";position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px var(--cyan-glow);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media(max-width:760px){.hero-orbit{display:none;}}
+  /* 떠다니는 입자 */
+  .hero-particles{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+  .hero-particles i{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);opacity:0;animation:float-up linear infinite;}
+  @keyframes float-up{0%{transform:translateY(0) translateX(0);opacity:0;}10%{opacity:.7;}90%{opacity:.4;}100%{transform:translateY(-90vh) translateX(30px);opacity:0;}}
+  /* 헤드라인 글로우 펄스 */
+  .gleam{animation:gleam 3.5s ease-in-out infinite;}
+  @keyframes gleam{0%,100%{text-shadow:0 0 40px var(--cyan-glow);}50%{text-shadow:0 0 64px var(--cyan),0 0 90px var(--cyan-glow);}}
+  /* 스크롤 인디케이터 */
+  .hero-scroll{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;font-family:var(--mono);font-size:.66rem;letter-spacing:.25em;color:var(--txt-dim);display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .hs-dot{width:22px;height:36px;border:1px solid var(--glass-bd-hi);border-radius:14px;position:relative;}
+  .hs-dot::before{content:"";position:absolute;top:6px;left:50%;transform:translateX(-50%);width:4px;height:7px;border-radius:3px;background:var(--cyan);box-shadow:0 0 8px var(--cyan-glow);animation:scroll-dot 1.8s ease-in-out infinite;}
+  @keyframes scroll-dot{0%{opacity:0;transform:translate(-50%,0);}40%{opacity:1;}80%{opacity:0;transform:translate(-50%,14px);}100%{opacity:0;}}
+  .hero .label{margin-bottom:28px;}
+  .hero h1{font-family:var(--disp);font-weight:800;font-size:clamp(2.6rem,7.6vw,6rem);line-height:.98;letter-spacing:-.03em;}
+  .hero h1 .kr{font-family:var(--kr);font-weight:700;}
+  .hero h1 .cy{color:var(--cyan);text-shadow:0 0 40px var(--cyan-glow);}
+  .hero h1 .out{-webkit-text-stroke:1.4px var(--txt);color:transparent;}
+  .hero .sub{margin-top:30px;max-width:530px;font-size:1.02rem;color:var(--txt-dim);line-height:1.75;}
+  .hero .hbtns{margin-top:40px;display:flex;gap:13px;flex-wrap:wrap;}
+
+  .marquee{border-top:1px solid var(--glass-bd);border-bottom:1px solid var(--glass-bd);padding:16px 0;overflow:hidden;white-space:nowrap;margin-top:24px;}
+  .marquee .track{display:inline-flex;gap:48px;animation:scroll 36s linear infinite;font-family:var(--disp);font-weight:700;font-size:1.05rem;color:var(--txt-dim);}
+  .marquee b{color:var(--cyan);}
+  .marquee .cy{color:var(--cyan);font-style:normal;text-shadow:0 0 18px var(--cyan-glow);}
+  .marquee .wh{color:var(--txt);font-style:normal;}
+  @keyframes scroll{to{transform:translateX(-50%);}}
+
+  section{padding:90px 0;}
+  .sec-head{margin-bottom:46px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:18px;}
+  .sec-head h2{font-family:var(--disp);font-weight:700;font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.02em;line-height:1.05;}
+  .sec-head h2 .cy{color:var(--cyan);}
+  .sec-head p{color:var(--txt-dim);max-width:330px;font-size:.9rem;}
+
+  /* BENTO */
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:190px;gap:16px;}
+  @media(max-width:980px){.bento{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.bento{grid-template-columns:1fr;grid-auto-rows:auto;}}
+  .cell{position:relative;border-radius:22px;padding:28px;overflow:hidden;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-bd);transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .45s var(--ease);display:flex;flex-direction:column;cursor:pointer;will-change:transform;}
+  .cell::before{content:"";position:absolute;inset:0;border-radius:22px;padding:1px;background:linear-gradient(135deg,rgba(255,255,255,.14),transparent 40%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;z-index:1;}
+  .cell::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .4s var(--ease);background:radial-gradient(360px circle at var(--mx,50%) var(--my,50%),rgba(0,229,255,.16),transparent 62%);pointer-events:none;z-index:1;}
+  .cell:hover::after{opacity:1;}
+  .cell>*{position:relative;z-index:2;}
+  .cell:hover{border-color:var(--glass-bd-hi);transform:translateY(-4px);box-shadow:0 30px 60px -34px rgba(0,229,255,.4);}
+  .cell:active{transform:scale(.985) translateY(-2px);transition:transform .2s var(--ease);}
+  .span2{grid-column:span 2;}.span2r{grid-row:span 2;}
+  @media(max-width:560px){.span2,.span2r{grid-column:span 1;grid-row:span 1;}}
+  .cell h3{font-family:var(--disp);font-weight:700;font-size:1.35rem;letter-spacing:-.01em;}
+  .cell .ck{font-family:var(--kr);font-weight:700;}
+  .cell p{color:var(--txt-dim);font-size:.84rem;margin-top:9px;}
+  .cell .corner{position:absolute;top:24px;right:26px;font-family:var(--mono);font-size:.64rem;letter-spacing:.18em;color:var(--txt-faint);z-index:2;}
+  .cell .arrow{margin-top:16px;font-family:var(--mono);font-size:.76rem;color:var(--cyan);display:inline-flex;align-items:center;gap:8px;transition:.3s;}
+  .cell:hover .arrow{gap:13px;}
+  .cell-feature{background:linear-gradient(150deg,rgba(0,229,255,.1),rgba(255,255,255,.03));justify-content:flex-end;}
+  .cell-feature .mesh{position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(0,229,255,.28),transparent 45%),radial-gradient(circle at 80% 75%,rgba(34,211,238,.16),transparent 50%);opacity:.7;z-index:0;}
+  .cell-feature .rel{position:relative;z-index:2;}
+  .cell-feature h3{font-size:1.9rem;}
+  .cell-feature .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;}
+  .cell-feature .tags span{font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;padding:6px 11px;border-radius:20px;background:rgba(0,0,0,.3);border:1px solid var(--glass-bd);color:var(--txt-2);}
+  .cell-stat{justify-content:center;cursor:default;}
+  .cell-stat:active{transform:none;}
+  .cell-stat .num{font-family:var(--disp);font-weight:800;font-size:clamp(2.4rem,4.6vw,3.4rem);line-height:1;color:var(--cyan);text-shadow:0 0 34px var(--cyan-glow);letter-spacing:-.02em;}
+  .cell-stat .num small{font-size:1.2rem;color:var(--txt);text-shadow:none;}
+  .cell-stat .cap{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;color:var(--txt-dim);text-transform:uppercase;margin-top:12px;}
+  .tiers{display:flex;flex-direction:column;gap:9px;margin-top:auto;}
+  .tier{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);font-size:.8rem;}
+  .tier.vip{background:rgba(0,229,255,.1);border-color:var(--glass-bd-hi);color:var(--cyan);}
+  .tier .mono{color:var(--txt-faint);font-size:.66rem;}.tier.vip .mono{color:var(--cyan-2);}
+  .cell-live .livebadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--red);}
+  .cell-live .pdot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red);animation:pulse 1.2s infinite;}
+  @keyframes pulse{50%{opacity:.3;}}
+  .cell-cta{background:linear-gradient(120deg,var(--cyan),var(--cyan-2));color:var(--bg);justify-content:center;}
+  .cell-cta::before,.cell-cta::after{display:none;}
+  .cell-cta h3{color:var(--bg);}.cell-cta p{color:rgba(0,0,0,.6);}
+  .cell-cta .gobtn{margin-top:16px;align-self:flex-start;font-family:var(--mono);font-size:.78rem;font-weight:700;background:var(--bg);color:var(--cyan);padding:12px 20px;border-radius:11px;transition:.3s;}
+  .cell-cta:hover .gobtn{transform:translateX(4px);}
+  .cell-iso .isolist{display:flex;gap:20px;margin-top:auto;flex-wrap:wrap;}
+  .cell-iso .isolist div{flex:1;min-width:110px;}
+  .cell-iso .isolist b{font-family:var(--disp);font-size:1rem;display:block;}
+  .cell-iso .isolist small{font-size:.72rem;color:var(--txt-dim);}
+
+  /* TOUR CARDS */
+  .tours-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;}
+  .tours-grid .tour-card{width:calc((100% - 36px)/3);flex:0 0 auto;}
+  @media(max-width:980px) and (min-width:561px){.tours-grid .tour-card{width:calc((100% - 18px)/2);}}
+  @media(max-width:560px){.tours-grid .tour-card{width:100%;}}
+  .tour-card{position:relative;border-radius:20px;overflow:hidden;background:var(--glass);backdrop-filter:blur(18px);border:1px solid var(--glass-bd);transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .45s var(--ease);display:flex;flex-direction:column;will-change:transform;}
+  .tour-card::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .4s var(--ease);background:radial-gradient(320px circle at var(--mx,50%) var(--my,50%),rgba(0,229,255,.14),transparent 60%);pointer-events:none;z-index:3;}
+  .tour-card:hover::after{opacity:1;}
+  .tour-card>*{position:relative;z-index:2;}
+  .tour-card:hover{border-color:var(--glass-bd-hi);transform:translateY(-5px);box-shadow:0 26px 54px -32px rgba(0,229,255,.36);}
+  .tour-card:active{transform:scale(.99) translateY(-2px);transition:transform .2s var(--ease);}
+  .tour-img{height:130px;position:relative;display:flex;align-items:flex-end;padding:15px;}
+  .ti0{background:linear-gradient(150deg,#1a2e3a,#0d4d5a);}.ti1{background:linear-gradient(150deg,#13322a,#0a5547);}.ti2{background:linear-gradient(150deg,#1a2440,#243a6b);}.ti3{background:linear-gradient(150deg,#2e2620,#5a4a2a);}
+  .tour-img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5));}
+  .tour-img .flag{position:relative;z-index:2;font-family:var(--mono);letter-spacing:.1em;font-size:.7rem;color:#cfeef4;text-transform:uppercase;}
+  .badge{position:absolute;top:13px;right:13px;z-index:4;font-family:var(--mono);font-size:.62rem;font-weight:700;padding:5px 10px;border-radius:20px;letter-spacing:.04em;}
+  .b-open{background:var(--cyan);color:var(--bg);}.b-pre{background:rgba(255,255,255,.16);color:var(--txt);border:1px solid var(--glass-bd);}.b-full{background:rgba(255,255,255,.1);color:var(--txt-dim);}
+  .tour-body{padding:20px;display:flex;flex-direction:column;flex:1;}
+  .tour-body h3{font-family:var(--kr);font-weight:700;font-size:1.08rem;color:var(--txt);}
+  .tour-body .tdesc{font-size:.78rem;color:var(--txt-dim);margin-top:6px;line-height:1.6;min-height:34px;}
+  .tour-meta{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0 14px;font-size:.76rem;color:var(--txt-dim);align-items:center;font-family:var(--mono);}
+  .tour-meta b{color:var(--txt-2);}
+  .price{font-family:var(--disp);font-size:1.1rem;color:var(--cyan);font-weight:700;}
+  .cap-bar{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:auto;}
+  .cap-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--cyan-2),var(--cyan));width:0;transition:width 1.2s var(--ease-lux);box-shadow:0 0 12px var(--cyan-glow);}
+  .cap-txt{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;color:var(--txt-dim);margin-top:6px;}
+  .cap-txt b{color:var(--txt-2);}
+  .tour-body .btn{margin-top:15px;width:100%;}
+
+  /* SKELETON */
+  .skel{position:relative;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid var(--glass-bd);border-radius:20px;}
+  .skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(0,229,255,.1),transparent);animation:shimmer 1.5s infinite;}
+  @keyframes shimmer{100%{transform:translateX(100%);}}
+
+  /* AUTH */
+  .auth-wrap{min-height:88vh;display:flex;align-items:center;justify-content:center;padding:130px 20px 60px;}
+  .auth-card{background:var(--glass);backdrop-filter:blur(22px);border:1px solid var(--glass-bd);border-radius:24px;max-width:430px;width:100%;overflow:hidden;position:relative;}
+  .auth-card::before{content:"";position:absolute;inset:0;border-radius:24px;padding:1px;background:linear-gradient(135deg,rgba(0,229,255,.4),transparent 45%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}
+  .auth-head{padding:34px 34px 0;}
+  .auth-head h2{font-family:var(--disp);font-weight:700;font-size:1.7rem;margin-top:10px;}
+  .auth-body{padding:26px 34px 36px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-dim);margin-bottom:7px;}
+  .field input,.field select{width:100%;padding:13px 15px;border:1px solid var(--glass-bd);border-radius:11px;font-family:var(--kr);font-size:.92rem;background:rgba(255,255,255,.04);color:var(--txt);transition:.25s;}
+  .field input::placeholder{color:var(--txt-faint);}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--cyan);background:rgba(0,229,255,.05);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
+  .field select option{background:var(--bg-soft);}
+  .auth-body .btn{width:100%;padding:15px;margin-top:6px;}
+  .auth-foot{text-align:center;margin-top:18px;font-size:.84rem;color:var(--txt-dim);}
+  .req{color:var(--cyan);font-size:.85em;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .pw-msg{display:block;font-family:var(--mono);font-size:.72rem;margin-top:6px;}
+  .pw-msg.ok{color:var(--emerald);}.pw-msg.no{color:var(--red);}
+  .agree-box{background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:12px;padding:14px 16px;margin:4px 0 16px;display:flex;flex-direction:column;gap:11px;}
+  .agree-all{display:flex;align-items:center;gap:9px;font-size:.9rem;color:var(--txt);padding-bottom:11px;border-bottom:1px solid var(--glass-bd);cursor:pointer;}
+  .agree-all b{font-weight:700;}
+  .agree{display:flex;align-items:center;gap:9px;font-size:.84rem;color:var(--txt-dim);cursor:pointer;}
+  .agree span{flex:1;}
+  .agree-box input[type=checkbox]{accent-color:var(--cyan);width:16px;height:16px;flex-shrink:0;}
+  .agree-view{font-size:.74rem;color:var(--cyan);text-decoration:underline;flex-shrink:0;}
+  .auth-foot a{color:var(--cyan);font-weight:500;}
+  .hint{background:rgba(0,229,255,.05);border:1px dashed var(--glass-bd-hi);border-radius:11px;padding:11px 14px;font-family:var(--mono);font-size:.7rem;color:var(--txt-dim);margin-top:16px;text-align:center;line-height:1.8;}
+  .hint b{color:var(--cyan);}
+
+  /* DASH */
+  .dash{padding:130px 0 90px;min-height:90vh;}
+  .dash-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:30px;}
+  .dash-head h1{font-family:var(--disp);font-weight:700;font-size:2rem;letter-spacing:-.01em;}
+  .dash-head .kh{font-family:var(--kr);}
+  .dash-head p{color:var(--txt-dim);font-size:.88rem;margin-top:6px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  @media(max-width:760px){.stat-grid{grid-template-columns:1fr 1fr;}}
+  .stat{background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-bd);border-radius:18px;padding:22px;}
+  .stat-sub{display:block;font-family:var(--mono);font-size:.66rem;color:var(--txt-faint);margin-top:6px;}
+  .stat-alert{border-color:rgba(255,184,0,.4);background:rgba(255,184,0,.06);}
+  .stat-alert .stat-sub{color:var(--amber);}
+  .stat-ops{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.06);}
+  .stat-ops .val{color:var(--cyan);}
+  .settle-panel{margin-bottom:18px;}
+  .settle-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--glass-bd);font-size:.9rem;color:var(--txt-2);}
+  .settle-row b{font-family:var(--mono);color:var(--txt);}
+  .settle-row.total{border-bottom:none;border-top:1.5px solid var(--glass-bd-hi);margin-top:4px;padding-top:14px;font-size:1rem;color:var(--txt);}
+  .settle-row.total b{font-size:1.15rem;}
+  /* 임원 리더보드 */
+  .lb-list{display:flex;flex-direction:column;gap:8px;}
+  .lb-row{display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--glass);border:1px solid var(--glass-bd);border-radius:12px;}
+  .lb-row.lb-me{border-color:var(--cyan);background:rgba(0,229,255,.07);}
+  .lb-rank{font-family:var(--disp);font-weight:800;font-size:1.1rem;width:34px;text-align:center;color:var(--txt-2);flex-shrink:0;}
+  .lb-name{font-family:var(--kr);font-weight:600;font-size:.95rem;min-width:120px;flex-shrink:0;}
+  .lb-bar{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+  .lb-fill{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan-2));border-radius:4px;transition:width .6s var(--ease-lux);}
+  .lb-cnt{font-family:var(--mono);font-size:.9rem;color:var(--cyan);font-weight:600;width:50px;text-align:right;flex-shrink:0;}
+  @media(max-width:560px){.lb-name{min-width:80px;font-size:.85rem;}.lb-bar{display:none;}}
+  /* 수수료 안내 */
+  .payout-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+  .payout-card{background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:14px;padding:20px;}
+  .payout-card.promo{border-color:var(--cyan);background:rgba(0,229,255,.06);}
+  .po-badge{font-family:var(--mono);font-size:.72rem;color:var(--txt-dim);}
+  .payout-card.promo .po-badge{color:var(--cyan);}
+  .po-amt{font-family:var(--disp);font-weight:800;font-size:2rem;margin-top:10px;color:var(--txt);}
+  .po-amt small{font-size:.9rem;font-weight:600;margin-left:2px;}
+  .po-rate{font-family:var(--mono);font-size:.78rem;color:var(--cyan);margin-top:2px;}
+  .po-desc{font-size:.82rem;color:var(--txt-dim);margin-top:10px;line-height:1.5;}
+  .payout-flow{background:rgba(255,255,255,.02);border:1px solid var(--glass-bd);border-radius:14px;padding:18px;}
+  .pf-title{font-size:.9rem;color:var(--txt-2);margin-bottom:14px;}
+  .pf-title b{color:var(--cyan);}
+  .pf-bars{display:flex;flex-direction:column;gap:9px;}
+  .pf-bar{position:relative;height:30px;background:rgba(255,255,255,.05);border-radius:8px;overflow:hidden;display:flex;align-items:center;}
+  .pf-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan-2));opacity:.85;}
+  .pf-fill.alt{background:linear-gradient(90deg,#3b82f6,#60a5fa);}
+  .pf-fill.dim{background:rgba(255,255,255,.18);}
+  .pf-label{position:relative;z-index:1;padding-left:12px;font-size:.8rem;color:#fff;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.5);}
+  .pf-note{font-size:.78rem;color:var(--txt-faint);margin-top:14px;line-height:1.6;}
+  .pf-note b{color:var(--txt-dim);}
+  @media(max-width:560px){.payout-cards{grid-template-columns:1fr;}}
+  .modal-x{background:none;border:none;color:var(--txt-dim);font-size:1.6rem;cursor:pointer;line-height:1;}
+  .modal-x:hover{color:var(--txt);}
+  .md-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;}
+  .md-grid > div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-bd);}
+  .md-k{color:var(--txt-faint);font-size:.82rem;}
+  .md-v{color:var(--txt);font-size:.86rem;font-weight:500;text-align:right;}
+  @media(max-width:520px){.md-grid{grid-template-columns:1fr;}}
+  .stat .lbl{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-dim);}
+  .stat .val{font-family:var(--disp);font-size:1.9rem;font-weight:800;color:var(--cyan);text-shadow:0 0 24px var(--cyan-glow);line-height:1.1;margin-top:8px;}
+  .stat .val small{font-size:.8rem;color:var(--txt);text-shadow:none;font-family:var(--kr);}
+
+  .panel{background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-bd);border-radius:20px;padding:24px 26px;margin-bottom:18px;}
+  .panel h3{font-family:var(--disp);font-weight:700;font-size:1.1rem;margin-bottom:5px;display:flex;align-items:center;gap:9px;}
+  .panel .ph-desc{font-size:.82rem;color:var(--txt-dim);margin-bottom:16px;}
+  .card-row{display:flex;flex-wrap:wrap;gap:14px;}
+  .mini{flex:1;min-width:210px;background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:14px;padding:20px;}
+  .mini .t{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-dim);}
+  .mini .b{font-family:var(--disp);font-size:1.2rem;margin:6px 0 8px;}
+
+  /* CERT process stepper */
+  .stepper{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;}
+  .step{flex:1;min-width:120px;background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:13px;padding:16px;position:relative;}
+  .step .sn{font-family:var(--mono);font-size:.66rem;color:var(--cyan);letter-spacing:.1em;}
+  .step b{font-family:var(--kr);display:block;margin:6px 0 3px;font-size:.95rem;}
+  .step small{font-size:.72rem;color:var(--txt-dim);}
+
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th,td{text-align:left;padding:12px 13px;border-bottom:1px solid var(--glass-bd);}
+  th{font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--txt-dim);font-weight:500;background:rgba(255,255,255,.03);}
+  td{color:var(--txt-2);font-weight:300;vertical-align:middle;}
+  td b{color:var(--txt);font-weight:500;}
+  tr:hover td{background:rgba(0,229,255,.045);}
+  .table-scroll{overflow-x:auto;border-radius:14px;border:1px solid var(--glass-bd);}
+  .tag{font-family:var(--mono);font-size:.64rem;font-weight:500;padding:4px 9px;border-radius:20px;white-space:nowrap;letter-spacing:.03em;}
+  .t-active{background:rgba(0,229,255,.13);color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.22);}
+  .t-pending{background:rgba(240,179,64,.13);color:var(--amber);box-shadow:0 0 12px rgba(240,179,64,.18);}
+  .t-cancel{background:rgba(255,106,90,.13);color:var(--red);box-shadow:0 0 12px rgba(255,106,90,.18);}
+  .t-done{background:rgba(52,211,153,.13);color:var(--emerald);box-shadow:0 0 12px rgba(52,211,153,.2);}
+  .t-info{background:rgba(90,169,255,.13);color:var(--blue);box-shadow:0 0 12px rgba(90,169,255,.18);}
+  .t-vip{background:rgba(0,229,255,.16);color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.25);}
+  .t-reg{background:rgba(0,229,255,.1);color:var(--cyan-2);}.t-norm{background:rgba(255,255,255,.06);color:var(--txt-dim);}
+  .empty{text-align:center;color:var(--txt-dim);padding:34px;font-size:.86rem;}.empty a{color:var(--cyan);}
+
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--glass-bd);}
+  .tab{padding:11px 18px;font-family:var(--mono);font-size:.78rem;letter-spacing:.04em;color:var(--txt-dim);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.2s;}
+  .tab:hover{color:var(--txt);}.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+  .admintab{display:none;}.admintab.active{display:block;}
+  .filterbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .filterbar .srch{flex:1;min-width:200px;position:relative;}
+  .filterbar .srch input{width:100%;padding:11px 13px 11px 36px;border:1px solid var(--glass-bd);border-radius:11px;font-family:var(--kr);font-size:.84rem;background:rgba(255,255,255,.04);color:var(--txt);transition:.25s;}
+  .filterbar .srch input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
+  .filterbar .srch input::placeholder{color:var(--txt-faint);}
+  .filterbar .srch .si{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--txt-faint);font-size:.85rem;}
+  .filterbar .fsel{position:relative;}
+  .filterbar select{appearance:none;padding:11px 36px 11px 15px;border:1px solid var(--glass-bd);border-radius:11px;font-family:var(--mono);font-size:.76rem;letter-spacing:.04em;background:rgba(255,255,255,.04);color:var(--txt-2);cursor:pointer;transition:.25s;}
+  .filterbar select:focus{outline:none;border-color:var(--cyan);}
+  .filterbar select option{background:var(--bg-soft);}
+  .filterbar .fsel::after{content:"▾";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--cyan);pointer-events:none;font-size:.7rem;}
+  .form-inline{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;}
+  .form-inline .field{margin:0;}
+
+  /* MODAL */
+  .modal-bg{position:fixed;inset:0;background:rgba(8,8,10,.78);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal-bg.show{display:flex;animation:fade .25s;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .modal{background:rgba(24,24,26,.94);backdrop-filter:blur(24px);border:1px solid var(--glass-bd);border-radius:22px;max-width:430px;width:100%;overflow:hidden;animation:rise .35s var(--ease-lux);max-height:92vh;overflow-y:auto;position:relative;}
+  .modal::before{content:"";position:absolute;inset:0;border-radius:22px;padding:1px;background:linear-gradient(135deg,rgba(0,229,255,.4),transparent 45%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}
+  @keyframes rise{from{opacity:0;transform:translateY(30px) scale(.97);}to{opacity:1;transform:none;}}
+  .modal-head{padding:26px 28px 0;position:relative;}
+  .modal-head h3{font-family:var(--disp);font-weight:700;font-size:1.3rem;margin-top:8px;}
+  .modal-head .close{position:absolute;top:20px;right:22px;background:none;border:none;color:var(--txt-dim);font-size:1.5rem;cursor:pointer;}.modal-head .close:hover{color:var(--cyan);}
+  .modal-body{padding:22px 28px 28px;}.modal-body .btn{width:100%;margin-top:6px;}
+  .bm-details{background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:13px;padding:16px;margin-bottom:18px;}
+  .bm-details .r{display:flex;justify-content:space-between;font-size:.82rem;padding:4px 0;color:var(--txt-dim);}
+  .bm-details .r b{color:var(--txt-2);font-weight:500;text-align:right;max-width:62%;}
+  .bm-details .inc{font-size:.78rem;color:var(--txt-dim);margin-top:8px;padding-top:10px;border-top:1px solid var(--glass-bd);line-height:1.7;}
+  .pay-amt{text-align:center;font-family:var(--disp);font-size:2.3rem;font-weight:800;color:var(--cyan);text-shadow:0 0 30px var(--cyan-glow);margin:6px 0 4px;}
+  .pay-note{font-family:var(--mono);font-size:.68rem;color:var(--txt-faint);text-align:center;margin-top:12px;line-height:1.7;}
+  .acct{background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:13px;padding:16px 18px;margin-top:4px;}
+  .acct .ar{display:flex;justify-content:space-between;font-size:.84rem;padding:5px 0;}
+  .acct .ar span{color:var(--txt-dim);}.acct .ar b{color:var(--txt);font-family:var(--mono);}
+  .acct .ar b.cy{color:var(--cyan);}
+  .ptabs{display:flex;gap:6px;margin-bottom:16px;}
+  .ptab{flex:1;text-align:center;padding:10px;border-radius:10px;font-family:var(--mono);font-size:.74rem;color:var(--txt-dim);background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);cursor:pointer;transition:.2s;}
+  .ptab.active{color:var(--cyan);border-color:var(--glass-bd-hi);background:rgba(0,229,255,.07);}
+  .pview{display:none;}.pview.active{display:block;}
+  /* SUCCESS modal */
+  .ok-icon{width:70px;height:70px;border-radius:50%;margin:6px auto 16px;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--bg);background:var(--cyan);box-shadow:0 0 36px var(--cyan-glow);animation:okpop .5s var(--ease-lux);}
+  @keyframes okpop{0%{transform:scale(0);}60%{transform:scale(1.12);}100%{transform:scale(1);}}
+  .ok-title{font-family:var(--disp);font-weight:700;font-size:1.5rem;text-align:center;}
+  .ok-msg{text-align:center;color:var(--txt-dim);font-size:.9rem;margin:10px 0 6px;line-height:1.7;}
+
+  /* 이벤트 팝업 */
+  .promo-pop{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,8,10,.7);backdrop-filter:blur(5px);}
+  .promo-pop.show{display:flex;animation:fade .3s;}
+  .promo-card{position:relative;width:100%;max-width:420px;background:rgba(20,20,22,.96);border:1px solid var(--glass-bd-hi);border-radius:22px;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,229,255,.5);animation:rise .4s var(--ease-lux);}
+  .promo-x{position:absolute;top:12px;right:14px;z-index:3;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:1.2rem;cursor:pointer;line-height:1;}
+  .promo-body{display:block;cursor:pointer;}
+  .promo-body .pb-img{width:100%;aspect-ratio:1/1;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:flex-end;padding:26px;}
+  .promo-body .pb-tag{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;color:var(--cyan);text-transform:uppercase;}
+  .promo-body .pb-title{font-family:var(--disp);font-weight:800;font-size:1.7rem;color:#fff;margin-top:8px;line-height:1.15;text-shadow:0 2px 20px rgba(0,0,0,.6);}
+  .promo-body .pb-desc{color:rgba(255,255,255,.85);font-size:.9rem;margin-top:8px;line-height:1.6;text-shadow:0 1px 10px rgba(0,0,0,.6);}
+  .promo-body .pb-cta{display:inline-block;margin-top:16px;background:var(--cyan);color:#04181c;font-family:var(--kr);font-weight:700;font-size:.9rem;padding:11px 20px;border-radius:30px;box-shadow:0 8px 24px -8px var(--cyan-glow);}
+  .promo-foot{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;background:rgba(0,0,0,.3);border-top:1px solid var(--glass-bd);}
+  .promo-today{display:flex;align-items:center;gap:7px;font-size:.82rem;color:var(--txt-dim);cursor:pointer;}
+  .promo-today input{accent-color:var(--cyan);width:15px;height:15px;}
+  .promo-close-btn{background:none;border:none;color:var(--txt);font-size:.86rem;cursor:pointer;font-family:var(--kr);}
+  .promo-close-btn:hover{color:var(--cyan);}
+
+  /* 사이드 글로우 플로팅 배너 */
+  .side-banner{position:fixed;right:22px;bottom:22px;z-index:200;width:230px;background:linear-gradient(150deg,rgba(0,229,255,.14),rgba(20,20,22,.96));border:1px solid var(--glass-bd-hi);border-radius:18px;padding:20px 18px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px -20px rgba(0,229,255,.5);transition:transform .3s var(--ease);cursor:pointer;}
+  .side-banner.show{display:flex;animation:rise .5s var(--ease-lux);}
+  .side-banner:hover{transform:translateY(-4px);}
+  .side-banner .sb-glow{position:absolute;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,var(--cyan-glow),transparent 70%);top:-70px;right:-50px;opacity:.5;animation:pulse 3s ease-in-out infinite;pointer-events:none;}
+  .side-banner > *{position:relative;z-index:2;}
+  .side-x{position:absolute;top:8px;right:10px;z-index:3;background:none;border:none;color:var(--txt-dim);font-size:1.1rem;cursor:pointer;line-height:1;}
+  .side-x:hover{color:var(--txt);}
+  .sb-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;color:var(--cyan);border:1px solid var(--glass-bd-hi);padding:2px 7px;border-radius:20px;align-self:flex-start;}
+  .sb-title{font-family:var(--kr);font-weight:700;font-size:1.05rem;color:var(--txt);margin-top:12px;line-height:1.3;}
+  .sb-sub{font-size:.8rem;color:var(--txt-dim);margin-top:6px;line-height:1.5;}
+  .sb-cta{font-family:var(--mono);font-size:.78rem;color:var(--cyan);margin-top:14px;font-weight:500;}
+  @media(max-width:600px){.side-banner{right:12px;bottom:12px;width:200px;padding:16px 14px;}}
+
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:rgba(24,24,26,.95);backdrop-filter:blur(16px);color:var(--txt);padding:15px 24px;border-radius:14px;border:1px solid var(--glass-bd-hi);box-shadow:0 20px 50px -20px rgba(0,229,255,.4);z-index:320;font-size:.88rem;display:flex;gap:10px;align-items:center;transition:.45s var(--ease-lux);max-width:90vw;}
+  .toast.show{transform:translateX(-50%) translateY(0);}.toast .ic{color:var(--cyan);}
+
+  footer{border-top:1px solid var(--glass-bd);padding:36px 0;}
+  footer .inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;font-family:var(--mono);font-size:.72rem;color:var(--txt-faint);}
+  footer b{font-family:var(--disp);color:var(--txt);letter-spacing:.06em;}
+  .reveal{opacity:0;transform:translateY(30px);transition:.8s var(--ease-lux);}.reveal.in{opacity:1;transform:none;}
+
+  /* ABOUT */
+  .about-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:48px;align-items:start;}
+  @media(max-width:840px){.about-grid{grid-template-columns:1fr;gap:24px;}}
+  .about-h{font-family:var(--disp);font-weight:700;font-size:clamp(1.6rem,3.4vw,2.6rem);line-height:1.15;letter-spacing:-.02em;margin-top:14px;}
+  .about-h .cy{color:var(--cyan);text-shadow:0 0 30px var(--cyan-glow);}
+  .about-body p{color:var(--txt-dim);font-size:.98rem;line-height:1.85;margin-bottom:16px;}
+  .about-body p:last-child{margin-bottom:0;}
+
+  /* PERKS */
+  .perks{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  @media(max-width:980px){.perks{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.perks{grid-template-columns:1fr;}}
+  .perk{position:relative;background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-bd);border-radius:18px;padding:26px 22px;overflow:hidden;transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .45s var(--ease);cursor:pointer;}
+  .perk-more{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:.74rem;color:var(--cyan);opacity:.7;transition:.3s;}
+  .perk:hover .perk-more{opacity:1;letter-spacing:.03em;}
+  .bd-list{list-style:none;padding:0;display:flex;flex-direction:column;gap:9px;}
+  .bd-list li{position:relative;padding-left:22px;font-size:.88rem;color:var(--txt-2);line-height:1.5;}
+  .bd-list li::before{content:"✓";position:absolute;left:0;color:var(--cyan);font-weight:700;}
+  .perk::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .4s var(--ease);background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(0,229,255,.13),transparent 60%);pointer-events:none;}
+  .perk:hover::after{opacity:1;}
+  .perk:hover{transform:translateY(-4px);border-color:var(--glass-bd-hi);box-shadow:0 26px 54px -34px rgba(0,229,255,.36);}
+  .perk>*{position:relative;z-index:2;}
+  .perk .pi{font-size:1.6rem;}
+  .perk h4{font-family:var(--kr);font-weight:700;font-size:1.02rem;margin:12px 0 8px;color:var(--txt);}
+  .perk p{font-size:.82rem;color:var(--txt-dim);line-height:1.65;}
+
+  /* COMPARISON */
+  table.comp th{text-align:center;}
+  table.comp td{text-align:center;color:var(--txt-2);}
+  table.comp td:first-child{text-align:left;color:var(--txt);font-weight:500;}
+  table.comp .o{color:var(--cyan);font-weight:700;}
+  table.comp .v{color:var(--cyan);font-weight:700;text-shadow:0 0 12px var(--cyan-glow);}
+  table.comp .x{color:var(--txt-faint);}
+
+  /* LOUNGE */
+  .lounge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:880px){.lounge-grid{grid-template-columns:1fr;}}
+  .loffer{background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-bd);border-radius:18px;padding:24px;position:relative;overflow:hidden;}
+  .loffer .lt{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;color:var(--cyan);text-transform:uppercase;}
+  .loffer h4{font-family:var(--kr);font-weight:700;font-size:1.1rem;margin:10px 0 6px;}
+  .loffer p{font-size:.84rem;color:var(--txt-dim);}
+  .loffer .lp{font-family:var(--disp);font-weight:700;color:var(--cyan);font-size:1.2rem;margin-top:12px;}
+  .loffer .lp s{color:var(--txt-faint);font-size:.85rem;font-weight:400;margin-right:8px;}
+  .locked{position:relative;border-radius:20px;overflow:hidden;}
+  .locked .blurred{filter:blur(11px);opacity:.25;pointer-events:none;user-select:none;}
+  .lock-over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(12,12,12,.82);backdrop-filter:blur(5px);text-align:center;padding:20px;border-radius:20px;}
+  .lock-over .lk{font-size:2rem;}
+  .lock-over h4{font-family:var(--disp);font-weight:700;font-size:1.3rem;}
+  .lock-over p{color:var(--txt-dim);font-size:.86rem;max-width:340px;}
+
+  /* CONTACT */
+  .contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:760px){.contact-grid{grid-template-columns:1fr;}}
+  .contact-card{position:relative;background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-bd);border-radius:18px;padding:28px 24px;overflow:hidden;transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .45s var(--ease);display:block;}
+  .contact-card::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .4s var(--ease);background:radial-gradient(300px circle at 50% 0%,rgba(0,229,255,.14),transparent 60%);pointer-events:none;}
+  .contact-card:hover::after{opacity:1;}
+  .contact-card:hover{transform:translateY(-4px);border-color:var(--glass-bd-hi);box-shadow:0 26px 54px -34px rgba(0,229,255,.4);}
+  .contact-card>*{position:relative;z-index:2;}
+  .contact-card .ci{font-size:1.8rem;}
+  .contact-card h4{font-family:var(--kr);font-weight:700;font-size:1.1rem;margin:12px 0 8px;color:var(--txt);}
+  .contact-card p{font-size:.85rem;color:var(--txt-dim);line-height:1.6;min-height:42px;}
+  .contact-mail{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:.78rem;color:var(--cyan);}
+  .contact-go{display:inline-block;margin-top:16px;font-family:var(--mono);font-size:.8rem;color:var(--cyan);font-weight:500;transition:.3s;}
+  .contact-card:hover .contact-go{letter-spacing:.04em;}
+  .contact-note{text-align:center;color:var(--txt-dim);font-size:.84rem;margin-top:26px;}
+  .contact-note b{color:var(--cyan-2);font-family:var(--mono);}
+
+  /* FAQ */
+  .faq-list{display:flex;flex-direction:column;gap:10px;max-width:820px;}
+  .faq{background:var(--glass);border:1px solid var(--glass-bd);border-radius:14px;overflow:hidden;transition:.3s;}
+  .faq[open]{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.04);}
+  .faq summary{list-style:none;cursor:pointer;padding:18px 22px;font-family:var(--kr);font-weight:500;font-size:.98rem;color:var(--txt);display:flex;justify-content:space-between;align-items:center;}
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary::after{content:"+";font-family:var(--mono);color:var(--cyan);font-size:1.3rem;transition:.3s;}
+  .faq[open] summary::after{transform:rotate(45deg);}
+  .faq .fa{padding:0 22px 20px;color:var(--txt-dim);font-size:.88rem;line-height:1.8;}
+
+  /* ACADEMY */
+  .acad-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:760px){.acad-grid{grid-template-columns:1fr;}}
+  .acad-card{position:relative;background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-bd);border-radius:18px;padding:26px 26px 24px;overflow:hidden;transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .45s var(--ease);}
+  .acad-card::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .4s var(--ease);background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),rgba(0,229,255,.12),transparent 60%);pointer-events:none;}
+  .acad-card:hover::after{opacity:1;}
+  .acad-card:hover{transform:translateY(-4px);border-color:var(--glass-bd-hi);box-shadow:0 26px 54px -34px rgba(0,229,255,.36);}
+  .acad-card>*{position:relative;z-index:2;}
+  .acad-card.span-full{grid-column:1/-1;}
+  .ac-no{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan-2));color:var(--bg);font-family:var(--disp);font-weight:800;font-size:1.2rem;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px -4px var(--cyan-glow);margin-bottom:14px;}
+  .acad-card h3{font-family:var(--kr);font-weight:700;font-size:1.3rem;color:var(--txt);}
+  .ac-sub{font-family:var(--mono);font-size:.74rem;color:var(--txt-dim);margin-top:6px;letter-spacing:.02em;}
+  .ac-price{margin:14px 0 12px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .ac-price s{font-family:var(--kr);font-size:.92rem;color:var(--txt-faint);}
+  .ac-price b{font-family:var(--disp);font-weight:800;font-size:1.8rem;color:var(--cyan);text-shadow:0 0 24px var(--cyan-glow);letter-spacing:-.01em;}
+  .acad-card p{font-size:.88rem;color:var(--txt-2);line-height:1.7;}
+  .ac-cap{display:inline-block;margin-top:8px;font-family:var(--mono);font-size:.7rem;color:var(--cyan-2);background:rgba(0,229,255,.08);padding:3px 10px;border-radius:20px;}
+  .acad-note{text-align:center;font-family:var(--mono);font-size:.74rem;color:var(--txt-faint);margin-top:24px;}
+
+  /* COURSE LIST */
+  .course-list{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(9,auto);grid-auto-flow:column;gap:10px;}
+  @media(max-width:760px){.course-list{grid-template-columns:1fr 1fr;grid-template-rows:none;grid-auto-flow:row;}}
+  @media(max-width:480px){.course-list{grid-template-columns:1fr;}}
+  .cl-item{display:flex;align-items:center;gap:10px;padding:13px 16px;background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:11px;font-size:.86rem;color:var(--txt-2);transition:.25s;cursor:pointer;}
+  .cl-item:hover{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);color:var(--txt);}
+  .cl-item .ci-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan-glow);flex-shrink:0;}
+  .cl-item .ci-name{font-weight:500;}
+  .cl-item .ci-region{font-size:.72rem;color:var(--txt-faint);}
+  .cl-item .ci-tag{margin-left:auto;font-family:var(--mono);font-size:.6rem;color:var(--cyan);flex-shrink:0;}
+  .cl-item .ci-desc{flex:1;min-width:0;font-size:.72rem;color:var(--txt-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none;}
+  @media(min-width:900px){.cl-item .ci-desc{display:block;}}
+  .cl-item .ci-link{margin-left:4px;padding:4px 8px;border-radius:6px;background:rgba(90,169,255,.1);color:var(--blue);font-size:.68rem;flex-shrink:0;transition:.2s;}
+  .cl-item .ci-link:hover{background:rgba(90,169,255,.22);color:#fff;}
+  .course-detail-desc{color:var(--txt-2);font-size:.92rem;line-height:1.75;margin-bottom:16px;padding:14px 16px;background:rgba(255,255,255,.03);border-radius:12px;border-left:3px solid var(--cyan);}
+
+  /* BENEFIT TYPES */
+  .benefit-types{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:760px){.benefit-types{grid-template-columns:1fr;}}
+  .bt{background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:14px;padding:20px;}
+  .bt-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .bt-h b{font-family:var(--disp);font-weight:700;font-size:1rem;color:var(--txt);}
+  .bt-tag{font-family:var(--mono);font-size:.64rem;padding:4px 10px;border-radius:20px;font-weight:500;}
+  .bt-tag.common{background:rgba(255,255,255,.08);color:var(--txt-2);}
+  .bt-tag.pro{background:rgba(0,229,255,.14);color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.22);}
+  .bt-tag.ama{background:rgba(52,211,153,.14);color:var(--emerald);}
+  .bt ul{list-style:none;}
+  .bt li{font-size:.85rem;color:var(--txt-2);padding:6px 0 6px 18px;position:relative;line-height:1.5;}
+  .bt li::before{content:"✓";position:absolute;left:0;color:var(--cyan);font-size:.78rem;}
+
+  /* BENEFIT GATE */
+  .benefit-preview{margin-bottom:24px;}
+  .bf-preview-row{display:flex;flex-wrap:wrap;gap:10px;}
+  .bf-chip{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);background:var(--glass);border:1px solid var(--glass-bd);border-radius:30px;padding:10px 16px;}
+  .benefit-gate{position:relative;border-radius:20px;}
+  .benefit-gate.gate-locked{overflow:hidden;}
+  .benefit-gate.gate-locked > .perks,.benefit-gate.gate-locked > .panel{filter:blur(9px);opacity:.32;pointer-events:none;user-select:none;}
+  .benefit-gate.gate-dim > .perks,.benefit-gate.gate-dim > .panel{filter:blur(3px);opacity:.5;pointer-events:none;user-select:none;}
+  .gate-over{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:90px 24px;text-align:center;background:linear-gradient(180deg,rgba(12,12,12,.55),rgba(12,12,12,.88));backdrop-filter:blur(2px);border-radius:20px;}
+  .gate-over.soft{background:linear-gradient(180deg,rgba(12,12,12,.35),rgba(12,12,12,.72));}
+  .gate-over .lk{font-size:2.2rem;}
+  .gate-over h4{font-family:var(--disp);font-weight:700;font-size:1.5rem;margin:14px 0 8px;}
+  .gate-over p{color:var(--txt-dim);font-size:.92rem;line-height:1.7;max-width:420px;margin-bottom:20px;}
+  @media(max-width:560px){.gate-over{padding:60px 18px;}}
+
+  /* SOCIAL LOGIN */
+  .divider-or{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--txt-faint);font-family:var(--mono);font-size:.7rem;}
+  .divider-or::before,.divider-or::after{content:"";flex:1;height:1px;background:var(--glass-bd);}
+  .social{display:flex;flex-direction:column;gap:9px;}
+  .sbtn{display:flex;align-items:center;justify-content:center;gap:9px;padding:13px;border-radius:11px;font-family:var(--kr);font-weight:500;font-size:.88rem;cursor:pointer;border:1px solid transparent;transition:.2s;}
+  .sbtn:active{transform:scale(.97);}.sbtn:hover{filter:brightness(1.06);}
+  .sb-kakao{background:#FEE500;color:#191600;}.sb-google{background:#fff;color:#1f1f1f;}.sb-fb{background:#1877F2;color:#fff;}.sb-apple{background:#000;color:#fff;border-color:#333;}
+  .btn-kakao-join{background:#FEE500;color:#191600;font-weight:700;}.btn-kakao-join:hover{filter:brightness(1.05);transform:translateY(-2px);}
+  .kakao-join-box{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:14px;padding:16px 18px;background:rgba(254,229,0,.06);border:1px solid rgba(254,229,0,.25);border-radius:14px;}
+  .kakao-join-box b{font-family:var(--kr);font-size:.98rem;color:var(--txt);}
+  .kakao-join-box p{font-size:.82rem;color:var(--txt-dim);margin-top:4px;line-height:1.5;}
+  .kakao-join-box .btn-kakao-join{flex-shrink:0;}
+
+  /* MEMBERSHIP CARD */
+  .card-modal{max-width:340px;}
+  .mcard{background:linear-gradient(160deg,#0c2a30,#0a1a1f);border:1px solid var(--glass-bd-hi);border-radius:20px;margin:18px;padding:26px 24px;text-align:center;position:relative;overflow:hidden;}
+  .mcard::before{content:"";position:absolute;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,.25),transparent 70%);top:-120px;right:-90px;}
+  .mcard-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;}
+  .mc-brand{font-family:var(--disp);font-weight:800;font-size:1.3rem;color:#fff;letter-spacing:.06em;}
+  .mc-type{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;color:var(--cyan);border:1px solid var(--glass-bd-hi);padding:4px 9px;border-radius:20px;}
+  .mc-qr{background:#fff;border-radius:14px;width:172px;height:172px;margin:20px auto;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;padding:11px;}
+  .mc-qr img,.mc-qr canvas{width:150px!important;height:150px!important;}
+  .mc-name{font-family:var(--kr);font-weight:700;font-size:1.3rem;color:#fff;position:relative;z-index:2;}
+  .mc-valid{font-family:var(--mono);font-size:.7rem;color:var(--cyan-2);margin-top:6px;position:relative;z-index:2;}
+  .mc-guide{font-size:.74rem;color:var(--txt-dim);margin-top:14px;position:relative;z-index:2;line-height:1.6;}
+
+  /* CONTENT PAGES */
+  .page-head{padding:130px 0 26px;}
+  .page-head .label{margin-bottom:10px;display:inline-block;}
+  .page-head h1{font-family:var(--disp);font-weight:700;font-size:2.2rem;letter-spacing:-.01em;}
+  .page-head h1 .cy{color:var(--cyan);}
+  .page-head p{color:var(--txt-dim);margin-top:10px;max-width:560px;}
+  .content-sec{padding:0 0 90px;}
+  /* NOTICE */
+  .notice-list{display:flex;flex-direction:column;gap:12px;}
+  .notice{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:22px 24px;transition:.3s;}
+  .notice:hover{border-color:var(--glass-bd-hi);}
+  .notice .nh{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  .notice .nt{font-family:var(--kr);font-weight:700;font-size:1.05rem;color:var(--txt);}
+  .notice .nd{font-family:var(--mono);font-size:.72rem;color:var(--txt-faint);}
+  .notice .nbody{margin-top:14px;border-top:1px solid var(--glass-bd);padding-top:16px;}
+  .event-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 18px;}
+  @media(max-width:640px){.event-grid{grid-template-columns:1fr;}}
+  .event-grid .er{display:flex;gap:10px;font-size:.86rem;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+  .event-grid .er .k{color:var(--cyan-2);min-width:72px;font-family:var(--mono);font-size:.7rem;padding-top:3px;letter-spacing:.04em;}
+  .event-grid .er .vv{color:var(--txt-2);}.event-grid .er .vv b{color:var(--cyan);}
+  /* ABOUT PAGE */
+  .about-slogan{text-align:center;padding:30px 0 50px;}
+  .about-slogan h2{font-family:var(--disp);font-weight:800;font-size:clamp(2rem,5vw,3.4rem);line-height:1.1;letter-spacing:-.02em;margin:16px 0;}
+  .about-slogan h2 .cy{color:var(--cyan);text-shadow:0 0 40px var(--cyan-glow);}
+  .about-slogan p{max-width:640px;margin:0 auto;color:var(--txt-dim);font-size:1rem;line-height:1.8;}
+  .about-h2{font-family:var(--disp);font-weight:700;font-size:1.6rem;margin:10px 0 24px;letter-spacing:-.01em;}
+  .about-h2 .cy{color:var(--cyan);}
+  .greeting{margin-bottom:46px;}
+  .greeting p{color:var(--txt-2);font-size:.95rem;line-height:1.9;margin-bottom:14px;}
+  .greeting .sign{text-align:right;font-family:var(--disp);font-weight:700;color:var(--cyan);font-size:1.05rem;margin-top:6px;}
+  .country-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+  @media(max-width:880px){.country-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:480px){.country-grid{grid-template-columns:repeat(2,1fr);}}
+  .cty{background:var(--glass);border:1px solid var(--glass-bd);border-radius:12px;padding:16px 12px;text-align:center;transition:.25s;}
+  .cty:hover{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);transform:translateY(-3px);}
+  .cty .flag{font-size:1.5rem;}
+  .cty .kr{font-family:var(--kr);font-weight:500;font-size:.86rem;color:var(--txt);margin-top:6px;}
+  .cty .en{font-family:var(--mono);font-size:.6rem;color:var(--txt-faint);letter-spacing:.04em;margin-top:2px;}
+
+  /* ORG */
+  .org-top{display:flex;justify-content:center;margin-bottom:16px;}
+  .org-pres{position:relative;}
+  .org-pres .escort{position:absolute;right:0;top:50%;transform:translateY(-50%);min-width:0;padding:11px 16px;opacity:.85;}
+  .org-pres .escort .role{font-size:.78rem;}
+  .org-pres .escort .mem{font-size:.76rem;}
+  @media(max-width:680px){.org-pres{flex-direction:column;}.org-pres .escort{position:static;transform:none;margin-top:12px;}}
+  .org-node{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:20px 22px;text-align:center;min-width:170px;backdrop-filter:blur(12px);}
+  .org-node.head,.org-node.planner{padding:24px 16px;min-width:0;width:calc((100% - 48px)/5);}
+  @media(max-width:880px){.org-node.head,.org-node.planner{width:calc((100% - 12px)/2);}}
+  @media(max-width:520px){.org-node.head,.org-node.planner{width:100%;}}
+  .org-node.head{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);box-shadow:0 0 34px -8px var(--cyan-glow);}
+  .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);}
+  .org-node.head .role,.org-node.planner .role{font-size:1rem;letter-spacing:.01em;text-transform:none;color:var(--cyan);}
+  .org-node.head .nm,.org-node.planner .nm{font-size:.92rem;font-weight:600;color:var(--txt-2);margin-top:6px;}
+  .org-node.sm{padding:16px 16px;min-width:0;}
+  /* 2단계: 최고 임원진 — 살짝 강조 */
+  .org-node.lv2{padding:18px 16px;min-width:0;border-color:rgba(0,229,255,.22);background:rgba(0,229,255,.035);}
+  .org-node.lv2 .role{font-size:.98rem;}
+  /* 3단계: 위원장 보조라인 */
+  .org-node.lv3{padding:17px 16px;min-width:0;border-color:rgba(255,255,255,.13);}
+  .org-node.lv3 .role{font-size:.95rem;}
+  /* 4단계: 실무/위원회 — 가장 차분, 작게 */
+  .org-node.lv4{padding:15px 16px;min-width:0;background:rgba(255,255,255,.025);border-color:var(--glass-bd);}
+  .org-node.lv4 .role{font-size:.86rem;color:var(--cyan-2);font-weight:600;}
+  .org-node.lv4 .mem{font-size:.8rem;color:var(--txt-dim);}
+  .org-node .role{font-family:var(--kr);font-weight:700;font-size:1rem;letter-spacing:.01em;color:var(--cyan);}
+  .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;}
+  .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;}
+  .org-row{display:grid;gap:12px;margin-bottom:12px;align-items:stretch;}
+  .org-row .org-node{display:flex;flex-direction:column;justify-content:flex-start;}
+  .org-row.lv2-row{max-width:920px;margin-left:auto;margin-right:auto;}
+  .org-row.lv3-row{max-width:680px;margin-left:auto;margin-right:auto;}
+  .org-row5{grid-template-columns:repeat(5,1fr);}
+  .org-row6{grid-template-columns:repeat(6,1fr);}
+  .org-row4{grid-template-columns:repeat(4,1fr);}
+  .org-row3{grid-template-columns:repeat(3,1fr);}
+  .org-row2{grid-template-columns:repeat(2,1fr);}
+  .org-divider{display:flex;align-items:center;gap:14px;margin:26px 0 16px;color:var(--txt-faint);}
+  .org-divider::before,.org-divider::after{content:"";flex:1;height:1px;background:var(--glass-bd);}
+  .org-divider span{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-dim);}
+  @media(max-width:880px){.org-row6{grid-template-columns:repeat(3,1fr);}.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr 1fr;}}
+  @media(max-width:520px){.org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr;}}
+  /* SPONSOR */
+  .sp-grid{display:flex;flex-wrap:wrap;gap:14px;}
+  .sp-card{flex:1;min-width:150px;background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:26px;text-align:center;}
+  .sp-card .spn{font-family:var(--disp);font-weight:700;font-size:1.2rem;color:var(--cyan);}
+  .sp-card small{display:block;color:var(--txt-dim);font-size:.78rem;margin-top:6px;}
+  /* FOOTER */
+  footer .foot-cols{display:grid;grid-template-columns:1.7fr 1fr 1fr 1.2fr;gap:30px;}
+  @media(max-width:760px){footer .foot-cols{grid-template-columns:1fr 1fr;gap:24px;}}
+  .foot-logo{font-family:var(--disp);font-weight:800;font-size:1.5rem;color:#fff;letter-spacing:.06em;}
+  .foot-desc{color:var(--txt-dim);font-size:.84rem;margin-top:10px;max-width:280px;line-height:1.6;}
+  .foot-pres{color:var(--txt-faint);font-size:.82rem;margin-top:10px;font-family:var(--mono);}
+  .foot-links{display:flex;flex-direction:column;gap:8px;}
+  .foot-links h5{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);margin-bottom:4px;}
+  .foot-links a,.foot-links span{font-size:.84rem;color:var(--txt-dim);}
+  .foot-links a:hover{color:var(--cyan);}
+  .foot-info{border-top:1px solid var(--glass-bd);margin-top:30px;padding-top:20px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 0;font-family:var(--kr);font-size:.78rem;color:var(--txt-dim);}
+  .foot-info .sep{color:var(--txt-faint);margin:0 12px;opacity:.5;}
+  .foot-bottom{margin-top:14px;font-family:var(--mono);font-size:.7rem;color:var(--txt-faint);}
+  @media(max-width:560px){.foot-info .sep{display:none;}.foot-info span{width:100%;}}
+  .reveal[data-d="1"]{transition-delay:.07s;}.reveal[data-d="2"]{transition-delay:.14s;}.reveal[data-d="3"]{transition-delay:.21s;}.reveal[data-d="4"]{transition-delay:.28s;}
+</style>
+</head>
+<body>
+<div class="bg-fx"><div class="glow g1"></div><div class="glow g2"></div></div>
+<div class="grid-lines"></div>
+<div class="shell">
+
+<nav id="nav"><div class="inner">
+  <a class="brand" onclick="go('home')"><span class="dot"></span><span><b>ASPA</b><br><small>ASIA GOLF FEDERATION</small></span></a>
+  <ul class="nav-menu">
+    <li><a onclick="go('home')">홈</a></li>
+    <li><a onclick="go('about')">연맹 소개</a></li>
+    <li><a onclick="go('org')">조직도</a></li>
+    <li><a onclick="goBook()">투어</a></li>
+    <li><a onclick="go('course')">골프장 부킹</a></li>
+    <li><a onclick="go('academy')">아카데미</a></li>
+    <li><a onclick="go('benefits')">회원혜택</a></li>
+    <li><a onclick="go('notice')">공지사항</a></li>
+  </ul>
+  <div class="navuser" id="navUser"><button class="btn btn-ghost btn-sm" onclick="go('login')">로그인</button><button class="btn btn-gold btn-sm" onclick="go('signup')">JOIN</button></div>
+  <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="메뉴"><span></span><span></span><span></span></button>
+</div></nav>
+
+<!-- 모바일 드로어 -->
+<div class="m-drawer" id="mDrawer">
+  <div class="m-drawer-head"><span class="brand"><span class="dot"></span><b>ASPA</b></span><button class="m-close" onclick="toggleMenu()">×</button></div>
+  <a onclick="mGo('home')">홈</a>
+  <a onclick="mGo('about')">연맹 소개</a>
+  <a onclick="mGo('org')">조직도</a>
+  <a onclick="mGoBook()">투어</a>
+  <a onclick="mGo('course')">골프장 부킹</a>
+  <a onclick="mGo('academy')">아카데미</a>
+  <a onclick="mGo('benefits')">회원혜택</a>
+  <a onclick="mGo('notice')">공지사항</a>
+  <div class="m-drawer-user" id="mDrawerUser"></div>
+</div>
+<div class="m-backdrop" id="mBackdrop" onclick="toggleMenu()"></div>
+
+<!-- HOME -->
+<div class="page active" id="pgHome">
+  <header class="hero">
+    <div class="hero-aurora"></div>
+    <div class="hero-orbit"><span></span><span></span><span></span></div>
+    <div class="hero-particles" id="heroParticles"></div>
+    <div class="spot" id="spot"></div>
+    <div class="wrap">
+      <span class="label reveal">Asia Sports-for-All Golf Federation</span>
+      <h1 class="reveal" data-d="1"><span class="cy gleam">ASIA</span> GOLF,<br><span class="out">RE</span>DEFINED<br><span class="kr">아시아 골프의 기준</span></h1>
+      <p class="sub reveal" data-d="2">아스파골프는 글로벌 투어 · ISO 국제인증 · 프리미엄 멤버십을 한 곳에 담은 아시아 최대 규모의 생활체육 골프 플랫폼입니다. 회원이 되는 순간, 아시아 전체가 당신의 무대가 됩니다.</p>
+      <div class="hbtns reveal" data-d="3">
+        <button class="btn btn-gold" onclick="go('signup')">JOIN THE FEDERATION →</button>
+        <button class="btn btn-ghost" onclick="goBook()">VIEW TOURS</button>
+      </div>
+    </div>
+    <div class="hero-scroll"><span class="hs-dot"></span>SCROLL</div>
+  </header>
+
+  <div class="marquee"><div class="track">
+    <span><i class="wh">WEIHAI</i>&nbsp;<b>·</b>&nbsp;<i class="wh">VIENTIANE</i>&nbsp;<b>·</b>&nbsp;<i class="cy">JAPAN INVITATIONAL</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MONGOLIA</i>&nbsp;<b>·</b>&nbsp;<i class="cy">ISO CERTIFIED</i>&nbsp;<b>·</b>&nbsp;<i class="cy">GLOBAL TOUR</i>&nbsp;<b>·</b>&nbsp;<i class="wh">ASIA 22 COUNTRIES</i>&nbsp;<b>·</b>&nbsp;<i class="cy">TOUR PRO ACADEMY</i>&nbsp;<b>·</b>&nbsp;<i class="wh">KPGA</i>&nbsp;<b>·</b>&nbsp;<i class="wh">KLPGA</i>&nbsp;<b>·</b>&nbsp;<i class="cy">MEMBERS ONLY</i>&nbsp;<b>·</b>&nbsp;<i class="cy">PLAY TOGETHER</i>&nbsp;<b>·</b>&nbsp;<i class="cy">GO TOGETHER</i>&nbsp;<b>·</b>&nbsp;<i class="wh">PARTNER COURSES</i>&nbsp;<b>·</b>&nbsp;</span>
+    <span><i class="wh">WEIHAI</i>&nbsp;<b>·</b>&nbsp;<i class="wh">VIENTIANE</i>&nbsp;<b>·</b>&nbsp;<i class="cy">JAPAN INVITATIONAL</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MONGOLIA</i>&nbsp;<b>·</b>&nbsp;<i class="cy">ISO CERTIFIED</i>&nbsp;<b>·</b>&nbsp;<i class="cy">GLOBAL TOUR</i>&nbsp;<b>·</b>&nbsp;<i class="wh">ASIA 22 COUNTRIES</i>&nbsp;<b>·</b>&nbsp;<i class="cy">TOUR PRO ACADEMY</i>&nbsp;<b>·</b>&nbsp;<i class="wh">KPGA</i>&nbsp;<b>·</b>&nbsp;<i class="wh">KLPGA</i>&nbsp;<b>·</b>&nbsp;<i class="cy">MEMBERS ONLY</i>&nbsp;<b>·</b>&nbsp;<i class="cy">PLAY TOGETHER</i>&nbsp;<b>·</b>&nbsp;<i class="cy">GO TOGETHER</i>&nbsp;<b>·</b>&nbsp;<i class="wh">PARTNER COURSES</i>&nbsp;<b>·</b>&nbsp;</span>
+  </div></div>
+
+  <section id="offer">
+    <div class="wrap">
+      <div class="sec-head reveal"><h2>THE <span class="cy">FEDERATION</span><br>IN ONE GRID</h2><p>가입 · 투어 · 인증 · 등급 · 라이브까지, 한 화면에서.</p></div>
+      <div class="bento">
+        <div class="cell cell-feature span2 span2r reveal" onclick="goBook()">
+          <div class="mesh"></div><span class="corner">FEATURED · 2026</span>
+          <div class="rel"><span class="label">Global Tour</span><h3 class="ck">아시아 프리미엄 투어</h3>
+            <p>중국 위해 · 라오스 비엔티안 · 일본 초청전 · 몽골 울란바토르. 왕복 항공·라운드·의전까지 회원 우대가로 우선 예약.</p>
+            <div class="tags"><span>WEIHAI</span><span>VIENTIANE</span><span>JAPAN</span><span>MONGOLIA</span></div>
+            <span class="arrow">예약하기 →</span></div>
+        </div>
+        <div class="cell cell-stat reveal" data-d="1"><div class="num"><span id="hsMembers">0</span></div><div class="cap">Members</div></div>
+        <div class="cell cell-stat reveal" data-d="2" onclick="go('about')" style="cursor:pointer"><div class="num"><span>18</span><small>&nbsp;개국</small></div><div class="cap">Member Countries</div></div>
+        <div class="cell reveal" data-d="3" onclick="go('signup')"><span class="label">Membership</span><h3 style="margin-top:13px;font-size:1.15rem" class="ck">등급별 특전</h3>
+          <div class="tiers"><div class="tier">일반 회원 <span class="mono">BASIC</span></div><div class="tier vip">정회원 <span class="mono">REGULAR ◆</span></div></div></div>
+        <div class="cell cell-live reveal" data-d="4" onclick="toast('대회 현장 라이브 (연동 예정)')"><span class="livebadge"><span class="pdot"></span>LIVE NOW</span>
+          <h3 class="ck" style="margin-top:auto;font-size:1.25rem">대회 현장 생중계</h3><p>틱톡 · 유튜브 라이브</p><span class="arrow">시청 →</span></div>
+        <div class="cell cell-iso span2 reveal" data-d="2" onclick="go('cert')"><span class="corner">ISO</span><span class="label">International Certification</span>
+          <h3 class="ck" style="margin:13px 0 4px">국제인증 · 교육</h3>
+          <div class="isolist"><div><b>골프장</b><small>ISO 9001 / 45001 경영·안전</small></div><div><b>단체</b><small>사단법인 운영 인증</small></div><div><b>심사원</b><small>양성 과정 · 자격 등록</small></div></div></div>
+        <div class="cell cell-cta span2 reveal" data-d="3" onclick="go('signup')"><span class="label" style="color:rgba(0,0,0,.55)">Become a Member</span>
+          <h3 class="ck">지금 아스파골프의<br>회원이 되십시오</h3><span class="gobtn">JOIN NOW →</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head reveal"><h2>GLOBAL <span class="cy">TOURS</span></h2><p>실시간 잔여 정원이 반영됩니다. 로그인 후 바로 예약하세요.</p></div>
+      <div class="tours-grid" id="homeTours"></div>
+    </div>
+  </section>
+
+  <!-- MEMBERS ONLY LOUNGE -->
+  <section id="lounge-sec">
+    <div class="wrap">
+      <div class="sec-head reveal"><h2>MEMBERS <span class="cy">ONLY</span></h2><p>아스파골프 회원만 누리는 전용 라운지. 비공개 특가와 한정 혜택이 매달 갱신됩니다.</p></div>
+      <div id="loungeBody" class="reveal"></div>
+      <div style="text-align:center;margin-top:34px" class="reveal"><button class="btn btn-ghost" onclick="go('benefits')">전체 회원 혜택 보기 →</button></div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" style="border-top:1px solid var(--glass-bd)">
+    <div class="wrap">
+      <div class="about-grid reveal">
+        <div>
+          <span class="label">About the Federation</span>
+          <h2 class="about-h">생활체육 골프의<br><span class="cy">아시아 표준</span>을 만듭니다</h2>
+        </div>
+        <div class="about-body">
+          <p>아스파골프(ASPA)는 단순한 동호회나 여행사가 아닙니다. 아시아 각국의 골프장·단체·선수·애호가를 하나의 네트워크로 연결하고, 국제 표준에 기반한 운영 체계를 제공하는 생활체육 골프 연맹입니다.</p>
+          <p>중국 위해부터 라오스 비엔티안, 일본 초청전까지 이어지는 글로벌 투어, ISO 9001/45001 기반의 골프장·단체 국제인증, 그리고 회원이 함께 성장하는 파트너 네트워크 — 이 세 축을 하나의 플랫폼에서 운영합니다.</p>
+          <p>회원이 되시면, 흩어져 있던 골프 경험이 하나의 멤버십으로 정리됩니다. 예약·인증·혜택·정산까지, 아스파골프가 책임지고 관리합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head reveal"><h2>FAQ</h2><p>자주 묻는 질문을 정리했습니다.</p></div>
+      <div class="faq-list reveal">
+        <details class="faq"><summary>회원 가입은 어떻게 하나요?</summary><div class="fa">상단 JOIN 버튼을 통해 이름·연락처·지역만 입력하면 즉시 가입됩니다. 가입 후 마이페이지에서 연회비를 납부하면 정회원으로 전환되어 회원 우대가와 우선 예약권이 적용됩니다.</div></details>
+        <details class="faq"><summary>투어 참가비에는 무엇이 포함되나요?</summary><div class="fa">투어별로 다르지만 기본적으로 왕복 항공, 라운드(그린피·캐디·카트), 호텔 숙박, 차량 의전이 포함됩니다. 각 투어 카드의 '예약하기'를 누르면 상세 포함 내역을 확인할 수 있습니다.</div></details>
+        <details class="faq"><summary>ISO 인증은 어떤 절차로 진행되나요?</summary><div class="fa">신청 접수 → 서류 심사 → 현장 실사 → 인증 발급의 4단계로 진행됩니다. 회원으로 로그인해 신청하면 마이페이지에서 실시간 진행 상태를 추적할 수 있습니다.</div></details>
+        <details class="faq"><summary>회원 등급은 어떻게 올라가나요?</summary><div class="fa">가입 시 일반 회원으로 시작하며, 연회비 납부 시 정회원으로 전환됩니다. 정회원이 되면 투어·대회 예약, 회원 우대가, 골프장 할인 등 모든 회원 혜택이 열립니다.</div></details>
+        <details class="faq"><summary>일본 골프장 우대 회원권 상담도 가능한가요?</summary><div class="fa">네. 아스파골프 네트워크를 통한 일본 명문 골프장 우대 회원권 상담을 전담 진행합니다. 회원에게는 상담 우선권이 주어지며, 일본 초청전 참가 시 현장 상담도 가능합니다.</div></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" style="border-top:1px solid var(--glass-bd)">
+    <div class="wrap">
+      <div class="sec-head reveal"><h2>CONTACT <span class="cy">US</span></h2><p>상담 · 신청 · 제휴 · 협찬 모든 문의는 카카오톡으로 받습니다.</p></div>
+      <div class="contact-grid reveal">
+        <a class="contact-card" href="https://open.kakao.com/o/sIpiWhxi" target="_blank" rel="noopener">
+          <div class="ci">💬</div><h4>일반 문의</h4><p>가입·투어·인증 등 서비스 전반에 대한 문의</p><span class="contact-go">카톡 문의 →</span>
+        </a>
+        <a class="contact-card" href="https://open.kakao.com/o/sIpiWhxi" target="_blank" rel="noopener">
+          <div class="ci">🤝</div><h4>제휴 · 협력</h4><p>골프장·단체·기업 제휴 및 협력 제안</p><span class="contact-go">카톡 문의 →</span>
+        </a>
+        <a class="contact-card" href="https://open.kakao.com/o/sIpiWhxi" target="_blank" rel="noopener">
+          <div class="ci">📣</div><h4>광고 · 협찬</h4><p>대회 후원, 배너 광고, 브랜드 협찬 문의</p><span class="contact-go">카톡 문의 →</span>
+        </a>
+      </div>
+      <p class="contact-note reveal">버튼을 누르면 카카오톡 문의 채팅방으로 연결됩니다.</p>
+    </div>
+  </section>
+</div>
+
+<!-- SIGNUP -->
+<div class="page" id="pgSignup"><div class="auth-wrap"><div class="auth-card">
+  <div class="auth-head"><span class="label">Membership</span><h2>회원 가입</h2></div>
+  <div class="auth-body">
+    <div class="field"><label>이름 <span class="req">*</span></label><input id="suName" placeholder="성함"></div>
+    <div class="field"><label>아이디 (이메일) <span class="req">*</span></label><input id="suId" placeholder="example@email.com"></div>
+    <div class="field"><label>연락처 <span class="req">*</span></label><input id="suPhone" placeholder="010-0000-0000" inputmode="numeric"></div>
+    <div class="grid2">
+      <div class="field"><label>생년월일</label><input id="suBirth" placeholder="YYYY-MM-DD" inputmode="numeric"></div>
+      <div class="field"><label>성별</label><select id="suGender"><option value="">선택</option><option>남성</option><option>여성</option></select></div>
+    </div>
+    <div class="field"><label>지역 <span class="req">*</span></label><select id="suRegion"><option>서울/경기</option><option>충청</option><option>영남</option><option>호남</option><option>강원/제주</option><option>해외</option></select></div>
+    <div class="field"><label>추천인 <span style="color:var(--txt-faint);font-size:.85em">(선택 · 소개한 임원 이름)</span></label><input id="suReferrer" placeholder="예: 김일두 부총재 (없으면 비워두세요)"></div>
+    <div class="field"><label>비밀번호 <span class="req">*</span></label><input id="suPw" type="password" placeholder="6자 이상 입력"></div>
+    <div class="field"><label>비밀번호 확인 <span class="req">*</span></label><input id="suPw2" type="password" placeholder="비밀번호 재입력"><span class="pw-msg" id="pwMsg"></span></div>
+
+    <div class="agree-box">
+      <label class="agree-all"><input type="checkbox" id="suAgreeAll" onchange="toggleAgreeAll()"> <b>전체 동의</b></label>
+      <label class="agree"><input type="checkbox" class="agree-item" id="suAgree1"> <span>[필수] 이용약관 동의</span> <a class="agree-view" onclick="showTerms('이용약관')">보기</a></label>
+      <label class="agree"><input type="checkbox" class="agree-item" id="suAgree2"> <span>[필수] 개인정보 수집·이용 동의</span> <a class="agree-view" onclick="showTerms('개인정보')">보기</a></label>
+      <label class="agree"><input type="checkbox" class="agree-item" id="suAgree3"> <span>[선택] 마케팅·이벤트 정보 수신 동의</span></label>
+    </div>
+
+    <button class="btn btn-gold" onclick="doSignup()">JOIN ASPA →</button>
+    <div class="auth-foot">이미 회원이신가요? <a onclick="go('login')">로그인</a></div>
+  </div>
+</div></div></div>
+
+<!-- LOGIN -->
+<div class="page" id="pgLogin"><div class="auth-wrap"><div class="auth-card">
+  <div class="auth-head"><span class="label">Sign In</span><h2>로그인</h2></div>
+  <div class="auth-body">
+    <div class="field"><label>아이디</label><input id="liId" placeholder="이메일 또는 관리자 아이디"></div>
+    <div class="field"><label>비밀번호</label><input id="liPw" type="password" placeholder="비밀번호"></div>
+    <button class="btn btn-gold" onclick="doLogin()">SIGN IN →</button>
+    <div class="divider-or">또는 간편 로그인 <span style="color:var(--txt-faint);font-size:.62rem">(준비 중)</span></div>
+    <div class="social">
+      <div class="sbtn sb-kakao" onclick="socialLogin('카카오')">💬 카카오로 시작하기</div>
+      <div class="sbtn sb-google" onclick="socialLogin('구글')">G 구글로 시작하기</div>
+      <div class="sbtn sb-fb" onclick="socialLogin('페이스북')">f 페이스북으로 시작하기</div>
+      <div class="sbtn sb-apple" onclick="socialLogin('애플')"> 애플로 시작하기</div>
+    </div>
+    <div class="auth-foot">아직 회원이 아니신가요? <a onclick="go('signup')">회원 가입</a></div>
+  </div>
+</div></div></div>
+
+<!-- BENEFITS (회원 전용 특혜) -->
+<div class="page" id="pgBenefits"><div class="dash"><div class="wrap">
+  <div class="dash-head"><div><span class="label">Members Only</span><h1 style="margin-top:8px">회원 전용 <span class="cy">특혜</span></h1><p class="kh">아스파골프 회원이 누리는 차별화된 혜택입니다. 연회비 납부 후 정회원이 되면 모든 혜택이 열립니다.</p></div></div>
+
+  <!-- 미리보기: 누구나 보임 (가입 유도) -->
+  <div class="benefit-preview" id="benefitPreview"></div>
+
+  <!-- 잠금 영역: 회원/정회원 단계별 노출 -->
+  <div class="benefit-gate" id="benefitGate">
+  <div class="perks">
+    <div class="perk" onclick="benefitDetail(0)"><div class="pi">🏷️</div><h4>투어 회원 우대가</h4><p>모든 글로벌 투어를 최대 20% 회원 할인가로 이용하세요. 비회원 공개가 대비 항상 우대됩니다.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(1)"><div class="pi">⏱️</div><h4>우선 예약권</h4><p>인기 투어는 일반 공개 전 회원에게 먼저 열립니다. 마감되는 자리를 놓치지 않습니다.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(2)"><div class="pi">⛩️</div><h4>일본 회원권 상담 우선</h4><p>일본 명문 골프장 우대 회원권 상담을 회원 우선으로 배정. 초청전 현장 상담도 가능합니다.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(3)"><div class="pi">🛡️</div><h4>ISO 인증 회원 할인</h4><p>골프장·단체·심사원 인증 신청 시 회원 전용 할인이 적용됩니다.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(4)"><div class="pi">🥂</div><h4>전용 네트워킹</h4><p>회원 전용 라운지와 만찬, 비즈니스 네트워킹 세션에 초청됩니다.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(5)"><div class="pi">🎁</div><h4>협찬 브랜드 혜택</h4><p>공식 후원 브랜드(스포츠·뷰티 등)의 회원 전용 증정·할인 혜택을 받습니다.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(6)"><div class="pi">📺</div><h4>전용 콘텐츠 · 라이브</h4><p>대회 현장 라이브, 레슨 영상 등 회원 전용 콘텐츠에 접근할 수 있습니다.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(7)"><div class="pi">💬</div><h4>회원 단톡방 참여</h4><p>정회원 전용 카카오톡 단톡방에 참여해 투어·이벤트 소식과 회원 간 네트워킹을 가장 먼저 누리세요.</p><span class="perk-more">자세히 →</span></div>
+    <div class="perk" onclick="benefitDetail(8)"><div class="pi">🎂</div><h4>기념일 라운드</h4><p>생일·기념일에 맞춘 무료 라운드 혜택과 작은 선물을 드립니다.</p><span class="perk-more">자세히 →</span></div>
+  </div>
+
+  <div class="panel" style="margin-top:8px">
+    <h3>회원 유형별 혜택</h3><p class="ph-desc">ASFA GOLF 공식 멤버십 혜택입니다.</p>
+    <div class="benefit-types">
+      <div class="bt">
+        <div class="bt-h"><span class="bt-tag common">공통</span><b>Common Benefits</b></div>
+        <ul><li>회원 가입 시 웰컴 기프트 증정</li><li>제휴 골프장 할인 (국내 50 / 해외 44개소 이상)</li></ul>
+      </div>
+      <div class="bt">
+        <div class="bt-h"><span class="bt-tag pro">프로회원</span><b>Professional</b></div>
+        <ul><li>투어카드 발급</li><li>상금 투어 참가 자격 부여 (연 4회 이상)</li><li>총 상금 1억원 이상 투어 참가</li></ul>
+      </div>
+      <div class="bt">
+        <div class="bt-h"><span class="bt-tag ama">아마추어회원</span><b>Amateur</b></div>
+        <ul><li>모바일 회원카드 발급</li><li>ASFA 아마추어 대회 참가 자격</li><li>ASFA 프로테스트 응시 자격</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>등급별 혜택 비교</h3><p class="ph-desc">일반 회원 → 정회원. 연회비 납부 시 정회원으로 전환되어 모든 혜택이 열립니다.</p>
+    <div class="table-scroll"><table class="comp">
+      <thead><tr><th style="text-align:left">혜택</th><th>일반 회원</th><th>정회원</th></tr></thead>
+      <tbody>
+        <tr><td>투어 · 대회 예약</td><td class="x">잠김</td><td class="o">✓</td></tr>
+        <tr><td>투어 회원 우대가</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>우선 예약권</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>골프장 2만원 할인</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>ISO 인증 회원 할인</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>전용 라운지 · 네트워킹</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>일본 회원권 상담 우선</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>아카데미 회원가</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>회원 단톡방 참여</td><td class="x">—</td><td class="o">✓</td></tr>
+      </tbody>
+    </table></div>
+    <p style="font-family:var(--mono);font-size:.7rem;color:var(--txt-faint);margin-top:12px">✓ 제공 · — 미제공 · 투어 예약은 정회원부터 가능합니다</p>
+  </div>
+  </div><!-- /benefit-gate -->
+
+  <div id="benefitCta" style="margin-top:8px"></div>
+</div></div></div>
+
+<!-- BOOK -->
+<div class="page" id="pgBook"><div class="dash"><div class="wrap">
+  <div class="dash-head"><div><h1>TOUR <span class="cy">BOOKING</span></h1><p class="kh">ASFA Golf Tour — Play Together, Go Together. 원하는 투어·대회를 선택해 예약하세요.</p></div></div>
+
+  <div class="panel" style="margin-bottom:20px">
+    <h3>ASFA Golf Tour Inc.</h3>
+    <p class="ph-desc">아시아골프연맹의 비전 실현과 회원 서비스 확대를 위해 설립된 골프투어 전문 법인입니다. ASFA 골프투어 기획 및 대회 운영을 담당합니다.</p>
+    <div class="stat-grid" style="margin-bottom:0">
+      <div class="stat"><div class="lbl">연간 해외 투어</div><div class="val">20<small> +회</small></div></div>
+      <div class="stat"><div class="lbl">아시아 네트워크</div><div class="val">22<small> 개국</small></div></div>
+      <div class="stat"><div class="lbl">주요 투어국</div><div class="val" style="font-size:1rem">중국·라오스<br>일본·몽골</div></div>
+      <div class="stat"><div class="lbl">서비스</div><div class="val" style="font-size:.92rem">항공·숙박·교통<br>일괄 예약</div></div>
+    </div>
+  </div>
+
+  <div class="tours-grid" id="bookTours"></div>
+</div></div></div>
+
+<!-- CERT -->
+<div class="page" id="pgCert"><div class="dash"><div class="wrap">
+  <div class="dash-head"><div><h1>ISO <span class="cy">CERTIFICATION</span></h1><p class="kh">국제 표준에 부합하는 골프장·단체·개인 인증. 신청 후 4단계 프로세스로 진행됩니다.</p></div></div>
+  <div class="stepper">
+    <div class="step"><span class="sn">STEP 01</span><b>신청 접수</b><small>온라인 신청 · 담당 배정</small></div>
+    <div class="step"><span class="sn">STEP 02</span><b>서류 심사</b><small>운영·안전 문서 검토</small></div>
+    <div class="step"><span class="sn">STEP 03</span><b>현장 실사</b><small>심사원 방문 평가</small></div>
+    <div class="step"><span class="sn">STEP 04</span><b>인증 발급</b><small>인증서 발급 · 자격 등록</small></div>
+  </div>
+  <div class="panel" style="max-width:600px;">
+    <h3>📝 인증 신청서</h3><p class="ph-desc">신청 후 담당자가 서류 안내를 드립니다. 회원 로그인 시 마이페이지에서 진행상태를 추적할 수 있습니다.</p>
+    <div class="field"><label>인증 종류</label><select id="ctType"><option>골프장 ISO 9001/45001 경영·안전 인증</option><option>사단법인 단체 운영 인증</option><option>ASPA 심사원 양성 과정</option></select></div>
+    <div class="field"><label>신청자 / 단체명</label><input id="ctName" placeholder="성함 또는 단체명"></div>
+    <div class="field"><label>소속 / 골프장명</label><input id="ctOrg" placeholder="(선택) 소속 기관·골프장"></div>
+    <div class="field"><label>연락처</label><input id="ctPhone" placeholder="010-0000-0000"></div>
+    <button class="btn btn-gold" style="width:100%" onclick="submitCert()">인증 신청 접수 →</button>
+  </div>
+</div></div></div>
+
+<!-- EXEC 임원 -->
+<div class="page" id="pgExec"><div class="dash"><div class="wrap">
+  <div class="dash-head"><div><span class="label">Executive</span><h1 id="execHi" class="kh" style="margin-top:8px">임원 라운지</h1><p class="kh">내 모객 실적과 전체 임원 순위를 확인하세요.</p></div><button class="btn btn-gold" onclick="go('signup')">회원 추천하기 →</button></div>
+  <div class="stat-grid" id="execStats"></div>
+
+  <div class="panel payout-guide" style="margin-top:8px">
+    <h3>💰 수수료 안내 <span style="font-size:.72rem;color:var(--txt-faint);font-weight:400">· 내가 직접 모집한 회원 1명당 받는 금액</span></h3>
+    <div class="payout-cards">
+      <div class="payout-card promo">
+        <span class="po-badge">🚀 가입 첫 달 (오픈 프로모션)</span>
+        <div class="po-amt">84,000<small>원</small></div>
+        <div class="po-rate">연회비 12만원의 70%</div>
+        <p class="po-desc">오픈 첫 달에 가입한 회원을 모집하면 회원당 84,000원을 받습니다.</p>
+      </div>
+      <div class="payout-card">
+        <span class="po-badge">📅 둘째 달 이후 (상시)</span>
+        <div class="po-amt">72,000<small>원</small></div>
+        <div class="po-rate">수수료 60% + 운영비 10%</div>
+        <p class="po-desc">상시 기간에는 모집 수수료 60%(72,000원)에 운영비 10%가 포함됩니다.</p>
+      </div>
+    </div>
+    <div class="payout-flow">
+      <div class="pf-title">회원 1명 연회비 <b>120,000원</b>이 이렇게 나뉩니다</div>
+      <div class="pf-bars">
+        <div class="pf-bar"><span class="pf-fill" style="width:70%"></span><span class="pf-label">나(임원) 70% · 84,000원</span></div>
+        <div class="pf-bar"><span class="pf-fill alt" style="width:10%"></span><span class="pf-label">시아스트릿 10% · 12,000원</span></div>
+        <div class="pf-bar"><span class="pf-fill dim" style="width:20%"></span><span class="pf-label">아스파 본사 20% · 24,000원</span></div>
+      </div>
+      <p class="pf-note">※ 수수료는 회원이 <b>연회비를 완납(정회원 전환)</b>해야 확정됩니다. 내가 직접 모집한 회원만 해당되며, 월말 마감 후 등록 계좌로 정산됩니다.</p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:8px"><h3>🏆 임원 모객 순위 <span style="font-size:.72rem;color:var(--txt-faint);font-weight:400">· 완납 회원 기준 실시간 집계</span></h3>
+    <div class="lb-list" id="execLeaderboard"></div>
+  </div>
+
+  <div class="panel"><h3>📋 내가 추천한 회원</h3><div class="table-scroll"><table id="execMyList"></table></div></div>
+</div></div></div>
+
+<!-- MEMBER -->
+<div class="page" id="pgMember"><div class="dash"><div class="wrap">
+  <div class="dash-head"><div><h1 id="memHi" class="kh">마이페이지</h1><p class="kh">내 정보·등급·회비·예약을 한눈에.</p></div><button class="btn btn-gold" onclick="goBook()">새 예약 →</button></div>
+  <div class="stat-grid" id="memStats"></div>
+  <div class="panel"><h3>💳 연회비 / 등급</h3><div id="memFee"></div></div>
+  <div class="panel"><h3>📋 내 예약 현황</h3><p class="ph-desc">진행중 예약은 취소할 수 있습니다.</p><div class="table-scroll"><table id="memResTable"></table></div></div>
+  <div class="panel"><h3>🛡️ 내 인증 신청</h3><p class="ph-desc">신청한 ISO 인증의 진행 상태입니다.</p><div class="table-scroll"><table id="memCertTable"></table></div></div>
+  <div class="panel"><h3>👤 내 정보</h3><div id="memInfo"></div></div>
+</div></div></div>
+
+<!-- ADMIN -->
+<div class="page" id="pgAdmin"><div class="dash"><div class="wrap">
+  <div class="dash-head"><div><h1>ADMIN <span class="cy">CONSOLE</span></h1><p class="kh">회원·예약·인증·투어 전체 통제</p></div><span class="tag t-active" style="font-size:.7rem;padding:8px 14px;">🔒 이현석 위원장</span></div>
+  <div class="stat-grid" id="adStats"></div>
+  <div class="panel settle-panel"><h3>💰 연회비 정산 요약 <span style="font-size:.72rem;color:var(--txt-faint);font-weight:400">· 임원70 / 본사20 / 시아10 자동 분배</span></h3><div id="adSettle"></div></div>
+  <div class="tabs">
+    <div class="tab active" onclick="adminTab('members',this)">MEMBERS</div>
+    <div class="tab" onclick="adminTab('res',this)">RESERVATIONS</div>
+    <div class="tab" onclick="adminTab('cert',this)">CERTIFICATION</div>
+    <div class="tab" onclick="adminTab('tours',this)">TOURS</div>
+    <div class="tab" onclick="adminTab('referral',this)">추천 수수료</div>
+  </div>
+  <div class="admintab active" id="atMembers"><div class="panel"><h3>👥 회원 관리 <button class="btn btn-dark btn-sm" style="float:right" onclick="exportCSV('members')">⬇ 엑셀(CSV) 내보내기</button></h3>
+    <div class="filterbar">
+      <div class="srch"><span class="si">⌕</span><input id="memSearch" placeholder="이름·이메일·지역 검색" oninput="renderAdminMembers()"></div>
+      <div class="fsel"><select id="memFilter" onchange="renderAdminMembers()"><option value="all">전체 상태</option><option value="active">활성</option><option value="pending">승인 대기</option></select></div>
+      <div class="fsel"><select id="memTierFilter" onchange="renderAdminMembers()"><option value="all">전체 등급</option><option value="reg">정회원</option><option value="norm">일반 회원</option></select></div>
+    </div>
+    <div class="table-scroll"><table id="adMemTable"></table></div></div></div>
+  <div class="admintab" id="atRes"><div class="panel"><h3>🗓️ 예약 관리 <button class="btn btn-dark btn-sm" style="float:right" onclick="exportCSV('res')">⬇ 엑셀(CSV) 내보내기</button></h3>
+    <div class="filterbar">
+      <div class="srch"><span class="si">⌕</span><input id="resSearch" placeholder="회원명·투어명 검색" oninput="renderAdminRes()"></div>
+      <div class="fsel"><select id="resFilter" onchange="renderAdminRes()"><option value="all">전체 상태</option><option value="pending">입금 대기</option><option value="active">예약 확정</option><option value="done">완료</option><option value="cancel">취소</option></select></div>
+    </div>
+    <div class="table-scroll"><table id="adResTable"></table></div></div></div>
+  <div class="admintab" id="atCert"><div class="panel"><h3>🛡️ 인증 신청 관리</h3>
+    <div class="filterbar">
+      <div class="srch"><span class="si">⌕</span><input id="certSearch" placeholder="신청자·인증 종류 검색" oninput="renderAdminCert()"></div>
+      <div class="fsel"><select id="certFilter" onchange="renderAdminCert()"><option value="all">전체 단계</option><option value="pending">접수</option><option value="review">서류심사</option><option value="audit">현장실사</option><option value="issued">발급완료</option></select></div>
+    </div>
+    <div class="table-scroll"><table id="adCertTable"></table></div></div></div>
+  <div class="admintab" id="atTours">
+    <div class="panel"><h3>⛳ 투어 · 대회 등록</h3><p class="ph-desc">추가 즉시 홈·예약 화면에 반영.</p>
+      <div class="form-inline">
+        <div class="field"><label>투어명</label><input id="ntTitle" placeholder="예: 베트남 다낭 투어"></div>
+        <div class="field"><label>지역/국가</label><input id="ntFlag" placeholder="Vietnam · Danang"></div>
+        <div class="field"><label>일정</label><input id="ntDate" placeholder="12월 10일~13일"></div>
+        <div class="field"><label>정원</label><input id="ntCap" type="number" value="40"></div>
+        <div class="field"><label>참가비(원)</label><input id="ntPrice" type="number" value="1200000"></div>
+        <button class="btn btn-dark" onclick="addTour()">+ 추가</button>
+      </div></div>
+    <div class="panel"><h3>📑 등록된 투어 · 대회</h3><div class="table-scroll"><table id="adTourTable"></table></div></div>
+  </div>
+  <div class="admintab" id="atReferral">
+    <div class="panel"><h3>🤝 임원 추천 수수료 정산 <button class="btn btn-dark btn-sm" style="float:right" onclick="exportCSV('referral')">⬇ CSV 내보내기</button></h3>
+      <p class="ph-desc">임원이 데려온 정회원(연회비 완납) 기준으로 추천 수수료가 집계됩니다. 현재 수수료율: <b style="color:var(--cyan)" id="refRateTxt"></b> · 회원당 <b style="color:var(--cyan)" id="refPerTxt"></b></p>
+      <div class="table-scroll"><table id="adReferralTable"></table></div>
+    </div>
+    <div class="panel"><h3>📋 추천 회원 상세</h3><div class="table-scroll"><table id="adReferralDetail"></table></div></div>
+  </div>
+</div></div></div>
+
+<!-- NOTICE 공지사항 -->
+<div class="page" id="pgNotice"><div class="wrap">
+  <div class="page-head"><span class="label">Notice</span><h1>공지<span class="cy">사항</span></h1><p>연맹의 대회·행사 소식을 확인하세요.</p></div>
+  <div class="content-sec"><div class="notice-list">
+    <div class="notice">
+      <div class="nh"><span class="nt">🏆 ASPA 창립기념 골프대회</span><span class="nd">2025.08.01</span></div>
+      <div class="nbody">
+        <p style="color:var(--txt-dim);font-size:.9rem;margin-bottom:14px">아시아생활체육골프연맹 창립을 기념하는 첫 공식 대회입니다. 선착순 20개팀(80명) 모집하며, STN 스포츠채널 주관방송으로 중계됩니다.</p>
+        <div class="event-grid">
+          <div class="er"><span class="k">일시</span><span class="vv"><b>2025년 9월 29일(월) 12:00 티업</b></span></div>
+          <div class="er"><span class="k">장소</span><span class="vv">센추리21CC (원주 문막)</span></div>
+          <div class="er"><span class="k">접수인원</span><span class="vv">20개팀 80명 · 선착순 마감</span></div>
+          <div class="er"><span class="k">참가비</span><span class="vv"><b>1인 32만원</b> (입회비·그린피·카트비·중식·만찬·기념품 포함)</span></div>
+          <div class="er"><span class="k">접수기간</span><span class="vv">8월 1일(금) ~ 9월 20일(토)</span></div>
+          <div class="er"><span class="k">입금정보</span><span class="vv">수협은행 2080-0470-7447 (예금주 김용태)</span></div>
+          <div class="er"><span class="k">주최/주관</span><span class="vv">아시아생활체육골프연맹 / 아스파골프투어</span></div>
+          <div class="er"><span class="k">주관방송</span><span class="vv">STN 스포츠채널</span></div>
+          <div class="er"><span class="k">조직위</span><span class="vv">010-3354-8207</span></div>
+        </div>
+        <button class="btn btn-gold" style="margin-top:16px" onclick="goBook()">대회 접수하기 →</button>
+      </div>
+    </div>
+    <div class="notice"><div class="nh"><span class="nt">📋 2026년 ASPA 심사원 양성 과정 모집</span><span class="nd">2026.04.10</span></div></div>
+    <div class="notice"><div class="nh"><span class="nt">⛳ 라오스 비엔티안 네트워킹 라운드 안내</span><span class="nd">2026.03.22</span></div></div>
+    <div class="notice"><div class="nh"><span class="nt">🤝 야마하 골프 공식 후원 협약 체결</span><span class="nd">2026.02.15</span></div></div>
+  </div></div>
+</div></div>
+
+<!-- ABOUT 연맹 소개 -->
+<div class="page" id="pgAbout"><div class="wrap">
+  <div class="page-head"><span class="label">About ASPA · 아시아 골프 연맹</span><h1>연맹 <span class="cy">소개</span></h1>
+    <p>ASFA GF (Asia Sports For All Golf Federation) — 아시아를 중심으로 한 글로벌 골프 투어를 통해 국제 골프 교류를 활성화하고, 선수와 골프 팬에게 새로운 경험을 선사하기 위해 설립된 골프 연맹입니다.</p></div>
+  <div class="content-sec">
+
+    <div class="about-slogan">
+      <span class="label">Play Together, Go Together</span>
+      <h2>함께 즐기고,<br>함께 <span class="cy">나아간다</span></h2>
+      <p>골프가 경쟁을 넘어 아시아를 하나로 잇는 평화의 언어가 되는 미래를 꿈꿉니다. 아시아생활체육골프연맹은 골프를 통해 아시아의 사람들을 연결하고, 함께 배우고 나누며 나아가는 플랫폼입니다.</p>
+    </div>
+
+    <h3 class="about-h2">비전 &amp; 기대 효과</h3>
+    <div class="perks" style="margin-bottom:46px">
+      <div class="perk"><div class="pi">🤝</div><h4>스포츠 외교 네트워크</h4><p>골프를 통한 아시아 국가 간 외교 관계 강화 및 문화 교류를 촉진합니다.</p></div>
+      <div class="perk"><div class="pi">⛳</div><h4>골프 대중화</h4><p>골프 대중화로 생활체육 문화를 아시아 전역에 확산합니다.</p></div>
+      <div class="perk"><div class="pi">🎓</div><h4>교육 기회 확대</h4><p>국제 지도자 양성을 통해 아시아 각국의 고용 기회를 창출합니다.</p></div>
+      <div class="perk"><div class="pi">🌏</div><h4>선도적 모델 구축</h4><p>아시아를 대표하는 스포츠 플랫폼의 선도적 모델을 구축합니다.</p></div>
+    </div>
+
+    <div class="greeting panel">
+      <h3>총재 인사말</h3>
+      <p>아시아생활체육골프연맹은 아시아 골프인들의 실력 향상에 앞장서며, 행복한 내일과 더 나은 미래를 함께 하겠습니다.</p>
+      <p>저희가 추구하는 최고의 가치는 <b style="color:var(--cyan)">함께(Together)</b>입니다. 스포츠는 절대 혼자서 할 수 없습니다. 함께할 때 즐거움도, 만족도, 행복도 배가 됩니다. 특히 골프는 팀원 간의 팀워크가 그날의 모든 것을 좌우합니다.</p>
+      <p>아시아 골프인들의 더 나은 생활체육 발전을 위해 상호 연대·협동·함께하는 가치를 높이고자 끊임없이 연구하고 노력하는 연맹으로 만들어 나갈 것을 약속드립니다. 감사합니다.</p>
+      <p class="sign">— 총재 조정영</p>
+    </div>
+
+    <h3 class="about-h2">회원국 <span class="cy">(예정 18개국)</span></h3>
+    <p class="ph-desc" style="margin-bottom:18px">ASFA GF Member Countries (Planned)</p>
+    <div class="country-grid" id="countryGrid"></div>
+  </div>
+</div></div>
+
+<!-- ORG 조직도 -->
+<div class="page" id="pgOrg"><div class="wrap">
+  <div class="page-head"><span class="label">Organization Chart</span><h1>조직<span class="cy">도</span></h1><p>아시아생활체육골프연맹의 운영 조직입니다.</p></div>
+  <div class="content-sec">
+    <div class="org-top org-pres">
+      <div class="org-node head"><div class="role">총재</div><div class="nm">조정영</div></div>
+      <div class="org-node sm escort"><div class="role">경호의전실</div><div class="mem">간태경 · 박종철 · 정다윤</div></div>
+    </div>
+
+    <div class="org-row org-row5">
+      <div class="org-node sm"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
+      <div class="org-node sm"><div class="role">부회장</div><div class="mem">이주덕</div></div>
+      <div class="org-node sm"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
+      <div class="org-node sm"><div class="role">감사</div><div class="mem">공창릉 · 허영길</div></div>
+      <div class="org-node sm"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
+    </div>
+
+    <div class="org-top" style="margin-top:8px"><div class="org-node planner"><div class="role">기획위원장</div><div class="nm">이현석</div></div></div>
+
+    <div class="org-row org-row4">
+      <div class="org-node sm"><div class="role">집행위원장</div><div class="mem">정철현</div></div>
+      <div class="org-node sm"><div class="role">사무총장</div><div class="mem">김용태</div></div>
+      <div class="org-node sm"><div class="role">사무국장</div><div class="mem">이은주</div></div>
+      <div class="org-node sm"><div class="role">대회협력단장</div><div class="mem">김상철</div></div>
+    </div>
+
+    <div class="org-row org-row4">
+      <div class="org-node sm"><div class="role">디지털 혁신단장</div><div class="mem">공경식</div></div>
+      <div class="org-node sm"><div class="role">국제위원장</div><div class="mem">조인관</div></div>
+      <div class="org-node sm"><div class="role">조직위원장</div><div class="mem">유승석<br>황승현(부) · 강태환(부)</div></div>
+      <div class="org-node sm"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div>
+    </div>
+
+    <div class="org-row org-row3">
+      <div class="org-node sm"><div class="role">홍보위원장</div><div class="mem">이동준 · 최재원 · 윤서현 (탤런트)<br>이진관 · 김양 · 정수연 · 홍성재 (가수)</div></div>
+      <div class="org-node sm"><div class="role">경기·교육총괄위원장 · 남승현</div>
+        <div class="mem"><b style="color:var(--cyan-2)">KPGA</b> 박찬우 · 정우재 · 심동준 · 서현석 · 이도형 · 박서준<br><b style="color:var(--cyan-2)">KLPGA</b> 김미순 · 김수민 · 심우리 · 정슬아 · 강진희 · 황현서</div></div>
+      <div class="org-node sm"><div class="role">이사진</div><div class="mem">박민정 · 정원형 · 임창옥 · 하경화 · 김상수</div></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ACADEMY 아카데미 -->
+<div class="page" id="pgAcademy"><div class="wrap">
+  <div class="page-head"><span class="label">ASFA GOLF · KPGA · KLPGA 투어프로</span><h1>투어프로 특별 <span class="cy">레슨 프로그램</span></h1><p>KPGA · KLPGA 투어프로가 직접 진행하는 ASPA 회원 전용 레슨 프로그램입니다.</p></div>
+  <div class="content-sec">
+    <div class="acad-preview" id="acadPreview"></div>
+    <div class="benefit-gate" id="acadGate">
+    <div class="acad-grid">
+      <div class="acad-card">
+        <div class="ac-no">1</div>
+        <h3>숏게임 컴플렉스</h3>
+        <div class="ac-sub">어프로치 · 퍼팅 · 벙커샷 · 120분</div>
+        <div class="ac-price"><s>정상가 20만원</s><b>10만원</b></div>
+        <p>스코어의 70~80%에 영향을 미치는 숏게임 교육 과정입니다. 특화된 야외 현장에서 진행되어 실전 감각을 길러줍니다. <span class="ac-cap">정원 4~5명</span></p>
+      </div>
+      <div class="acad-card">
+        <div class="ac-no">2</div>
+        <h3>원데이 클래스</h3>
+        <div class="ac-sub">스윙 + 숏게임 컴플렉스 · 240분</div>
+        <div class="ac-price"><s>정상가 35만원</s><b>17.5만원</b></div>
+        <p>천연잔디 연습장 이용 스윙 체크 및 숏게임 컴플렉스를 모두 교육받는 프로그램으로, 필드레슨보다 더욱 효과적인 프로그램입니다. <span class="ac-cap">정원 4~5명</span></p>
+      </div>
+      <div class="acad-card">
+        <div class="ac-no">3</div>
+        <h3>원포인트 레슨</h3>
+        <div class="ac-sub">60분</div>
+        <div class="ac-price"><s>정상가 20만원</s><b>10만원</b></div>
+        <p>전문 스튜디오에서 개인 레슨을 받는 프로그램이며, 회원이 교육받고 싶은 내용을 집중적으로 교육받을 수 있는 집중 레슨 프로그램입니다.</p>
+      </div>
+      <div class="acad-card">
+        <div class="ac-no">4</div>
+        <h3>필드 레슨</h3>
+        <div class="ac-sub">그린피 · 카트비 · 캐디피 불포함</div>
+        <div class="ac-price"><s>정상가 40만원</s><b>28만원</b></div>
+        <p>실전에서 투어프로 출신 교습가에게 코스 매니지먼트, 상황별 대처 능력 등 실전 교육을 통해 실력 향상을 할 수 있는 프로그램입니다. 중·상급자에게는 최고의 만족도가 있는 프로그램입니다.</p>
+      </div>
+      <div class="acad-card span-full">
+        <div class="ac-no">5</div>
+        <h3>단기 골프캠프 <span style="font-size:.85rem;color:var(--txt-dim)">(전지훈련)</span></h3>
+        <div class="ac-price"><b style="font-size:1.1rem">회원가 정상가에서 30% 할인 적용</b></div>
+        <p>단기 또는 장기, 국내 또는 해외에서 필드레슨 위주로 진행되는 프로그램입니다. 골퍼들의 종합적인 역량 향상은 물론 실제 경기력 향상에 초점을 맞추고 있으며, 기술 연습을 넘어 전략적 사고와 실전 감각까지 강화할 수 있는 소중한 프로그램입니다.</p>
+      </div>
+    </div>
+    <p class="acad-note">※ 시설 이용료 개인 결제 · 모든 레슨은 ASPA 정회원 대상 진행됩니다.</p>
+    </div><!-- /acadGate -->
+    <div id="acadCta" style="text-align:center;margin-top:24px"></div>
+  </div>
+</div></div>
+
+<!-- COURSE 골프장 부킹 -->
+<div class="page" id="pgCourse"><div class="wrap">
+  <div class="page-head"><span class="label">Golf Booking</span><h1>골프장 <span class="cy">부킹</span></h1><p>아스파 정회원은 전국 제휴 골프장을 회원 우대 조건으로 부킹할 수 있습니다.</p></div>
+  <div class="content-sec">
+    <div class="stat-grid" style="margin-bottom:22px">
+      <div class="stat"><div class="lbl">정회원 할인</div><div class="val" style="font-size:1.5rem">₩20,000<small> 할인</small></div></div>
+      <div class="stat"><div class="lbl">국내 제휴 골프장</div><div class="val">26<small> 개소</small></div></div>
+      <div class="stat"><div class="lbl">해외 제휴</div><div class="val">44<small> +</small></div></div>
+      <div class="stat"><div class="lbl">아시아 네트워크</div><div class="val">22<small> 개국</small></div></div>
+    </div>
+
+    <div class="benefit-gate" id="courseGate">
+    <div class="panel" style="border-color:var(--glass-bd-hi);background:rgba(0,229,255,.04)">
+      <h3>💳 아스파 정회원 골프장 할인 혜택</h3>
+      <p class="ph-desc">아래 26개 제휴 골프장에서 <b style="color:var(--cyan)">라운드 시 1인 20,000원 할인</b>을 받으실 수 있습니다. 예약사이트에서 골프장 검색 후 부킹하세요.</p>
+      <button class="btn btn-gold" onclick="bookingSite()">제휴 골프장 예약하기 (타이거부킹) →</button>
+    </div>
+
+    <div class="panel">
+      <h3>⛳ 제휴 골프장 (26개소)</h3>
+      <p class="ph-desc">골프장을 클릭하면 상세 설명·공식 사이트·네이버 검색 링크를 확인할 수 있습니다. 🔗 아이콘으로 바로 검색할 수도 있습니다.</p>
+      <div class="course-list" id="courseList"></div>
+    </div>
+    </div><!-- /courseGate -->
+    <div id="courseCta" style="margin-top:8px"></div>
+  </div>
+</div></div>
+
+<!-- SPONSOR 공식 후원 -->
+<div class="page" id="pgSponsor"><div class="wrap">
+  <div class="page-head"><span class="label">Official Partners</span><h1>공식 <span class="cy">후원</span></h1><p>아스파골프와 함께하는 공식 후원 · 제휴 브랜드입니다.</p></div>
+  <div class="content-sec">
+    <div class="panel"><h3>🏌️ 야마하 골프 (Yamaha Golf)</h3><p class="ph-desc">아스파골프 공식 후원사. 회원 전용 장비 혜택 및 우대 프로그램을 제공합니다.</p>
+      <button class="btn btn-gold" onclick="toast('공식 후원 업체몰로 연결됩니다')">야마하 골프몰 바로가기 →</button></div>
+    <div class="sp-grid" style="margin-top:6px">
+      <div class="sp-card"><div class="spn">ACTIVE CARE</div><small>스포츠 크림</small></div>
+      <div class="sp-card"><div class="spn">LUMIÈRE</div><small>코스메틱</small></div>
+      <div class="sp-card"><div class="spn">VITAL+</div><small>건강기능식품</small></div>
+      <div class="sp-card"><div class="spn">맘사랑</div><small>호텔앤리조트</small></div>
+    </div>
+  </div>
+</div></div>
+
+<footer><div class="wrap">
+  <div class="foot-cols">
+    <div><div class="foot-logo">ASPA</div><p class="foot-desc">아시아생활체육골프연맹 · 글로벌 투어 · ISO 국제인증 · 프리미엄 멤버십</p><p class="foot-pres">조정영 총재</p></div>
+    <div class="foot-links"><h5>바로가기</h5><a onclick="goBook()">투어 예약</a><a onclick="go('course')">골프장 부킹</a><a onclick="go('academy')">아카데미</a><a onclick="go('benefits')">회원 혜택</a></div>
+    <div class="foot-links"><h5>연맹</h5><a onclick="go('about')">연맹 소개</a><a onclick="go('org')">조직도</a><a onclick="go('notice')">공지사항</a><a onclick="go('sponsor')">공식 후원</a><a onclick="go('cert')">ISO 인증</a></div>
+    <div class="foot-links"><h5>연락처</h5><span>T. 02-462-2553</span><span>F. 070-7500-8370</span><span style="line-height:1.6">서울 송파구 송파대로 167<br>문정테라타워 1차 A동 910호</span></div>
+  </div>
+  <div class="foot-info">
+    <span>대표자 조정영</span><span class="sep">|</span>
+    <span>개인정보관리책임자 이현석</span><span class="sep">|</span>
+    <span>T. 02-462-2553</span><span class="sep">|</span>
+    <span>E. leestones@naver.com</span><span class="sep">|</span>
+    <span>문의 <a href="https://open.kakao.com/o/sIpiWhxi" target="_blank" rel="noopener" style="color:var(--cyan-2)">카카오톡 채팅 상담</a></span><span class="sep">|</span>
+    <span>서울 송파구 송파대로 167 문정테라타워 1차 A동 910호</span>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 ASPA · Asia Sports-for-All Golf Federation. All rights reserved.</span>
+  </div>
+</div></footer>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="bookModal"><div class="modal"><div class="modal-head"><button class="close" onclick="closeM('bookModal')">×</button><span class="label">Reservation</span><h3 id="bmTitle">투어 예약</h3></div>
+  <div class="modal-body">
+    <div class="bm-details" id="bmDetails"></div>
+    <div class="field"><label>참가 인원</label><select id="bmQty"><option>1명</option><option>2명</option><option>3명</option><option>4명 (1팀)</option></select></div>
+    <div class="field"><label>옵션</label><select id="bmOpt"><option>골프 라운드만</option><option>라운드 + 숙박</option><option>라운드 + 항공 + 숙박 (풀패키지)</option></select></div>
+    <button class="btn btn-gold" onclick="confirmBook()">예약 확정하기 →</button>
+  </div></div></div>
+
+<div class="modal-bg" id="payModal"><div class="modal"><div class="modal-head"><button class="close" onclick="closeM('payModal')">×</button><span class="label">Annual Fee</span><h3>연회비 납부</h3></div>
+  <div class="modal-body">
+    <p style="text-align:center;color:var(--txt-dim);font-size:.82rem;font-family:var(--mono)">ASPA REGULAR MEMBERSHIP</p>
+    <div class="pay-amt">120,000원</div>
+    <div class="ptabs"><div class="ptab active" onclick="payTab('acct',this)">가상계좌</div><div class="ptab" onclick="payTab('card',this)">카드결제</div></div>
+    <div class="pview active" id="pvAcct">
+      <div class="acct">
+        <div class="ar"><span>은행</span><b>국민은행</b></div>
+        <div class="ar"><span>가상계좌</span><b id="acctNo">079-204-2026-0517</b></div>
+        <div class="ar"><span>예금주</span><b>아스파골프(ASPA)</b></div>
+        <div class="ar"><span>입금액</span><b class="cy">120,000원</b></div>
+      </div>
+      <button class="btn btn-ghost" onclick="copyAcct()" style="margin-top:12px">⧉ 계좌번호 복사</button>
+      <button class="btn btn-gold" onclick="payFee()" style="margin-top:8px">입금 완료 처리</button>
+    </div>
+    <div class="pview" id="pvCard">
+      <div class="field"><label>카드 번호</label><input placeholder="0000 0000 0000 0000" inputmode="numeric"></div>
+      <div style="display:flex;gap:10px"><div class="field" style="flex:1"><label>유효기간</label><input placeholder="MM/YY"></div><div class="field" style="flex:1"><label>CVC</label><input placeholder="***"></div></div>
+      <button class="btn btn-gold" onclick="payFee()" style="margin-top:6px">120,000원 결제하기</button>
+    </div>
+    <p class="pay-note">입금자명과 주문자명을 일치시켜 주세요. 입금 확인 후 관리자 승인을 거쳐 정회원으로 전환됩니다.<br><span style="color:var(--txt-faint)">※ 연회비 120,000원 (사이트 운영비 10% 포함)</span></p>
+  </div></div></div>
+
+<div class="modal-bg" id="mdModal"><div class="modal" style="max-width:560px"><div class="modal-body">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 id="mdTitle" style="margin:0">회원 상세</h3><button class="modal-x" onclick="closeM('mdModal')">×</button></div>
+  <div id="mdBody"></div>
+</div></div></div>
+
+<div class="modal-bg" id="okModal"><div class="modal"><div class="modal-body" style="padding-top:32px">
+  <div class="ok-icon">✓</div>
+  <h3 class="ok-title" id="okTitle">완료</h3>
+  <p class="ok-msg" id="okMsg"></p>
+  <button class="btn btn-gold" id="okCta">마이페이지로 이동 →</button>
+  <a class="btn btn-kakao-join" id="okKakao" href="https://open.kakao.com/o/guiUNhxi" target="_blank" rel="noopener" style="display:none;margin-top:8px">💬 ASPA 회원 단톡방 참여하기</a>
+  <button class="btn btn-ghost" id="okClose" style="margin-top:8px">닫기</button>
+</div></div></div>
+
+<div class="modal-bg" id="cardModal"><div class="modal card-modal">
+  <button class="close" onclick="closeM('cardModal')" style="position:absolute;top:14px;right:18px;z-index:6;background:none;border:none;color:var(--txt-dim);font-size:1.5rem;cursor:pointer">×</button>
+  <div class="mcard">
+    <div class="mcard-top"><span class="mc-brand">ASPA</span><span class="mc-type" id="mcType">AMATEUR MEMBER</span></div>
+    <div class="mc-qr"><div id="qrBox"></div></div>
+    <div class="mc-name" id="mcName">회원</div>
+    <div class="mc-valid" id="mcValid">유효기간</div>
+    <p class="mc-guide">이용하려는 시설의 담당자에게 위 QR을 보여주세요</p>
+  </div>
+</div></div>
+
+<!-- 이벤트 팝업 -->
+<div class="promo-pop" id="promoPop">
+  <div class="promo-card">
+    <button class="promo-x" onclick="closePromo()">×</button>
+    <a class="promo-body" id="promoBody" target="_blank" rel="noopener"></a>
+    <div class="promo-foot">
+      <label class="promo-today"><input type="checkbox" id="promoToday"> 오늘 그만보기</label>
+      <button class="promo-close-btn" onclick="closePromo()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 사이드 글로우 플로팅 배너 -->
+<a class="side-banner" id="sideBanner" target="_blank" rel="noopener">
+  <button class="side-x" onclick="closeBanner(event)">×</button>
+  <span class="sb-glow"></span>
+  <span class="sb-label" id="sbLabel">AD</span>
+  <span class="sb-title" id="sbTitle"></span>
+  <span class="sb-sub" id="sbSub"></span>
+  <span class="sb-cta" id="sbCta">자세히 →</span>
+</a>
+
+<div class="toast" id="toast"><span class="ic">✓</span><span id="toastMsg"></span></div>
+
+<script>
+/* ===== 설정 ===== */
+const SUPA={url:'',key:''};const TG={token:'',chat:''};
+const ADMIN={id:'leestones',pw:'1234',name:'이현석 위원장'};const FEE=120000;
+// ===== 연회비 분배 (모두 '직접 모집한 임원 본인'에게 — 다단계 아님) =====
+const OPS_RATE=0.10;        // 시아스트릿 운영비 10% (고정)
+const HQ_RATE=0.20;         // 아스파 본사 20% (고정)
+// 투트랙: 가입 후 30일(첫 달)과 이후로 임원 수수료 구조가 다름
+const PROMO_DAYS=30;        // 프로모션 기간(일)
+const T1_REFERRAL=0.70;     // 첫 달: 임원 직접 수수료 70%
+const T2_REFERRAL=0.60;     // 둘째 달~: 임원 직접 수수료 60%
+const T2_OPSFEE=0.10;       // 둘째 달~: 임원 운영비 10% (직접 모집 본인에게)
+// 회원 가입일 기준 첫 달 여부
+function isPromo(m){if(!m||!m.joined)return false;const d=(Date.now()-new Date(m.joined).getTime())/86400000;return d<=PROMO_DAYS;}
+// 회원 1명에 대한 임원 총 수령액(완납 기준)
+function execPayout(m){if(!m||!m.fee_paid)return 0;return isPromo(m)?Math.round(FEE*T1_REFERRAL):Math.round(FEE*(T2_REFERRAL+T2_OPSFEE));}
+
+/* ===== 팝업 · 배너 설정 (운영 시 이 부분만 수정) ===== */
+// enabled를 false로 하면 노출 안 됨. link는 외부 주소(새 창).
+const PROMO={
+  enabled:true,
+  id:'2026-member-recruit',         // 변경 시 '오늘 그만보기' 초기화됨
+  tag:'MEMBERSHIP · 2026',
+  title:'아스파골프 정회원 모집',
+  desc:'연회비 12만원으로 투어·골프장·아카데미·전용 혜택까지 — 지금 가입하세요',
+  image:'linear-gradient(150deg,#0d2a33,#0d4d5a)', // 이미지 URL 또는 그라데이션
+  goto:'signup'                      // 내부 페이지로 이동 (외부 링크는 link 사용)
+};
+const BANNER={
+  enabled:true,
+  label:'AD',
+  title:'GLOW · 채널 성장 플랫폼',
+  sub:'유튜브 · 인스타 · 틱톡 성장 마케팅',
+  cta:'무료로 시작하기 →',
+  link:'https://glow-0wdh.onrender.com'
+};
+let sb=null,MODE='local';
+try{if(SUPA.url&&SUPA.key&&window.supabase){sb=window.supabase.createClient(SUPA.url,SUPA.key);MODE='cloud';}}catch(e){MODE='local';}
+let state={members:[],tours:[],reservations:[],certs:[],session:{role:'guest',mid:null}};
+let seq=0;const nid=()=>Date.now()*1000+(seq++%1000);
+const $=id=>document.getElementById(id);
+const won=n=>Number(n||0).toLocaleString('ko-KR')+'원';
+const today=()=>new Date().toISOString().slice(0,10);
+const nextYear=()=>{const d=new Date();d.setFullYear(d.getFullYear()+1);return d.toISOString().slice(0,10);};
+const LS={save(){try{localStorage.setItem('aspa_db_v8',JSON.stringify({members:state.members,tours:state.tours,reservations:state.reservations,certs:state.certs,seq}));}catch(e){}},
+  load(){try{const d=localStorage.getItem('aspa_db_v8');return d?JSON.parse(d):null;}catch(e){return null;}}};
+function seed(){
+  state.tours=[
+    {id:nid(),title:"ASPA 창립기념 골프대회",flag:"Korea · 원주",date:"9월 29일(월) 12:00 티업",period:"센추리21CC · 원주 문막",course:"센추리21CC (원주 문막)",cls:"ti3",cap:80,joined:52,price:320000,status:"open",desc:"아시아생활체육골프연맹 창립기념 대회 · 선착순 20개팀(80명) · STN 주관방송",includes:"입회비 · 그린피 · 카트비 · 중식 · 만찬 · 기념품"},
+    {id:nid(),title:"중국 위해(威海) 프리미엄 투어",flag:"China · 威海",date:"6월 14~17일",period:"3박 4일",course:"위해 포인트 CC · 36홀",cls:"ti0",cap:40,joined:24,price:1450000,status:"open",desc:"황해를 마주한 명문 코스에서 즐기는 3박 4일 라운드 투어",includes:"왕복 항공 · 3회 라운드 · 4성급 호텔 · 캐디/카트 · 차량 의전"},
+    {id:nid(),title:"라오스 비엔티안 네트워킹 라운드",flag:"Laos · Vientiane",date:"9월 20일",period:"당일 라운드",course:"라오 컨트리클럽",cls:"ti1",cap:36,joined:31,price:1280000,status:"open",desc:"회원 간 네트워킹을 위한 라운드와 만찬 세션",includes:"18홀 라운드 · 캐디/카트 · 만찬 · 네트워킹 세션"},
+    {id:nid(),title:"일본 초청 골프대회 2026",flag:"Japan · Invitational",date:"11월 (예정)",period:"2박 3일 초청전",course:"이바라키 CC",cls:"ti2",cap:60,joined:12,price:1980000,status:"pre",desc:"일본 명문 코스 초청전 · 우대 회원권 상담 동반",includes:"왕복 항공 · 2회 라운드 · 우대 회원권 상담 · 시상 만찬"},
+    {id:nid(),title:"몽골 울란바토르 초원 투어",flag:"Mongolia · Ulaanbaatar",date:"7월 18~22일",period:"4박 5일",course:"몽골리아 마운틴 CC",cls:"ti1",cap:32,joined:9,price:1750000,status:"open",desc:"드넓은 초원 위에서 즐기는 이색 골프와 유목 문화 체험 투어",includes:"왕복 항공 · 3회 라운드 · 게르 체험 · 호텔 · 차량 의전"},
+  ];
+  state.members=[
+    {id:nid(),name:"김정미",mid:"kim@test.com",pw:"1234",phone:"010-1111-2222",region:"서울/경기",status:"active",tier:"reg",fee_paid:true,fee_status:"paid",fee_until:"2027-03-01",joined:"2026-03-02",referrer:"곽상기"},
+    {id:nid(),name:"곽상기",mid:"kwak@test.com",pw:"1234",phone:"010-3333-4444",region:"영남",status:"active",tier:"reg",fee_paid:true,fee_status:"paid",fee_until:"2026-12-31",joined:"2026-03-15",is_exec:true},
+    {id:nid(),name:"황대영",mid:"hwang@test.com",pw:"1234",phone:"010-5555-6666",region:"호남",status:"active",tier:"norm",fee_paid:false,fee_status:"pending",fee_until:null,joined:"2026-04-01",referrer:"곽상기"},
+    {id:nid(),name:"이주덕",mid:"lee@test.com",pw:"1234",phone:"010-7777-8888",region:"서울/경기",status:"active",tier:"reg",fee_paid:true,fee_status:"paid",fee_until:"2027-01-10",joined:"2026-02-20",is_exec:true},
+    {id:nid(),name:"박정웅",mid:"park@test.com",pw:"1234",phone:"010-9999-0000",region:"충청",status:"active",tier:"reg",fee_paid:true,fee_status:"paid",fee_until:"2027-02-01",joined:"2026-02-25",is_exec:true},
+    {id:nid(),name:"정현우",mid:"jung@test.com",pw:"1234",phone:"010-2222-3333",region:"서울/경기",status:"active",tier:"reg",fee_paid:true,fee_status:"paid",fee_until:"2027-03-20",joined:"2026-03-20",referrer:"이주덕"},
+    {id:nid(),name:"최민서",mid:"choi@test.com",pw:"1234",phone:"010-4444-5555",region:"영남",status:"active",tier:"reg",fee_paid:true,fee_status:"paid",fee_until:"2027-03-22",joined:"2026-03-22",referrer:"이주덕"},
+    {id:nid(),name:"한지영",mid:"han@test.com",pw:"1234",phone:"010-6666-7777",region:"호남",status:"active",tier:"norm",fee_paid:false,fee_status:"none",fee_until:null,joined:"2026-04-05",referrer:"박정웅"},
+  ];
+  const m=state.members;
+  state.reservations=[
+    {id:nid(),mid:m[0].id,mname:m[0].name,tid:state.tours[0].id,ttitle:state.tours[0].title,qty:"2명",opt:"라운드 + 숙박",status:"active",date:"2026-04-10"},
+    {id:nid(),mid:m[1].id,mname:m[1].name,tid:state.tours[1].id,ttitle:state.tours[1].title,qty:"4명 (1팀)",opt:"풀패키지",status:"pending",date:"2026-04-18"},
+  ];
+  state.certs=[{id:nid(),applicant:"한빛CC",type:"골프장 ISO 9001/45001 경영·안전 인증",org:"한빛컨트리클럽",phone:"031-000-0000",status:"pending",date:"2026-04-20",mid:null}];
+}
+const api={
+  async loadAll(){
+    if(MODE==='cloud'){
+      const [m,t,r,c]=await Promise.all([sb.from('members').select('*'),sb.from('tours').select('*').order('id'),sb.from('reservations').select('*'),sb.from('certs').select('*')]);
+      state.members=m.data||[];state.tours=t.data||[];state.reservations=r.data||[];state.certs=c.data||[];
+      if(!state.tours.length){seed();await Promise.all([sb.from('tours').insert(state.tours),sb.from('members').insert(state.members),sb.from('reservations').insert(state.reservations),sb.from('certs').insert(state.certs)]);}
+    }else{const s=LS.load();if(s&&s.members){state.members=s.members;state.tours=s.tours;state.reservations=s.reservations;state.certs=s.certs||[];seq=s.seq||0;
+      if(!state.tours.some(t=>(t.flag||'').includes('Mongolia')||(t.title||'').includes('몽골'))){state.tours.push({id:nid(),title:"몽골 울란바토르 초원 투어",flag:"Mongolia · Ulaanbaatar",date:"7월 18~22일",period:"4박 5일",course:"몽골리아 마운틴 CC",cls:"ti1",cap:32,joined:9,price:1750000,status:"open",desc:"드넓은 초원 위에서 즐기는 이색 골프와 유목 문화 체험 투어",includes:"왕복 항공 · 3회 라운드 · 게르 체험 · 호텔 · 차량 의전"});LS.save();}
+    }else{seed();LS.save();}}
+  },
+  async up(t,r){if(MODE==='cloud'){try{await sb.from(t).upsert(r);}catch(e){console.warn(e);}}else LS.save();},
+  async del(t,id){if(MODE==='cloud'){try{await sb.from(t).delete().eq('id',id);}catch(e){console.warn(e);}}else LS.save();},
+};
+async function notify(msg){if(MODE==='cloud'&&TG.token&&TG.chat){try{await fetch(`https://api.telegram.org/bot${TG.token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:TG.chat,text:'[ASPA] '+msg})});}catch(e){}}}
+
+/* SKELETON */
+function skeletonGrid(el){el.innerHTML=Array(3).fill('<div class="skel" style="height:296px"></div>').join('');}
+(async function init(){
+  skeletonGrid($('homeTours'));skeletonGrid($('bookTours'));
+  await api.loadAll();
+  await new Promise(r=>setTimeout(r,MODE==='local'?750:0)); // shimmer 노출
+  renderAll();renderNav();
+})();
+
+function toast(msg){const t=$('toast');$('toastMsg').textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),3000);}
+function go(v){
+  if(v==='admin'&&state.session.role!=='admin'){toast('관리자 전용 페이지입니다');v='login';}
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$('pg'+v[0].toUpperCase()+v.slice(1)).classList.add('active');window.scrollTo(0,0);
+  if(v==='member')renderMember();if(v==='admin')renderAdmin();if(v==='book')renderTours();if(v==='benefits')renderBenefits();if(v==='course')renderCourses();if(v==='about')renderCountries();if(v==='academy')renderAcademy();if(v==='exec')renderExec();}
+function statusTag(s){const m={open:'<span class="tag t-active">모집중</span>',pre:'<span class="tag t-pending">사전등록</span>',full:'<span class="tag t-cancel">마감</span>',active:'<span class="tag t-active">예약확정</span>',pending:'<span class="tag t-pending">대기</span>',cancel:'<span class="tag t-cancel">취소</span>',done:'<span class="tag t-done">완료</span>',review:'<span class="tag t-pending">서류심사</span>',audit:'<span class="tag t-info">현장실사</span>',issued:'<span class="tag t-done">발급완료</span>'};return m[s]||s;}
+function tierTag(t){const m={norm:'<span class="tag t-norm">일반 회원</span>',reg:'<span class="tag t-reg">정회원</span>',vip:'<span class="tag t-reg">정회원</span>'};return m[t]||m.norm;}
+function renderNav(){const s=state.session,el=$('navUser');
+  if(s.role==='guest')el.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="go('login')">로그인</button><button class="btn btn-gold btn-sm" onclick="go('signup')">JOIN</button>`;
+  else if(s.role==='member'){const m=state.members.find(x=>x.id===s.mid);el.innerHTML=`<span class="who"><b>${m?m.name:''}</b></span>${m&&m.is_exec?`<a onclick="go('exec')" style="color:var(--cyan)">임원 라운지</a>`:''}<a onclick="openCard()">회원증</a><a onclick="go('member')">My</a><button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>`;}
+  else el.innerHTML=`<span class="who">🔒 <b>ADMIN</b></span><a onclick="go('admin')">Console</a><button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>`;
+  const du=$('mDrawerUser');
+  if(du){
+    if(s.role==='guest')du.innerHTML=`<button class="btn btn-ghost" onclick="mGo('login')">로그인</button><button class="btn btn-gold" onclick="mGo('signup')">회원 가입</button>`;
+    else if(s.role==='member'){const m=state.members.find(x=>x.id===s.mid);du.innerHTML=`<div style="font-family:var(--mono);font-size:.8rem;color:var(--cyan-2);padding:0 4px 6px"><b style="color:var(--txt)">${m?m.name:''}</b> 님</div>${m&&m.is_exec?`<button class="btn btn-gold" onclick="mGo('exec')">🏆 임원 라운지</button>`:''}<button class="btn btn-dark" onclick="mAction('openCard')">디지털 회원증</button><button class="btn btn-ghost" onclick="mGo('member')">마이페이지</button><button class="btn btn-ghost" onclick="mAction('logout')">로그아웃</button>`;}
+    else du.innerHTML=`<button class="btn btn-ghost" onclick="mGo('admin')">관리자 콘솔</button><button class="btn btn-ghost" onclick="mAction('logout')">로그아웃</button>`;
+  }
+  if(typeof renderLounge==='function')renderLounge();}
+function toggleMenu(){const d=$('mDrawer'),b=$('mBackdrop'),n=$('nav');const open=d.classList.toggle('open');b.classList.toggle('open',open);n.classList.toggle('menu-open',open);document.body.style.overflow=open?'hidden':'';}
+function closeMenu(){$('mDrawer').classList.remove('open');$('mBackdrop').classList.remove('open');$('nav').classList.remove('menu-open');document.body.style.overflow='';}
+function mGo(v){closeMenu();go(v);}
+function mGoBook(){closeMenu();goBook();}
+function mAction(fn){closeMenu();if(fn==='openCard')openCard();else if(fn==='logout')logout();}
+async function doSignup(){
+  const name=$('suName').value.trim(),mid=$('suId').value.trim(),phone=$('suPhone').value.trim(),
+        pw=$('suPw').value.trim(),pw2=$('suPw2').value.trim(),region=$('suRegion').value,
+        birth=$('suBirth').value.trim(),gender=$('suGender').value,referrer=$('suReferrer')?$('suReferrer').value.trim():'';
+  if(!name||!mid||!phone||!pw){toast('필수 항목(*)을 모두 입력해주세요');return;}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mid)){toast('올바른 이메일 형식이 아닙니다');return;}
+  if(pw.length<6){toast('비밀번호는 6자 이상이어야 합니다');return;}
+  if(pw!==pw2){toast('비밀번호가 일치하지 않습니다');return;}
+  if(!$('suAgree1').checked||!$('suAgree2').checked){toast('필수 약관에 동의해주세요');return;}
+  if(state.members.some(m=>m.mid===mid)){toast('이미 가입된 아이디입니다');return;}
+  const m={id:nid(),name,mid,pw,phone,region,birth,gender,referrer,marketing:$('suAgree3').checked,status:'active',tier:'norm',fee_paid:false,fee_status:'none',fee_until:null,joined:today()};
+  state.members.push(m);await api.up('members',m);notify(`신규 회원: ${name} (${region})${referrer?' · 추천: '+referrer:''}`);state.session={role:'member',mid:m.id};renderNav();renderAll();
+  ['suName','suId','suPhone','suPw','suPw2','suBirth','suReferrer'].forEach(id=>{if($(id))$(id).value='';});
+  ['suAgreeAll','suAgree1','suAgree2','suAgree3'].forEach(id=>{if($(id))$(id).checked=false;});
+  showOk('가입을 환영합니다',`${name}님, 아스파골프 회원이 되셨습니다.\\n연회비 납부 후 정회원이 되면 회원 단톡방과 모든 혜택이 열립니다.`,'마이페이지로 이동 →',()=>go('member'));}
+function toggleAgreeAll(){const on=$('suAgreeAll').checked;document.querySelectorAll('.agree-item').forEach(c=>c.checked=on);}
+function showTerms(kind){
+  const txt=kind==='이용약관'
+    ?'제1조(목적) 본 약관은 아스파골프(ASPA) 회원 서비스 이용에 관한 조건을 규정합니다.\\n제2조(회원) 가입 신청 후 승인된 자를 회원으로 합니다.\\n제3조(서비스) 투어 예약, 골프장 부킹, 아카데미, ISO 인증 등을 제공합니다.\\n제4조(회비) 정회원 전환 시 연회비가 부과되며, 입금 확인 후 관리자 승인으로 전환됩니다.\\n※ 정식 약관 전문은 추후 게시됩니다.'
+    :'1. 수집 항목: 이름, 이메일, 연락처, 지역, 생년월일, 성별\\n2. 수집 목적: 회원 관리, 서비스 제공, 예약·결제 처리\\n3. 보유 기간: 회원 탈퇴 시까지\\n4. 동의를 거부할 수 있으나, 필수 항목 미동의 시 가입이 제한됩니다.\\n※ 정식 방침 전문은 추후 게시됩니다.';
+  showOk(kind+' 안내',txt,'확인',null);}
+function doLogin(){const id=$('liId').value.trim(),pw=$('liPw').value.trim();
+  if(id===ADMIN.id&&pw===ADMIN.pw){state.session={role:'admin',mid:null};renderNav();$('liId').value=$('liPw').value='';toast('총괄 관리자 로그인');go('admin');return;}
+  const m=state.members.find(x=>x.mid===id&&x.pw===pw);if(m){state.session={role:'member',mid:m.id};renderNav();renderTours();$('liId').value=$('liPw').value='';toast(`${m.name}님 환영합니다`);go('member');return;}
+  toast('아이디 또는 비밀번호가 일치하지 않습니다');}
+function logout(){state.session={role:'guest',mid:null};renderNav();renderTours();toast('로그아웃 되었습니다');go('home');}
+
+function tourCardHTML(t){const pct=Math.round(t.joined/t.cap*100),left=t.cap-t.joined;
+  const badge=t.joined>=t.cap?'<span class="badge b-full">SOLD OUT</span>':(t.status==='pre'?'<span class="badge b-pre">PRE</span>':'<span class="badge b-open">OPEN</span>');
+  const me=state.session.role==='member'?state.members.find(x=>x.id===state.session.mid):null;
+  const locked=me&&!me.fee_paid;
+  let btn;
+  if(t.joined>=t.cap)btn=`<button class="btn btn-ghost" disabled>예약 마감</button>`;
+  else if(locked)btn=`<button class="btn btn-ghost" onclick="openBook(${t.id})">🔒 정회원 전용</button>`;
+  else btn=`<button class="btn btn-gold" onclick="openBook(${t.id})">예약하기 →</button>`;
+  return `<div class="tour-card"><div class="tour-img ${t.cls||'ti3'}">${badge}<span class="flag">${t.flag}</span></div>
+    <div class="tour-body"><h3>${t.title}</h3><div class="tdesc">${t.desc||''}</div><div class="tour-meta"><span>📅 <b>${t.date}</b></span><span class="price">${won(t.price)}</span></div>
+    <div class="cap-bar"><div class="cap-fill" data-w="${pct}"></div></div><div class="cap-txt"><span>잔여 ${left}석</span><span><b>${t.joined}</b>/${t.cap}</span></div>${btn}</div></div>`;}
+function animateGauges(){requestAnimationFrame(()=>requestAnimationFrame(()=>{document.querySelectorAll('.cap-fill[data-w]').forEach(f=>{f.style.width=f.dataset.w+'%';});}));}
+function renderTours(){const h=state.tours.map(tourCardHTML).join('');$('homeTours').innerHTML=h;$('bookTours').innerHTML=h;animateGauges();}
+
+let curTour=null;
+function goBook(){if(state.session.role==='guest'){toast('예약은 로그인 후 이용 가능합니다');go('login');return;}go('book');}
+function openBook(tid){if(state.session.role!=='member'){toast(state.session.role==='admin'?'예약은 회원 계정으로':'로그인 후 가능합니다');if(state.session.role==='guest')go('login');return;}
+  const me=state.members.find(x=>x.id===state.session.mid);
+  if(me&&!me.fee_paid){showOk('정회원 전용 예약','투어 예약은 정회원부터 이용 가능합니다.\\n연회비 납부 후 정회원으로 전환하면 모든 투어를 예약할 수 있습니다.','연회비 납부하러 가기 →',()=>{go('member');setTimeout(openPay,400);});return;}
+  curTour=tid;const t=state.tours.find(x=>x.id===tid);$('bmTitle').textContent=t.title;
+  $('bmDetails').innerHTML=`<div class="r"><span>일정</span><b>${t.date} · ${t.period||''}</b></div><div class="r"><span>코스</span><b>${t.course||'-'}</b></div><div class="r"><span>참가비</span><b style="color:var(--cyan)">${won(t.price)} / 1인</b></div><div class="inc">포함 내역 · ${t.includes||'-'}</div>`;
+  $('bookModal').classList.add('show');}
+function closeM(id){$(id).classList.remove('show');}
+document.querySelectorAll('.modal-bg').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('show');}));
+async function confirmBook(){const t=state.tours.find(x=>x.id===curTour),m=state.members.find(x=>x.id===state.session.mid);
+  if(t.joined>=t.cap){toast('정원이 마감되었습니다');return;}
+  const r={id:nid(),mid:m.id,mname:m.name,tid:t.id,ttitle:t.title,qty:$('bmQty').value,opt:$('bmOpt').value,status:'pending',date:today()};
+  state.reservations.push(r);t.joined++;await api.up('reservations',r);await api.up('tours',t);notify(`예약: ${m.name} → ${t.title}`);
+  renderAll();closeM('bookModal');
+  showOk('예약이 접수되었습니다',`${t.title}\n${r.qty} · ${r.opt}\n\n입금 확인 후 예약이 확정됩니다.`,'내 예약 확인하기 →',()=>go('member'));}
+async function cancelRes(rid){const r=state.reservations.find(x=>x.id===rid);if(!r||r.status==='cancel')return;
+  r.status='cancel';const t=state.tours.find(x=>x.id===r.tid);if(t&&t.joined>0){t.joined--;await api.up('tours',t);}await api.up('reservations',r);renderAll();renderMember();toast('예약이 취소되었습니다');}
+function goCert(type){go('cert');if(type)$('ctType').value=type;}
+async function submitCert(){const type=$('ctType').value,name=$('ctName').value.trim(),org=$('ctOrg').value.trim(),phone=$('ctPhone').value.trim();
+  if(!name){toast('신청자 또는 단체명을 입력해주세요');return;}
+  const c={id:nid(),applicant:name,type,org,phone,status:'pending',date:today(),mid:state.session.role==='member'?state.session.mid:null};
+  state.certs.push(c);await api.up('certs',c);notify(`인증 신청: ${name} - ${type}`);$('ctName').value=$('ctOrg').value=$('ctPhone').value='';renderAll();
+  const member=state.session.role==='member';
+  showOk('인증 신청이 접수되었습니다',`${type}\n신청자: ${name}\n\n4단계 심사 프로세스로 진행되며, 담당자가 서류 안내를 드립니다.`,member?'진행 상태 확인 →':'확인',member?()=>go('member'):null);}
+function openPay(){payTab('acct',document.querySelector('.ptab'));$('payModal').classList.add('show');}
+function payTab(v,el){document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.pview').forEach(t=>t.classList.remove('active'));el.classList.add('active');$('pv'+v[0].toUpperCase()+v.slice(1)).classList.add('active');}
+function copyAcct(){const n=$('acctNo').textContent;const done=()=>toast('계좌번호가 복사되었습니다');
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(n).then(done).catch(()=>fallbackCopy(n,done));}else fallbackCopy(n,done);}
+function fallbackCopy(t,cb){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');cb();}catch(e){}document.body.removeChild(ta);}
+async function payFee(){const m=state.members.find(x=>x.id===state.session.mid);if(!m)return;
+  m.fee_status='pending';await api.up('members',m);notify(`연회비 입금 신청: ${m.name} (관리자 승인 대기)`);closeM('payModal');renderMember();renderAll();
+  showOk('입금 신청이 접수되었습니다',`입금 확인 후 관리자 승인을 거쳐 정회원으로 전환됩니다.\\n승인은 보통 영업일 기준 1일 이내 처리됩니다.`,'마이페이지로 이동 →',()=>go('member'));}
+
+/* SUCCESS modal */
+function showOk(title,msg,ctaLabel,ctaFn,showKakao,kakaoLabel,kakaoLink){$('okTitle').textContent=title;$('okMsg').textContent=msg;
+  const cta=$('okCta');cta.textContent=ctaLabel||'확인';cta.onclick=()=>{closeM('okModal');ctaFn&&ctaFn();};
+  const kk=$('okKakao');if(kk){kk.style.display=showKakao?'flex':'none';if(showKakao){kk.textContent=kakaoLabel||'💬 ASPA 회원 단톡방 참여하기';kk.href=kakaoLink||'https://open.kakao.com/o/guiUNhxi';}}
+  $('okClose').onclick=()=>closeM('okModal');$('okModal').classList.add('show');}
+
+function renderMember(){const m=state.members.find(x=>x.id===state.session.mid);if(!m)return;
+  $('memHi').textContent=`${m.name}님의 마이페이지`;
+  const my=state.reservations.filter(r=>r.mid===m.id),myc=state.certs.filter(c=>c.mid===m.id);
+  $('memStats').innerHTML=`<div class="stat"><div class="lbl">Tier</div><div class="val" style="font-size:1.2rem">${tierTag(m.tier)}</div></div>
+    <div class="stat"><div class="lbl">My Booking</div><div class="val">${my.length}<small> 건</small></div></div>
+    <div class="stat"><div class="lbl">Cert Apply</div><div class="val">${myc.length}<small> 건</small></div></div>
+    <div class="stat"><div class="lbl">Joined</div><div class="val" style="font-size:1rem">${m.joined}</div></div>`;
+  $('memFee').innerHTML=m.fee_paid
+    ?`<div class="card-row"><div class="mini"><div class="t">Annual Fee</div><div class="b" style="color:var(--cyan)">납부 완료 ✓</div><span style="font-size:.8rem;color:var(--txt-dim)">유효 ~ ${m.fee_until}</span></div><div class="mini"><div class="t">Tier</div><div class="b">${tierTag(m.tier)}</div><span style="font-size:.8rem;color:var(--txt-dim)">투어 예약 시 회원 우대가</span></div></div>
+       <div class="kakao-join-box"><div><b>💬 ASPA 회원 단톡방</b><p>정회원 전용 단톡방입니다. 투어·이벤트 소식을 가장 먼저 받아보세요.</p></div><a class="btn btn-kakao-join" href="https://open.kakao.com/o/guiUNhxi" target="_blank" rel="noopener">단톡방 참여하기 →</a></div>`
+    :(m.fee_status==='pending'
+      ?`<div class="card-row"><div class="mini"><div class="t">Annual Fee</div><div class="b" style="color:var(--amber)">입금확인 대기 중</div><span style="font-size:.8rem;color:var(--txt-dim)">관리자 승인 후 정회원으로 전환됩니다</span></div><div class="mini" style="display:flex;align-items:center"><span style="font-family:var(--mono);font-size:.78rem;color:var(--amber)">⏳ 승인 대기</span></div></div>`
+      :`<div class="card-row"><div class="mini"><div class="t">Annual Fee</div><div class="b" style="color:var(--red)">미납</div><span style="font-size:.8rem;color:var(--txt-dim)">연회비 ${won(FEE)} · 납부 시 정회원</span></div><div class="mini" style="display:flex;align-items:center"><button class="btn btn-gold" onclick="openPay()">연회비 납부 →</button></div></div>`);
+  $('memResTable').innerHTML=my.length?`<thead><tr><th>투어·대회</th><th>인원</th><th>옵션</th><th>예약일</th><th>상태</th><th></th></tr></thead><tbody>`+my.map(r=>`<tr><td><b>${r.ttitle}</b></td><td>${r.qty}</td><td>${r.opt}</td><td>${r.date}</td><td>${statusTag(r.status)}</td><td>${r.status!=='cancel'&&r.status!=='done'?`<button class="btn btn-danger btn-sm" onclick="cancelRes(${r.id})">취소</button>`:'—'}</td></tr>`).join('')+`</tbody>`:`<tbody><tr><td colspan="6" class="empty">예약 내역이 없습니다. <a onclick="goBook()">예약하기 →</a></td></tr></tbody>`;
+  $('memCertTable').innerHTML=myc.length?`<thead><tr><th>인증 종류</th><th>소속</th><th>신청일</th><th>진행</th></tr></thead><tbody>`+myc.map(c=>`<tr><td><b>${c.type}</b></td><td>${c.org||'-'}</td><td>${c.date}</td><td>${statusTag(c.status)}</td></tr>`).join('')+`</tbody>`:`<tbody><tr><td colspan="4" class="empty">신청 내역이 없습니다. <a onclick="go('cert')">인증 신청 →</a></td></tr></tbody>`;
+  $('memInfo').innerHTML=`<div class="table-scroll"><table><tbody><tr><th style="width:110px">이름</th><td>${m.name}</td></tr><tr><th>아이디</th><td>${m.mid}</td></tr><tr><th>연락처</th><td>${m.phone||'-'}</td></tr><tr><th>지역</th><td>${m.region||'-'}</td></tr><tr><th>등급</th><td>${tierTag(m.tier)}</td></tr></tbody></table></div>`;}
+
+function renderAdmin(){const revenue=state.reservations.filter(r=>r.status!=='cancel').reduce((s,r)=>{const t=state.tours.find(x=>x.id===r.tid);return s+(t?t.price*(parseInt(r.qty)||1):0);},0);
+  const feeRev=state.members.filter(m=>m.fee_paid).length*FEE;
+  const regCnt=state.members.filter(m=>m.fee_paid).length;
+  const normCnt=state.members.length-regCnt;
+  const feePending=state.members.filter(m=>m.fee_status==='pending').length;
+  const ym=today().slice(0,7);
+  const newThisMonth=state.members.filter(m=>(m.joined||'').slice(0,7)===ym).length;
+  const activeRes=state.reservations.filter(r=>r.status==='active'||r.status==='pending').length;
+  const opsRev=Math.round(feeRev*OPS_RATE);        // 시아스트릿 10% (전체 완납 기준)
+  // 임원 수수료: 추천인(임원)이 있는 완납 회원만, 가입 시점(투트랙)별로 합산
+  const paidMembers=state.members.filter(m=>m.fee_paid);
+  const refRev=paidMembers.filter(m=>m.referrer&&m.referrer.trim()).reduce((s,m)=>s+execPayout(m),0);
+  const hqRev=feeRev-opsRev-refRev;                 // 아스파 본사 (나머지)
+  $('adStats').innerHTML=`
+    <div class="stat"><div class="lbl">전체 회원</div><div class="val">${state.members.length}</div><span class="stat-sub">정회원 ${regCnt} · 일반 ${normCnt}</span></div>
+    <div class="stat ${feePending?'stat-alert':''}"><div class="lbl">입금 승인 대기</div><div class="val">${feePending}</div><span class="stat-sub">${feePending?'⚠ 확인 필요':'대기 없음'}</span></div>
+    <div class="stat"><div class="lbl">이번 달 신규</div><div class="val">${newThisMonth}</div><span class="stat-sub">${ym}</span></div>
+    <div class="stat ${activeRes?'stat-alert':''}"><div class="lbl">처리할 예약</div><div class="val">${activeRes}</div><span class="stat-sub">입금대기+확정</span></div>
+    <div class="stat"><div class="lbl">연회비 매출</div><div class="val" style="font-size:1.05rem">${won(feeRev)}</div><span class="stat-sub">정회원 ${regCnt}명 × ${won(FEE)}</span></div>
+    <div class="stat stat-ops"><div class="lbl">시아스트릿 운영 매출</div><div class="val" style="font-size:1.05rem">${won(opsRev)}</div><span class="stat-sub">연회비의 ${Math.round(OPS_RATE*100)}% · 회원당 ${won(FEE*OPS_RATE)}</span></div>`;
+  const settle=$('adSettle');
+  if(settle)settle.innerHTML=`
+    <div class="settle-row"><span>정회원 수 (완납)</span><b>${regCnt}명</b></div>
+    <div class="settle-row"><span>연회비 총 수납</span><b>${won(feeRev)}</b></div>
+    <div class="settle-row"><span>① 시아스트릿 운영비 (${Math.round(OPS_RATE*100)}%)</span><b style="color:var(--cyan)">${won(opsRev)}</b></div>
+    <div class="settle-row"><span>② 임원 수수료 (첫달 70% / 이후 60%+운영비10%)</span><b style="color:var(--amber)">${won(refRev)}</b></div>
+    <div class="settle-row total"><span>③ 아스파 본사 (나머지)</span><b>${won(hqRev)}</b></div>`;
+  renderAdminMembers();renderAdminRes();renderAdminCert();renderAdminTours();renderAdminReferral();}
+function adminTab(n,el){document.querySelectorAll('.admintab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));$('at'+n[0].toUpperCase()+n.slice(1)).classList.add('active');el.classList.add('active');}
+function memberDetail(id){const m=state.members.find(x=>x.id===id);if(!m)return;
+  const myRes=state.reservations.filter(r=>r.mid===id);
+  const feeTxt=m.fee_paid?`완납 (유효 ~ ${m.fee_until})`:(m.fee_status==='pending'?'입금확인 대기':'미납');
+  const refTxt=m.referrer?`${m.referrer}${m.fee_paid?` · 수수료 ${won(execPayout(m))} (${isPromo(m)?'첫달70%':'60%+운영10%'})`:' (미납)'}`:'-';
+  const resHtml=myRes.length?myRes.map(r=>`<tr><td>${r.ttitle}</td><td>${r.qty}명</td><td>${statusTag(r.status)}</td><td>${r.date}</td></tr>`).join(''):`<tr><td colspan="4" class="empty">예약 내역 없음</td></tr>`;
+  $('mdBody').innerHTML=`
+    <div class="md-grid">
+      <div><span class="md-k">이름</span><span class="md-v">${m.name}</span></div>
+      <div><span class="md-k">아이디</span><span class="md-v">${m.mid}</span></div>
+      <div><span class="md-k">연락처</span><span class="md-v">${m.phone||'-'}</span></div>
+      <div><span class="md-k">지역</span><span class="md-v">${m.region||'-'}</span></div>
+      <div><span class="md-k">생년월일</span><span class="md-v">${m.birth||'-'}</span></div>
+      <div><span class="md-k">성별</span><span class="md-v">${m.gender||'-'}</span></div>
+      <div><span class="md-k">등급</span><span class="md-v">${tierTag(m.tier)}</span></div>
+      <div><span class="md-k">회비</span><span class="md-v">${feeTxt}</span></div>
+      <div><span class="md-k">가입일</span><span class="md-v">${m.joined||'-'}</span></div>
+      <div><span class="md-k">마케팅 수신</span><span class="md-v">${m.marketing?'동의':'미동의'}</span></div>
+      <div><span class="md-k">임원 여부</span><span class="md-v">${m.is_exec?'<b style="color:var(--cyan)">임원</b>':'일반'}</span></div>
+      <div style="grid-column:1/-1"><span class="md-k">추천 임원</span><span class="md-v">${refTxt} <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="setReferrer(${m.id})">지정/수정</button></span></div>
+    </div>
+    <h4 style="margin:18px 0 8px;font-size:.95rem">예약 내역 (${myRes.length})</h4>
+    <div class="table-scroll"><table><thead><tr><th>투어·대회</th><th>인원</th><th>상태</th><th>예약일</th></tr></thead><tbody>${resHtml}</tbody></table></div>
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+      ${m.fee_status==='pending'?`<button class="btn btn-gold btn-sm" onclick="approveFee(${m.id});closeM('mdModal')">입금 승인</button>`:''}
+      <button class="btn btn-blue btn-sm" onclick="cycleTier(${m.id});closeM('mdModal')">등급 변경</button>
+      <button class="btn btn-blue btn-sm" onclick="toggleExec(${m.id})">${m.is_exec?'임원 해제':'임원 지정'}</button>
+      <button class="btn btn-dark btn-sm" onclick="toggleMember(${m.id});closeM('mdModal')">${m.status==='active'?'보류 처리':'활성 처리'}</button>
+    </div>`;
+  $('mdTitle').textContent=`${m.name} 회원 상세`;
+  $('mdModal').classList.add('show');}
+async function setReferrer(id){const m=state.members.find(x=>x.id===id);if(!m)return;
+  const v=prompt('추천한 임원 이름을 입력하세요 (지우려면 빈칸으로 두고 확인)',m.referrer||'');
+  if(v===null)return;
+  m.referrer=v.trim();await api.up('members',m);toast(m.referrer?`추천 임원: ${m.referrer}`:'추천인 삭제됨');renderAdmin();memberDetail(id);}
+async function toggleExec(id){const m=state.members.find(x=>x.id===id);if(!m)return;
+  m.is_exec=!m.is_exec;await api.up('members',m);toast(`${m.name} ${m.is_exec?'임원으로 지정':'임원 해제'}`);renderAdmin();memberDetail(id);}
+function execStandings(){
+  // 임원별 완납/대기 집계 (회원의 referrer 이름과 임원 이름 매칭)
+  const execs=state.members.filter(m=>m.is_exec);
+  const rows=execs.map(e=>{
+    const mine=state.members.filter(m=>m.referrer&&m.referrer.trim()&&(m.referrer.trim()===e.name||m.referrer.trim().indexOf(e.name)===0));
+    const paid=mine.filter(m=>m.fee_paid).length;
+    const pending=mine.length-paid;
+    const fee=mine.reduce((s,m)=>s+execPayout(m),0);  // 투트랙 반영 합산
+    return {name:e.name,id:e.id,paid,pending,fee,list:mine};
+  });
+  rows.sort((a,b)=>b.paid-a.paid||b.pending-a.pending);
+  return {rows};
+}
+function renderExec(){
+  const me=state.members.find(x=>x.id===state.session.mid);if(!me)return;
+  const {rows}=execStandings();
+  const myRank=rows.findIndex(r=>r.id===me.id)+1;
+  const mine=rows.find(r=>r.id===me.id)||{paid:0,pending:0,fee:0,list:[]};
+  $('execHi').textContent=`${me.name} 임원님`;
+  $('execStats').innerHTML=`
+    <div class="stat stat-ops"><div class="lbl">내 순위</div><div class="val">${myRank>0?myRank+'위':'-'}</div><span class="stat-sub">전체 임원 ${rows.length}명 중</span></div>
+    <div class="stat"><div class="lbl">내 완납 회원</div><div class="val">${mine.paid}<small>명</small></div><span class="stat-sub">정회원 전환 완료</span></div>
+    <div class="stat ${mine.pending?'stat-alert':''}"><div class="lbl">대기 회원</div><div class="val">${mine.pending}<small>명</small></div><span class="stat-sub">납부 전</span></div>
+    <div class="stat stat-ops"><div class="lbl">내 누적 수수료</div><div class="val" style="font-size:1.1rem">${won(mine.fee)}</div><span class="stat-sub">첫달 84,000 / 이후 72,000원</span></div>`;
+  const medals=['🥇','🥈','🥉'];
+  $('execLeaderboard').innerHTML=rows.length?rows.map((r,i)=>`
+    <div class="lb-row ${r.id===me.id?'lb-me':''}">
+      <span class="lb-rank">${medals[i]||(i+1)}</span>
+      <span class="lb-name">${r.name}${r.id===me.id?' <b style="color:var(--cyan)">(나)</b>':''}</span>
+      <span class="lb-bar"><span class="lb-fill" style="width:${rows[0].paid?Math.round(r.paid/rows[0].paid*100):0}%"></span></span>
+      <span class="lb-cnt">${r.paid}명</span>
+    </div>`).join(''):`<p class="empty" style="padding:20px">아직 등록된 임원이 없습니다.</p>`;
+  const myList=mine.list||[];
+  $('execMyList').innerHTML=`<thead><tr><th>회원명</th><th>지역</th><th>회비 상태</th><th>가입일</th></tr></thead><tbody>`+
+    (myList.length?myList.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.region||'-'}</td><td>${feeBadge(m)}</td><td>${m.joined||'-'}</td></tr>`).join('')
+      :`<tr><td colspan="4" class="empty">아직 추천한 회원이 없습니다. 회원을 추천해보세요!</td></tr>`)+`</tbody>`;
+}
+function exportCSV(kind){
+  let rows=[],fname='';
+  if(kind==='members'){
+    fname='ASPA_회원목록';
+    rows.push(['이름','아이디','연락처','지역','생년월일','성별','등급','회비상태','가입일','마케팅동의']);
+    state.members.forEach(m=>rows.push([m.name,m.mid,m.phone||'',m.region||'',m.birth||'',m.gender||'',m.tier==='reg'?'정회원':'일반',m.fee_paid?'완납':(m.fee_status==='pending'?'대기':'미납'),m.joined||'',m.marketing?'Y':'N']));
+  }else if(kind==='res'){
+    fname='ASPA_예약목록';
+    rows.push(['회원','투어·대회','인원','옵션','예약일','상태']);
+    state.reservations.forEach(r=>rows.push([r.mname||'',r.ttitle||'',r.qty||'',r.opt||'',r.date||'',r.status||'']));
+  }else if(kind==='referral'){
+    fname='ASPA_추천수수료';
+    rows.push(['회원','추천임원','회비상태','가입구분','수수료']);
+    state.members.filter(m=>m.referrer&&m.referrer.trim()).forEach(m=>rows.push([m.name,m.referrer,m.fee_paid?'완납':(m.fee_status==='pending'?'대기':'미납'),isPromo(m)?'첫달(70%)':'상시(60+10%)',execPayout(m)]));
+  }
+  const csv='\uFEFF'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\\r\\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${fname}_${today()}.csv`;a.click();URL.revokeObjectURL(a.href);
+  toast('CSV 파일을 내려받았습니다');}
+function feeBadge(m){if(m.fee_paid)return '<span class="tag t-done">완납</span>';if(m.fee_status==='pending')return '<span class="tag t-pending">입금확인 대기</span>';return '<span class="tag t-cancel">미납</span>';}
+function renderAdminMembers(){const q=($('memSearch').value||'').toLowerCase(),f=$('memFilter').value,tf=$('memTierFilter').value;
+  const list=state.members.filter(m=>(m.name+m.mid+m.region).toLowerCase().includes(q)&&(f==='all'||m.status===f)&&(tf==='all'||m.tier===tf));
+  $('adMemTable').innerHTML=`<thead><tr><th>이름</th><th>아이디</th><th>지역</th><th>등급</th><th>회비</th><th>상태</th><th>관리</th></tr></thead><tbody>`+(list.length?list.map(m=>`<tr><td><b><a onclick="memberDetail(${m.id})" style="cursor:pointer;color:var(--cyan-2);text-decoration:underline">${m.name}</a></b></td><td>${m.mid}</td><td>${m.region||'-'}</td><td>${tierTag(m.tier)}</td><td>${feeBadge(m)}</td><td>${statusTag(m.status)}</td><td style="white-space:nowrap">${m.fee_status==='pending'?`<button class="btn btn-gold btn-sm" onclick="approveFee(${m.id})">입금 승인</button> `:''}<button class="btn btn-blue btn-sm" onclick="cycleTier(${m.id})">등급</button> <button class="btn btn-dark btn-sm" onclick="toggleMember(${m.id})">${m.status==='active'?'보류':'활성'}</button> <button class="btn btn-danger btn-sm" onclick="delMember(${m.id})">삭제</button></td></tr>`).join(''):`<tr><td colspan="7" class="empty">조건에 맞는 회원이 없습니다.</td></tr>`)+`</tbody>`;}
+async function approveFee(id){const m=state.members.find(x=>x.id===id);if(!m)return;
+  m.fee_paid=true;m.fee_status='paid';m.fee_until=nextYear();if(m.tier==='norm')m.tier='reg';await api.up('members',m);notify(`연회비 승인 완료: ${m.name} → 정회원`);renderAdmin();renderTours();toast(`${m.name} 입금 승인 · 정회원 전환`);}
+async function cycleTier(id){const m=state.members.find(x=>x.id===id);m.tier=m.tier==='norm'?'reg':'norm';m.fee_paid=(m.tier==='reg');m.fee_status=(m.tier==='reg')?'paid':'none';await api.up('members',m);renderAdmin();renderTours();toast(`${m.name} ${m.tier==='reg'?'정회원으로':'일반 회원으로'} 변경`);}
+async function toggleMember(id){const m=state.members.find(x=>x.id===id);m.status=m.status==='active'?'pending':'active';await api.up('members',m);renderAdmin();toast(`${m.name} 상태 변경`);}
+async function delMember(id){const m=state.members.find(x=>x.id===id);if(!confirm(`${m.name} 회원을 삭제할까요?`))return;state.members=state.members.filter(x=>x.id!==id);await api.del('members',id);renderAdmin();renderAll();toast('삭제되었습니다');}
+function renderAdminRes(){const q=($('resSearch').value||'').toLowerCase(),f=$('resFilter').value;
+  const list=state.reservations.filter(r=>(r.mname+r.ttitle).toLowerCase().includes(q)&&(f==='all'||r.status===f));
+  $('adResTable').innerHTML=`<thead><tr><th>회원</th><th>투어·대회</th><th>인원</th><th>옵션</th><th>예약일</th><th>상태</th><th>처리</th></tr></thead><tbody>`+(list.length?list.map(r=>`<tr><td><b>${r.mname}</b></td><td>${r.ttitle}</td><td>${r.qty}</td><td>${r.opt}</td><td>${r.date}</td><td>${statusTag(r.status)}</td><td style="white-space:nowrap">${r.status==='pending'?`<button class="btn btn-dark btn-sm" onclick="setRes(${r.id},'active')">입금확인</button> `:''}${r.status==='active'?`<button class="btn btn-blue btn-sm" onclick="setRes(${r.id},'done')">완료</button> `:''}${r.status!=='cancel'?`<button class="btn btn-danger btn-sm" onclick="setRes(${r.id},'cancel')">취소</button>`:'—'}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">조건에 맞는 예약이 없습니다.</td></tr>`)+`</tbody>`;}
+async function setRes(id,s){const r=state.reservations.find(x=>x.id===id);if(s==='cancel'&&r.status!=='cancel'){const t=state.tours.find(x=>x.id===r.tid);if(t&&t.joined>0){t.joined--;await api.up('tours',t);}}r.status=s;await api.up('reservations',r);notify(`예약 변경: ${r.mname} [${s}]`);renderAll();renderAdmin();toast('예약 상태 변경');}
+function renderAdminCert(){const q=($('certSearch').value||'').toLowerCase(),f=$('certFilter').value;
+  const list=state.certs.filter(c=>(c.applicant+c.type).toLowerCase().includes(q)&&(f==='all'||c.status===f));
+  $('adCertTable').innerHTML=`<thead><tr><th>신청자/단체</th><th>인증 종류</th><th>소속</th><th>연락처</th><th>신청일</th><th>진행</th><th>처리</th></tr></thead><tbody>`+(list.length?list.map(c=>`<tr><td><b>${c.applicant}</b></td><td>${c.type}</td><td>${c.org||'-'}</td><td>${c.phone||'-'}</td><td>${c.date}</td><td>${statusTag(c.status)}</td><td style="white-space:nowrap">${c.status==='pending'?`<button class="btn btn-dark btn-sm" onclick="setCert(${c.id},'review')">서류</button>`:''}${c.status==='review'?`<button class="btn btn-blue btn-sm" onclick="setCert(${c.id},'audit')">실사</button>`:''}${c.status==='audit'?`<button class="btn btn-gold btn-sm" onclick="setCert(${c.id},'issued')">발급</button>`:''}${c.status==='issued'?'<span style="color:var(--emerald);font-size:.74rem">완료 ✓</span>':''}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">조건에 맞는 신청이 없습니다.</td></tr>`)+`</tbody>`;}
+async function setCert(id,s){const c=state.certs.find(x=>x.id===id);c.status=s;await api.up('certs',c);notify(`인증 진행: ${c.applicant} [${s}]`);renderAdmin();toast('인증 단계 변경');}
+function renderAdminTours(){$('adTourTable').innerHTML=`<thead><tr><th>투어·대회</th><th>지역</th><th>일정</th><th>참가비</th><th>모집</th><th>관리</th></tr></thead><tbody>`+state.tours.map(t=>`<tr><td><b>${t.title}</b></td><td>${t.flag}</td><td>${t.date}</td><td>${won(t.price)}</td><td><b style="color:var(--cyan)">${t.joined}</b>/${t.cap}</td><td><button class="btn btn-danger btn-sm" onclick="delTour(${t.id})">삭제</button></td></tr>`).join('')+`</tbody>`;}
+function renderAdminReferral(){
+  if($('refRateTxt'))$('refRateTxt').textContent='첫달 70% / 이후 60%+운영비10%';
+  if($('refPerTxt'))$('refPerTxt').textContent='첫달 84,000원 / 이후 72,000원';
+  const referred=state.members.filter(m=>m.referrer&&m.referrer.trim());
+  // 임원별 집계 (수수료는 투트랙 execPayout 합산)
+  const byRef={};
+  referred.forEach(m=>{const k=m.referrer.trim();if(!byRef[k])byRef[k]={paid:0,pending:0,fee:0};if(m.fee_paid){byRef[k].paid++;byRef[k].fee+=execPayout(m);}else byRef[k].pending++;});
+  const refs=Object.keys(byRef).sort((a,b)=>byRef[b].fee-byRef[a].fee);
+  const tbl=$('adReferralTable');
+  if(tbl)tbl.innerHTML=`<thead><tr><th>추천 임원</th><th>완납 회원</th><th>미납/대기</th><th>지급 수수료</th></tr></thead><tbody>`+
+    (refs.length?refs.map(r=>`<tr><td><b>${r}</b></td><td><b style="color:var(--cyan)">${byRef[r].paid}명</b></td><td>${byRef[r].pending}명</td><td><b>${won(byRef[r].fee)}</b></td></tr>`).join('')
+      +`<tr style="border-top:1.5px solid var(--glass-bd-hi)"><td><b>합계</b></td><td><b>${refs.reduce((s,r)=>s+byRef[r].paid,0)}명</b></td><td>${refs.reduce((s,r)=>s+byRef[r].pending,0)}명</td><td><b style="color:var(--cyan)">${won(refs.reduce((s,r)=>s+byRef[r].fee,0))}</b></td></tr>`
+      :`<tr><td colspan="4" class="empty">추천으로 가입한 회원이 아직 없습니다.</td></tr>`)+`</tbody>`;
+  const dt=$('adReferralDetail');
+  if(dt)dt.innerHTML=`<thead><tr><th>회원</th><th>추천 임원</th><th>회비 상태</th><th>가입구분</th><th>수수료</th></tr></thead><tbody>`+
+    (referred.length?referred.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.referrer}</td><td>${feeBadge(m)}</td><td>${isPromo(m)?'<span style="color:var(--amber)">첫달</span>':'상시'}</td><td>${m.fee_paid?won(execPayout(m)):'<span style="color:var(--txt-faint)">대기</span>'}</td></tr>`).join('')
+      :`<tr><td colspan="5" class="empty">추천 가입 회원이 없습니다.</td></tr>`)+`</tbody>`;
+}
+async function addTour(){const title=$('ntTitle').value.trim(),flag=$('ntFlag').value.trim()||'ASPA Tour',date=$('ntDate').value.trim()||'일정 미정',cap=parseInt($('ntCap').value)||40,price=parseInt($('ntPrice').value)||0;
+  if(!title){toast('투어명을 입력해주세요');return;}const t={id:nid(),title,flag,date,period:'',course:'',cls:['ti0','ti1','ti2','ti3'][state.tours.length%4],cap,joined:0,price,status:'open',desc:'',includes:''};
+  state.tours.push(t);await api.up('tours',t);$('ntTitle').value=$('ntFlag').value=$('ntDate').value='';renderAll();renderAdmin();toast(`'${title}' 추가됨`);}
+async function delTour(id){const t=state.tours.find(x=>x.id===id);if(!confirm(`'${t.title}' 삭제할까요?`))return;state.tours=state.tours.filter(x=>x.id!==id);await api.del('tours',id);renderAll();renderAdmin();toast('삭제되었습니다');}
+function renderAll(){renderTours();$('hsMembers').textContent=state.members.length;$('hsTours').textContent=state.tours.length;}
+
+const PARTNER_COURSES=[
+  {name:"더 크로스비 골프클럽",region:"경기 이천",desc:"미국 더크로스비 브랜드 27홀 프리미엄 퍼블릭. 이천 호법 소재, 사또겐타로 설계의 자연친화 코스.",search:"https://search.naver.com/search.naver?query=%EB%8D%94+%ED%81%AC%EB%A1%9C%EC%8A%A4%EB%B9%84+%EA%B3%A8%ED%94%84%ED%81%B4%EB%9F%BD",site:"https://www.thecrosbygc.co.kr/"},
+  {name:"몽베르 컨트리클럽",region:"경기 가평",desc:"북한강변 산악 지형의 27홀 명문 코스. 계절마다 다른 풍경과 전략적 레이아웃이 특징.",search:"https://search.naver.com/search.naver?query=%EB%AA%BD%EB%B2%A0%EB%A5%B4+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD",site:"https://www.montvert.co.kr/"},
+  {name:"샴발라 컨트리클럽",region:"경기",desc:"수도권 접근성과 코스 전략성을 겸비한 18홀. 페어웨이·그린 관리가 우수한 인기 코스.",search:"https://search.naver.com/search.naver?query=%EC%83%90%EB%B0%9C%EB%9D%BC+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"오렌지듄스 영종 골프클럽",region:"인천 영종도",desc:"서해 바다를 조망하는 링크스 스타일 18홀. 바람과 언듈레이션이 승부를 가르는 해안 코스.",search:"https://search.naver.com/search.naver?query=%EC%98%A4%EB%A0%8C%EC%A7%80%EB%93%9C%EC%8A%A4+%EC%98%81%EC%A2%85+%EA%B3%A8%ED%94%84%ED%81%B4%EB%9F%BD"},
+  {name:"파주 컨트리클럽",region:"경기 파주",desc:"수도권 북부 임진강 인근 18홀. 접근성이 좋아 평일·주말 라운드 모두 인기.",search:"https://search.naver.com/search.naver?query=%ED%8C%8C%EC%A3%BC+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"로드힐스 골프&리조트",region:"경기 여주",desc:"여주 남한강 인근 리조트형 18홀. 골프와 숙박·휴양을 함께 즐기기 좋은 코스.",search:"https://search.naver.com/search.naver?query=%EB%A1%9C%EB%93%9C%ED%9E%90%EC%8A%A4+%EA%B3%A8%ED%94%84+%EB%A6%AC%EC%A1%B0%ED%8A%B8"},
+  {name:"파가니카 컨트리클럽",region:"경기",desc:"수도권 남부 명문 회원제 18홀. 깊은 숲과 계곡을 활용한 프리미엄 레이아웃.",search:"https://search.naver.com/search.naver?query=%ED%8C%8C%EA%B0%80%EB%8B%88%EC%B9%B4+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"SG아름다운 골프리조트",region:"충북",desc:"충북권 대표 리조트형 18홀. 넓은 페어웨이와 쾌적한 클럽하우스가 강점.",search:"https://search.naver.com/search.naver?query=SG%EC%95%84%EB%A6%84%EB%8B%A4%EC%9A%B4+%EA%B3%A8%ED%94%84%EB%A6%AC%EC%A1%B0%ED%8A%B8"},
+  {name:"한맥 컨트리클럽",region:"경기 이천",desc:"이천·여주권 인기 18홀. 수도권에서 1시간 내 접근 가능한 실속형 코스.",search:"https://search.naver.com/search.naver?query=%ED%95%9C%EB%A7%A5+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"레이크우드 컨트리클럽",region:"경기 양주",desc:"양주·의정부권 27홀 명문. 호수와 숲이 어우러진 3코스 27홀 대형 레이아웃.",search:"https://search.naver.com/search.naver?query=%EB%A0%88%EC%9D%B4%ED%81%AC%EC%9A%B0%EB%93%9C+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"베뉴지 컨트리클럽",region:"충남",desc:"충남권 리조트형 18홀. 중부권 골퍼들의 주말 라운드 명소.",search:"https://search.naver.com/search.naver?query=%EB%B2%A0%EB%89%B4%EC%A7%80+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"신라 CC",region:"경기",desc:"전통 회원제 18홀. 오랜 역사와 정통적인 코스 매너가 유지되는 명문 클럽.",search:"https://search.naver.com/search.naver?query=%EC%8B%A0%EB%9D%BC+CC+%EA%B3%A8%ED%94%84"},
+  {name:"참밸리 컨트리클럽",region:"경기",desc:"계곡 지형을 활용한 18홀. 업다운이 있는 전략형 코스로 숙련 골퍼에게 인기.",search:"https://search.naver.com/search.naver?query=%EC%B0%B8%EB%B0%B8%EB%A6%AC+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"한림광릉 컨트리클럽",region:"경기 남양주",desc:"수도권 동부 18홀. 광릉 숲 인근 자연 친화형 코스, 접근성 우수.",search:"https://search.naver.com/search.naver?query=%ED%95%9C%EB%A6%BC%EA%B4%91%EB%A6%89+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"샤인데일 골프&리조트",region:"강원",desc:"강원권 리조트 연계 18홀. 산과 계곡 사이에서 즐기는 힐링 라운드.",search:"https://search.naver.com/search.naver?query=%EC%83%A4%EC%9D%B8%EB%8D%B0%EC%9D%BC+%EA%B3%A8%ED%94%84+%EB%A6%AC%EC%A1%B0%ED%8A%B8"},
+  {name:"감곡 컨트리클럽",region:"충북 음성",desc:"충북 음성 18홀. 중부권에서 코스 컨디션이 안정적인 편.",search:"https://search.naver.com/search.naver?query=%EA%B0%90%EA%B3%A1+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"구니컨트리클럽",region:"경기",desc:"수도권 회원제 18홀. 조용한 분위기와 깔끔한 코스 관리로 단골 회원이 많음.",search:"https://search.naver.com/search.naver?query=%EA%B5%AC%EB%8B%88%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"오로라 골프앤리조트",region:"강원",desc:"강원권 리조트형 18홀. 골프와 휴양을 함께 즐길 수 있는 휴식형 코스.",search:"https://search.naver.com/search.naver?query=%EC%98%A4%EB%A1%9C%EB%9D%BC+%EA%B3%A8%ED%94%84%EC%95%A4%EB%A6%AC%EC%A1%B0%ED%8A%B8"},
+  {name:"리베라 컨트리클럽",region:"경기 용인",desc:"용인·수지권 18홀 명문. 수도권 남부 골퍼들의 대표 라운드 코스.",search:"https://search.naver.com/search.naver?query=%EB%A6%AC%EB%B2%A0%EB%9D%BC+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"빅토리아 골프클럽",region:"경기",desc:"전략형 18홀. 좁은 페어웨이와 까다로운 그린이 승부욕을 자극.",search:"https://search.naver.com/search.naver?query=%EB%B9%85%ED%86%A0%EB%A6%AC%EC%95%84+%EA%B3%A8%ED%94%84%ED%81%B4%EB%9F%BD"},
+  {name:"써닝포인트 컨트리클럽",region:"경기",desc:"수도권 18홀. 평지와 언듈레이션이 조화된 대중적 인기 코스.",search:"https://search.naver.com/search.naver?query=%EC%8D%A8%EB%8B%9D%ED%8F%AC%EC%9D%B8%ED%8A%B8+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"클럽72 CC - 바다코스",region:"인천 영종도",desc:"국내 최대 규모 퍼블릭 72홀 중 바다코스. 인천공항 인근 링크스형 대형 코스.",search:"https://search.naver.com/search.naver?query=%ED%81%B4%EB%9F%BD72+%EB%B0%94%EB%8B%A4%EC%BD%94%EC%8A%A4",site:"https://www.club72.co.kr/"},
+  {name:"클럽디 더플레이어스",region:"경기",desc:"챔피언십 대회 개최 경력의 18홀. 프로·아마 모두 인정하는 수준 높은 코스.",search:"https://search.naver.com/search.naver?query=%ED%81%B4%EB%9F%BD%EB%94%94+%EB%8D%94%ED%94%8C%EB%A0%88%EC%9D%B4%EC%96%B4%EC%8A%A4",site:"https://www.clubd.co.kr/"},
+  {name:"웰리힐리파크 컨트리클럽",region:"강원 횡성",desc:"횡성 리조트 연계 18홀. 강원권 대표 휴양형 골프장.",search:"https://search.naver.com/search.naver?query=%EC%9B%94%EB%A6%AC%ED%9E%90%EB%A6%AC%ED%8C%8C%ED%81%AC+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD",site:"https://www.wellihillipark.com/"},
+  {name:"마론 컨트리클럽",region:"충북",desc:"충북권 18홀 명문. 중부 지역 골퍼들의 단골 제휴 코스.",search:"https://search.naver.com/search.naver?query=%EB%A7%88%EB%A1%A0+%EC%BB%A8%ED%8A%B8%EB%A6%AC%ED%81%B4%EB%9F%BD"},
+  {name:"클럽디 거창",region:"경남 거창",desc:"영남권 산악 18홀. 거창의 산세를 활용한 이색 라운드 코스.",search:"https://search.naver.com/search.naver?query=%ED%81%B4%EB%9F%BD%EB%94%94+%EA%B1%B0%EC%B0%BD",site:"https://www.clubd.co.kr/"}
+];
+function courseSearchUrl(c){return c.search||('https://search.naver.com/search.naver?query='+encodeURIComponent((c.name||'')+' 골프장'));}
+function courseDetail(i){const c=PARTNER_COURSES[i];if(!c)return;
+  const search=courseSearchUrl(c);
+  $('mdTitle').textContent=`⛳ ${c.name}`;
+  $('mdBody').innerHTML=`
+    <div class="md-grid" style="margin-bottom:16px">
+      <div><span class="md-k">지역</span><span class="md-v">${c.region}</span></div>
+      <div><span class="md-k">회원 혜택</span><span class="md-v" style="color:var(--cyan)">라운드 1인 2만원 할인</span></div>
+    </div>
+    <div class="course-detail-desc">${c.desc}</div>
+    <ul class="bd-list" style="margin-bottom:18px">
+      <li>아스파골프 <b>정회원</b> 전용 제휴 할인 (연회비 완납 후 이용)</li>
+      <li>그린피 2만원 할인 — 타이거부킹 또는 골프장 예약 시 적용</li>
+      <li>예약·일정 문의는 카카오톡 상담으로도 가능합니다</li>
+    </ul>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${c.site?`<a class="btn btn-gold btn-sm" href="${c.site}" target="_blank" rel="noopener">🌐 골프장 공식 사이트</a>`:''}
+      <a class="btn btn-blue btn-sm" href="${search}" target="_blank" rel="noopener">🔍 네이버에서 정보 보기</a>
+      <button class="btn btn-dark btn-sm" onclick="bookingSite()">📅 타이거부킹 예약</button>
+      <a class="btn btn-kakao-join btn-sm" href="https://open.kakao.com/o/sIpiWhxi" target="_blank" rel="noopener">💬 예약 문의</a>
+    </div>
+    <p style="margin-top:16px;font-size:.8rem;color:var(--txt-faint)">※ 제휴 조건·할인 금액은 골프장 사정에 따라 달라질 수 있습니다.</p>`;
+  $('mdModal').classList.add('show');}
+function openCourseSearch(i,e){if(e){e.stopPropagation();}const c=PARTNER_COURSES[i];if(!c)return;window.open(courseSearchUrl(c),'_blank');}
+function renderCourses(){const el=$('courseList');if(!el)return;
+  el.innerHTML=PARTNER_COURSES.map((c,i)=>`<div class="cl-item" onclick="courseDetail(${i})"><span class="ci-dot"></span><span class="ci-name">${c.name}</span><span class="ci-region">${c.region}</span><span class="ci-desc">${c.desc}</span><span class="ci-tag">−2만원</span><a class="ci-link" href="${courseSearchUrl(c)}" target="_blank" rel="noopener" onclick="openCourseSearch(${i},event)" title="네이버에서 보기">🔗</a></div>`).join('');
+  const gate=$('courseGate'),cta=$('courseCta');if(!gate)return;
+  const s=state.session.role;
+  const m=s==='member'?state.members.find(x=>x.id===state.session.mid):null;
+  const isReg=m&&m.fee_paid, isMember=s==='member', isAdmin=s==='admin';
+  gate.classList.remove('gate-locked','gate-dim');
+  const old=gate.querySelector('.gate-over');if(old)old.remove();
+  if(!isMember&&!isAdmin){
+    gate.classList.add('gate-locked');
+    const ov=document.createElement('div');ov.className='gate-over';
+    ov.innerHTML=`<span class="lk">🔒</span><h4>정회원 전용 혜택</h4><p>제휴 골프장 할인·부킹은 아스파골프 정회원에게만 공개됩니다.<br>먼저 무료 가입 후 정회원으로 전환하세요.</p><button class="btn btn-gold" onclick="go('signup')">무료 가입하기 →</button>`;
+    gate.appendChild(ov);
+  }else if(isMember&&!isReg){
+    gate.classList.add('gate-dim');
+    const ov=document.createElement('div');ov.className='gate-over soft';
+    ov.innerHTML=`<span class="lk">⭐</span><h4>정회원 전용 혜택</h4><p>골프장 2만원 할인·부킹은 정회원부터 이용하실 수 있습니다.<br>연회비 납부 후 관리자 승인을 거치면 열립니다.</p><button class="btn btn-gold" onclick="openPay()">연회비 납부하고 정회원 되기 →</button>`;
+    gate.appendChild(ov);
+  }
+  if(cta){
+    if(s==='guest')cta.innerHTML='';
+    else if(isMember&&!isReg)cta.innerHTML='';
+    else cta.innerHTML='';
+  }
+}
+function bookingSite(){
+  const s=state.session.role;
+  if(s==='guest'){toast('골프장 할인은 회원 가입 후 이용 가능합니다');go('login');return;}
+  const m=s==='member'?state.members.find(x=>x.id===state.session.mid):null;
+  if(m&&!m.fee_paid){showOk('정회원 전용 혜택','제휴 골프장 할인·부킹은 정회원부터 이용 가능합니다.\\n연회비 납부 후 정회원으로 전환하면 2만원 할인 부킹을 이용하실 수 있습니다.','연회비 납부하러 가기 →',()=>{go('member');setTimeout(openPay,400);});return;}
+  window.open('https://www.tigerbooking.com/?aid=asfa&utm_source=ASFA','_blank');toast('타이거부킹 예약 사이트로 이동합니다');}
+function academyApply(){
+  const s=state.session.role;
+  if(s==='guest'){toast('레슨 신청은 회원 로그인 후 이용 가능합니다');go('login');return;}
+  const m=s==='member'?state.members.find(x=>x.id===state.session.mid):null;
+  if(m&&!m.fee_paid){showOk('정회원 전용 프로그램','투어프로 레슨은 정회원부터 신청 가능합니다.\\n연회비 납부 후 정회원으로 전환하면 모든 레슨을 회원가로 신청할 수 있습니다.','연회비 납부하러 가기 →',()=>{go('member');setTimeout(openPay,400);});return;}
+  if(m)notify(`레슨 문의: ${m.name} (${m.phone||'연락처 미입력'})`);
+  showOk('레슨 문의 안내','아래 카카오톡 버튼을 눌러 문의해 주세요.\\n원하시는 레슨 종류와 일정을 남겨주시면 담당자가 안내해 드립니다.','확인',null,true,'💬 카카오톡으로 문의하기','https://open.kakao.com/o/sIpiWhxi');}
+function renderAcademy(){
+  const pv=$('acadPreview'),gate=$('acadGate'),cta=$('acadCta');if(!gate)return;
+  const s=state.session.role;
+  const m=s==='member'?state.members.find(x=>x.id===state.session.mid):null;
+  const isReg=m&&m.fee_paid, isMember=s==='member', isAdmin=s==='admin';
+  if(pv){pv.innerHTML=`<div class="bf-preview-row" style="margin-bottom:24px">
+    <div class="bf-chip">🏌️ KPGA · KLPGA 투어프로 직강</div>
+    <div class="bf-chip">🏷️ 정회원가 최대 50% 할인</div>
+    <div class="bf-chip">🎯 숏게임 · 필드 · 원포인트</div>
+    <div class="bf-chip">🏕️ 단기 전지훈련 캠프</div>
+  </div>`;}
+  gate.classList.remove('gate-locked','gate-dim');
+  const old=gate.querySelector('.gate-over');if(old)old.remove();
+  if(!isMember&&!isAdmin){
+    gate.classList.add('gate-locked');
+    const ov=document.createElement('div');ov.className='gate-over';
+    ov.innerHTML=`<span class="lk">🔒</span><h4>정회원 전용 레슨</h4><p>투어프로 특별 레슨은 아스파골프 정회원에게만 공개됩니다.<br>먼저 무료 가입 후 정회원으로 전환하세요.</p><button class="btn btn-gold" onclick="go('signup')">무료 가입하기 →</button>`;
+    gate.appendChild(ov);
+  }else if(isMember&&!isReg){
+    gate.classList.add('gate-dim');
+    const ov=document.createElement('div');ov.className='gate-over soft';
+    ov.innerHTML=`<span class="lk">⭐</span><h4>정회원 전용 레슨</h4><p>투어프로 레슨은 정회원부터 회원가로 신청하실 수 있습니다.<br>연회비 납부 후 관리자 승인을 거치면 열립니다.</p><button class="btn btn-gold" onclick="openPay()">연회비 납부하고 정회원 되기 →</button>`;
+    gate.appendChild(ov);
+  }
+  if(isReg||isAdmin)cta.innerHTML=`<button class="btn btn-gold" onclick="academyApply()">레슨 문의 · 신청 →</button>`;
+  else cta.innerHTML='';
+}
+
+const MEMBER_COUNTRIES=[
+  {f:"🇰🇷",kr:"대한민국",en:"South Korea"},{f:"🇨🇳",kr:"중국",en:"China"},{f:"🇯🇵",kr:"일본",en:"Japan"},
+  {f:"🇱🇦",kr:"라오스",en:"Laos"},{f:"🇻🇳",kr:"베트남",en:"Vietnam"},{f:"🇹🇭",kr:"태국",en:"Thailand"},
+  {f:"🇲🇾",kr:"말레이시아",en:"Malaysia"},{f:"🇸🇬",kr:"싱가포르",en:"Singapore"},{f:"🇵🇭",kr:"필리핀",en:"Philippines"},
+  {f:"🇮🇩",kr:"인도네시아",en:"Indonesia"},{f:"🇮🇳",kr:"인도",en:"India"},{f:"🇧🇩",kr:"방글라데시",en:"Bangladesh"},
+  {f:"🇰🇭",kr:"캄보디아",en:"Cambodia"},{f:"🇭🇰",kr:"홍콩",en:"Hong Kong"},{f:"🇲🇴",kr:"마카오",en:"Macau"},
+  {f:"🇹🇼",kr:"대만",en:"Chinese Taipei"},{f:"🇺🇿",kr:"우즈베키스탄",en:"Uzbekistan"},{f:"🇰🇿",kr:"카자흐스탄",en:"Kazakhstan"}
+];
+function renderCountries(){const el=$('countryGrid');if(!el)return;
+  el.innerHTML=MEMBER_COUNTRIES.map(c=>`<div class="cty"><div class="flag">${c.f}</div><div class="kr">${c.kr}</div><div class="en">${c.en}</div></div>`).join('');}
+
+/* 디지털 회원증 (QR) */
+function openCard(){const m=state.members.find(x=>x.id===state.session.mid);if(!m){toast('로그인이 필요합니다');return;}
+  $('mcName').textContent=m.name;
+  $('mcType').textContent=m.fee_paid?'PROFESSIONAL MEMBER':'AMATEUR MEMBER';
+  $('mcValid').textContent='유효기간 '+(m.joined||'2025/06/01')+' ~ '+(m.fee_until||'2026/06/01');
+  const box=$('qrBox');box.innerHTML='';
+  try{new QRCode(box,{text:'ASPA-MEMBER:'+m.id+':'+m.mid,width:150,height:150,colorDark:'#0c2419',colorLight:'#ffffff'});}
+  catch(e){box.innerHTML='<div style="font-family:monospace;font-size:.7rem;color:#0c2419">QR\\n'+m.id+'</div>';}
+  $('cardModal').classList.add('show');}
+
+/* 소셜 로그인 (UI 시연 — 게스트 체험 계정으로 입장) */
+function socialLogin(provider){
+  // 실제 소셜 로그인은 실서버(Supabase OAuth) 연동 후 활성화됩니다.
+  showOk(provider+' 로그인 준비 중',provider+' 간편 로그인은 곧 제공될 예정입니다.\\n현재는 이메일로 가입·로그인해 주세요.','이메일로 가입하기 →',()=>go('signup'));}
+
+function renderLounge(){const el=$('loungeBody');if(!el)return;
+  const offers=`<div class="lounge-grid">
+    <div class="loffer"><span class="lt">한정 특가</span><h4>위해 프리미엄 회원 특가</h4><p>3박 4일 · 36홀 라운드 패키지</p><div class="lp"><s>1,450,000원</s>1,160,000원</div></div>
+    <div class="loffer"><span class="lt">정회원 한정</span><h4>일본 프라이빗 라운드</h4><p>이바라키 CC · 한정 8팀 선착순</p><div class="lp">회원 초청</div></div>
+    <div class="loffer"><span class="lt">분기 1회</span><h4>회원 네트워킹 나이트</h4><p>전용 라운지 만찬 · 비즈니스 세션</p><div class="lp">무료 초청</div></div>
+    <div class="loffer"><span class="lt">정회원 전용</span><h4>아스파골프 회원 단톡방</h4><p>투어·이벤트 소식 + 회원 네트워킹</p><div class="lp">참여 가능</div></div>
+  </div>`;
+  const s=state.session.role;
+  if(s==='member'||s==='admin')el.innerHTML=offers;
+  else el.innerHTML=`<div class="locked"><div class="blurred">${offers}</div><div class="lock-over"><span class="lk">🔒</span><h4>회원 전용 라운지</h4><p>이 특가와 한정 혜택은 아스파골프 회원에게만 공개됩니다. 지금 가입하고 모든 혜택을 확인하세요.</p><button class="btn btn-gold" onclick="go('signup')">가입하고 입장하기 →</button></div></div>`;}
+
+const BENEFIT_DETAILS=[
+  {icon:'🏷️',title:'투어 회원 우대가',sum:'모든 글로벌 투어 최대 20% 할인',body:'아스파골프가 주관·주최하는 모든 글로벌 투어와 대회를 정회원 전용 우대가로 이용하실 수 있습니다.',points:['비회원 공개가 대비 최대 20% 할인','창립기념 대회, 위해·라오스·몽골 투어 등 전 일정 적용','동반 1인까지 우대가 적용 (일부 상품 제외)','우대가는 예약 시 자동 적용']},
+  {icon:'⏱️',title:'우선 예약권',sum:'일반 공개 전 회원 선예약',body:'정원이 빠르게 마감되는 인기 투어를 일반 공개보다 먼저 예약할 수 있는 권한입니다.',points:['일반 공개 24~48시간 전 회원 선예약 오픈','한정 정원 투어(예: 일본 초청전)에서 특히 유리','마이페이지에서 선예약 일정 알림 제공']},
+  {icon:'⛩️',title:'일본 회원권 상담 우선',sum:'일본 명문 골프장 회원권 우선 상담',body:'일본 명문 골프장의 우대 회원권 가입·구매 상담을 정회원에게 우선 배정합니다.',points:['일본 현지 제휴 골프장 회원권 정보 제공','초청전 참가 시 현장 상담 연결','회원권 구매 시 협회 제휴 조건 적용']},
+  {icon:'🛡️',title:'ISO 인증 회원 할인',sum:'골프장·단체·심사원 인증 할인',body:'아스파골프가 발급하는 ISO 기반 인증 신청 시 정회원 전용 할인이 적용됩니다.',points:['골프장 운영 인증 / 단체 인증 / 심사원 자격 인증','정회원 신청 시 인증 수수료 할인','갱신 시에도 회원 할인 유지']},
+  {icon:'🥂',title:'전용 네트워킹',sum:'회원 라운지·만찬·비즈니스 세션',body:'정회원만 초청되는 오프라인 네트워킹 행사에 참여하실 수 있습니다.',points:['분기별 회원 전용 만찬·라운지','업계 인사·임원진과의 비즈니스 네트워킹','대회 현장 VIP 라운지 이용']},
+  {icon:'🎁',title:'협찬 브랜드 혜택',sum:'공식 후원 브랜드 증정·할인',body:'아스파골프 공식 후원 브랜드의 회원 전용 혜택을 받으실 수 있습니다.',points:['야마하 골프 등 공식 후원사 회원 우대','스포츠·뷰티·건강기능식품 브랜드 증정·할인','시즌별 협찬 이벤트 우선 참여']},
+  {icon:'📺',title:'전용 콘텐츠 · 라이브',sum:'대회 라이브·레슨 영상 접근',body:'정회원에게만 공개되는 온라인 콘텐츠를 시청하실 수 있습니다.',points:['대회 현장 생중계(STN 주관방송 연동)','투어프로 레슨 영상 아카이브','회원 전용 골프 팁·코스 공략 콘텐츠']},
+  {icon:'💬',title:'회원 단톡방 참여',sum:'정회원 전용 카카오톡 단톡방',body:'정회원만 입장 가능한 카카오톡 단톡방에서 가장 빠른 소식과 네트워킹을 누리세요.',points:['투어·대회·이벤트 소식 실시간 공유','회원 간 라운드 동반 모집·친목','협회 공지 및 한정 혜택 우선 안내','입금 승인 후 마이페이지에서 입장 링크 제공']},
+  {icon:'🎂',title:'기념일 라운드',sum:'생일·기념일 무료 라운드 혜택',body:'정회원의 생일과 기념일을 협회가 함께 축하합니다.',points:['생일 월 무료/할인 라운드 혜택','기념일 작은 선물 증정','가입 시 등록한 생년월일 기준 자동 안내']}
+];
+function benefitDetail(i){const b=BENEFIT_DETAILS[i];if(!b)return;
+  $('mdTitle').textContent=`${b.icon} ${b.title}`;
+  $('mdBody').innerHTML=`
+    <p style="color:var(--cyan);font-family:var(--mono);font-size:.82rem;margin-bottom:12px">${b.sum}</p>
+    <p style="color:var(--txt-2);font-size:.92rem;line-height:1.7;margin-bottom:16px">${b.body}</p>
+    <ul class="bd-list">${b.points.map(p=>`<li>${p}</li>`).join('')}</ul>
+    <p style="margin-top:18px;font-size:.82rem;color:var(--txt-faint)">※ 모든 혜택은 정회원(연회비 납부) 전환 후 이용 가능합니다.</p>`;
+  $('mdModal').classList.add('show');}
+function renderBenefits(){
+  const pv=$('benefitPreview'),gate=$('benefitGate'),cta=$('benefitCta');if(!gate)return;
+  const s=state.session.role;
+  const m=s==='member'?state.members.find(x=>x.id===state.session.mid):null;
+  const isReg=m&&m.fee_paid;            // 정회원
+  const isMember=s==='member';          // 가입 회원(일반 포함)
+  const isAdmin=s==='admin';
+
+  // 상단 미리보기: 누구나 (가입 유도)
+  if(pv){pv.innerHTML=`<div class="bf-preview-row">
+    <div class="bf-chip">🏷️ 투어 최대 20% 우대가</div>
+    <div class="bf-chip">⛳ 제휴 골프장 2만원 할인</div>
+    <div class="bf-chip">🥂 회원 전용 라운지</div>
+    <div class="bf-chip">🎁 협찬 브랜드 혜택</div>
+    <div class="bf-chip">⛩️ 일본 회원권 상담</div>
+    <div class="bf-chip">💬 정회원 단톡방 참여</div>
+  </div>`;}
+
+  // 본문 잠금 처리
+  gate.classList.remove('gate-locked','gate-dim');
+  const old=gate.querySelector('.gate-over');if(old)old.remove();
+  if(!isMember&&!isAdmin){
+    // 게스트: 강하게 잠금 → 가입 유도
+    gate.classList.add('gate-locked');
+    const ov=document.createElement('div');ov.className='gate-over';
+    ov.innerHTML=`<span class="lk">🔒</span><h4>회원 전용 혜택</h4><p>아래 모든 혜택은 아스파골프 회원에게만 공개됩니다.<br>지금 가입하고 혜택을 확인하세요. (가입은 무료입니다)</p><button class="btn btn-gold" onclick="go('signup')">무료 가입하고 혜택 보기 →</button>`;
+    gate.appendChild(ov);
+  }else if(isMember&&!isReg){
+    // 일반회원(미납): 혜택은 보이되 흐리게 + 정회원 유도
+    gate.classList.add('gate-dim');
+    const ov=document.createElement('div');ov.className='gate-over soft';
+    ov.innerHTML=`<span class="lk">⭐</span><h4>정회원 전용 혜택</h4><p>아래 혜택은 정회원부터 누리실 수 있습니다.<br>연회비 납부 후 관리자 승인을 거치면 모두 열립니다.</p><button class="btn btn-gold" onclick="openPay()">연회비 납부하고 정회원 되기 →</button>`;
+    gate.appendChild(ov);
+  }
+  // 정회원/관리자는 그대로 전체 노출
+
+  // 하단 CTA
+  if(s==='guest')cta.innerHTML=`<div class="cell cell-cta" style="cursor:default;border-radius:20px;padding:30px"><h3 class="ck">지금 가입하고<br>모든 혜택을 여십시오</h3><p>가입은 무료 · 연회비 납부 시 정회원 전환</p><span class="gobtn" onclick="go('signup')">JOIN NOW →</span></div>`;
+  else if(isMember)cta.innerHTML=`<div class="panel"><h3>내 현재 등급 — ${tierTag(m.tier)}</h3><p class="ph-desc">${isReg?'정회원 혜택이 모두 적용되고 있습니다. 마음껏 누리세요!':(m.fee_status==='pending'?'입금 확인 후 관리자 승인을 거쳐 정회원으로 전환됩니다.':'연회비 납부 시 정회원 혜택이 모두 열립니다.')}</p>${isReg?'<button class="btn btn-ghost" onclick="go(&quot;member&quot;)">마이페이지로 이동 →</button>':(m.fee_status==='pending'?'<span class="tag t-pending" style="font-size:.78rem;padding:8px 14px">⏳ 승인 대기 중</span>':'<button class="btn btn-gold" onclick="openPay()">연회비 납부 →</button>')}</div>`;
+  else cta.innerHTML=`<div class="panel"><h3>관리자 계정</h3><p class="ph-desc">회원 혜택은 회원 계정에 적용됩니다.</p></div>`;}
+
+const nav=document.getElementById('nav');addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>30));
+const spot=document.getElementById('spot');addEventListener('mousemove',e=>{
+  if(spot&&e.clientY<680){spot.style.setProperty('--mx',e.clientX+'px');spot.style.setProperty('--my',e.clientY+'px');}
+  const c=e.target.closest('.cell,.tour-card,.perk');if(c){const r=c.getBoundingClientRect();c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');}
+});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+// 히어로 떠다니는 입자 생성
+(function(){const box=document.getElementById('heroParticles');if(!box)return;const n=18;
+  for(let i=0;i<n;i++){const p=document.createElement('i');const size=2+Math.random()*4;
+    p.style.left=Math.random()*100+'%';p.style.width=p.style.height=size+'px';
+    p.style.animationDuration=(9+Math.random()*10)+'s';p.style.animationDelay=(Math.random()*10)+'s';
+    p.style.opacity=String(0.3+Math.random()*0.5);box.appendChild(p);}
+})();
+
+/* ===== 팝업 · 배너 ===== */
+function closePromo(){
+  if($('promoToday')&&$('promoToday').checked){try{localStorage.setItem('aspa_promo_hide_'+PROMO.id,'1');}catch(e){}}
+  $('promoPop').classList.remove('show');
+}
+function initPromo(){
+  if(!PROMO.enabled)return;
+  try{if(localStorage.getItem('aspa_promo_hide_'+PROMO.id)==='1')return;}catch(e){}
+  const isImg=/^https?:|^\//.test(PROMO.image);
+  const pb=$('promoBody');
+  if(PROMO.goto){pb.removeAttribute('href');pb.style.cursor='pointer';pb.onclick=function(e){e.preventDefault();closePromo();go(PROMO.goto);};}
+  else if(PROMO.link){pb.href=PROMO.link;pb.style.cursor='pointer';pb.onclick=null;}
+  else{pb.removeAttribute('href');pb.style.cursor='default';pb.onclick=function(e){e.preventDefault();};}
+  pb.innerHTML=`<div class="pb-img" style="${isImg?`background-image:url('${PROMO.image}')`:`background:${PROMO.image}`}">
+    <span class="pb-tag">${PROMO.tag}</span><span class="pb-title">${PROMO.title}</span><span class="pb-desc">${PROMO.desc}</span>
+    ${PROMO.goto||PROMO.link?'<span class="pb-cta">지금 가입하기 →</span>':''}</div>`;
+  setTimeout(()=>$('promoPop').classList.add('show'),700);
+}
+function closeBanner(e){if(e){e.preventDefault();e.stopPropagation();}$('sideBanner').classList.remove('show');try{sessionStorage.setItem('aspa_banner_hide','1');}catch(e2){}}
+function initBanner(){
+  if(!BANNER.enabled)return;
+  try{if(sessionStorage.getItem('aspa_banner_hide')==='1')return;}catch(e){}
+  const b=$('sideBanner');b.href=BANNER.link;
+  $('sbLabel').textContent=BANNER.label;$('sbTitle').textContent=BANNER.title;$('sbSub').textContent=BANNER.sub;$('sbCta').textContent=BANNER.cta;
+  setTimeout(()=>b.classList.add('show'),1600);
+}
+initPromo();initBanner();
+// 비밀번호 확인 실시간 표시
+(function(){const p2=document.getElementById('suPw2'),msg=document.getElementById('pwMsg');if(!p2)return;
+  function chk(){const a=document.getElementById('suPw').value,b=p2.value;if(!b){msg.textContent='';return;}
+    if(a===b){msg.textContent='✓ 일치';msg.className='pw-msg ok';}else{msg.textContent='✗ 불일치';msg.className='pw-msg no';}}
+  p2.addEventListener('input',chk);document.getElementById('suPw').addEventListener('input',chk);
+})();
+</script>
+</body>
+</html>
