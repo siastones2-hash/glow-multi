@@ -1342,18 +1342,18 @@ function showPg(id){
 }
 
 // ── 3. 동적 테마 적용 ──
-// ── GLOW 본사 랜딩 전용 (첫 방문 — 무슨 서비스인지 바로 이해) ──
-function applyGlowLanding(isGlow){
+// ── 모든 사이트 공통 성장형 랜딩 (GLOW·히즈마케팅·지인 사이트 동일 구조) ──
+function applyGrowthLanding(d){
   var ls=ge('landServices'),lh=ge('landHow');
-  if(ls)ls.style.display=isGlow?'block':'none';
-  if(lh)lh.style.display=isGlow?'block':'none';
-  if(!isGlow)return;
+  if(ls)ls.style.display='block';
+  if(lh)lh.style.display='block';
 
+  var brand=(d&&d.name)?d.name:'GLOW';
   var hb=ge('heroBadge');if(hb)hb.textContent='🔥 인스타·유튜브·틱톡 즉시 성장';
   var hpf=ge('heroPrefix');if(hpf)hpf.textContent='링크 하나면';
   var hs=ge('heroSloganSpan');if(hs)hs.textContent='팔로워·조회수·구독자 UP';
   var hss=ge('heroSloganSub');if(hss)hss.textContent='좋아요부터 구독자까지 — 오늘 바로 키우세요';
-  var hd=ge('heroDesc');if(hd)hd.textContent='가입 30초, 링크만 넣으면 끝. 크리에이터·셀러·매장도 지금 바로 채널 성장 시작할 수 있습니다.';
+  var hd=ge('heroDesc');if(hd)hd.textContent='가입 30초, 링크만 넣으면 끝. '+brand+'에서 크리에이터·셀러·매장 채널을 바로 키우세요.';
 
   var chips=ge('pg-land')?.querySelector('.hero-chips');
   if(chips){
@@ -1366,7 +1366,7 @@ function applyGlowLanding(isGlow){
   var s4l=ge('stat4Label');if(s4l)s4l.textContent='자동 처리';
 
   var ct=ge('lctaTitle');if(ct)ct.innerHTML='지금 가입하면 <span class="gt">오늘부터 UP</span>';
-  var cs=ge('lctaSub');if(cs)cs.textContent='무료 가입 · 링크만 있으면 바로 주문 가능합니다.';
+  var cs=ge('lctaSub');if(cs)cs.textContent=brand+' · 무료 가입 · 링크만 있으면 바로 주문';
 }
 
 async function loadSiteConfig(){
@@ -1429,33 +1429,15 @@ async function loadSiteConfig(){
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
   var hp=ge('heroPanel');if(hp)hp.textContent=logo;
-  var hpf=ge('heroPrefix');
-
-  var isGlow=d.isDefault||d.siteId==='default'||/^(localhost|glow-0wdh\.onrender\.com)$/i.test(location.hostname.replace(/^www\./,''));
-
-  // 커스텀 텍스트 적용 (지인 사이트 — GLOW 본사는 applyGlowLanding에서 처리)
-  if(!isGlow){
-    if(hpf)hpf.textContent=d.heroPrefix||'콘텐츠가';
-    var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'채널 성장 · 마케팅 플랫폼';
-    var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'빛나도록';
-    var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'우리가 성장시킵니다';
-    var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'유튜브·인스타·틱톡부터 아마존·쿠팡까지, 모든 채널의 성장을 지원합니다';
-  }
   var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
 
-  // 통계 숫자
+  // 통계 숫자 (상단 2칸은 사이트별 설정 가능)
   var s1n=ge('stat1Num');if(s1n)s1n.textContent=d.stat1Num||'10K+';
   var s1l=ge('stat1Label');if(s1l)s1l.textContent=d.stat1Label||'서비스 종류';
   var s2n=ge('stat2Num');if(s2n)s2n.textContent=d.stat2Num||'24H';
   var s2l=ge('stat2Label');if(s2l)s2l.textContent=d.stat2Label||'빠른 처리';
-  if(!isGlow){
-    var s3n=ge('stat3Num');if(s3n)s3n.textContent=d.stat3Num||'50%+';
-    var s3l=ge('stat3Label');if(s3l)s3l.textContent=d.stat3Label||'마진 보장';
-    var s4n=ge('stat4Num');if(s4n)s4n.textContent=d.stat4Num||'100%';
-    var s4l=ge('stat4Label');if(s4l)s4l.textContent=d.stat4Label||'안전 보장';
-  }
 
-  applyGlowLanding(isGlow);
+  applyGrowthLanding(d);
 
   // 충전 보너스 표시 — 금액 구간별 보너스율에 따라 프리셋 버튼에 동적 표시
   (function(){
