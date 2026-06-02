@@ -60,12 +60,14 @@ header {
 }
 .icon-btn svg { width: 20px; height: 20px; }
 .logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 32px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: var(--ink);
-  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+.logo img {
+  display: block;
+  height: 44px;
+  width: auto;
 }
 .header-nav {
   border-top: 1px solid rgba(0,0,0,0.06);
@@ -389,7 +391,7 @@ footer {
   padding: 22px 32px;
   border-bottom: 1px solid var(--line);
 }
-.side-menu-header .logo { font-size: 24px; }
+.side-menu-header .logo img { height: 34px; }
 .side-menu-close {
   width: 32px; height: 32px;
   cursor: pointer;
@@ -462,7 +464,7 @@ footer {
   .header-nav::-webkit-scrollbar { display: none; }
   .header-nav a { font-size: 10px; letter-spacing: 0.12em; white-space: nowrap; padding: 2px 0; }
   .header-side { gap: 14px; }
-  .logo { font-size: 22px; }
+  .logo img { height: 34px; }
   .page-hero { padding: 130px 16px 50px; }
   .page-hero h1 {
     font-size: clamp(32px, 10vw, 56px);
