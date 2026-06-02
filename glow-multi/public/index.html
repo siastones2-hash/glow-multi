@@ -136,6 +136,10 @@ th{text-align:left;padding:10px 14px;font-size:10px;letter-spacing:.12em;color:v
 td{padding:11px 14px;border-bottom:1px solid rgba(114,9,183,.05);font-size:13px;color:var(--tm);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);z-index:9999;padding:12px 22px;border-radius:100px;font-size:13px;font-weight:600;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,.15);transition:transform .3s,opacity .3s;opacity:0;white-space:nowrap;max-width:90vw}
+.kakao-float{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom) + 82px);z-index:140;display:inline-flex;align-items:center;gap:8px;padding:11px 14px;border-radius:999px;border:1px solid #E5D26A;background:#FEE500;color:#3C1E1E;font-size:12px;font-weight:800;box-shadow:0 10px 24px rgba(60,30,30,.2);cursor:pointer}
+.kakao-float:hover{transform:translateY(-1px)}
+.kakao-float[hidden]{display:none!important}
+@media(min-width:900px){.kakao-float{bottom:20px}}
 @keyframes sp{to{transform:rotate(360deg)}}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:5px}
 .spin2{border:2px solid var(--bd2);border-top-color:var(--p2)}
@@ -279,6 +283,7 @@ tr:last-child td{border-bottom:none}
 </head>
 <body>
 <div id="toast"></div>
+<button id="kakaoFloatBtn" class="kakao-float" onclick="openKakaoInquiry()" hidden>💬 <span class="kakao-btn-text">카카오톡 문의</span></button>
 
 <!-- LANDING -->
 <div class="pg on" id="pg-land">
@@ -1325,6 +1330,19 @@ function toast(msg,type){
   t.style.cssText=(s[type]||s.ok)+';position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(0);z-index:9999;padding:12px 22px;border-radius:100px;font-size:13px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.15);opacity:1;white-space:nowrap;max-width:90vw';
   clearTimeout(t._t);t._t=setTimeout(function(){t.style.opacity='0'},3000);
 }
+function syncKakaoCta(){
+  var btn=ge('kakaoFloatBtn');
+  if(!btn)return;
+  var hasKakao=!!(window._kakao&&String(window._kakao).trim());
+  btn.hidden=!hasKakao;
+}
+function openKakaoInquiry(){
+  if(window._kakao&&String(window._kakao).trim()){
+    window.open(window._kakao,'_blank');
+    return;
+  }
+  toast('카카오 문의 링크를 준비 중입니다','warn');
+}
 function badge(s){
   var m={pending:'background:#FEF3C7;color:#F59E0B',processing:'background:rgba(114,9,183,.1);color:#B5179E',completed:'background:#D1FAE5;color:#10B981',cancelled:'background:#FEE2E2;color:#EF4444',canceled:'background:#FEE2E2;color:#EF4444',refunded:'background:#DBEAFE;color:#3B82F6',partial_refunded:'background:#FEF3C7;color:#F59E0B',failed:'background:#FEE2E2;color:#EF4444',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444'};
   var l={pending:'대기',processing:'처리중',completed:'완료',cancelled:'취소',canceled:'취소',refunded:'환불완료',partial_refunded:'부분환불',failed:'실패',approved:'승인',rejected:'거절'};
@@ -1546,9 +1564,11 @@ async function loadSiteConfig(){
   window._siteChargeGuide=d.chargeGuide||'입금 후 아래 양식을 작성해주세요.';
   window._siteOrderGuide=d.orderGuide||'주문 후 취소가 어려울 수 있습니다.';
   window._siteKakaoBtnText=d.kakaoBtnText||'카카오톡 문의';
+  window._kakao=d.kakao||'';
 
   // 카카오 버튼 텍스트
   document.querySelectorAll('.kakao-btn-text').forEach(function(el){el.textContent=d.kakaoBtnText||'카카오톡 문의'});
+  syncKakaoCta();
 }
 
 function goAuth(m){showPg('pg-auth');switchAuth(m)}
@@ -1929,6 +1949,7 @@ async function loadBankInfo(){
       bi.innerHTML='<span style="color:var(--tl);font-size:13px">⚠️ 입금 계좌는 관리자에게 문의해주세요.</span>';
     }
     if(d && d.kakao) window._kakao=d.kakao;
+    syncKakaoCta();
   } catch(e) {
     var bi=ge('bankInfo');
     if(bi) bi.innerHTML='<span style="color:var(--tl);font-size:13px">계좌 정보를 불러오는 중입니다...</span>';
