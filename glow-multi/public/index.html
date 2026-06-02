@@ -249,6 +249,17 @@ tr:last-child td{border-bottom:none}
 .land-step-num{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--g);color:#fff;font-size:13px;font-weight:800;align-items:center;justify-content:center;margin-bottom:10px}
 .land-step-title{font-size:14px;font-weight:800;margin-bottom:6px}
 .land-step-desc{font-size:12px;color:var(--tm);line-height:1.55;font-weight:300}
+.land-faq{padding:40px 16px 52px;background:var(--w);border-bottom:1px solid var(--bd)}
+.land-faq-inner{max-width:780px;margin:0 auto}
+.land-faq h2{font-size:clamp(18px,4vw,24px);font-weight:800;text-align:center;margin-bottom:10px}
+.land-faq-sub{text-align:center;font-size:13px;color:var(--tm);margin:0 auto 18px;line-height:1.6}
+.faq-item{border:1px solid var(--bd);border-radius:12px;background:#fff;margin-bottom:10px;overflow:hidden}
+.faq-q{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:none;background:#fff;padding:13px 14px;font-size:13px;font-weight:700;color:var(--tx);cursor:pointer;font-family:inherit;text-align:left}
+.faq-q:hover{background:#faf5ff}
+.faq-a{display:none;padding:0 14px 13px 14px;font-size:12px;color:var(--tm);line-height:1.7}
+.faq-item.on .faq-a{display:block}
+.faq-item.on .faq-toggle{transform:rotate(45deg)}
+.faq-toggle{font-size:18px;color:var(--p2);line-height:1;transition:transform .15s}
 .hero-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
 [data-layout="card"] .hero{padding:72px 16px 56px;background:linear-gradient(180deg,var(--w),var(--bg))}
@@ -395,6 +406,33 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
   </div>
+  <section class="land-faq" id="landFaq">
+    <div class="land-faq-inner">
+      <h2>FAQ · 주문 안내</h2>
+      <p class="land-faq-sub">처음 주문하시는 분들이 가장 많이 묻는 질문을 정리했습니다.</p>
+
+      <div class="faq-item on">
+        <button class="faq-q" onclick="toggleFaq(this)">주문은 어떻게 진행되나요?<span class="faq-toggle">+</span></button>
+        <div class="faq-a">회원가입 → 충전 → 서비스 선택 → 링크 입력 → 수량 입력 → 주문하기 순서로 진행됩니다. 대부분 작업은 24시간 이내 자동 반영됩니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">어떤 링크를 넣어야 하나요?<span class="faq-toggle">+</span></button>
+        <div class="faq-a">팔로워는 프로필/채널 링크, 좋아요·조회수는 게시물/영상 링크를 넣어주세요. 비공개 계정이나 삭제된 링크는 작업이 진행되지 않을 수 있습니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">주문 후 수정·취소 가능한가요?<span class="faq-toggle">+</span></button>
+        <div class="faq-a">작업이 시작되기 전에는 일부 취소가 가능하지만, 진행된 주문은 취소·변경이 어려울 수 있습니다. 링크/수량을 꼭 확인 후 주문해주세요.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">효과는 언제부터 보이나요?<span class="faq-toggle">+</span></button>
+        <div class="faq-a">서비스별 시작 속도는 다르지만 보통 주문 직후부터 순차 반영됩니다. 급격한 변동보다 자연스러운 증감 형태로 처리됩니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">상담이 필요하면 어디로 문의하나요?<span class="faq-toggle">+</span></button>
+        <div class="faq-a">화면 우하단의 <b>카카오톡 문의</b> 버튼으로 바로 상담 연결됩니다. 서비스 선택/링크 검수도 문의 가능합니다.</div>
+      </div>
+    </div>
+  </section>
   <div class="sts" id="landStats">
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat1Num">10K+</div><div style="font-size:11px;color:var(--tm)" id="stat1Label">서비스 종류</div></div>
     <div class="st"><div style="font-size:26px;font-weight:800" class="gt" id="stat2Num">24H</div><div style="font-size:11px;color:var(--tm)" id="stat2Label">빠른 처리</div></div>
@@ -1342,6 +1380,11 @@ function openKakaoInquiry(){
     return;
   }
   toast('카카오 문의 링크를 준비 중입니다','warn');
+}
+function toggleFaq(btn){
+  var item=btn&&btn.closest('.faq-item');
+  if(!item)return;
+  item.classList.toggle('on');
 }
 function badge(s){
   var m={pending:'background:#FEF3C7;color:#F59E0B',processing:'background:rgba(114,9,183,.1);color:#B5179E',completed:'background:#D1FAE5;color:#10B981',cancelled:'background:#FEE2E2;color:#EF4444',canceled:'background:#FEE2E2;color:#EF4444',refunded:'background:#DBEAFE;color:#3B82F6',partial_refunded:'background:#FEF3C7;color:#F59E0B',failed:'background:#FEE2E2;color:#EF4444',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444'};
