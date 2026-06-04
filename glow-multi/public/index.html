@@ -979,7 +979,7 @@ tr:last-child td{border-bottom:none}
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <div style="font-size:14px;font-weight:800">사이트 목록</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn binf bsm" onclick="repairAllSiteServices()">🛍 전체 사이트 상품 동기화</button>
+              <button class="btn binf bsm" onclick="repairAllSiteServices()">🔗 지인 사이트 상품 연결</button>
               <button class="btn ber bsm" onclick="fixAbnormalCredits()">🔧 비정상 크레딧 0원 정리</button>
               <button class="bp bsm" style="padding:8px 16px" onclick="ge('mNewSite').classList.add('on');toggleNsAutoTheme()">+ 새 사이트</button>
             </div>
@@ -1072,13 +1072,16 @@ tr:last-child td{border-bottom:none}
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔄 자동 동기화</div>
               <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">
                 • 주문 상태는 <strong>30분마다 자동</strong> 동기화됩니다.<br>
-                • 서비스는 <strong>24시간마다 자동</strong> 체크됩니다.<br>
-                • 신규 서비스는 <strong>매주 일요일</strong> 알림이 옵니다.
+                • 서비스는 <strong>6시간마다</strong> Peakerr 체크 · 삭제·저품질 자동 숨김<br>
+                • 신규 핫상품은 <strong>매주 일요일</strong> Peakerr에서 자동 추가<br>
+                • 매일 <strong>상품 노출 점검</strong> · 문제 시 자동 복구 + 텔레그램
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="bo bsm" onclick="manualSyncOrders()">🔄 주문 지금 동기화</button>
                 <button class="bo bsm" onclick="manualSyncServices()">📦 서비스 지금 체크</button>
-                <button class="bo bsm" onclick="manualScanNewServices()">🆕 신규 서비스 스캔</button>
+                <button class="bo bsm" onclick="importHotPeakerrServices()">🔥 Peakerr 핫상품 추가</button>
+                <button class="bo bsm" onclick="importNicheServices()">🛒 아마zon·이커머스 스캔</button>
+                <button class="bo bsm" onclick="pruneServices()">🧹 불필요 상품 정리</button>
               </div>
               <div id="manualSyncRes" style="font-size:12px;color:var(--tm);margin-top:8px"></div>
             </div>
@@ -2384,11 +2387,21 @@ async function toggleAllSiteServices(active){
 
 // 슈퍼관리자 서비스 자동 정리
 async function autoCleanServices(){
-  if(!confirm('카테고리별 베스트 서비스만 남기고 나머지를 비활성화합니다. 계속하시겠습니까?'))return;
+  if(!confirm('저품질·중복·과다 상품을 숨깁니다.\n(삭제 아님 · 최근 30일 주문 상품은 보호)\n\n계속하시겠습니까?'))return;
   toast('정리 중...','ok');
-  var d=await api('/api/super/services/auto-clean','POST',{});
+  var d=await api('/api/super/services/auto-clean','POST',{maxPerPlatform:25});
   if(d.error){toast(d.error,'err');return;}
-  toast('완료! '+d.activated+'개 서비스 활성화됨 ✨','ok');
+  toast((d.message||d.pruned+'개 정리')+' ✨','ok');
+  loadSuperSvcs&&loadSuperSvcs();
+}
+
+async function pruneServices(){
+  if(!confirm('다음 상품을 숨깁니다 (고객 화면에서 안 보임):\n\n• Peakerr에서 사라진 것\n• bot/fake/testing 등 저품질\n• 같은 상품 중복\n• 플랫폼별 28개 초과\n\n주문 기록은 유지 · 최근 주문 상품은 보호\n\n계속할까요?'))return;
+  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>정리 중...';
+  var d=await api('/api/super/services/prune','POST',{maxPerPlatform:28});
+  if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
+  if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
+  toast(d.message||'정리 완료','ok');
   loadSuperSvcs&&loadSuperSvcs();
 }
 
@@ -2528,12 +2541,12 @@ async function testApi(){
   if(res)res.innerHTML=msg;
 }
 async function syncSvcs(){
-  if(!confirm('⚠️ 서비스 동기화 시 외부 API 서비스로 교체됩니다.\n현재 70개 서비스를 유지하려면 취소하세요.\n\n계속하시겠습니까?'))return;
+  if(!confirm('Peakerr 전체 목록을 가져와 기존 상품은 유지·신규만 추가합니다.\n(기존 98개 큐레이션 상품은 삭제되지 않습니다)\n\n계속하시겠습니까?'))return;
   var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 중...';
   var d=await api('/api/admin/api-sync');
-  var msg=d.ok?'<span style="color:#10B981">✅ '+d.count+'개 동기화 완료!</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
+  var msg=d.ok?'<span style="color:#10B981">✅ 신규 '+d.added+'개 · 갱신 '+d.updated+'개</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
   if(res)res.innerHTML=msg;
-  if(d.ok){loadSvcs();toast('서비스 '+d.count+'개 동기화 ✨','ok')}
+  if(d.ok){loadSvcs();toast('Peakerr 동기화 완료 ✨','ok')}
 }
 async function testTg(){
   var res=ge('tgRes')||ge('spTgRes');if(res)res.innerHTML='<span class="spin spin2"></span>테스트 중...';
@@ -2562,21 +2575,43 @@ async function manualSyncServices(){
   toast('서비스 체크 시작됨 ✨','ok');
 }
 
-// 🆕 신규 서비스 스캔
+// 🔥 Peakerr 핫상품 추가 (HQ·Real 등 자동 선별)
+async function importNicheServices(){
+  if(!confirm('Peakerr에서 아마zon·쿠팡·네이버·카카오·이커머스 및\nLinkedIn·Pinterest 등 — 실제 있는 상품만 추가합니다.\n\n없으면 아무 것도 추가하지 않습니다.\n\n계속할까요?'))return;
+  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>Peakerr 스캔 중...';
+  var d=await api('/api/super/import-niche-services','POST',{maxNichePerPlatform:5,maxBonusPerBucket:3});
+  if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
+  if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
+  toast(d.message||'완료','ok');
+  loadSuperSvcs&&loadSuperSvcs();
+}
+
+async function importHotPeakerrServices(){
+  if(!confirm('Peakerr에서 HQ·Real·Non Drop 등 고품질 신규 상품만 골라 추가합니다.\n(유튜브·인스타·틱톡 등 플랫폼당 최대 5개 · 기존 상품 유지)\n\n계속할까요?'))return;
+  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>Peakerr 스캔 중...';
+  var d=await api('/api/super/import-hot-services','POST',{maxPerPlatform:5});
+  if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
+  if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
+  toast(d.message||'완료','ok');
+  loadSuperSvcs&&loadSuperSvcs();
+}
+
+// 🆕 신규 서비스 스캔 (주간용 — 소량)
 async function manualScanNewServices(){
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>스캔 중...';
   var d=await api('/api/super/scan-new-services','POST');
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
   if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
-  toast('신규 서비스 스캔 시작됨 ✨','ok');
+  toast(d.message||'스캔 완료 ✨','ok');
+  loadSuperSvcs&&loadSuperSvcs();
 }
 
 async function repairAllSiteServices(){
-  if(!confirm('모든 지인 사이트에 활성 상품을 전부 다시 연결합니다.\n(나인스토리 등 상품이 안 보이는 문제 예방·복구)\n\n계속할까요?'))return;
+  if(!confirm('지인 사이트(나인스토리 등)에 활성 상품 연결을 다시 맞춥니다.\nPeakerr에서 새 상품을 가져오지 않습니다.\n\n계속할까요?'))return;
   var d=await api('/api/super/sites/repair-services','POST',{force:true});
   if(d.error){toast(d.error,'err');return}
   var n=(d.results&&d.results.length)||0;
-  toast('전체 사이트 상품 동기화 완료 ('+n+'개) ✨','ok');
+  toast('지인 사이트 상품 연결 완료 ('+n+'개) ✨','ok');
   loadSuperDash();
 }
 async function fixAbnormalCredits(){

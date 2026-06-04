@@ -1011,63 +1011,445 @@ async function syncPeakerrServices() {
     }
 
     await repairAllPartnerSiteServices();
+    await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(e => console.log('상품 정리:', e.message));
   } catch(e) { console.log('서비스 동기화 실패:', e.message); }
 }
 
-// 🆕 새로운 고품질 서비스 추천 알림 (주간)
-async function scanNewServices() {
-  try {
-    const apiKey = await getGlobalSetting('peakerr_api_key');
-    if (!apiKey) return;
-    
-    const resp = await fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key: apiKey, action: 'services' })
-    });
-    const services = await resp.json();
-    if (!Array.isArray(services)) return;
-    
-    // 현재 GLOW에 있는 api_id 목록
-    const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL`);
-    const existing = new Set(existingR.rows.map(r => String(r.api_id)));
-    
-    // 고품질 신규 서비스 필터
-    const candidates = [];
-    for (const s of services) {
-      if (existing.has(String(s.service))) continue;
-      const name = (s.name || '').toLowerCase();
-      const cat = (s.category || '').toLowerCase();
-      if (cat.includes('testing')) continue;
-      if (name.includes('bot') || name.includes('fake')) continue;
-      
-      let score = 0;
-      if (/\bhq\b|high quality/.test(name)) score += 100;
-      if (/\breal\b/.test(name)) score += 80;
-      if (name.includes('non drop') || name.includes('non-drop')) score += 60;
-      if (name.includes('lifetime')) score += 50;
-      if (s.refill) score += 30;
-      if (name.includes('premium')) score += 20;
-      if (name.includes('monetiz')) score += 80;
-      
-      if (score >= 150) {
-        candidates.push({ ...s, qs: score });
-      }
+/** Peakerr 상품 품질 점수 (높을수록 HQ·Real·한국·리필 등) */
+function scorePeakerrService(s) {
+  const name = (s.name || '').toLowerCase();
+  const cat = (s.category || '').toLowerCase();
+  const full = `${name} ${cat}`;
+  if (cat.includes('testing')) return -1;
+  if (/\bbot\b|\bfake\b|cheat|adult|porn|gambling|casino/.test(full)) return -1;
+
+  let score = 0;
+  if (/\bhq\b|high quality|premium/.test(full)) score += 100;
+  if (/\breal\b|organic/.test(full)) score += 80;
+  if (/non[- ]?drop|no drop/.test(full)) score += 60;
+  if (/lifetime|guarantee/.test(full)) score += 50;
+  if (s.refill || /refill/.test(full)) score += 30;
+  if (/instant|fast|speed|🔥/.test(full)) score += 25;
+  if (/monetiz|korea|korean|\bkr\b/.test(full)) score += 50;
+  if (/instagram|youtube|tiktok|threads/.test(full)) score += 20;
+  if (/follow|subscriber|view|like|comment|share|watch hour|reel|story/.test(full)) score += 15;
+  const pl = detectPlat(full);
+  if (['youtube', 'instagram', 'tiktok'].includes(pl)) score += 30;
+  return score;
+}
+
+async function linkServiceToAllSites(serviceId) {
+  const sitesR = await query(`SELECT id FROM sites`);
+  for (const st of sitesR.rows) {
+    await query(`
+      INSERT INTO site_services(site_id, service_id, active) VALUES($1,$2,1)
+      ON CONFLICT(site_id, service_id) DO UPDATE SET active=1
+    `, [st.id, serviceId]);
+  }
+}
+
+/** Peakerr에서 HQ·Real 등 핫상품만 골라 DB에 추가 (기존 상품은 유지) */
+async function importHotPeakerrServices(opts = {}) {
+  const maxPerPlatform = opts.maxPerPlatform ?? 3;
+  const minScore = opts.minScore ?? 120;
+  const dryRun = !!opts.dryRun;
+
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0 };
+
+  const resp = await fetch('https://peakerr.com/api/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ key: apiKey, action: 'services' })
+  });
+  const services = await resp.json();
+  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0 };
+
+  const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  const existing = new Set(existingR.rows.map(r => String(r.api_id)));
+
+  const priorityPls = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram'];
+  const byPl = {};
+  for (const s of services) {
+    if (existing.has(String(s.service))) continue;
+    const score = scorePeakerrService(s);
+    if (score < minScore) continue;
+    const pl = detectPlat(`${s.name || ''} ${s.category || ''}`);
+    const bucket = priorityPls.includes(pl) ? pl : null;
+    if (!bucket) continue;
+    if (!byPl[bucket]) byPl[bucket] = [];
+    byPl[bucket].push({ ...s, qs: score, pl });
+  }
+
+  const toAdd = [];
+  for (const pl of priorityPls) {
+    const list = (byPl[pl] || []).sort((a, b) => b.qs - a.qs);
+    toAdd.push(...list.slice(0, maxPerPlatform));
+  }
+
+  const added = [];
+  if (!dryRun) {
+    for (const s of toAdd) {
+      const id = `pk_${s.service}`;
+      await query(`
+        INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,1)
+        ON CONFLICT(id) DO UPDATE SET
+          name=EXCLUDED.name, pl=EXCLUDED.pl, rate=EXCLUDED.rate,
+          min=EXCLUDED.min, max=EXCLUDED.max, description=EXCLUDED.description,
+          api_id=EXCLUDED.api_id, active=1
+      `, [
+        id, s.name, s.pl,
+        parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000),
+        s.type || s.category || '', String(s.service)
+      ]);
+      await linkServiceToAllSites(id);
+      added.push({ id, name: s.name, pl: s.pl, rate: s.rate, score: s.qs, apiId: s.service });
     }
-    
-    candidates.sort((a, b) => b.qs - a.qs);
-    const top5 = candidates.slice(0, 5);
-    
-    if (top5.length > 0) {
-      let msg = `🆕 <b>신규 고품질 서비스</b>\n\n`;
-      top5.forEach((s, i) => {
-        msg += `${i+1}. ${(s.name || '').substring(0, 50)}\n`;
-        msg += `   💰 $${s.rate}/1K, Q${s.qs}\n\n`;
+    if (added.length) {
+      await repairAllPartnerSiteServices();
+      await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => {});
+    }
+  }
+
+  return { ok: true, added, count: added.length, candidates: toAdd.length };
+}
+
+const BAD_SERVICE_NAME = /\bbot\b|\bfake\b|cheat|adult|porn|gambling|casino|testing/i;
+
+const NICHE_PLATFORMS = ['amazon', 'coupang', 'ecommerce', 'naver', 'kakao'];
+
+const BONUS_SERVICE_PATTERNS = [
+  { re: /linkedin/i, pl: 'other', bucket: 'linkedin' },
+  { re: /pinterest/i, pl: 'other', bucket: 'pinterest' },
+  { re: /snapchat/i, pl: 'other', bucket: 'snapchat' },
+  { re: /discord/i, pl: 'other', bucket: 'discord' },
+  { re: /reddit/i, pl: 'other', bucket: 'reddit' },
+  { re: /soundcloud/i, pl: 'other', bucket: 'soundcloud' },
+  { re: /google my business|google map|gmb |google review/i, pl: 'traffic', bucket: 'google' },
+  { re: /quora/i, pl: 'other', bucket: 'quora' },
+  { re: /clubhouse/i, pl: 'other', bucket: 'clubhouse' },
+  { re: /vimeo/i, pl: 'other', bucket: 'vimeo' },
+  { re: /bluesky/i, pl: 'other', bucket: 'bluesky' },
+];
+
+function classifyBonusService(full) {
+  for (const p of BONUS_SERVICE_PATTERNS) {
+    if (p.re.test(full)) return p;
+  }
+  return null;
+}
+
+function formatNicheServiceName(name, pl) {
+  const ko = { amazon: 'Amazon', coupang: '쿠팡', ecommerce: '이커머스', naver: '네이버', kakao: '카카오' };
+  const n = (name || '').trim();
+  if (/[\uAC00-\uD7AF]/.test(n)) return n.substring(0, 120);
+  const prefix = ko[pl];
+  if (prefix && !n.toLowerCase().includes(pl)) return `${prefix} — ${n}`.substring(0, 120);
+  return n.substring(0, 120);
+}
+
+function nicheServiceDescription(name, pl, type) {
+  const base = {
+    amazon: '아마zon 셀러·상품 마케팅 서비스입니다. 상품 URL을 입력해 주세요.',
+    coupang: '쿠팡 상품·스토어 마케팅 서비스입니다. 상품 링크를 입력해 주세요.',
+    ecommerce: '쇼피·라자다·알리·이베이 등 이커머스 상품 마케팅 서비스입니다.',
+    naver: '네이버 스마트스토어·플레이스·블로그 마케팅 서비스입니다.',
+    kakao: '카카오 채널·스토어 마케팅 서비스입니다.',
+  };
+  const d = base[pl] || `${name} — 프리미엄 마케팅 서비스`;
+  return type ? `${d} (${type})` : d;
+}
+
+function qualifiesForNicheImport(s) {
+  const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+  if (BAD_SERVICE_NAME.test(full)) return null;
+  const badScore = scorePeakerrService(s);
+  if (badScore < 0) return null;
+
+  const pl = detectPlat(full);
+  if (NICHE_PLATFORMS.includes(pl)) {
+    return { pl, bucket: pl, qs: badScore + 200 };
+  }
+
+  const bonus = classifyBonusService(full);
+  if (bonus) {
+    const low = full.toLowerCase();
+    const useful = badScore >= 50 || /\bhq\b|\breal\b|review|follow|like|subscriber|member|view|rank|install|rating/.test(low);
+    if (useful) return { pl: bonus.pl, bucket: bonus.bucket, qs: badScore + 80 };
+  }
+  return null;
+}
+
+/** Peakerr에서 아마zon·쿠팡·네이버 등 + 보너스(LinkedIn 등) — 실제 있을 때만 추가 */
+async function importNichePeakerrServices(opts = {}) {
+  const maxNiche = opts.maxNichePerPlatform ?? 5;
+  const maxBonus = opts.maxBonusPerBucket ?? 3;
+  const dryRun = !!opts.dryRun;
+  const notify = opts.notify !== false;
+
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, scanned: 0 };
+
+  const resp = await fetch('https://peakerr.com/api/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ key: apiKey, action: 'services' })
+  });
+  const services = await resp.json();
+  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0, scanned: 0 };
+
+  const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  const existing = new Set(existingR.rows.map(r => String(r.api_id)));
+
+  const byBucket = {};
+  let scanned = 0;
+  for (const s of services) {
+    if (existing.has(String(s.service))) continue;
+    const hit = qualifiesForNicheImport(s);
+    if (!hit) continue;
+    scanned++;
+    if (!byBucket[hit.bucket]) byBucket[hit.bucket] = [];
+    byBucket[hit.bucket].push({ ...s, ...hit });
+  }
+
+  const toAdd = [];
+  for (const pl of NICHE_PLATFORMS) {
+    const list = (byBucket[pl] || []).sort((a, b) => b.qs - a.qs);
+    toAdd.push(...list.slice(0, maxNiche));
+  }
+  for (const bucket of Object.keys(byBucket)) {
+    if (NICHE_PLATFORMS.includes(bucket)) continue;
+    const list = byBucket[bucket].sort((a, b) => b.qs - a.qs);
+    toAdd.push(...list.slice(0, maxBonus));
+  }
+
+  const added = [];
+  if (!dryRun) {
+    for (const s of toAdd) {
+      const id = `pk_${s.service}`;
+      const displayName = NICHE_PLATFORMS.includes(s.pl)
+        ? formatNicheServiceName(s.name, s.pl)
+        : formatNicheServiceName(s.name, s.pl);
+      const desc = nicheServiceDescription(s.name, s.pl, s.type || s.category || '');
+      await query(`
+        INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,1)
+        ON CONFLICT(id) DO UPDATE SET
+          name=EXCLUDED.name, pl=EXCLUDED.pl, rate=EXCLUDED.rate,
+          min=EXCLUDED.min, max=EXCLUDED.max, description=EXCLUDED.description,
+          api_id=EXCLUDED.api_id, active=1
+      `, [
+        id, displayName, s.pl,
+        parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000),
+        desc, String(s.service)
+      ]);
+      await linkServiceToAllSites(id);
+      added.push({ id, name: displayName, pl: s.pl, rate: s.rate, bucket: s.bucket, apiId: s.service });
+    }
+    if (added.length) {
+      await repairAllPartnerSiteServices();
+      await pruneServiceCatalog({ maxPerPlatform: 30, notify: false }).catch(() => {});
+    }
+  }
+
+  if (notify && added.length && !dryRun) {
+    let msg = `🛒 <b>이커머스·보너스 상품 추가</b>\n\n`;
+    added.forEach((s, i) => {
+      msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 45)}\n   💰 $${s.rate}/1K\n`;
+    });
+    msg += `\n총 ${added.length}개 · 전체 사이트 연결`;
+    await sendTelegramToSuper(msg);
+  }
+
+  return { ok: true, added, count: added.length, scanned, candidates: toAdd.length };
+}
+
+async function scanNewServices(opts = {}) {
+  try {
+    const maxPerPlatform = opts.maxPerPlatform ?? 2;
+    const result = await importHotPeakerrServices({ maxPerPlatform, minScore: 150 });
+    if (result.error) {
+      console.log('신규 서비스 스캔:', result.error);
+      return result;
+    }
+    if (result.added.length > 0) {
+      let msg = `🔥 <b>Peakerr 핫상품 자동 추가</b>\n\n`;
+      result.added.forEach((s, i) => {
+        msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 45)}\n`;
+        msg += `   💰 $${s.rate}/1K\n\n`;
       });
-      msg += `슈퍼관리자에서 추가할지 검토해주세요.`;
+      msg += `총 ${result.count}개 · 전체 사이트 연결 완료`;
       await sendTelegramToSuper(msg);
     }
-  } catch(e) { console.log('신규 서비스 스캔 실패:', e.message); }
+    return result;
+  } catch (e) { console.log('신규 서비스 스캔 실패:', e.message); return { error: e.message, added: [], count: 0 }; }
+}
+
+function scoreServiceRow(row) {
+  return scorePeakerrService({
+    name: row.name,
+    category: row.description || '',
+    refill: /refill/i.test(`${row.name} ${row.description || ''}`)
+  });
+}
+
+function serviceIdPriority(id) {
+  if (/^[a-z]{2,3}\d/i.test(id)) return 0;
+  if (id.startsWith('pk_')) return 2;
+  if (id.startsWith('api_')) return 3;
+  if (id.startsWith('svc_')) return 4;
+  return 1;
+}
+
+/** 저품질·중복·과다 상품 비활성화 (DB 삭제 없음 — 주문 기록 보존) */
+async function pruneServiceCatalog(opts = {}) {
+  const maxPerPlatform = opts.maxPerPlatform ?? 28;
+  const dryRun = !!opts.dryRun;
+  const notify = opts.notify !== false;
+
+  const protR = await query(`
+    SELECT DISTINCT sid FROM orders
+    WHERE created >= NOW() - INTERVAL '30 days'
+      AND status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')
+  `);
+  const protectedIds = new Set(protR.rows.map(r => r.sid));
+
+  const toDeactivate = new Map();
+  const mark = (id, reason, name) => {
+    if (protectedIds.has(id) || toDeactivate.has(id)) return;
+    toDeactivate.set(id, { reason, name });
+  };
+
+  const allR = await query(`
+    SELECT id, name, pl, rate, api_id, active, description FROM services WHERE active=1
+  `);
+
+  for (const row of allR.rows) {
+    const full = `${row.name} ${row.description || ''}`;
+    if (BAD_SERVICE_NAME.test(full) || scoreServiceRow(row) < 0) {
+      mark(row.id, 'bad', row.name);
+    }
+    if (parseFloat(row.rate) <= 0) mark(row.id, 'bad', row.name);
+  }
+
+  const dupR = await query(`
+    SELECT api_id, array_agg(id) AS ids
+    FROM services WHERE api_id IS NOT NULL AND api_id != '' AND active=1
+    GROUP BY api_id HAVING COUNT(*) > 1
+  `);
+  for (const dup of dupR.rows) {
+    const rowsR = await query(`
+      SELECT id, name, pl, rate, description FROM services WHERE id = ANY($1) AND active=1
+    `, [dup.ids]);
+    const sorted = rowsR.rows.sort((a, b) => {
+      const pa = serviceIdPriority(a.id);
+      const pb = serviceIdPriority(b.id);
+      if (pa !== pb) return pa - pb;
+      return scoreServiceRow(b) - scoreServiceRow(a) || parseFloat(a.rate) - parseFloat(b.rate);
+    });
+    for (let i = 1; i < sorted.length; i++) {
+      mark(sorted[i].id, 'duplicate', sorted[i].name);
+    }
+  }
+
+  const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'traffic', 'appstore', 'other'];
+  for (const pl of platforms) {
+    const activeR = await query(`
+      SELECT id, name, pl, rate, description FROM services
+      WHERE active=1 AND pl=$1
+    `, [pl]);
+    const live = activeR.rows.filter(r => !toDeactivate.has(r.id));
+    if (live.length <= maxPerPlatform) continue;
+    const scored = live.map(r => ({ ...r, sc: scoreServiceRow(r) }))
+      .sort((a, b) => {
+        if (protectedIds.has(a.id) && !protectedIds.has(b.id)) return -1;
+        if (!protectedIds.has(a.id) && protectedIds.has(b.id)) return 1;
+        return b.sc - a.sc || parseFloat(a.rate) - parseFloat(b.rate);
+      });
+    scored.slice(maxPerPlatform).forEach(r => mark(r.id, 'overflow', r.name));
+  }
+
+  const stats = { bad: 0, duplicate: 0, overflow: 0 };
+  const items = [];
+  for (const [id, info] of toDeactivate) {
+    stats[info.reason] = (stats[info.reason] || 0) + 1;
+    items.push({ id, name: info.name, reason: info.reason });
+  }
+  const total = items.length;
+
+  if (!dryRun && total > 0) {
+    await query(`UPDATE services SET active=0 WHERE id = ANY($1)`, [items.map(i => i.id)]);
+    await query(`
+      UPDATE site_services ss SET active=0
+      FROM services s WHERE ss.service_id = s.id AND s.active=0 AND ss.active=1
+    `);
+    await query(`DELETE FROM site_services WHERE service_id NOT IN (SELECT id FROM services)`);
+    await repairAllPartnerSiteServices();
+  }
+
+  if (notify && total > 0 && !dryRun) {
+    let msg = `🧹 <b>상품 정리</b>\n\n`;
+    if (stats.bad) msg += `❌ 저품질·무효: ${stats.bad}개\n`;
+    if (stats.duplicate) msg += `📋 중복 api_id: ${stats.duplicate}개\n`;
+    if (stats.overflow) msg += `📦 플랫폼별 상한 초과: ${stats.overflow}개\n`;
+    msg += `\n총 ${total}개 숨김 (주문 기록 유지)`;
+    items.slice(0, 5).forEach(s => { msg += `\n• ${(s.name || '').substring(0, 40)}`; });
+    await sendTelegramToSuper(msg);
+  }
+
+  const activeR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
+  return { ok: true, deactivated: stats, total, items: items.slice(0, 30), activeCount: activeR.rows[0]?.c || 0 };
+}
+
+/** 지인 사이트 상품 노출·공급사 연결 상태 점검 (문제 시 자동 복구 + 텔레그램) */
+async function runCatalogHealthCheck(autoRepair = true) {
+  const issues = [];
+  const totalR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
+  const totalActive = totalR.rows[0]?.c || 0;
+  if (totalActive < 10) issues.push(`활성 상품 극소 (${totalActive}개)`);
+
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) issues.push('Peakerr API 키 미설정');
+
+  const sitesR = await query(`SELECT id, name, domain FROM sites WHERE id != 'default' AND active=1`);
+  const minHealthy = Math.max(5, Math.floor(totalActive * 0.1));
+  for (const site of sitesR.rows) {
+    const enR = await query(`
+      SELECT COUNT(*)::int AS c FROM services s
+      INNER JOIN site_services ss ON s.id = ss.service_id
+      WHERE s.active=1 AND ss.site_id=$1 AND ss.active=1
+    `, [site.id]);
+    const enabled = enR.rows[0]?.c || 0;
+    if (totalActive > 0 && enabled < minHealthy) {
+      issues.push(`${site.name}: ${enabled}/${totalActive}개만 노출`);
+      if (autoRepair) await repairSiteServices(site.id, true);
+    }
+  }
+
+  const orphanR = await query(`
+    SELECT COUNT(*)::int AS c FROM site_services WHERE service_id NOT IN (SELECT id FROM services)
+  `);
+  if (orphanR.rows[0]?.c > 0) {
+    issues.push(`고아 site_services ${orphanR.rows[0].c}건`);
+    if (autoRepair) await repairAllPartnerSiteServices();
+  }
+
+  const balance = await checkPeakerrBalance().catch(() => null);
+  if (balance !== null && balance < 10) issues.push(`Peakerr 잔액 위험 ($${balance.toFixed(2)})`);
+
+  if (issues.length > 0) {
+    const today = new Date().toDateString();
+    const last = await getGlobalSetting('catalog_health_alert');
+    if (last !== today) {
+      let msg = `⚠️ <b>상품 카탈로그 점검</b>\n\n${issues.join('\n')}`;
+      if (autoRepair) msg += `\n\n✅ 자동 복구 시도 완료`;
+      await sendTelegramToSuper(msg);
+      await setGlobalSetting('catalog_health_alert', today);
+    }
+  }
+
+  return { ok: issues.length === 0, issues, totalActive };
 }
 
 // 💰 충전 보너스 계산 — 금액이 도달한 가장 높은 구간의 보너스율(%)을 적용
@@ -1551,9 +1933,10 @@ app.get('/api/services', async (req, res) => {
     // YouTube, Instagram, TikTok 먼저 → Twitter, Threads → 기타
     const platformOrder = {
       youtube: 1, instagram: 2, tiktok: 3,
-      threads: 4, twitter: 5, spotify: 6,
-      twitch: 7, facebook: 8, telegram: 9,
-      traffic: 10, travel: 11, other: 99,
+      naver: 4, kakao: 5, coupang: 6, amazon: 7, ecommerce: 8,
+      threads: 9, twitter: 10, spotify: 11,
+      twitch: 12, facebook: 13, telegram: 14,
+      traffic: 15, appstore: 16, travel: 17, other: 99,
     };
     serviceRows.sort((a, b) => {
       const oa = platformOrder[a.pl] || 50;
@@ -2357,46 +2740,33 @@ app.post('/api/admin/site-services/toggle-all', requireAdmin, async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// 슈퍼관리자 - 서비스 자동 정리 (카테고리별 베스트만 남기기)
+// 슈퍼관리자 - 불필요·저품질 상품 정리 (비활성화만, 삭제 없음)
+app.post('/api/super/services/prune', requireSuperAdmin, async (req, res) => {
+  try {
+    const { maxPerPlatform, dryRun } = req.body || {};
+    const result = await pruneServiceCatalog({
+      maxPerPlatform: maxPerPlatform || 28,
+      dryRun: !!dryRun,
+      notify: !dryRun
+    });
+    const msg = result.total > 0
+      ? `${result.total}개 정리 · 활성 ${result.activeCount}개 유지`
+      : `정리할 상품 없음 · 활성 ${result.activeCount}개`;
+    res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 슈퍼관리자 - 서비스 자동 정리 (카테고리별 베스트만 남기기 → prune 통합)
 app.post('/api/super/services/auto-clean', requireSuperAdmin, async (req, res) => {
   try {
-    // 1. 전체 비활성화
-    await query(`UPDATE services SET active=0`);
-    // 2. 카테고리별 베스트 선별 기준:
-    //    - HQ, Real, Instant, 🔥 키워드 우선
-    //    - 가격 적정 (rate > 0.01)
-    //    - 카테고리별 최대 25개
-    const categories = ['instagram','tiktok','youtube','facebook','telegram','twitter','threads','spotify','twitch','traffic','travel','other'];
-    let totalActivated = 0;
-    for (const pl of categories) {
-      // 좋은 키워드 포함된 것 우선
-      const good = await query(`
-        SELECT id FROM services
-        WHERE pl=$1 AND rate > 0.01
-        AND (
-          name ILIKE '%HQ%' OR name ILIKE '%Real%' OR name ILIKE '%Instant%'
-          OR name ILIKE '%🔥%' OR name ILIKE '%Refill%' OR name ILIKE '%Non Drop%'
-          OR name ILIKE '%High Quality%' OR name ILIKE '%Organic%'
-        )
-        ORDER BY rate ASC
-        LIMIT 15
-      `, [pl]);
-      // 나머지도 저렴한 순으로 채우기
-      const goodIds = good.rows.map(r => r.id);
-      const rest = await query(`
-        SELECT id FROM services
-        WHERE pl=$1 AND rate > 0.01
-        AND id != ALL($2)
-        ORDER BY rate ASC
-        LIMIT $3
-      `, [pl, goodIds.length ? goodIds : [''], 25 - goodIds.length]);
-      const allIds = [...goodIds, ...rest.rows.map(r => r.id)];
-      if (allIds.length > 0) {
-        await query(`UPDATE services SET active=1 WHERE id = ANY($1)`, [allIds]);
-        totalActivated += allIds.length;
-      }
-    }
-    res.json({ ok: true, activated: totalActivated });
+    const maxPerPlatform = (req.body && req.body.maxPerPlatform) || 25;
+    const result = await pruneServiceCatalog({ maxPerPlatform, notify: true });
+    res.json({
+      ok: true,
+      activated: result.activeCount,
+      pruned: result.total,
+      message: `${result.total}개 정리 · 활성 ${result.activeCount}개`
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2535,14 +2905,29 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
     });
     const data = await resp.json();
     if (!Array.isArray(data)) return res.json({ error: 'API 응답 오류' });
-    await query(`DELETE FROM services`);
+    let added = 0, updated = 0;
     for (const s of data) {
-      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING`,
-        ['api_'+s.service, s.name, detectPlat(s.name+' '+(s.category||'')),
-          parseFloat(s.rate||0), parseInt(s.min||100), parseInt(s.max||1000000),
-          s.type||'', String(s.service), 1]);
+      const apiId = String(s.service);
+      const pl = detectPlat(`${s.name || ''} ${s.category || ''}`);
+      const existing = await query(`SELECT id FROM services WHERE api_id=$1 LIMIT 1`, [apiId]);
+      if (existing.rows.length) {
+        await query(`UPDATE services SET name=$1, pl=$2, rate=$3, min=$4, max=$5 WHERE api_id=$6`,
+          [s.name, pl, parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000), apiId]);
+        updated++;
+      } else {
+        const id = `api_${s.service}`;
+        await query(`
+          INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8,1)
+          ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, rate=EXCLUDED.rate, active=1
+        `, [id, s.name, pl, parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000),
+          s.type || '', apiId]);
+        await linkServiceToAllSites(id);
+        added++;
+      }
     }
-    res.json({ ok: true, count: data.length });
+    await repairAllPartnerSiteServices();
+    res.json({ ok: true, count: data.length, added, updated });
   } catch(e) { res.json({ error: e.message }); }
 });
 
@@ -2781,12 +3166,55 @@ app.post('/api/super/sync-services', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🆕 슈퍼관리자: 신규 서비스 스캔
+// 🆕 슈퍼관리자: Peakerr 핫상품 추가
+app.post('/api/super/import-hot-services', requireSuperAdmin, async (req, res) => {
+  try {
+    const { maxPerPlatform, minScore, dryRun } = req.body || {};
+    const result = await importHotPeakerrServices({
+      maxPerPlatform: maxPerPlatform || 5,
+      minScore: minScore || 120,
+      dryRun: !!dryRun
+    });
+    if (result.error) return res.json({ error: result.error });
+    let msg = result.count > 0
+      ? `${result.count}개 핫상품 추가 · 전체 사이트 연결 완료`
+      : '추가할 신규 핫상품이 없습니다 (이미 등록됨 또는 기준 미달)';
+    if (result.count > 0) {
+      const pr = await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
+      if (pr && pr.total > 0) msg += ` · 중복/과다 ${pr.total}개 정리`;
+    }
+    res.json({ ok: true, message: msg, added: result.added, count: result.count });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 🛒 슈퍼관리자: 아마zon·쿠팡·네이버 등 Peakerr 실존 상품만 추가
+app.post('/api/super/import-niche-services', requireSuperAdmin, async (req, res) => {
+  try {
+    const { maxNichePerPlatform, maxBonusPerBucket, dryRun } = req.body || {};
+    const result = await importNichePeakerrServices({
+      maxNichePerPlatform: maxNichePerPlatform || 5,
+      maxBonusPerBucket: maxBonusPerBucket || 3,
+      dryRun: !!dryRun,
+      notify: !dryRun
+    });
+    if (result.error) return res.json({ error: result.error });
+    const msg = result.count > 0
+      ? `${result.count}개 추가 (Peakerr 후보 ${result.scanned}개)`
+      : `Peakerr에 추가할 아마zon·이커머스·보너스 상품 없음`;
+    res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 🆕 슈퍼관리자: 신규 서비스 스캔 (주간 자동 — 핫상품 추가)
 app.post('/api/super/scan-new-services', requireSuperAdmin, async (req, res) => {
   try {
-    scanNewServices().catch(e => console.log(e));
-    res.json({ ok: true, message: '신규 서비스 스캔을 시작했습니다. 결과는 텔레그램으로 알려드립니다.' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    const result = await scanNewServices({ maxPerPlatform: 2 });
+    if (result.error) return res.json({ error: result.error });
+    const msg = result.count > 0
+      ? `${result.count}개 핫상품 자동 추가 (텔레그램 알림 발송)`
+      : '추가할 신규 핫상품 없음';
+    res.json({ ok: true, message: msg, count: result.count });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 슈퍼관리자 - 크레딧 요청 처리 (승인/거절)
@@ -2853,11 +3281,7 @@ app.post('/api/super/services/create', requireSuperAdmin, async (req, res) => {
       [id, name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, String(apiId).trim()]);
     // 🆕 모든 사이트의 site_services에도 자동 연결 — 새 상품이 지인 사이트에도 바로 보이도록
     try {
-      const sitesR = await query(`SELECT id FROM sites`);
-      for (const st of sitesR.rows) {
-        await query(`INSERT INTO site_services(site_id, service_id, active) VALUES($1,$2,1)
-                     ON CONFLICT(site_id, service_id) DO NOTHING`, [st.id, id]);
-      }
+      await linkServiceToAllSites(id);
     } catch(e) { console.error('site_services 자동 연결 실패:', e.message); }
     res.json({ ok: true, id });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -3288,11 +3712,17 @@ function detectPlat(n) {
   if (n.includes('facebook')) return 'facebook';
   if (n.includes('spotify')) return 'spotify';
   if (n.includes('twitch')) return 'twitch';
+  if (n.includes('amazon')) return 'amazon';
+  if (n.includes('coupang') || n.includes('쿠팡')) return 'coupang';
+  if (/shopee|lazada|aliexpress|ali express|\bebay\b|etsy|shopify|wish\.com|walmart seller|tokopedia|mercado livre/.test(n)) return 'ecommerce';
+  if (/naver|네이버|smartstore|스마트스토어|naver place|naver blog|naver cafe/.test(n)) return 'naver';
+  if (/kakao|카카오|kakaotalk|ch channel|kakao channel/.test(n)) return 'kakao';
   if (n.includes('discord')) return 'other';
   if (n.includes('linkedin')) return 'other';
   if (n.includes('pinterest')) return 'other';
   if (n.includes('reddit')) return 'other';
   if (n.includes('soundcloud')) return 'other';
+  if (/google my business|google map|gmb |google review/.test(n)) return 'traffic';
   if (n.includes('트래픽') || n.includes('traffic') || n.includes('seo') || n.includes('검색')) return 'traffic';
   if (n.includes('appstore') || n.includes('play store') || n.includes('ios') || n.includes('android')) return 'appstore';
   return 'other';
@@ -3486,12 +3916,25 @@ app.listen(PORT, async () => {
     if (now.getDay() === 0 && now.getHours() === 10) { // 일요일 오전 10시
       await scanNewServices().catch(e => console.log('신규 스캔 오류:', e.message));
     }
-  }, 60 * 60 * 1000); // 매 시간 체크 (실제 실행은 일요일 10시만)
+  }, 60 * 60 * 1000);
+
+  // 🛡️ 상품 카탈로그 건강 점검 (매일 09:00 KST 근사 · UTC 0시)
+  setInterval(async () => {
+    const now = new Date();
+    if (now.getUTCHours() === 0) {
+      await runCatalogHealthCheck(true).catch(e => console.log('카탈로그 점검:', e.message));
+    }
+  }, 60 * 60 * 1000);
   
   // 서버 시작 후 5분 뒤 한 번 실행 (DB 준비 대기)
   setTimeout(async () => {
     console.log('🔄 서버 시작 후 자동 동기화 실행');
     await syncAllOrderStatuses().catch(() => {});
+    await runCatalogHealthCheck(true).catch(() => {});
+    const niche = await importNichePeakerrServices({ notify: true }).catch(e => ({ error: e.message, count: 0 }));
+    if (niche.count > 0) console.log(`🛒 이커머스·보너스 상품 ${niche.count}개 추가`);
+    else if (!niche.error) console.log('🛒 Peakerr 이커머스·보너스: 추가할 상품 없음');
+    else console.log('🛒 이커머스 스캔:', niche.error);
   }, 5 * 60 * 1000);
 
   // 📊 매일 23:50 KST — 사이트별 당일 매출·신규 가입 텔레그램 요약
