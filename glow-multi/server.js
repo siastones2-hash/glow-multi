@@ -470,7 +470,54 @@ async function initDB() {
     window_start TIMESTAMP DEFAULT NOW()
   )`); } catch(e) {}
   
+  await repairAllPartnerSiteServices();
   console.log('✅ DB 초기화 완료');
+}
+
+/** 지인 사이트 site_services 깨짐 복구 (고아 레코드·전체 OFF·극소 활성) */
+async function repairSiteServices(siteId, force = false) {
+  const totalR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
+  const totalActive = totalR.rows[0]?.c || 0;
+  if (totalActive === 0) return { repaired: false, reason: 'no_active_services' };
+
+  await query(
+    `DELETE FROM site_services WHERE site_id=$1 AND service_id NOT IN (SELECT id FROM services)`,
+    [siteId]
+  );
+
+  const enabledR = await query(`
+    SELECT COUNT(*)::int AS c FROM services s
+    INNER JOIN site_services ss ON s.id = ss.service_id
+    WHERE s.active=1 AND ss.site_id=$1 AND ss.active=1
+  `, [siteId]);
+  const enabled = enabledR.rows[0]?.c || 0;
+  const minHealthy = Math.max(5, Math.floor(totalActive * 0.1));
+  const shouldRepair = force || enabled === 0 || enabled < minHealthy;
+  if (!shouldRepair) return { repaired: false, enabled, totalActive };
+
+  const allSvcs = await query(`SELECT id FROM services WHERE active=1`);
+  for (const s of allSvcs.rows) {
+    await query(`
+      INSERT INTO site_services(site_id, service_id, active)
+      VALUES($1, $2, 1)
+      ON CONFLICT(site_id, service_id) DO UPDATE SET active=1
+    `, [siteId, s.id]);
+  }
+  return { repaired: true, before: enabled, after: allSvcs.rows.length, totalActive };
+}
+
+async function repairAllPartnerSiteServices() {
+  const sites = await query(`SELECT id, name FROM sites WHERE id != 'default' AND active=1`);
+  for (const site of sites.rows) {
+    try {
+      const r = await repairSiteServices(site.id);
+      if (r.repaired) {
+        console.log(`🔧 site_services 복구: ${site.name} (${site.id}) ${r.before} → ${r.after}`);
+      }
+    } catch (e) {
+      console.log(`site_services 복구 실패 ${site.id}:`, e.message);
+    }
+  }
 }
 
 /** DB=credit(USD), 화면=USD×exrate(원). 비정상적으로 큰 값 일괄 0 정리 */
@@ -1478,8 +1525,14 @@ app.get('/api/services', async (req, res) => {
         ORDER BY s.id
       `, [site.id]);
       serviceRows = ssR.rows;
-      // site_services 설정이 없으면 전체 보여줌 (초기 설정 전)
-      if (serviceRows.length === 0) {
+      const totalActiveR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
+      const totalActive = totalActiveR.rows[0]?.c || 0;
+      const minHealthy = Math.max(5, Math.floor(totalActive * 0.1));
+      // site_services 없음/전체 OFF/깨진 상태(극소 활성) → 전체 노출 + 자동 복구
+      if (serviceRows.length === 0 || (totalActive > 0 && serviceRows.length < minHealthy)) {
+        if (serviceRows.length > 0 && serviceRows.length < minHealthy) {
+          repairSiteServices(site.id).catch(e => console.log('site_services 자동복구:', e.message));
+        }
         const allR = await query(`SELECT * FROM services WHERE active=1 ORDER BY id`);
         serviceRows = allR.rows;
       }
@@ -3039,6 +3092,18 @@ app.post('/api/super/sites/credit', requireSuperAdmin, async (req, res) => {
 });
 
 // 사이트 크레딧 직접 수정 (정확한 값으로 덮어쓰기 · 잘못 충전 정정용)
+app.post('/api/super/sites/repair-services', requireSuperAdmin, async (req, res) => {
+  try {
+    const { siteId, force } = req.body || {};
+    if (siteId) {
+      const r = await repairSiteServices(siteId, !!force);
+      return res.json({ ok: true, ...r });
+    }
+    await repairAllPartnerSiteServices();
+    res.json({ ok: true, message: '모든 지인 사이트 site_services 점검 완료' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/super/sites/fix-abnormal-credits', requireSuperAdmin, async (req, res) => {
   try {
     const before = await query(`
