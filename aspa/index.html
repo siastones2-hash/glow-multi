@@ -678,7 +678,7 @@
   .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);}
   .org-node.head .role,.org-node.planner .role{font-size:1rem;letter-spacing:.01em;text-transform:none;color:var(--cyan);}
   .org-node.head .nm,.org-node.planner .nm{font-size:.92rem;font-weight:600;color:var(--txt-2);margin-top:6px;}
-  .org-node.sm{padding:16px 14px;min-width:min-content;}
+  .org-node.sm{padding:16px 14px;min-width:11em;width:100%;max-width:100%;}
   /* 2단계: 최고 임원진 — 살짝 강조 */
   .org-node.lv2{padding:18px 16px;min-width:min-content;border-color:rgba(0,229,255,.22);background:rgba(0,229,255,.035);}
   .org-node.lv2 .role{font-size:.98rem;}
@@ -689,7 +689,8 @@
   .org-node.lv4{padding:15px 16px;min-width:min-content;background:rgba(255,255,255,.025);border-color:var(--glass-bd);}
   .org-node.lv4 .role{font-size:.86rem;color:var(--cyan-2);font-weight:600;}
   .org-node.lv4 .mem{font-size:.8rem;color:var(--txt-dim);}
-  .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;letter-spacing:0;color:var(--cyan);white-space:normal;line-height:1.45;overflow:visible;word-break:keep-all;}
+  .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;letter-spacing:0;color:var(--cyan);white-space:normal;line-height:1.45;overflow:visible;word-break:keep-all;text-align:center;padding:0 2px;}
+  .org-node .role-long{display:inline-block;min-width:4.8em;}
   .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;overflow:visible;word-break:keep-all;}
   .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;overflow:visible;word-break:keep-all;}
   .org-row{display:grid;gap:12px;margin-bottom:12px;align-items:stretch;overflow:visible;}
@@ -698,15 +699,24 @@
   .org-row.lv3-row{max-width:680px;margin-left:auto;margin-right:auto;}
   .org-row5{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
   .org-row6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
-  .org-row4{grid-template-columns:repeat(auto-fit,minmax(168px,1fr));}
   .org-row3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
   .org-row2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
-  .org-divider{display:flex;align-items:center;gap:14px;margin:26px 0 16px;color:var(--txt-faint);}
-  .org-divider::before,.org-divider::after{content:"";flex:1;height:1px;background:var(--glass-bd);}
-  .org-divider span{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-dim);}
+  .org-row4{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .org-row4 > .org-node{min-width:0;}
+  @media(max-width:1100px){
+    .org-row4{grid-template-columns:repeat(2,minmax(180px,1fr));}
+    .org-row5{grid-template-columns:repeat(2,minmax(150px,1fr));}
+    .org-row3{grid-template-columns:repeat(2,minmax(220px,1fr));}
+  }
   #pgOrg .content-sec{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;padding-bottom:90px;}
-  @media(max-width:880px){.org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:repeat(2,minmax(0,1fr));}}
-  @media(max-width:520px){.org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr;}}
+  @media(max-width:880px){
+    .org-row6{grid-template-columns:repeat(2,minmax(150px,1fr));}
+    .org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:repeat(2,minmax(180px,1fr));}
+  }
+  @media(max-width:520px){
+    .org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr;}
+    .org-node.sm{min-width:0;width:100%;}
+  }
   /* SPONSOR */
   .sp-grid{display:flex;flex-wrap:wrap;gap:14px;}
   .sp-card{flex:1;min-width:150px;background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:26px;text-align:center;}
@@ -1194,7 +1204,7 @@
 
     <div class="org-row org-row5">
       <div class="org-node sm"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
-      <div class="org-node sm"><div class="role">부회장</div><div class="mem">이주덕</div></div>
+      <div class="org-node sm"><div class="role">부회장</div><div class="mem role-long">이주덕</div></div>
       <div class="org-node sm"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
       <div class="org-node sm"><div class="role">감사</div><div class="mem">공창릉 · 허영길</div></div>
       <div class="org-node sm"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
@@ -1205,8 +1215,8 @@
     <div class="org-row org-row4">
       <div class="org-node sm"><div class="role">집행위원장</div><div class="mem">정철현</div></div>
       <div class="org-node sm"><div class="role">사무총장</div><div class="mem">김용태</div></div>
-      <div class="org-node sm"><div class="role">사무국장</div><div class="mem">이은주</div></div>
-      <div class="org-node sm"><div class="role">대회협력단장</div><div class="mem">김상철</div></div>
+      <div class="org-node sm"><div class="role role-long">사무국장</div><div class="mem">이은주</div></div>
+      <div class="org-node sm"><div class="role role-long">대회협력단장</div><div class="mem">김상철</div></div>
     </div>
 
     <div class="org-row org-row4">
