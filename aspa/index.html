@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="2026-06-01-orgfix2">
+<meta name="build" content="2026-06-01-leejudeok">
 <title>ASFA — 아스파골프 · 아시아생활체육골프연맹</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -690,7 +690,9 @@
   .org-node.lv4 .role{font-size:.86rem;color:var(--cyan-2);font-weight:600;}
   .org-node.lv4 .mem{font-size:.8rem;color:var(--txt-dim);}
   .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;color:var(--cyan);line-height:1.45;text-align:center;}
-  .org-node .role-tight,.org-node .mem-tight{display:block;white-space:nowrap;word-break:keep-all;overflow:visible;text-overflow:clip;}
+  .org-vchair{min-width:9rem!important;flex-shrink:0;}
+  .org-vchair .org-name{display:inline-block;padding:0 10px;white-space:nowrap;letter-spacing:.06em;font-variant-ligatures:none;}
+  .org-node .role-tight,.org-node .mem-tight{display:block;white-space:nowrap;word-break:keep-all;overflow:visible;}
   .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;}
   .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;}
   .org-row{display:grid;gap:12px;margin-bottom:12px;align-items:stretch;}
@@ -711,6 +713,7 @@
   @media(max-width:560px){
     .org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr;}
     .org-row .org-node{min-width:0;width:100%;}
+    .org-row .org-node.org-vchair{min-width:9rem!important;width:auto;}
   }
   /* SPONSOR */
   .sp-grid{display:flex;flex-wrap:wrap;gap:14px;}
@@ -1199,7 +1202,7 @@
 
     <div class="org-row org-row5">
       <div class="org-node sm"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
-      <div class="org-node sm"><div class="role">부회장</div><div class="mem mem-tight">이주덕</div></div>
+      <div class="org-node sm org-vchair"><div class="role">부회장</div><div class="mem"><span class="org-name">이주덕</span></div></div>
       <div class="org-node sm"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
       <div class="org-node sm"><div class="role role-tight">감사</div><div class="mem">공창릉 · 허영길</div></div>
       <div class="org-node sm"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
