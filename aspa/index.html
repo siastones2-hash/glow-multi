@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="build" content="2026-06-01-orgfix">
 <title>ASFA — 아스파골프 · 아시아생활체육골프연맹</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,16 +52,17 @@
 
   /* NAV */
   nav{position:fixed;top:0;left:0;right:0;z-index:50;}
-  nav .inner{max-width:1240px;margin:16px auto;padding:0 14px 0 22px;height:60px;display:flex;align-items:center;justify-content:space-between;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--glass-bd);border-radius:18px;transition:.4s;}
+  nav .inner{max-width:1240px;margin:16px auto;padding:0 14px 0 22px;height:60px;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--glass-bd);border-radius:18px;transition:.4s;}
   nav.scrolled .inner{background:rgba(18,18,18,.72);box-shadow:0 12px 44px -18px rgba(0,0,0,.7);}
   .brand{display:flex;align-items:center;gap:11px;cursor:pointer;text-decoration:none;color:inherit;}
   .brand-logo{width:38px;height:38px;flex-shrink:0;display:block;filter:drop-shadow(0 0 10px rgba(0,229,255,.35));transition:transform .3s var(--ease),filter .3s;}
   .brand:hover .brand-logo{transform:scale(1.04);filter:drop-shadow(0 0 14px rgba(0,229,255,.5));}
   .brand b{font-family:var(--disp);font-weight:800;font-size:1.3rem;letter-spacing:.04em;line-height:1;}
   .brand small{font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;color:var(--txt-dim);}
-  .nav-menu{display:flex;align-items:center;gap:26px;list-style:none;}
-  .nav-menu a{font-size:.84rem;color:var(--txt-dim);transition:.25s;}.nav-menu a:hover{color:var(--txt);}
-  .navuser{display:flex;align-items:center;gap:12px;font-size:.82rem;}
+  .nav-menu{display:flex;align-items:center;gap:16px;list-style:none;flex-shrink:1;min-width:0;}
+  .nav-menu a{font-size:.8rem;color:var(--txt-dim);transition:.25s;white-space:nowrap;}
+  .nav-menu a:hover{color:var(--txt);}
+  .navuser{display:flex;align-items:center;gap:10px;font-size:.82rem;flex-shrink:0;}
   .navuser .who{color:var(--cyan-2);font-family:var(--mono);font-size:.74rem;}.navuser .who b{color:var(--txt);}
   .navuser a{color:var(--txt-dim);font-size:.82rem;}.navuser a:hover{color:var(--cyan);}
   .mode-badge{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;padding:3px 9px;border-radius:20px;}
@@ -83,7 +84,7 @@
   .m-drawer-user{margin-top:auto;padding-top:18px;border-top:1px solid var(--glass-bd);display:flex;flex-direction:column;gap:10px;}
   .m-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:110;opacity:0;visibility:hidden;transition:.3s;}
   .m-backdrop.open{opacity:1;visibility:visible;}
-  @media(max-width:880px){.nav-menu{display:none;}.brand small{display:none;}.hamburger{display:flex;}.navuser .who{display:none;}.navuser a{display:none;}}
+  @media(max-width:1020px){.nav-menu{display:none;}.brand small{display:none;}.hamburger{display:flex;}.navuser .who{display:none;}.navuser a{display:none;}}
   @media(max-width:600px){
     .wrap{padding:0 16px;}
     .hero{padding:130px 0 50px;}
@@ -664,58 +665,46 @@
   .cty .en{font-family:var(--mono);font-size:.6rem;color:var(--txt-faint);letter-spacing:.04em;margin-top:2px;}
 
   /* ORG */
-  .org-top{display:flex;justify-content:center;margin-bottom:16px;}
-  .org-pres{position:relative;}
-  .org-pres .escort{position:absolute;right:0;top:50%;transform:translateY(-50%);min-width:0;padding:11px 16px;opacity:.85;}
-  .org-pres .escort .role{font-size:.78rem;}
-  .org-pres .escort .mem{font-size:.76rem;}
-  @media(max-width:680px){.org-pres{flex-direction:column;}.org-pres .escort{position:static;transform:none;margin-top:12px;}}
-  .org-node{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:20px 22px;text-align:center;min-width:min-content;backdrop-filter:blur(12px);overflow:visible;}
-  .org-node.head,.org-node.planner{padding:24px 16px;min-width:0;width:calc((100% - 48px)/5);}
-  @media(max-width:880px){.org-node.head,.org-node.planner{width:calc((100% - 12px)/2);}}
-  @media(max-width:520px){.org-node.head,.org-node.planner{width:100%;}}
+  .org-top{display:flex;justify-content:center;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
+  .org-pres{flex-direction:column;align-items:center;}
+  .org-pres .escort{position:static;transform:none;min-width:0;max-width:360px;width:100%;padding:14px 18px;opacity:1;}
+  .org-pres .escort .role{font-size:.8rem;}
+  .org-pres .escort .mem{font-size:.78rem;}
+  .org-node{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:20px 22px;text-align:center;backdrop-filter:blur(12px);overflow:visible;}
+  .org-node.head,.org-node.planner{padding:26px 36px;min-width:220px;max-width:320px;width:auto;margin:0 auto;}
   .org-node.head{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);box-shadow:0 0 34px -8px var(--cyan-glow);}
   .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);}
-  .org-node.head .role,.org-node.planner .role{font-size:1rem;letter-spacing:.01em;text-transform:none;color:var(--cyan);}
-  .org-node.head .nm,.org-node.planner .nm{font-size:.92rem;font-weight:600;color:var(--txt-2);margin-top:6px;}
-  .org-node.sm{padding:16px 14px;min-width:11em;width:100%;max-width:100%;}
-  /* 2단계: 최고 임원진 — 살짝 강조 */
-  .org-node.lv2{padding:18px 16px;min-width:min-content;border-color:rgba(0,229,255,.22);background:rgba(0,229,255,.035);}
+  .org-node.head .role,.org-node.planner .role{font-size:1.05rem;letter-spacing:0;text-transform:none;color:var(--cyan);}
+  .org-node.head .nm,.org-node.planner .nm{font-size:1rem;font-weight:600;color:var(--txt-2);margin-top:8px;}
+  .org-node.sm{padding:18px 16px;}
+  .org-node.lv2{padding:18px 16px;border-color:rgba(0,229,255,.22);background:rgba(0,229,255,.035);}
   .org-node.lv2 .role{font-size:.98rem;}
-  /* 3단계: 위원장 보조라인 */
-  .org-node.lv3{padding:17px 16px;min-width:min-content;border-color:rgba(255,255,255,.13);}
+  .org-node.lv3{padding:17px 16px;border-color:rgba(255,255,255,.13);}
   .org-node.lv3 .role{font-size:.95rem;}
-  /* 4단계: 실무/위원회 — 가장 차분, 작게 */
-  .org-node.lv4{padding:15px 16px;min-width:min-content;background:rgba(255,255,255,.025);border-color:var(--glass-bd);}
+  .org-node.lv4{padding:15px 16px;background:rgba(255,255,255,.025);border-color:var(--glass-bd);}
   .org-node.lv4 .role{font-size:.86rem;color:var(--cyan-2);font-weight:600;}
   .org-node.lv4 .mem{font-size:.8rem;color:var(--txt-dim);}
-  .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;letter-spacing:0;color:var(--cyan);white-space:normal;line-height:1.45;overflow:visible;word-break:keep-all;text-align:center;padding:0 2px;}
-  .org-node .role-long{display:inline-block;min-width:4.8em;}
-  .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;overflow:visible;word-break:keep-all;}
-  .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;overflow:visible;word-break:keep-all;}
-  .org-row{display:grid;gap:12px;margin-bottom:12px;align-items:stretch;overflow:visible;}
-  .org-row .org-node{display:flex;flex-direction:column;justify-content:flex-start;overflow:visible;}
+  .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;color:var(--cyan);line-height:1.45;text-align:center;}
+  .org-node .role-tight,.org-node .mem-tight{white-space:nowrap;word-break:normal;overflow:visible;}
+  .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;}
+  .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;}
+  .org-row{display:grid;gap:12px;margin-bottom:12px;align-items:stretch;}
+  .org-row .org-node{display:flex;flex-direction:column;justify-content:flex-start;min-width:0;}
   .org-row.lv2-row{max-width:920px;margin-left:auto;margin-right:auto;}
   .org-row.lv3-row{max-width:680px;margin-left:auto;margin-right:auto;}
-  .org-row5{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+  .org-row5{grid-template-columns:repeat(5,minmax(168px,1fr));}
   .org-row6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
-  .org-row3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
+  .org-row3{grid-template-columns:repeat(3,minmax(260px,1fr));}
   .org-row2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
-  .org-row4{grid-template-columns:repeat(4,minmax(0,1fr));}
-  .org-row4 > .org-node{min-width:0;}
+  .org-row4{grid-template-columns:repeat(4,minmax(200px,1fr));}
+  #pgOrg .content-sec{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px;}
   @media(max-width:1100px){
-    .org-row4{grid-template-columns:repeat(2,minmax(180px,1fr));}
-    .org-row5{grid-template-columns:repeat(2,minmax(150px,1fr));}
-    .org-row3{grid-template-columns:repeat(2,minmax(220px,1fr));}
+    .org-row5{grid-template-columns:repeat(2,minmax(200px,1fr));}
+    .org-row4{grid-template-columns:repeat(2,minmax(200px,1fr));}
+    .org-row3{grid-template-columns:1fr;}
   }
-  #pgOrg .content-sec{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;padding-bottom:90px;}
-  @media(max-width:880px){
-    .org-row6{grid-template-columns:repeat(2,minmax(150px,1fr));}
-    .org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:repeat(2,minmax(180px,1fr));}
-  }
-  @media(max-width:520px){
+  @media(max-width:560px){
     .org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr;}
-    .org-node.sm{min-width:0;width:100%;}
   }
   /* SPONSOR */
   .sp-grid{display:flex;flex-wrap:wrap;gap:14px;}
@@ -751,7 +740,7 @@
     <li><a onclick="go('home')">홈</a></li>
     <li><a onclick="go('about')">연맹 소개</a></li>
     <li><a onclick="go('org')">조직도</a></li>
-    <li><a onclick="goBook()">투어</a></li>
+    <li><a onclick="goBook()" title="투어 일정·예약">투어</a></li>
     <li><a onclick="go('course')">골프장 부킹</a></li>
     <li><a onclick="go('academy')">아카데미</a></li>
     <li><a onclick="go('benefits')">회원혜택</a></li>
@@ -1204,19 +1193,19 @@
 
     <div class="org-row org-row5">
       <div class="org-node sm"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
-      <div class="org-node sm"><div class="role">부회장</div><div class="mem role-long">이주덕</div></div>
+      <div class="org-node sm"><div class="role">부회장</div><div class="mem mem-tight">이주덕</div></div>
       <div class="org-node sm"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
-      <div class="org-node sm"><div class="role">감사</div><div class="mem">공창릉 · 허영길</div></div>
+      <div class="org-node sm"><div class="role role-tight">감사</div><div class="mem">공창릉 · 허영길</div></div>
       <div class="org-node sm"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
     </div>
 
     <div class="org-top" style="margin-top:8px"><div class="org-node planner"><div class="role">기획위원장</div><div class="nm">이현석</div></div></div>
 
     <div class="org-row org-row4">
-      <div class="org-node sm"><div class="role">집행위원장</div><div class="mem">정철현</div></div>
-      <div class="org-node sm"><div class="role">사무총장</div><div class="mem">김용태</div></div>
-      <div class="org-node sm"><div class="role role-long">사무국장</div><div class="mem">이은주</div></div>
-      <div class="org-node sm"><div class="role role-long">대회협력단장</div><div class="mem">김상철</div></div>
+      <div class="org-node sm"><div class="role role-tight">집행위원장</div><div class="mem mem-tight">정철현</div></div>
+      <div class="org-node sm"><div class="role role-tight">사무총장</div><div class="mem mem-tight">김용태</div></div>
+      <div class="org-node sm"><div class="role role-tight">사무국장</div><div class="mem mem-tight">이은주</div></div>
+      <div class="org-node sm"><div class="role role-tight">대회협력단장</div><div class="mem mem-tight">김상철</div></div>
     </div>
 
     <div class="org-row org-row4">
