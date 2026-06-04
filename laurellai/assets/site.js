@@ -10,9 +10,9 @@ const DEFAULT_CONTENT = {
   home: {
     heroTop: '사각의 마법',
     heroTagline: '',
-    heroBottom: 'OF THE SQUARE',
+    heroBottom: 'AT THE FIELD',
     heroName: 'Pink Stone',
-    heroRole: 'Premium Park Golf Driver',
+    heroRole: '프리미엄 파크골프 드라이버',
     heroProduct: 'LAURELLAI',
     storyEyebrow: '',
     storyTitle: 'The Art of<br>Park Golf.',
@@ -280,8 +280,15 @@ function initSideMenu() {
   });
 }
 
+function initNoTranslate() {
+  document.querySelectorAll(
+    'header, .side-menu, .logo, .hero, .footer-brand, [data-cms]'
+  ).forEach(el => el.setAttribute('translate', 'no'));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   applyContent();
+  initNoTranslate();
   initReveal();
   initSideMenu();
 });
