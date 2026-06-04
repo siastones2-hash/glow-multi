@@ -1169,7 +1169,33 @@ function nicheServiceDescription(name, pl, type) {
   return type ? `${d} (${type})` : d;
 }
 
+const DOMESTIC_PLATFORM_RULES = [
+  { test: /naver|smartstore|스마트스토어|네이버|naver blog|blog neighbor|서로이웃|naver place|플레이스|naver cafe|naver kin|place review|blog view|blog visit/i, pl: 'naver', bucket: 'dom_naver', label: '네이버' },
+  { test: /kakao|카카오|kakaotalk|ch channel|kakao channel|카톡|kakao talk/i, pl: 'kakao', bucket: 'dom_kakao', label: '카카오' },
+  { test: /coupang|쿠팡/i, pl: 'coupang', bucket: 'dom_coupang', label: '쿠팡' },
+  { test: /tistory|티스토리|brunch|브런치|band\.naver|naver band|네이버밴드|밴드/i, pl: 'naver', bucket: 'dom_naver_blog', label: '네이버블로그' },
+];
+
+function qualifiesDomesticPlatformImport(s) {
+  const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+  if (BAD_SERVICE_NAME.test(full)) return null;
+  for (const rule of DOMESTIC_PLATFORM_RULES) {
+    if (!rule.test.test(full)) continue;
+    const score = scorePeakerrService(s);
+    if (score < 0) return null;
+    const low = full.toLowerCase();
+    const useful = /\bhq\b|real|premium|refill|review|follow|like|view|visit|neighbor|scrap|save|member|subscriber|rank|traffic|comment|share|place|store|channel|blog/.test(low)
+      || score >= 80;
+    if (!useful) continue;
+    return { pl: rule.pl, bucket: rule.bucket, qs: score + 250, label: rule.label };
+  }
+  return null;
+}
+
 function qualifiesForNicheImport(s) {
+  const domestic = qualifiesDomesticPlatformImport(s);
+  if (domestic) return domestic;
+
   const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
   if (BAD_SERVICE_NAME.test(full)) return null;
   const badScore = scorePeakerrService(s);
@@ -1192,6 +1218,7 @@ function qualifiesForNicheImport(s) {
 /** Peakerr에서 아마zon·쿠팡·네이버 등 + 보너스(LinkedIn 등) — 실제 있을 때만 추가 */
 async function importNichePeakerrServices(opts = {}) {
   const maxNiche = opts.maxNichePerPlatform ?? 5;
+  const maxDomestic = opts.maxDomesticPerBucket ?? 8;
   const maxBonus = opts.maxBonusPerBucket ?? 3;
   const dryRun = !!opts.dryRun;
   const notify = opts.notify !== false;
@@ -1222,12 +1249,17 @@ async function importNichePeakerrServices(opts = {}) {
   }
 
   const toAdd = [];
+  const domesticBuckets = ['dom_naver', 'dom_kakao', 'dom_coupang', 'dom_naver_blog'];
+  for (const bucket of domesticBuckets) {
+    const list = (byBucket[bucket] || []).sort((a, b) => b.qs - a.qs);
+    toAdd.push(...list.slice(0, maxDomestic));
+  }
   for (const pl of NICHE_PLATFORMS) {
     const list = (byBucket[pl] || []).sort((a, b) => b.qs - a.qs);
     toAdd.push(...list.slice(0, maxNiche));
   }
   for (const bucket of Object.keys(byBucket)) {
-    if (NICHE_PLATFORMS.includes(bucket)) continue;
+    if (NICHE_PLATFORMS.includes(bucket) || domesticBuckets.includes(bucket)) continue;
     const list = byBucket[bucket].sort((a, b) => b.qs - a.qs);
     toAdd.push(...list.slice(0, maxBonus));
   }
@@ -1236,9 +1268,9 @@ async function importNichePeakerrServices(opts = {}) {
   if (!dryRun) {
     for (const s of toAdd) {
       const id = `pk_${s.service}`;
-      const displayName = NICHE_PLATFORMS.includes(s.pl)
-        ? formatNicheServiceName(s.name, s.pl)
-        : formatNicheServiceName(s.name, s.pl);
+      const displayName = s.label
+        ? `${s.label} — ${(s.name || '').substring(0, 80)}`
+        : (NICHE_PLATFORMS.includes(s.pl) ? formatNicheServiceName(s.name, s.pl) : formatNicheServiceName(s.name, s.pl));
       const desc = nicheServiceDescription(s.name, s.pl, s.type || s.category || '');
       await query(`
         INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
@@ -3906,6 +3938,7 @@ function detectPlat(n) {
   if (n.includes('amazon')) return 'amazon';
   if (n.includes('coupang') || n.includes('쿠팡')) return 'coupang';
   if (/shopee|lazada|aliexpress|ali express|\bebay\b|etsy|shopify|wish\.com|walmart seller|tokopedia|mercado livre/.test(n)) return 'ecommerce';
+  if (/tistory|티스토리|brunch|브런치|band\.naver|naver band|네이버밴드/.test(n)) return 'naver';
   if (/naver|네이버|smartstore|스마트스토어|naver place|naver blog|naver cafe/.test(n)) return 'naver';
   if (/kakao|카카오|kakaotalk|ch channel|kakao channel/.test(n)) return 'kakao';
   if (n.includes('pinterest')) return 'pinterest';
