@@ -507,17 +507,19 @@ async function repairSiteServices(siteId, force = false) {
 }
 
 async function repairAllPartnerSiteServices() {
-  const sites = await query(`SELECT id, name FROM sites WHERE id != 'default' AND active=1`);
+  const sites = await query(`SELECT id, name, domain FROM sites WHERE id != 'default' AND active=1`);
+  const results = [];
   for (const site of sites.rows) {
     try {
-      const r = await repairSiteServices(site.id);
-      if (r.repaired) {
-        console.log(`🔧 site_services 복구: ${site.name} (${site.id}) ${r.before} → ${r.after}`);
-      }
+      const r = await repairSiteServices(site.id, true);
+      results.push({ siteId: site.id, name: site.name, domain: site.domain, ...r });
+      console.log(`✅ site_services 동기화: ${site.name} (${site.domain}) → ${r.after ?? r.enabled}/${r.totalActive} 활성`);
     } catch (e) {
-      console.log(`site_services 복구 실패 ${site.id}:`, e.message);
+      results.push({ siteId: site.id, name: site.name, domain: site.domain, error: e.message });
+      console.log(`site_services 동기화 실패 ${site.id}:`, e.message);
     }
   }
+  return results;
 }
 
 /** DB=credit(USD), 화면=USD×exrate(원). 비정상적으로 큰 값 일괄 0 정리 */
@@ -1007,6 +1009,8 @@ async function syncPeakerrServices() {
       }
       await sendTelegramToSuper(msg);
     }
+
+    await repairAllPartnerSiteServices();
   } catch(e) { console.log('서비스 동기화 실패:', e.message); }
 }
 
@@ -3099,8 +3103,8 @@ app.post('/api/super/sites/repair-services', requireSuperAdmin, async (req, res)
       const r = await repairSiteServices(siteId, !!force);
       return res.json({ ok: true, ...r });
     }
-    await repairAllPartnerSiteServices();
-    res.json({ ok: true, message: '모든 지인 사이트 site_services 점검 완료' });
+    const results = await repairAllPartnerSiteServices();
+    res.json({ ok: true, message: '모든 지인 사이트 상품 동기화 완료', results });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

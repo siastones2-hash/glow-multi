@@ -979,6 +979,7 @@ tr:last-child td{border-bottom:none}
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <div style="font-size:14px;font-weight:800">사이트 목록</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn binf bsm" onclick="repairAllSiteServices()">🛍 전체 사이트 상품 동기화</button>
               <button class="btn ber bsm" onclick="fixAbnormalCredits()">🔧 비정상 크레딧 0원 정리</button>
               <button class="bp bsm" style="padding:8px 16px" onclick="ge('mNewSite').classList.add('on');toggleNsAutoTheme()">+ 새 사이트</button>
             </div>
@@ -2570,6 +2571,14 @@ async function manualScanNewServices(){
   toast('신규 서비스 스캔 시작됨 ✨','ok');
 }
 
+async function repairAllSiteServices(){
+  if(!confirm('모든 지인 사이트에 활성 상품을 전부 다시 연결합니다.\n(나인스토리 등 상품이 안 보이는 문제 예방·복구)\n\n계속할까요?'))return;
+  var d=await api('/api/super/sites/repair-services','POST',{force:true});
+  if(d.error){toast(d.error,'err');return}
+  var n=(d.results&&d.results.length)||0;
+  toast('전체 사이트 상품 동기화 완료 ('+n+'개) ✨','ok');
+  loadSuperDash();
+}
 async function fixAbnormalCredits(){
   if(!confirm('화면에 1천만 원 넘게 보이는 크레딧(버그)을 전 사이트 0원으로 맞춥니다.\n이후 필요한 금액만 다시 충전하세요.\n\n계속할까요?'))return;
   var d=await api('/api/super/sites/fix-abnormal-credits','POST',{});
