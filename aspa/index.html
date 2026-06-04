@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="2026-06-01-leejudeok">
+<meta name="build" content="2026-06-01-pres-center">
 <title>ASFA — 아스파골프 · 아시아생활체육골프연맹</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -666,14 +666,27 @@
 
   /* ORG */
   .org-top{display:flex;justify-content:center;align-items:center;margin-bottom:16px;}
-  .org-pres{position:relative;max-width:920px;width:100%;margin-left:auto;margin-right:auto;padding:0 200px 0 0;min-height:120px;}
-  .org-pres .org-node.head{margin:0 auto;}
-  .org-pres .escort{position:absolute;right:0;top:50%;transform:translateY(-50%);width:auto;max-width:200px;padding:12px 16px;opacity:.92;}
+  .org-pres{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    align-items:center;
+    gap:12px;
+    max-width:920px;width:100%;
+    margin-left:auto;margin-right:auto;
+    min-height:120px;
+  }
+  .org-pres .org-node.head{grid-column:2;justify-self:center;margin:0;}
+  .org-pres .escort{
+    grid-column:3;justify-self:end;
+    position:static;transform:none;
+    width:auto;max-width:200px;padding:12px 16px;opacity:.92;
+  }
   .org-pres .escort .role{font-size:.78rem;}
   .org-pres .escort .mem{font-size:.76rem;line-height:1.5;}
   @media(max-width:720px){
-    .org-pres{padding:0;min-height:0;display:flex;flex-direction:column;align-items:center;gap:12px;}
-    .org-pres .escort{position:static;transform:none;max-width:360px;width:100%;}
+    .org-pres{display:flex;flex-direction:column;align-items:center;gap:12px;min-height:0;}
+    .org-pres .org-node.head{grid-column:auto;}
+    .org-pres .escort{grid-column:auto;justify-self:center;max-width:360px;width:100%;}
   }
   .org-node{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:20px 22px;text-align:center;backdrop-filter:blur(12px);overflow:visible;}
   .org-node.head,.org-node.planner{padding:26px 36px;min-width:220px;max-width:320px;width:auto;}
