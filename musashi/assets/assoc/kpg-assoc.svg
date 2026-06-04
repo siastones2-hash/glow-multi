@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" fill="none">
+  <defs>
+    <linearGradient id="kpg-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C547"/>
+      <stop offset="50%" stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#9A7B1A"/>
+    </linearGradient>
+    <linearGradient id="kpg-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#12161E"/>
+      <stop offset="100%" stop-color="#0A0B10"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#kpg-bg)"/>
+  <rect x="12" y="12" width="376" height="216" rx="12" stroke="url(#kpg-gold)" stroke-width="2" fill="none" opacity=".85"/>
+  <polygon points="200,44 228,68 228,108 200,132 172,108 172,68" stroke="url(#kpg-gold)" stroke-width="2" fill="rgba(201,162,39,.06)"/>
+  <text x="200" y="98" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="26" font-weight="800" letter-spacing="3" fill="url(#kpg-gold)">KPG</text>
+  <rect x="130" y="142" width="140" height="22" rx="4" fill="rgba(55,226,160,.12)" stroke="rgba(55,226,160,.35)" stroke-width="1"/>
+  <text x="200" y="157" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="600" fill="#37E2A0" letter-spacing=".5">�u�x � 2025 �</text>
+  <text x="200" y="186" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="600" fill="#E8EAF2">(�)T�D\�T��</text>
+  <text x="200" y="210" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#7B819B">Korea Professional Golf Association</text>
+</svg>

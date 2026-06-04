@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" fill="none">
+  <defs>
+    <linearGradient id="kgia-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C547"/>
+      <stop offset="50%" stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#9A7B1A"/>
+    </linearGradient>
+    <linearGradient id="kgia-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141820"/>
+      <stop offset="100%" stop-color="#0A0B10"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#kgia-bg)"/>
+  <rect x="12" y="12" width="376" height="216" rx="12" stroke="url(#kgia-gold)" stroke-width="2" fill="none" opacity=".85"/>
+  <circle cx="200" cy="88" r="44" stroke="url(#kgia-gold)" stroke-width="2" fill="rgba(201,162,39,.08)"/>
+  <path d="M200 58 L200 118 M176 82 L224 82" stroke="url(#kgia-gold)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="200" cy="118" r="6" fill="url(#kgia-gold)"/>
+  <text x="200" y="168" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="700" letter-spacing="6" fill="url(#kgia-gold)">KGIA</text>
+  <text x="200" y="196" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#9BA3B8" letter-spacing="1">Korea Golf Industry Association</text>
+  <text x="200" y="218" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#E8EAF2">\m����</text>
+</svg>
