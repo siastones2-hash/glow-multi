@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="2026-06-01-orgfix">
+<meta name="build" content="2026-06-01-orgfix2">
 <title>ASFA — 아스파골프 · 아시아생활체육골프연맹</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -665,18 +665,23 @@
   .cty .en{font-family:var(--mono);font-size:.6rem;color:var(--txt-faint);letter-spacing:.04em;margin-top:2px;}
 
   /* ORG */
-  .org-top{display:flex;justify-content:center;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
-  .org-pres{flex-direction:column;align-items:center;}
-  .org-pres .escort{position:static;transform:none;min-width:0;max-width:360px;width:100%;padding:14px 18px;opacity:1;}
-  .org-pres .escort .role{font-size:.8rem;}
-  .org-pres .escort .mem{font-size:.78rem;}
+  .org-top{display:flex;justify-content:center;align-items:center;margin-bottom:16px;}
+  .org-pres{position:relative;max-width:920px;width:100%;margin-left:auto;margin-right:auto;padding:0 200px 0 0;min-height:120px;}
+  .org-pres .org-node.head{margin:0 auto;}
+  .org-pres .escort{position:absolute;right:0;top:50%;transform:translateY(-50%);width:auto;max-width:200px;padding:12px 16px;opacity:.92;}
+  .org-pres .escort .role{font-size:.78rem;}
+  .org-pres .escort .mem{font-size:.76rem;line-height:1.5;}
+  @media(max-width:720px){
+    .org-pres{padding:0;min-height:0;display:flex;flex-direction:column;align-items:center;gap:12px;}
+    .org-pres .escort{position:static;transform:none;max-width:360px;width:100%;}
+  }
   .org-node{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:20px 22px;text-align:center;backdrop-filter:blur(12px);overflow:visible;}
-  .org-node.head,.org-node.planner{padding:26px 36px;min-width:220px;max-width:320px;width:auto;margin:0 auto;}
+  .org-node.head,.org-node.planner{padding:26px 36px;min-width:220px;max-width:320px;width:auto;}
   .org-node.head{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);box-shadow:0 0 34px -8px var(--cyan-glow);}
-  .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);}
+  .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);margin:0 auto;}
   .org-node.head .role,.org-node.planner .role{font-size:1.05rem;letter-spacing:0;text-transform:none;color:var(--cyan);}
   .org-node.head .nm,.org-node.planner .nm{font-size:1rem;font-weight:600;color:var(--txt-2);margin-top:8px;}
-  .org-node.sm{padding:18px 16px;}
+  .org-node.sm{padding:18px 16px;min-width:max-content;}
   .org-node.lv2{padding:18px 16px;border-color:rgba(0,229,255,.22);background:rgba(0,229,255,.035);}
   .org-node.lv2 .role{font-size:.98rem;}
   .org-node.lv3{padding:17px 16px;border-color:rgba(255,255,255,.13);}
@@ -685,26 +690,27 @@
   .org-node.lv4 .role{font-size:.86rem;color:var(--cyan-2);font-weight:600;}
   .org-node.lv4 .mem{font-size:.8rem;color:var(--txt-dim);}
   .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;color:var(--cyan);line-height:1.45;text-align:center;}
-  .org-node .role-tight,.org-node .mem-tight{white-space:nowrap;word-break:normal;overflow:visible;}
+  .org-node .role-tight,.org-node .mem-tight{display:block;white-space:nowrap;word-break:keep-all;overflow:visible;text-overflow:clip;}
   .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;}
   .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;}
   .org-row{display:grid;gap:12px;margin-bottom:12px;align-items:stretch;}
-  .org-row .org-node{display:flex;flex-direction:column;justify-content:flex-start;min-width:0;}
+  .org-row .org-node{display:flex;flex-direction:column;justify-content:flex-start;min-width:max-content;overflow:visible;}
   .org-row.lv2-row{max-width:920px;margin-left:auto;margin-right:auto;}
   .org-row.lv3-row{max-width:680px;margin-left:auto;margin-right:auto;}
-  .org-row5{grid-template-columns:repeat(5,minmax(168px,1fr));}
+  .org-row5{grid-template-columns:repeat(5,minmax(max-content,1fr));}
   .org-row6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
   .org-row3{grid-template-columns:repeat(3,minmax(260px,1fr));}
   .org-row2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
-  .org-row4{grid-template-columns:repeat(4,minmax(200px,1fr));}
+  .org-row4{grid-template-columns:repeat(4,minmax(max-content,1fr));}
   #pgOrg .content-sec{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px;}
   @media(max-width:1100px){
-    .org-row5{grid-template-columns:repeat(2,minmax(200px,1fr));}
-    .org-row4{grid-template-columns:repeat(2,minmax(200px,1fr));}
+    .org-row5{grid-template-columns:repeat(2,minmax(max-content,1fr));}
+    .org-row4{grid-template-columns:repeat(2,minmax(max-content,1fr));}
     .org-row3{grid-template-columns:1fr;}
   }
   @media(max-width:560px){
     .org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr;}
+    .org-row .org-node{min-width:0;width:100%;}
   }
   /* SPONSOR */
   .sp-grid{display:flex;flex-wrap:wrap;gap:14px;}
