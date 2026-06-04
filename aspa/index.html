@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="2026-06-01-ko-nav">
+<meta name="build" content="2026-06-04-meeting">
 <title>ASFA — 아스파골프 · 아시아생활체육골프연맹</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -244,9 +244,10 @@
   .auth-body{padding:26px 34px 36px;}
   .field{margin-bottom:14px;}
   .field label{display:block;font-family:var(--kr);font-size:.8rem;letter-spacing:0;text-transform:none;color:var(--txt-dim);margin-bottom:7px;}
-  .field input,.field select{width:100%;padding:13px 15px;border:1px solid var(--glass-bd);border-radius:11px;font-family:var(--kr);font-size:.92rem;background:rgba(255,255,255,.04);color:var(--txt);transition:.25s;}
-  .field input::placeholder{color:var(--txt-faint);}
-  .field input:focus,.field select:focus{outline:none;border-color:var(--cyan);background:rgba(0,229,255,.05);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
+  .field input,.field select,.field textarea{width:100%;padding:13px 15px;border:1px solid var(--glass-bd);border-radius:11px;font-family:var(--kr);font-size:.92rem;background:rgba(255,255,255,.04);color:var(--txt);transition:.25s;}
+  .field textarea{resize:vertical;min-height:80px;}
+  .field input::placeholder,.field textarea::placeholder{color:var(--txt-faint);}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--cyan);background:rgba(0,229,255,.05);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
   .field select option{background:var(--bg-soft);}
   .auth-body .btn{width:100%;padding:15px;margin-top:6px;}
   .auth-sub{margin-top:8px;font-size:.88rem;color:var(--txt-dim);line-height:1.5;}
@@ -642,6 +643,17 @@
   .notice .nt{font-family:var(--kr);font-weight:700;font-size:1.05rem;color:var(--txt);}
   .notice .nd{font-family:var(--mono);font-size:.72rem;color:var(--txt-faint);}
   .notice .nbody{margin-top:14px;border-top:1px solid var(--glass-bd);padding-top:16px;}
+  .notice.pin{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.04);}
+  .roadmap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px;}
+  .roadmap-card{background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:14px;padding:16px 18px;}
+  .roadmap-card h4{font-size:.95rem;color:var(--cyan);margin-bottom:8px;}
+  .roadmap-card p{font-size:.84rem;color:var(--txt-dim);line-height:1.65;}
+  .roadmap-card .st{font-family:var(--mono);font-size:.68rem;color:var(--amber);margin-top:8px;}
+  .ops-line{background:rgba(0,229,255,.05);border:1px solid var(--glass-bd-hi);border-radius:16px;padding:22px 24px;margin-bottom:32px;}
+  .ops-line h3{font-size:1.05rem;margin-bottom:12px;color:var(--txt);}
+  .ops-line ol{padding-left:1.2em;color:var(--txt-2);font-size:.9rem;line-height:1.85;}
+  .tag.t-pro{background:rgba(240,179,64,.14);color:var(--amber);}
+  .bt-tag.pro-reg{background:rgba(240,179,64,.2);color:var(--amber);}
   .event-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 18px;}
   @media(max-width:640px){.event-grid{grid-template-columns:1fr;}}
   .event-grid .er{display:flex;gap:10px;font-size:.86rem;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
@@ -828,7 +840,7 @@
         <div class="cell cell-stat reveal" data-d="1"><div class="num"><span id="hsMembers">0</span></div><div class="cap">Members</div></div>
         <div class="cell cell-stat reveal" data-d="2" onclick="go('about')" style="cursor:pointer"><div class="num"><span>18</span><small>&nbsp;개국</small></div><div class="cap">Member Countries</div></div>
         <div class="cell reveal" data-d="3" onclick="go('signup')"><span class="label">Membership</span><h3 style="margin-top:13px;font-size:1.15rem" class="ck">등급별 특전</h3>
-          <div class="tiers"><div class="tier">일반 회원 <span class="mono">BASIC</span></div><div class="tier vip">정회원 <span class="mono">REGULAR ◆</span></div></div></div>
+          <div class="tiers"><div class="tier">일반 회원 <span class="mono">BASIC</span></div><div class="tier vip">정회원 <span class="mono">12만/년</span></div><div class="tier" style="border-color:rgba(240,179,64,.35);color:var(--amber)">프로 정회원 <span class="mono">별도심사</span></div></div></div>
         <div class="cell cell-live reveal" data-d="4" onclick="toast('대회 현장 라이브 (연동 예정)')"><span class="livebadge"><span class="pdot"></span>LIVE NOW</span>
           <h3 class="ck" style="margin-top:auto;font-size:1.25rem">대회 현장 생중계</h3><p>틱톡 · 유튜브 라이브</p><span class="arrow">시청 →</span></div>
         <div class="cell cell-iso span2 reveal" data-d="2" onclick="go('cert')"><span class="corner">ISO</span><span class="label">International Certification</span>
@@ -881,7 +893,8 @@
         <details class="faq"><summary>회원 가입은 어떻게 하나요?</summary><div class="fa">상단 JOIN 버튼에서 이름·휴대폰·비밀번호만 입력하면 즉시 가입됩니다. 가입 후 마이페이지에서 연회비를 납부하면 정회원으로 전환되어 회원 우대가와 우선 예약권이 적용됩니다.</div></details>
         <details class="faq"><summary>투어 참가비에는 무엇이 포함되나요?</summary><div class="fa">투어별로 다르지만 기본적으로 왕복 항공, 라운드(그린피·캐디·카트), 호텔 숙박, 차량 의전이 포함됩니다. 각 투어 카드의 '예약하기'를 누르면 상세 포함 내역을 확인할 수 있습니다.</div></details>
         <details class="faq"><summary>ISO 인증은 어떤 절차로 진행되나요?</summary><div class="fa">신청 접수 → 서류 심사 → 현장 실사 → 인증 발급의 4단계로 진행됩니다. 회원으로 로그인해 신청하면 마이페이지에서 실시간 진행 상태를 추적할 수 있습니다.</div></details>
-        <details class="faq"><summary>회원 등급은 어떻게 올라가나요?</summary><div class="fa">가입 시 일반 회원으로 시작하며, 연회비 납부 시 정회원으로 전환됩니다. 정회원이 되면 투어·대회 예약, 회원 우대가, 골프장 할인 등 모든 회원 혜택이 열립니다.</div></details>
+        <details class="faq"><summary>회원 등급은 어떻게 올라가나요?</summary><div class="fa"><b>① 일반 회원</b> — 무료 가입<br><b>② 정회원</b> — 연회비 12만원 납부 → 입금 확인 → 관리자 승인<br><b>③ 프로 정회원</b> — 정회원 이후 별도 신청·스코어카드 심사·승인 (회비 약 250만원, 2027 프로대회 연계)<br>정회원부터 투어·골프장 할인·단톡방 등이 열립니다.</div></details>
+        <details class="faq"><summary>임원 소개비는 어떻게 되나요?</summary><div class="fa">임원이 직접 모집한 회원이 연회비를 완납하면, <b>첫 완납 3만원 · 이후 갱신마다 2만원</b>이 지급됩니다. 일반 회원에게 소개비를 주지 않습니다(법적 리스크 방지).</div></details>
         <details class="faq"><summary>일본 골프장 우대 회원권 상담도 가능한가요?</summary><div class="fa">네. 아스파골프 네트워크를 통한 일본 명문 골프장 우대 회원권 상담을 전담 진행합니다. 회원에게는 상담 우선권이 주어지며, 일본 초청전 참가 시 현장 상담도 가능합니다.</div></details>
       </div>
     </div>
@@ -918,7 +931,7 @@
       <summary>추가 정보 (선택)</summary>
       <div class="field"><label>이메일</label><input id="suEmail" placeholder="안내 수신용 (선택)" autocomplete="email"></div>
       <div class="field"><label>지역</label><select id="suRegion"><option>서울/경기</option><option>충청</option><option>영남</option><option>호남</option><option>강원/제주</option><option>해외</option></select></div>
-      <div class="field"><label>추천인</label><input id="suReferrer" placeholder="소개한 임원 이름"></div>
+      <div class="field"><label>추천인 (임원)</label><input id="suReferrer" placeholder="소개한 임원 이름 · 임원만 소개비 적용"></div>
     </details>
 
     <label class="agree-single"><input type="checkbox" id="suAgree"> <span>[필수] <a onclick="showTerms('이용약관')">이용약관</a> 및 <a onclick="showTerms('개인정보')">개인정보 처리</a>에 동의합니다</span></label>
@@ -968,7 +981,38 @@
   </div>
 
   <div class="panel" style="margin-top:8px">
-    <h3>회원 유형별 혜택</h3><p class="ph-desc">ASFA GOLF 공식 멤버십 혜택입니다.</p>
+    <h3>회원 유형별 혜택</h3><p class="ph-desc">ASFA GOLF 공식 멤버십 · <b>2026.06 운영회의</b> 반영</p>
+    <div class="benefit-types">
+      <div class="bt">
+        <div class="bt-h"><span class="bt-tag common">일반</span><b>가입 후</b></div>
+        <ul><li>웰컴 기프트(예정)</li><li>연회비 납부 시 정회원 전환</li></ul>
+      </div>
+      <div class="bt">
+        <div class="bt-h"><span class="bt-tag ama">정회원</span><b>연회비 12만원/년</b></div>
+        <ul><li>투어·대회 예약 · 골프장 2만원 할인</li><li>건강검진 제휴(전국 30곳+) · 야마하 신규클럽 30%</li><li>회원 단톡방 · 아카데미 회원가 · 디지털 회원증</li></ul>
+      </div>
+      <div class="bt">
+        <div class="bt-h"><span class="bt-tag pro-reg">프로 정회원</span><b>별도 심사·약 250만원</b></div>
+        <ul><li>스코어카드(최근 2~3개월) 심사 · 2027.5 프로대회 참가 연계</li><li>투어카드·상금 투어 자격(안내 중)</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>제휴 혜택 (확대 중)</h3>
+    <div class="perks" style="margin-top:12px">
+      <div class="perk"><div class="pi">⛳</div><h4>골프장</h4><p>라운드 1인 <b>2만원 할인</b> · 핵심 제휴 1~2골프장 직거래 추진</p></div>
+      <div class="perk"><div class="pi">🏥</div><h4>건강검진</h4><p>전국 약 30개 지점 제휴(협의 중)</p></div>
+      <div class="perk"><div class="pi">🎸</div><h4>야마하 골프</h4><p>신규 클럽 <b>30% 할인</b> (공식 후원)</p></div>
+      <div class="perk"><div class="pi">🛒</div><h4>나무플러스</h4><p>쇼핑몰 연계(직접 운영 대신 링크 방식 검토)</p></div>
+      <div class="perk"><div class="pi">💳</div><h4>회원·결제 카드</h4><p>코나카드·은행 연계형 검토 · 도입 전 안내</p></div>
+      <div class="perk"><div class="pi">📱</div><h4>디지털 마케팅</h4><p>유튜브·인스타 트래픽 지원(정회원 대상, 일부 검토)</p></div>
+    </div>
+    <p style="font-size:.78rem;color:var(--txt-faint);margin-top:14px">※ 일부 혜택·수익 구조는 내부 검토 중이며, 확정 시 순차 공개합니다.</p>
+  </div>
+
+  <div class="panel" style="margin-top:8px">
+    <h3>회원 유형 (기존 안내)</h3><p class="ph-desc">프로·아마추어 라운드 프로그램</p>
     <div class="benefit-types">
       <div class="bt">
         <div class="bt-h"><span class="bt-tag common">공통</span><b>Common Benefits</b></div>
@@ -986,22 +1030,18 @@
   </div>
 
   <div class="panel">
-    <h3>등급별 혜택 비교</h3><p class="ph-desc">일반 회원 → 정회원. 연회비 납부 시 정회원으로 전환되어 모든 혜택이 열립니다.</p>
+    <h3>등급별 혜택 비교</h3><p class="ph-desc">일반 → 정회원(연회비) → 프로 정회원(별도 심사)</p>
     <div class="table-scroll"><table class="comp">
-      <thead><tr><th style="text-align:left">혜택</th><th>일반 회원</th><th>정회원</th></tr></thead>
+      <thead><tr><th style="text-align:left">혜택</th><th>일반</th><th>정회원</th><th>프로 정회원</th></tr></thead>
       <tbody>
-        <tr><td>투어 · 대회 예약</td><td class="x">잠김</td><td class="o">✓</td></tr>
-        <tr><td>투어 회원 우대가</td><td class="x">—</td><td class="o">✓</td></tr>
-        <tr><td>우선 예약권</td><td class="x">—</td><td class="o">✓</td></tr>
-        <tr><td>골프장 2만원 할인</td><td class="x">—</td><td class="o">✓</td></tr>
-        <tr><td>ISO 인증 회원 할인</td><td class="x">—</td><td class="o">✓</td></tr>
-        <tr><td>전용 라운지 · 네트워킹</td><td class="x">—</td><td class="o">✓</td></tr>
-        <tr><td>일본 회원권 상담 우선</td><td class="x">—</td><td class="o">✓</td></tr>
-        <tr><td>아카데미 회원가</td><td class="x">—</td><td class="o">✓</td></tr>
-        <tr><td>회원 단톡방 참여</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>투어 · 대회 예약</td><td class="x">—</td><td class="o">✓</td><td class="o">✓</td></tr>
+        <tr><td>골프장 2만원 할인</td><td class="x">—</td><td class="o">✓</td><td class="o">✓</td></tr>
+        <tr><td>회원 단톡방</td><td class="x">—</td><td class="o">✓</td><td class="o">✓</td></tr>
+        <tr><td>프로 토너먼트(2027.5)</td><td class="x">—</td><td class="x">—</td><td class="o">✓</td></tr>
+        <tr><td>아카데미 회원가</td><td class="x">—</td><td class="o">✓</td><td class="o">✓</td></tr>
       </tbody>
     </table></div>
-    <p style="font-family:var(--mono);font-size:.7rem;color:var(--txt-faint);margin-top:12px">✓ 제공 · — 미제공 · 투어 예약은 정회원부터 가능합니다</p>
+    <p style="font-family:var(--mono);font-size:.7rem;color:var(--txt-faint);margin-top:12px">정회원: 연회비 12만원 · 프로: 약 250만원+심사 (회의안 기준)</p>
   </div>
   </div><!-- /benefit-gate -->
 
@@ -1051,29 +1091,24 @@
   <div class="stat-grid" id="execStats"></div>
 
   <div class="panel payout-guide" style="margin-top:8px">
-    <h3>💰 수수료 안내 <span style="font-size:.72rem;color:var(--txt-faint);font-weight:400">· 내가 직접 모집한 회원 1명당 받는 금액</span></h3>
+    <h3>💰 임원 소개비 안내 <span style="font-size:.72rem;color:var(--txt-faint);font-weight:400">· 2026.06.04 회의 확정 · 임원 직접 모집만</span></h3>
     <div class="payout-cards">
       <div class="payout-card promo">
-        <span class="po-badge">🚀 가입 첫 달 (오픈 프로모션)</span>
-        <div class="po-amt">84,000<small>원</small></div>
-        <div class="po-rate">연회비 12만원의 70%</div>
-        <p class="po-desc">오픈 첫 달에 가입한 회원을 모집하면 회원당 84,000원을 받습니다.</p>
+        <span class="po-badge">첫 연회비 완납</span>
+        <div class="po-amt">30,000<small>원</small></div>
+        <div class="po-rate">내가 모집한 회원 1명당</div>
+        <p class="po-desc">해당 회원이 처음 연회비(12만원)를 완납·승인되면 지급됩니다.</p>
       </div>
       <div class="payout-card">
-        <span class="po-badge">📅 둘째 달 이후 (상시)</span>
-        <div class="po-amt">72,000<small>원</small></div>
-        <div class="po-rate">수수료 60% + 운영비 10%</div>
-        <p class="po-desc">상시 기간에는 모집 수수료 60%(72,000원)에 운영비 10%가 포함됩니다.</p>
+        <span class="po-badge">2회차 연회비(갱신)부터</span>
+        <div class="po-amt">20,000<small>원</small></div>
+        <div class="po-rate">갱신 1회당</div>
+        <p class="po-desc">같은 회원이 연회비를 갱신할 때마다 2만원이 반복 지급됩니다.</p>
       </div>
     </div>
     <div class="payout-flow">
-      <div class="pf-title">회원 1명 연회비 <b>120,000원</b>이 이렇게 나뉩니다</div>
-      <div class="pf-bars">
-        <div class="pf-bar"><span class="pf-fill" style="width:70%"></span><span class="pf-label">나(임원) 70% · 84,000원</span></div>
-        <div class="pf-bar"><span class="pf-fill alt" style="width:10%"></span><span class="pf-label">시아스트릿 10% · 12,000원</span></div>
-        <div class="pf-bar"><span class="pf-fill dim" style="width:20%"></span><span class="pf-label">아스파 본사 20% · 24,000원</span></div>
-      </div>
-      <p class="pf-note">※ 수수료는 회원이 <b>연회비를 완납(정회원 전환)</b>해야 확정됩니다. 내가 직접 모집한 회원만 해당되며, 월말 마감 후 등록 계좌로 정산됩니다.</p>
+      <div class="pf-title">연회비 <b>120,000원</b> · 소개비는 <b>임원만</b> 받을 수 있습니다</div>
+      <p class="pf-note">※ 일반 회원에게 소개비를 지급하지 않습니다(법적 리스크 방지). 수수료는 회원 <b>연회비 완납·관리자 승인</b> 후 확정되며, 월말 정산됩니다.</p>
     </div>
   </div>
 
@@ -1089,6 +1124,7 @@
   <div class="dash-head"><div><h1 id="memHi" class="kh">마이페이지</h1><p class="kh">내 정보·등급·회비·예약을 한눈에.</p></div><button class="btn btn-gold" onclick="goBook()">새 예약 →</button></div>
   <div class="stat-grid" id="memStats"></div>
   <div class="panel"><h3>💳 연회비 / 등급</h3><div id="memFee"></div></div>
+  <div class="panel"><h3>🏌️ 프로 정회원</h3><div id="memPro"></div></div>
   <div class="panel"><h3>📋 내 예약 현황</h3><p class="ph-desc">진행중 예약은 취소할 수 있습니다.</p><div class="table-scroll"><table id="memResTable"></table></div></div>
   <div class="panel"><h3>🛡️ 내 인증 신청</h3><p class="ph-desc">신청한 ISO 인증의 진행 상태입니다.</p><div class="table-scroll"><table id="memCertTable"></table></div></div>
   <div class="panel"><h3>👤 내 정보</h3><div id="memInfo"></div></div>
@@ -1098,7 +1134,7 @@
 <div class="page" id="pgAdmin"><div class="dash"><div class="wrap">
   <div class="dash-head"><div><h1>ADMIN <span class="cy">CONSOLE</span></h1><p class="kh">회원·예약·인증·투어 전체 통제</p></div><span class="tag t-active" style="font-size:.7rem;padding:8px 14px;">🔒 이현석 위원장</span></div>
   <div class="stat-grid" id="adStats"></div>
-  <div class="panel settle-panel"><h3>💰 연회비 정산 요약 <span style="font-size:.72rem;color:var(--txt-faint);font-weight:400">· 임원70 / 본사20 / 시아10 자동 분배</span></h3><div id="adSettle"></div></div>
+  <div class="panel settle-panel"><h3>💰 연회비·소개비 집계 <span style="font-size:.72rem;color:var(--txt-faint);font-weight:400">· 임원 3만/2만 · 내부용</span></h3><div id="adSettle"></div></div>
   <div class="tabs">
     <div class="tab active" onclick="adminTab('members',this)">MEMBERS</div>
     <div class="tab" onclick="adminTab('res',this)">RESERVATIONS</div>
@@ -1110,7 +1146,7 @@
     <div class="filterbar">
       <div class="srch"><span class="si">⌕</span><input id="memSearch" placeholder="이름·이메일·지역 검색" oninput="renderAdminMembers()"></div>
       <div class="fsel"><select id="memFilter" onchange="renderAdminMembers()"><option value="all">전체 상태</option><option value="active">활성</option><option value="pending">승인 대기</option></select></div>
-      <div class="fsel"><select id="memTierFilter" onchange="renderAdminMembers()"><option value="all">전체 등급</option><option value="reg">정회원</option><option value="norm">일반 회원</option></select></div>
+      <div class="fsel"><select id="memTierFilter" onchange="renderAdminMembers()"><option value="all">전체 등급</option><option value="pro">프로 정회원</option><option value="reg">정회원</option><option value="norm">일반 회원</option></select></div>
     </div>
     <div class="table-scroll"><table id="adMemTable"></table></div></div></div>
   <div class="admintab" id="atRes"><div class="panel"><h3>🗓️ 예약 관리 <button class="btn btn-dark btn-sm" style="float:right" onclick="exportCSV('res')">⬇ 엑셀(CSV) 내보내기</button></h3>
@@ -1139,7 +1175,7 @@
   </div>
   <div class="admintab" id="atReferral">
     <div class="panel"><h3>🤝 임원 추천 수수료 정산 <button class="btn btn-dark btn-sm" style="float:right" onclick="exportCSV('referral')">⬇ CSV 내보내기</button></h3>
-      <p class="ph-desc">임원이 데려온 정회원(연회비 완납) 기준으로 추천 수수료가 집계됩니다. 현재 수수료율: <b style="color:var(--cyan)" id="refRateTxt"></b> · 회원당 <b style="color:var(--cyan)" id="refPerTxt"></b></p>
+      <p class="ph-desc">임원이 데려온 정회원(연회비 완납) 기준 · <b>첫 완납 3만원 · 갱신 2만원</b> (임원만)</p>
       <div class="table-scroll"><table id="adReferralTable"></table></div>
     </div>
     <div class="panel"><h3>📋 추천 회원 상세</h3><div class="table-scroll"><table id="adReferralDetail"></table></div></div>
@@ -1150,6 +1186,19 @@
 <div class="page" id="pgNotice"><div class="wrap">
   <div class="page-head"><span class="label">Notice</span><h1>공지<span class="cy">사항</span></h1><p>연맹의 대회·행사 소식을 확인하세요.</p></div>
   <div class="content-sec"><div class="notice-list">
+    <div class="notice pin">
+      <div class="nh"><span class="nt">📌 2026.06.04 운영회의 — 사업·조직 방향</span><span class="nd">2026.06.04</span></div>
+      <div class="nbody">
+        <p style="color:var(--txt-2);font-size:.9rem;line-height:1.8;margin-bottom:14px">조직도 정비, 연회비·임원 소개비, 해외투어, 프로 정회원·프로대회(2027.5) 등 핵심 안건을 확정·검토했습니다.</p>
+        <div class="roadmap-grid">
+          <div class="roadmap-card"><h4>회원 · 연회비</h4><p>정회원 연회비 <b>12만원/년</b>. 임원 직접 모집 시 소개비 <b>첫 완납 3만 · 갱신 2만</b>(일반인 지급 없음).</p><span class="st">가입 → 연회비 → 관리자 승인 → 정회원</span></div>
+          <div class="roadmap-card"><h4>프로 정회원</h4><p>별도 트랙(약 <b>250만원</b>·스코어카드 심사). 2027년 5월 프로 토너먼트(상금 7천만 검토) 연계.</p><span class="st">마이페이지에서 신청 · 심사 후 승인</span></div>
+          <div class="roadmap-card"><h4>해외·대회</h4><p>라오스 9월말, 일본 초청(기획), 몽골 27년 5~6월 검토. ASPA Tour 법인 추진(여행·항공 등).</p><span class="st">대회·투어 메뉴에서 모집 예정 공지</span></div>
+          <div class="roadmap-card"><h4>회원 혜택</h4><p>제휴 골프장 2만원 할인, 건강검진(전국 30곳+), 야마하 30% 등 확대. 회원증·결제카드 도입 검토.</p><span class="st">자격증이 아닌 <b>회원증</b> 체계</span></div>
+        </div>
+        <button class="btn btn-gold" style="margin-top:16px" onclick="go('benefits')">회원 혜택 · 등급 안내 →</button>
+      </div>
+    </div>
     <div class="notice">
       <div class="nh"><span class="nt">🏆 ASFA 창립기념 골프대회</span><span class="nd">2025.08.01</span></div>
       <div class="nbody">
@@ -1169,7 +1218,10 @@
       </div>
     </div>
     <div class="notice"><div class="nh"><span class="nt">📋 2026년 ASFA 심사원 양성 과정 모집</span><span class="nd">2026.04.10</span></div></div>
-    <div class="notice"><div class="nh"><span class="nt">⛳ 라오스 비엔티안 네트워킹 라운드 안내</span><span class="nd">2026.03.22</span></div></div>
+    <div class="notice"><div class="nh"><span class="nt">⛳ 라오스 비엔티안 — 2026년 9월말 예정</span><span class="nd">2026.06.04</span></div>
+      <div class="nbody"><p style="color:var(--txt-dim);font-size:.88rem">푸시그룹 현지 파트너 연계 · 국내 20~30명+현지 50~100명 규모 검토 중입니다.</p><button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="goBook()">투어 일정 보기 →</button></div></div>
+    <div class="notice"><div class="nh"><span class="nt">🏆 2027년 5월 프로 정회원 토너먼트 (예정)</span><span class="nd">2026.06.04</span></div>
+      <div class="nbody"><p style="color:var(--txt-dim);font-size:.88rem">총 상금 7,000만원·우승 3,000만원 규모 검토 · 예선/본선 2일 · 포스터·모집 선행.</p></div></div>
     <div class="notice"><div class="nh"><span class="nt">🤝 야마하 골프 공식 후원 협약 체결</span><span class="nd">2026.02.15</span></div></div>
   </div></div>
 </div></div>
@@ -1184,6 +1236,17 @@
       <span class="label">Play Together, Go Together</span>
       <h2>함께 즐기고,<br>함께 <span class="cy">나아간다</span></h2>
       <p>골프가 경쟁을 넘어 아시아를 하나로 잇는 평화의 언어가 되는 미래를 꿈꿉니다. 아시아생활체육골프연맹은 골프를 통해 아시아의 사람들을 연결하고, 함께 배우고 나누며 나아가는 플랫폼입니다.</p>
+    </div>
+
+    <div class="ops-line panel">
+      <h3>운영 체계 (2026.06 확정)</h3>
+      <ol>
+        <li><b>대외·법인 공지</b> — 정철현 집행위원장(CEO) 일원화</li>
+        <li><b>실무 라인</b> — 집행위원장 → 부회장 → 사무총장 → 사무국장</li>
+        <li><b>고문·위원</b> — 자문·위원회는 별도 라인(명예·자문)</li>
+        <li><b>회원증</b> — 사설 자격증이 아닌 <b>ASFA 회원증</b>·디지털 카드 체계 (디자인 진행 중)</li>
+        <li><b>ASPA Tour</b> — 여행·항공·숙박 등 수익 사업은 별도 법인 추진 (연맹 비영리 한계 보완)</li>
+      </ol>
     </div>
 
     <h3 class="about-h2">비전 &amp; 기대 효과</h3>
@@ -1373,6 +1436,15 @@
     <button class="btn btn-gold" onclick="confirmBook()">예약 확정하기 →</button>
   </div></div></div>
 
+<div class="modal-bg" id="proModal"><div class="modal"><div class="modal-head"><button class="close" onclick="closeM('proModal')">×</button><span class="label">Pro Member</span><h3>프로 정회원 신청</h3></div>
+  <div class="modal-body">
+    <p style="font-size:.88rem;color:var(--txt-dim);line-height:1.7">정회원(연회비 완납) 이후 신청 가능합니다. 최근 2~3개월 스코어카드(캐디 서명 등) 제출 · 심사 후 승인됩니다.</p>
+    <div class="pay-amt" style="font-size:1.6rem">2,500,000원<small style="font-size:.75rem;color:var(--txt-faint)"> (회의안 · 구조 확정 전)</small></div>
+    <div class="field"><label>최근 평균 타수 / 메모</label><textarea id="proScoreNote" rows="3" placeholder="예: 최근 3라운드 78~82타 · 캐디 서명 스코어카드 첨부 예정"></textarea></div>
+    <button class="btn btn-gold" onclick="submitProApply()">신청 접수 →</button>
+    <p class="pay-note" style="margin-top:12px">접수 후 담당자가 연락드립니다. 2027년 5월 프로 토너먼트 참가 자격과 연계됩니다.</p>
+  </div></div></div>
+
 <div class="modal-bg" id="payModal"><div class="modal"><div class="modal-head"><button class="close" onclick="closeM('payModal')">×</button><span class="label">Annual Fee</span><h3>연회비 납부</h3></div>
   <div class="modal-body">
     <p style="text-align:center;color:var(--txt-dim);font-size:.82rem;font-family:var(--mono)">ASFA REGULAR MEMBERSHIP</p>
@@ -1448,19 +1520,45 @@
 <script>
 /* ===== 설정 ===== */
 const SUPA={url:'',key:''};const TG={token:'',chat:''};
-const ADMIN={id:'leestones',pw:'1234',name:'이현석 위원장'};const FEE=120000;
-// ===== 연회비 분배 (모두 '직접 모집한 임원 본인'에게 — 다단계 아님) =====
-const OPS_RATE=0.10;        // 시아스트릿 운영비 10% (고정)
-const HQ_RATE=0.20;         // 아스파 본사 20% (고정)
-// 투트랙: 가입 후 30일(첫 달)과 이후로 임원 수수료 구조가 다름
-const PROMO_DAYS=30;        // 프로모션 기간(일)
-const T1_REFERRAL=0.70;     // 첫 달: 임원 직접 수수료 70%
-const T2_REFERRAL=0.60;     // 둘째 달~: 임원 직접 수수료 60%
-const T2_OPSFEE=0.10;       // 둘째 달~: 임원 운영비 10% (직접 모집 본인에게)
-// 회원 가입일 기준 첫 달 여부
-function isPromo(m){if(!m||!m.joined)return false;const d=(Date.now()-new Date(m.joined).getTime())/86400000;return d<=PROMO_DAYS;}
-// 회원 1명에 대한 임원 총 수령액(완납 기준)
-function execPayout(m){if(!m||!m.fee_paid)return 0;return isPromo(m)?Math.round(FEE*T1_REFERRAL):Math.round(FEE*(T2_REFERRAL+T2_OPSFEE));}
+const ADMIN={id:'leestones',pw:'1234',name:'이현석 위원장'};const FEE=120000;const PRO_FEE=2500000;
+// ===== 임원 추천 소개비 (2026-06-04 회의 확정 · 임원 직접 모집만) =====
+const REF_FEE_Y1=30000;   // 해당 회원 첫 연회비 완납 시
+const REF_FEE_Y2=20000;   // 2회차 연회비(갱신)부터
+const HQ_RATE=0.20;       // 관리자 집계용 (대외 비공개)
+const OPS_RATE=0.10;      // 관리자 집계용 (대외 비공개)
+function referrerExec(referrer){
+  if(!referrer||!String(referrer).trim())return null;
+  const r=referrer.trim();
+  return state.members.find(e=>e.is_exec&&(e.name===r||r.indexOf(e.name)===0))||null;
+}
+function execPayout(m){
+  if(!m||!m.fee_paid||!m.referrer||!referrerExec(m.referrer))return 0;
+  const n=m.fee_payment_count||1;
+  return n<=1?REF_FEE_Y1:REF_FEE_Y2;
+}
+function refPayoutLabel(m){const n=m.fee_payment_count||1;return n<=1?'첫 연회비':'갱신';}
+function migrateMeeting2026(){
+  let ch=false;
+  state.tours.forEach(t=>{
+    if((t.title||'').includes('라오스')&&(t.date||'').indexOf('9월 20')>=0){
+      t.date='2026년 9월 말';t.period='라오 비엔티안 · 푸시그룹 협력';
+      t.desc='현지 파트너(푸시그룹)와 연계 · 국내 20~30명+현지 50~100명 규모 검토';t.status='pre';ch=true;
+    }
+  });
+  if(!state.tours.some(t=>(t.title||'').includes('프로 정회원'))){
+    state.tours.unshift({id:nid(),title:'2027년 5월 ASFA 프로 정회원 토너먼트',flag:'Korea · 예정',date:'2027년 5월(6월 검토)',period:'예선 1일 · 본선 1일',course:'일정·장소 확정 중',cls:'ti3',cap:120,joined:0,price:0,status:'pre',desc:'총 상금 7,000만원 규모 검토(우승 3,000만원) · 포스터·모집 선행',includes:'참가 자격: 프로 정회원 · 상금 세금 처리 사전 확인'});
+    ch=true;
+  }
+  if(!state.tours.some(t=>(t.title||'').includes('몽골')&&((t.date||'').includes('2027')||(t.date||'').includes('5월')))){
+    const mg=state.tours.find(t=>(t.title||'').includes('몽골'));
+    if(mg){mg.date='2027년 5~6월 검토';mg.status='pre';ch=true;}
+  }
+  state.members.forEach(m=>{
+    if(m.fee_paid&&!m.fee_payment_count){m.fee_payment_count=1;ch=true;}
+    if(m.pro_status===undefined){m.pro_status='none';ch=true;}
+  });
+  if(ch&&MODE==='local')LS.save();
+}
 
 /* ===== 팝업 · 배너 설정 (운영 시 이 부분만 수정) ===== */
 // enabled를 false로 하면 노출 안 됨. link는 외부 주소(새 창).
@@ -1495,9 +1593,10 @@ function seed(){
   state.tours=[
     {id:nid(),title:"ASFA 창립기념 골프대회",flag:"Korea · 원주",date:"9월 29일(월) 12:00 티업",period:"센추리21CC · 원주 문막",course:"센추리21CC (원주 문막)",cls:"ti3",cap:80,joined:52,price:320000,status:"open",desc:"아시아생활체육골프연맹 창립기념 대회 · 선착순 20개팀(80명) · STN 주관방송",includes:"입회비 · 그린피 · 카트비 · 중식 · 만찬 · 기념품"},
     {id:nid(),title:"중국 위해(威海) 프리미엄 투어",flag:"China · 威海",date:"6월 14~17일",period:"3박 4일",course:"위해 포인트 CC · 36홀",cls:"ti0",cap:40,joined:24,price:1450000,status:"open",desc:"황해를 마주한 명문 코스에서 즐기는 3박 4일 라운드 투어",includes:"왕복 항공 · 3회 라운드 · 4성급 호텔 · 캐디/카트 · 차량 의전"},
-    {id:nid(),title:"라오스 비엔티안 네트워킹 라운드",flag:"Laos · Vientiane",date:"9월 20일",period:"당일 라운드",course:"라오 컨트리클럽",cls:"ti1",cap:36,joined:31,price:1280000,status:"open",desc:"회원 간 네트워킹을 위한 라운드와 만찬 세션",includes:"18홀 라운드 · 캐디/카트 · 만찬 · 네트워킹 세션"},
-    {id:nid(),title:"일본 초청 골프대회 2026",flag:"Japan · Invitational",date:"11월 (예정)",period:"2박 3일 초청전",course:"이바라키 CC",cls:"ti2",cap:60,joined:12,price:1980000,status:"pre",desc:"일본 명문 코스 초청전 · 우대 회원권 상담 동반",includes:"왕복 항공 · 2회 라운드 · 우대 회원권 상담 · 시상 만찬"},
-    {id:nid(),title:"몽골 울란바토르 초원 투어",flag:"Mongolia · Ulaanbaatar",date:"7월 18~22일",period:"4박 5일",course:"몽골리아 마운틴 CC",cls:"ti1",cap:32,joined:9,price:1750000,status:"open",desc:"드넓은 초원 위에서 즐기는 이색 골프와 유목 문화 체험 투어",includes:"왕복 항공 · 3회 라운드 · 게르 체험 · 호텔 · 차량 의전"},
+    {id:nid(),title:"라오스 비엔티안 네트워킹 라운드",flag:"Laos · Vientiane",date:"2026년 9월 말",period:"라오 비엔티안 · 푸시그룹 협력",course:"라오 컨트리클럽",cls:"ti1",cap:50,joined:8,price:1280000,status:"pre",desc:"현지 파트너(푸시그룹)와 연계 · 국내 20~30명+현지 50~100명 규모 검토",includes:"18홀 라운드 · 캐디/카트 · 만찬 · 네트워킹"},
+    {id:nid(),title:"일본 초청 골프대회 2026",flag:"Japan · Invitational",date:"2026년 11월(예정)",period:"2박 3일 초청전",course:"이바라키 CC",cls:"ti2",cap:60,joined:12,price:1980000,status:"pre",desc:"일본 명문 코스 초청전 · 주최 측 비용 부담형 저비용 모델 검토",includes:"왕복 항공 · 2회 라운드 · 우대 회원권 상담 · 시상 만찬"},
+    {id:nid(),title:"몽골 울란바토르 초원 투어",flag:"Mongolia · Ulaanbaatar",date:"2027년 5~6월 검토",period:"4박 5일",course:"몽골리아 마운틴 CC",cls:"ti1",cap:32,joined:9,price:1750000,status:"pre",desc:"내년 5~6월 시기 검토 · 현지 정보 추가 확인 중",includes:"왕복 항공 · 3회 라운드 · 게르 체험 · 호텔 · 차량 의전"},
+    {id:nid(),title:"2027년 5월 ASFA 프로 정회원 토너먼트",flag:"Korea · Championship",date:"2027년 5월(6월 검토)",period:"예선 1일 · 본선 1일",course:"일정·장소 확정 중",cls:"ti3",cap:120,joined:0,price:0,status:"pre",desc:"총 상금 7,000만원 규모 검토(우승 3,000만원) · 프로 정회원 대상",includes:"포스터·모집 선행 · 상금 원천징수 세무 확인"},
   ];
   state.members=[
     {id:nid(),name:"김정미",mid:"kim@test.com",pw:"1234",phone:"010-1111-2222",region:"서울/경기",status:"active",tier:"reg",fee_paid:true,fee_status:"paid",fee_until:"2027-03-01",joined:"2026-03-02",referrer:"곽상기"},
@@ -1536,6 +1635,7 @@ function skeletonGrid(el){el.innerHTML=Array(3).fill('<div class="skel" style="h
 (async function init(){
   skeletonGrid($('homeTours'));skeletonGrid($('bookTours'));
   await api.loadAll();
+  migrateMeeting2026();
   await new Promise(r=>setTimeout(r,MODE==='local'?750:0)); // shimmer 노출
   renderAll();renderNav();
 })();
@@ -1546,7 +1646,7 @@ function go(v){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$('pg'+v[0].toUpperCase()+v.slice(1)).classList.add('active');window.scrollTo(0,0);
   if(v==='member')renderMember();if(v==='admin')renderAdmin();if(v==='book')renderTours();if(v==='benefits')renderBenefits();if(v==='course')renderCourses();if(v==='about')renderCountries();if(v==='academy')renderAcademy();if(v==='exec')renderExec();}
 function statusTag(s){const m={open:'<span class="tag t-active">모집중</span>',pre:'<span class="tag t-pending">사전등록</span>',full:'<span class="tag t-cancel">마감</span>',active:'<span class="tag t-active">예약확정</span>',pending:'<span class="tag t-pending">대기</span>',cancel:'<span class="tag t-cancel">취소</span>',done:'<span class="tag t-done">완료</span>',review:'<span class="tag t-pending">서류심사</span>',audit:'<span class="tag t-info">현장실사</span>',issued:'<span class="tag t-done">발급완료</span>'};return m[s]||s;}
-function tierTag(t){const m={norm:'<span class="tag t-norm">일반 회원</span>',reg:'<span class="tag t-reg">정회원</span>',vip:'<span class="tag t-reg">정회원</span>'};return m[t]||m.norm;}
+function tierTag(t){const m={norm:'<span class="tag t-norm">일반 회원</span>',reg:'<span class="tag t-reg">정회원</span>',pro:'<span class="tag t-pro">프로 정회원</span>',vip:'<span class="tag t-reg">정회원</span>'};return m[t]||m.norm;}
 function renderNav(){const s=state.session,el=$('navUser');
   if(s.role==='guest')el.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="go('login')">로그인</button><button class="btn btn-gold btn-sm" onclick="go('signup')">JOIN</button>`;
   else if(s.role==='member'){const m=state.members.find(x=>x.id===s.mid);el.innerHTML=`<span class="who"><b>${m?m.name:''}</b></span>${m&&m.is_exec?`<a onclick="go('exec')" style="color:var(--cyan)">임원 라운지</a>`:''}<a onclick="openCard()">회원증</a><a onclick="go('member')">My</a><button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>`;}
@@ -1577,7 +1677,7 @@ async function doSignup(){
   if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('이메일 형식을 확인해주세요');return;}
   if(!$('suAgree').checked){toast('약관에 동의해주세요');return;}
   if(state.members.some(m=>m.mid===mid||memberLoginId(m)===mid)){toast('이미 가입된 번호입니다');return;}
-  const m={id:nid(),name,mid,pw,phone,email,region,referrer,marketing:false,status:'active',tier:'norm',fee_paid:false,fee_status:'none',fee_until:null,joined:today()};
+  const m={id:nid(),name,mid,pw,phone,email,region,referrer,marketing:false,status:'active',tier:'norm',fee_paid:false,fee_status:'none',fee_until:null,fee_payment_count:0,pro_status:'none',joined:today()};
   state.members.push(m);await api.up('members',m);notify(`신규 회원: ${name} (${region})${referrer?' · 추천: '+referrer:''}`);state.session={role:'member',mid:m.id};renderNav();renderAll();
   ['suName','suPhone','suPw','suEmail','suReferrer'].forEach(id=>{if($(id))$(id).value='';});
   if($('suAgree'))$('suAgree').checked=false;
@@ -1633,6 +1733,21 @@ async function submitCert(){const type=$('ctType').value,name=$('ctName').value.
   state.certs.push(c);await api.up('certs',c);notify(`인증 신청: ${name} - ${type}`);$('ctName').value=$('ctOrg').value=$('ctPhone').value='';renderAll();
   const member=state.session.role==='member';
   showOk('인증 신청이 접수되었습니다',`${type}\n신청자: ${name}\n\n4단계 심사 프로세스로 진행되며, 담당자가 서류 안내를 드립니다.`,member?'진행 상태 확인 →':'확인',member?()=>go('member'):null);}
+function openProApply(){
+  if(state.session.role!=='member'){toast('로그인 후 신청 가능합니다');go('login');return;}
+  const m=state.members.find(x=>x.id===state.session.mid);
+  if(!m.fee_paid){showOk('정회원 필요','프로 정회원은 연회비 완납(정회원) 후 신청할 수 있습니다.','연회비 납부 →',()=>{go('member');setTimeout(openPay,400);});return;}
+  if(m.pro_status==='approved'){toast('이미 프로 정회원입니다');return;}
+  if(m.pro_status==='pending'){toast('심사 대기 중입니다');return;}
+  $('proModal').classList.add('show');
+}
+async function submitProApply(){
+  const m=state.members.find(x=>x.id===state.session.mid);if(!m)return;
+  const note=$('proScoreNote')?$('proScoreNote').value.trim():'';
+  m.pro_status='pending';m.pro_note=note;await api.up('members',m);
+  notify(`프로 정회원 신청: ${m.name}`);closeM('proModal');renderMember();
+  showOk('신청 접수','프로 정회원 심사 신청이 접수되었습니다.\\n담당자가 스코어카드·서류 안내를 드립니다.','확인',null);
+}
 function openPay(){payTab('acct',document.querySelector('.ptab'));$('payModal').classList.add('show');}
 function payTab(v,el){document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.pview').forEach(t=>t.classList.remove('active'));el.classList.add('active');$('pv'+v[0].toUpperCase()+v.slice(1)).classList.add('active');}
 function copyAcct(){const n=$('acctNo').textContent;const done=()=>toast('계좌번호가 복사되었습니다');
@@ -1661,6 +1776,14 @@ function renderMember(){const m=state.members.find(x=>x.id===state.session.mid);
     :(m.fee_status==='pending'
       ?`<div class="card-row"><div class="mini"><div class="t">Annual Fee</div><div class="b" style="color:var(--amber)">입금확인 대기 중</div><span style="font-size:.8rem;color:var(--txt-dim)">관리자 승인 후 정회원으로 전환됩니다</span></div><div class="mini" style="display:flex;align-items:center"><span style="font-family:var(--mono);font-size:.78rem;color:var(--amber)">⏳ 승인 대기</span></div></div>`
       :`<div class="card-row"><div class="mini"><div class="t">Annual Fee</div><div class="b" style="color:var(--red)">미납</div><span style="font-size:.8rem;color:var(--txt-dim)">연회비 ${won(FEE)} · 납부 시 정회원</span></div><div class="mini" style="display:flex;align-items:center"><button class="btn btn-gold" onclick="openPay()">연회비 납부 →</button></div></div>`);
+  const proSt=m.pro_status||'none';
+  $('memPro').innerHTML=proSt==='approved'
+    ?`<div class="card-row"><div class="mini"><div class="t">Pro Membership</div><div class="b" style="color:var(--amber)">프로 정회원 ✓</div><span style="font-size:.8rem;color:var(--txt-dim)">2027 프로 토너먼트 등 대회 연계</span></div></div>`
+    :proSt==='pending'
+      ?`<div class="card-row"><div class="mini"><div class="t">Pro Membership</div><div class="b" style="color:var(--amber)">심사 대기</div><span style="font-size:.8rem;color:var(--txt-dim)">${m.pro_note||'스코어카드 검토 중'}</span></div></div>`
+      :m.fee_paid
+        ?`<div class="card-row"><div class="mini"><div class="t">Pro Membership</div><div class="b">신청 가능</div><span style="font-size:.8rem;color:var(--txt-dim)">약 ${won(PRO_FEE)} · 스코어카드 심사</span></div><div class="mini" style="display:flex;align-items:center"><button class="btn btn-gold" onclick="openProApply()">프로 정회원 신청 →</button></div></div>`
+        :`<p style="color:var(--txt-dim);font-size:.88rem">연회비 완납(정회원) 후 프로 정회원을 신청할 수 있습니다.</p>`;
   $('memResTable').innerHTML=my.length?`<thead><tr><th>투어·대회</th><th>인원</th><th>옵션</th><th>예약일</th><th>상태</th><th></th></tr></thead><tbody>`+my.map(r=>`<tr><td><b>${r.ttitle}</b></td><td>${r.qty}</td><td>${r.opt}</td><td>${r.date}</td><td>${statusTag(r.status)}</td><td>${r.status!=='cancel'&&r.status!=='done'?`<button class="btn btn-danger btn-sm" onclick="cancelRes(${r.id})">취소</button>`:'—'}</td></tr>`).join('')+`</tbody>`:`<tbody><tr><td colspan="6" class="empty">예약 내역이 없습니다. <a onclick="goBook()">예약하기 →</a></td></tr></tbody>`;
   $('memCertTable').innerHTML=myc.length?`<thead><tr><th>인증 종류</th><th>소속</th><th>신청일</th><th>진행</th></tr></thead><tbody>`+myc.map(c=>`<tr><td><b>${c.type}</b></td><td>${c.org||'-'}</td><td>${c.date}</td><td>${statusTag(c.status)}</td></tr>`).join('')+`</tbody>`:`<tbody><tr><td colspan="4" class="empty">신청 내역이 없습니다. <a onclick="go('cert')">인증 신청 →</a></td></tr></tbody>`;
   $('memInfo').innerHTML=`<div class="table-scroll"><table><tbody><tr><th style="width:110px">이름</th><td>${m.name}</td></tr><tr><th>아이디</th><td>${m.mid}</td></tr><tr><th>연락처</th><td>${m.phone||'-'}</td></tr><tr><th>지역</th><td>${m.region||'-'}</td></tr><tr><th>등급</th><td>${tierTag(m.tier)}</td></tr></tbody></table></div>`;}
@@ -1673,31 +1796,30 @@ function renderAdmin(){const revenue=state.reservations.filter(r=>r.status!=='ca
   const ym=today().slice(0,7);
   const newThisMonth=state.members.filter(m=>(m.joined||'').slice(0,7)===ym).length;
   const activeRes=state.reservations.filter(r=>r.status==='active'||r.status==='pending').length;
-  const opsRev=Math.round(feeRev*OPS_RATE);        // 시아스트릿 10% (전체 완납 기준)
-  // 임원 수수료: 추천인(임원)이 있는 완납 회원만, 가입 시점(투트랙)별로 합산
   const paidMembers=state.members.filter(m=>m.fee_paid);
   const refRev=paidMembers.filter(m=>m.referrer&&m.referrer.trim()).reduce((s,m)=>s+execPayout(m),0);
-  const hqRev=feeRev-opsRev-refRev;                 // 아스파 본사 (나머지)
+  const assocRev=feeRev-refRev;
+  const proCnt=state.members.filter(m=>m.tier==='pro'||m.pro_status==='approved').length;
   $('adStats').innerHTML=`
     <div class="stat"><div class="lbl">전체 회원</div><div class="val">${state.members.length}</div><span class="stat-sub">정회원 ${regCnt} · 일반 ${normCnt}</span></div>
     <div class="stat ${feePending?'stat-alert':''}"><div class="lbl">입금 승인 대기</div><div class="val">${feePending}</div><span class="stat-sub">${feePending?'⚠ 확인 필요':'대기 없음'}</span></div>
     <div class="stat"><div class="lbl">이번 달 신규</div><div class="val">${newThisMonth}</div><span class="stat-sub">${ym}</span></div>
     <div class="stat ${activeRes?'stat-alert':''}"><div class="lbl">처리할 예약</div><div class="val">${activeRes}</div><span class="stat-sub">입금대기+확정</span></div>
-    <div class="stat"><div class="lbl">연회비 매출</div><div class="val" style="font-size:1.05rem">${won(feeRev)}</div><span class="stat-sub">정회원 ${regCnt}명 × ${won(FEE)}</span></div>
-    <div class="stat stat-ops"><div class="lbl">시아스트릿 운영 매출</div><div class="val" style="font-size:1.05rem">${won(opsRev)}</div><span class="stat-sub">연회비의 ${Math.round(OPS_RATE*100)}% · 회원당 ${won(FEE*OPS_RATE)}</span></div>`;
+    <div class="stat"><div class="lbl">연회비 매출</div><div class="val" style="font-size:1.05rem">${won(feeRev)}</div><span class="stat-sub">정회원 ${regCnt}명 · 프로 ${proCnt}명</span></div>`;
   const settle=$('adSettle');
   if(settle)settle.innerHTML=`
     <div class="settle-row"><span>정회원 수 (완납)</span><b>${regCnt}명</b></div>
     <div class="settle-row"><span>연회비 총 수납</span><b>${won(feeRev)}</b></div>
-    <div class="settle-row"><span>① 시아스트릿 운영비 (${Math.round(OPS_RATE*100)}%)</span><b style="color:var(--cyan)">${won(opsRev)}</b></div>
-    <div class="settle-row"><span>② 임원 수수료 (첫달 70% / 이후 60%+운영비10%)</span><b style="color:var(--amber)">${won(refRev)}</b></div>
-    <div class="settle-row total"><span>③ 아스파 본사 (나머지)</span><b>${won(hqRev)}</b></div>`;
+    <div class="settle-row"><span>임원 소개비 합계 (3만/2만)</span><b style="color:var(--amber)">${won(refRev)}</b></div>
+    <div class="settle-row total"><span>연맹 집계 (수납−소개비)</span><b style="color:var(--cyan)">${won(assocRev)}</b></div>
+    <p style="font-size:.72rem;color:var(--txt-faint);margin-top:10px">※ 내부 배분·9조 구조는 대외 비공개 · 임원 직접 모집만 소개비 지급</p>`;
   renderAdminMembers();renderAdminRes();renderAdminCert();renderAdminTours();renderAdminReferral();}
 function adminTab(n,el){document.querySelectorAll('.admintab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));$('at'+n[0].toUpperCase()+n.slice(1)).classList.add('active');el.classList.add('active');}
 function memberDetail(id){const m=state.members.find(x=>x.id===id);if(!m)return;
   const myRes=state.reservations.filter(r=>r.mid===id);
   const feeTxt=m.fee_paid?`완납 (유효 ~ ${m.fee_until})`:(m.fee_status==='pending'?'입금확인 대기':'미납');
-  const refTxt=m.referrer?`${m.referrer}${m.fee_paid?` · 수수료 ${won(execPayout(m))} (${isPromo(m)?'첫달70%':'60%+운영10%'})`:' (미납)'}`:'-';
+  const refTxt=m.referrer?`${m.referrer}${m.fee_paid?` · 소개비 ${won(execPayout(m))} (${refPayoutLabel(m)})`:' (미납)'}`:'-';
+  const proTxt=(m.pro_status||'none')==='approved'?'승인':(m.pro_status==='pending'?'심사중':(m.pro_note||'—'));
   const resHtml=myRes.length?myRes.map(r=>`<tr><td>${r.ttitle}</td><td>${r.qty}명</td><td>${statusTag(r.status)}</td><td>${r.date}</td></tr>`).join(''):`<tr><td colspan="4" class="empty">예약 내역 없음</td></tr>`;
   $('mdBody').innerHTML=`
     <div class="md-grid">
@@ -1713,11 +1835,13 @@ function memberDetail(id){const m=state.members.find(x=>x.id===id);if(!m)return;
       <div><span class="md-k">마케팅 수신</span><span class="md-v">${m.marketing?'동의':'미동의'}</span></div>
       <div><span class="md-k">임원 여부</span><span class="md-v">${m.is_exec?'<b style="color:var(--cyan)">임원</b>':'일반'}</span></div>
       <div style="grid-column:1/-1"><span class="md-k">추천 임원</span><span class="md-v">${refTxt} <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="setReferrer(${m.id})">지정/수정</button></span></div>
+      <div><span class="md-k">프로 정회원</span><span class="md-v">${proTxt}</span></div>
     </div>
     <h4 style="margin:18px 0 8px;font-size:.95rem">예약 내역 (${myRes.length})</h4>
     <div class="table-scroll"><table><thead><tr><th>투어·대회</th><th>인원</th><th>상태</th><th>예약일</th></tr></thead><tbody>${resHtml}</tbody></table></div>
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
       ${m.fee_status==='pending'?`<button class="btn btn-gold btn-sm" onclick="approveFee(${m.id});closeM('mdModal')">입금 승인</button>`:''}
+      ${m.pro_status==='pending'?`<button class="btn btn-gold btn-sm" onclick="approvePro(${m.id});closeM('mdModal')">프로 승인</button>`:''}
       <button class="btn btn-blue btn-sm" onclick="cycleTier(${m.id});closeM('mdModal')">등급 변경</button>
       <button class="btn btn-blue btn-sm" onclick="toggleExec(${m.id})">${m.is_exec?'임원 해제':'임원 지정'}</button>
       <button class="btn btn-dark btn-sm" onclick="toggleMember(${m.id});closeM('mdModal')">${m.status==='active'?'보류 처리':'활성 처리'}</button>
@@ -1753,7 +1877,7 @@ function renderExec(){
     <div class="stat stat-ops"><div class="lbl">내 순위</div><div class="val">${myRank>0?myRank+'위':'-'}</div><span class="stat-sub">전체 임원 ${rows.length}명 중</span></div>
     <div class="stat"><div class="lbl">내 완납 회원</div><div class="val">${mine.paid}<small>명</small></div><span class="stat-sub">정회원 전환 완료</span></div>
     <div class="stat ${mine.pending?'stat-alert':''}"><div class="lbl">대기 회원</div><div class="val">${mine.pending}<small>명</small></div><span class="stat-sub">납부 전</span></div>
-    <div class="stat stat-ops"><div class="lbl">내 누적 수수료</div><div class="val" style="font-size:1.1rem">${won(mine.fee)}</div><span class="stat-sub">첫달 84,000 / 이후 72,000원</span></div>`;
+    <div class="stat stat-ops"><div class="lbl">내 누적 소개비</div><div class="val" style="font-size:1.1rem">${won(mine.fee)}</div><span class="stat-sub">첫 완납 3만 · 갱신 2만</span></div>`;
   const medals=['🥇','🥈','🥉'];
   $('execLeaderboard').innerHTML=rows.length?rows.map((r,i)=>`
     <div class="lb-row ${r.id===me.id?'lb-me':''}">
@@ -1780,7 +1904,7 @@ function exportCSV(kind){
   }else if(kind==='referral'){
     fname='ASFA_추천수수료';
     rows.push(['회원','추천임원','회비상태','가입구분','수수료']);
-    state.members.filter(m=>m.referrer&&m.referrer.trim()).forEach(m=>rows.push([m.name,m.referrer,m.fee_paid?'완납':(m.fee_status==='pending'?'대기':'미납'),isPromo(m)?'첫달(70%)':'상시(60+10%)',execPayout(m)]));
+    state.members.filter(m=>m.referrer&&m.referrer.trim()).forEach(m=>rows.push([m.name,m.referrer,m.fee_paid?'완납':(m.fee_status==='pending'?'대기':'미납'),refPayoutLabel(m),execPayout(m)]));
   }
   const csv='\uFEFF'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\\r\\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -1791,8 +1915,12 @@ function renderAdminMembers(){const q=($('memSearch').value||'').toLowerCase(),f
   const list=state.members.filter(m=>(m.name+m.mid+m.region).toLowerCase().includes(q)&&(f==='all'||m.status===f)&&(tf==='all'||m.tier===tf));
   $('adMemTable').innerHTML=`<thead><tr><th>이름</th><th>아이디</th><th>지역</th><th>등급</th><th>회비</th><th>상태</th><th>관리</th></tr></thead><tbody>`+(list.length?list.map(m=>`<tr><td><b><a onclick="memberDetail(${m.id})" style="cursor:pointer;color:var(--cyan-2);text-decoration:underline">${m.name}</a></b></td><td>${m.mid}</td><td>${m.region||'-'}</td><td>${tierTag(m.tier)}</td><td>${feeBadge(m)}</td><td>${statusTag(m.status)}</td><td style="white-space:nowrap">${m.fee_status==='pending'?`<button class="btn btn-gold btn-sm" onclick="approveFee(${m.id})">입금 승인</button> `:''}<button class="btn btn-blue btn-sm" onclick="cycleTier(${m.id})">등급</button> <button class="btn btn-dark btn-sm" onclick="toggleMember(${m.id})">${m.status==='active'?'보류':'활성'}</button> <button class="btn btn-danger btn-sm" onclick="delMember(${m.id})">삭제</button></td></tr>`).join(''):`<tr><td colspan="7" class="empty">조건에 맞는 회원이 없습니다.</td></tr>`)+`</tbody>`;}
 async function approveFee(id){const m=state.members.find(x=>x.id===id);if(!m)return;
+  m.fee_payment_count=(m.fee_payment_count||0)+1;
   m.fee_paid=true;m.fee_status='paid';m.fee_until=nextYear();if(m.tier==='norm')m.tier='reg';await api.up('members',m);notify(`연회비 승인 완료: ${m.name} → 정회원`);renderAdmin();renderTours();toast(`${m.name} 입금 승인 · 정회원 전환`);}
-async function cycleTier(id){const m=state.members.find(x=>x.id===id);m.tier=m.tier==='norm'?'reg':'norm';m.fee_paid=(m.tier==='reg');m.fee_status=(m.tier==='reg')?'paid':'none';await api.up('members',m);renderAdmin();renderTours();toast(`${m.name} ${m.tier==='reg'?'정회원으로':'일반 회원으로'} 변경`);}
+async function approvePro(id){const m=state.members.find(x=>x.id===id);if(!m)return;
+  m.pro_status='approved';m.tier='pro';await api.up('members',m);notify(`프로 정회원 승인: ${m.name}`);renderAdmin();renderMember();toast(`${m.name} 프로 정회원 승인`);}
+async function cycleTier(id){const m=state.members.find(x=>x.id===id);const order=['norm','reg','pro'];let i=order.indexOf(m.tier);if(i<0)i=0;m.tier=order[(i+1)%order.length];
+  m.fee_paid=(m.tier!=='norm');m.fee_status=m.fee_paid?'paid':'none';if(m.tier==='pro')m.pro_status='approved';await api.up('members',m);renderAdmin();renderTours();toast(`${m.name} ${tierTag(m.tier).replace(/<[^>]+>/g,'')} 변경`);}
 async function toggleMember(id){const m=state.members.find(x=>x.id===id);m.status=m.status==='active'?'pending':'active';await api.up('members',m);renderAdmin();toast(`${m.name} 상태 변경`);}
 async function delMember(id){const m=state.members.find(x=>x.id===id);if(!confirm(`${m.name} 회원을 삭제할까요?`))return;state.members=state.members.filter(x=>x.id!==id);await api.del('members',id);renderAdmin();renderAll();toast('삭제되었습니다');}
 function renderAdminRes(){const q=($('resSearch').value||'').toLowerCase(),f=$('resFilter').value;
@@ -1805,8 +1933,8 @@ function renderAdminCert(){const q=($('certSearch').value||'').toLowerCase(),f=$
 async function setCert(id,s){const c=state.certs.find(x=>x.id===id);c.status=s;await api.up('certs',c);notify(`인증 진행: ${c.applicant} [${s}]`);renderAdmin();toast('인증 단계 변경');}
 function renderAdminTours(){$('adTourTable').innerHTML=`<thead><tr><th>투어·대회</th><th>지역</th><th>일정</th><th>참가비</th><th>모집</th><th>관리</th></tr></thead><tbody>`+state.tours.map(t=>`<tr><td><b>${t.title}</b></td><td>${t.flag}</td><td>${t.date}</td><td>${won(t.price)}</td><td><b style="color:var(--cyan)">${t.joined}</b>/${t.cap}</td><td><button class="btn btn-danger btn-sm" onclick="delTour(${t.id})">삭제</button></td></tr>`).join('')+`</tbody>`;}
 function renderAdminReferral(){
-  if($('refRateTxt'))$('refRateTxt').textContent='첫달 70% / 이후 60%+운영비10%';
-  if($('refPerTxt'))$('refPerTxt').textContent='첫달 84,000원 / 이후 72,000원';
+  if($('refRateTxt'))$('refRateTxt').textContent='첫 완납 3만원 · 갱신 2만원';
+  if($('refPerTxt'))$('refPerTxt').textContent='임원 직접 모집만';
   const referred=state.members.filter(m=>m.referrer&&m.referrer.trim());
   // 임원별 집계 (수수료는 투트랙 execPayout 합산)
   const byRef={};
@@ -1819,7 +1947,7 @@ function renderAdminReferral(){
       :`<tr><td colspan="4" class="empty">추천으로 가입한 회원이 아직 없습니다.</td></tr>`)+`</tbody>`;
   const dt=$('adReferralDetail');
   if(dt)dt.innerHTML=`<thead><tr><th>회원</th><th>추천 임원</th><th>회비 상태</th><th>가입구분</th><th>수수료</th></tr></thead><tbody>`+
-    (referred.length?referred.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.referrer}</td><td>${feeBadge(m)}</td><td>${isPromo(m)?'<span style="color:var(--amber)">첫달</span>':'상시'}</td><td>${m.fee_paid?won(execPayout(m)):'<span style="color:var(--txt-faint)">대기</span>'}</td></tr>`).join('')
+    (referred.length?referred.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.referrer}</td><td>${feeBadge(m)}</td><td>${refPayoutLabel(m)}</td><td>${m.fee_paid?won(execPayout(m)):'<span style="color:var(--txt-faint)">대기</span>'}</td></tr>`).join('')
       :`<tr><td colspan="5" class="empty">추천 가입 회원이 없습니다.</td></tr>`)+`</tbody>`;
 }
 async function addTour(){const title=$('ntTitle').value.trim(),flag=$('ntFlag').value.trim()||'ASFA Tour',date=$('ntDate').value.trim()||'일정 미정',cap=parseInt($('ntCap').value)||40,price=parseInt($('ntPrice').value)||0;
@@ -2012,12 +2140,12 @@ function renderBenefits(){
 
   // 상단 미리보기: 누구나 (가입 유도)
   if(pv){pv.innerHTML=`<div class="bf-preview-row">
-    <div class="bf-chip">🏷️ 투어 최대 20% 우대가</div>
-    <div class="bf-chip">⛳ 제휴 골프장 2만원 할인</div>
-    <div class="bf-chip">🥂 회원 전용 라운지</div>
-    <div class="bf-chip">🎁 협찬 브랜드 혜택</div>
-    <div class="bf-chip">⛩️ 일본 회원권 상담</div>
-    <div class="bf-chip">💬 정회원 단톡방 참여</div>
+    <div class="bf-chip">🏷️ 투어 회원 우대가</div>
+    <div class="bf-chip">⛳ 골프장 2만원 할인</div>
+    <div class="bf-chip">🏥 건강검진 제휴</div>
+    <div class="bf-chip">🎸 야마하 30% 할인</div>
+    <div class="bf-chip">🏌️ 프로 정회원 트랙</div>
+    <div class="bf-chip">💬 정회원 단톡방</div>
   </div>`;}
 
   // 본문 잠금 처리
@@ -2040,7 +2168,7 @@ function renderBenefits(){
 
   // 하단 CTA
   if(s==='guest')cta.innerHTML=`<div class="cell cell-cta" style="cursor:default;border-radius:20px;padding:30px"><h3 class="ck">지금 가입하고<br>모든 혜택을 여십시오</h3><p>가입은 무료 · 연회비 납부 시 정회원 전환</p><span class="gobtn" onclick="go('signup')">JOIN NOW →</span></div>`;
-  else if(isMember)cta.innerHTML=`<div class="panel"><h3>내 현재 등급 — ${tierTag(m.tier)}</h3><p class="ph-desc">${isReg?'정회원 혜택이 모두 적용되고 있습니다. 마음껏 누리세요!':(m.fee_status==='pending'?'입금 확인 후 관리자 승인을 거쳐 정회원으로 전환됩니다.':'연회비 납부 시 정회원 혜택이 모두 열립니다.')}</p>${isReg?'<button class="btn btn-ghost" onclick="go(&quot;member&quot;)">마이페이지로 이동 →</button>':(m.fee_status==='pending'?'<span class="tag t-pending" style="font-size:.78rem;padding:8px 14px">⏳ 승인 대기 중</span>':'<button class="btn btn-gold" onclick="openPay()">연회비 납부 →</button>')}</div>`;
+  else if(isMember)cta.innerHTML=`<div class="panel"><h3>내 현재 등급 — ${tierTag(m.tier)}</h3><p class="ph-desc">${isReg?(m.tier==='pro'?'프로 정회원 혜택이 적용 중입니다.':'정회원 혜택이 적용 중입니다.'):(m.fee_status==='pending'?'입금 확인 후 정회원 전환됩니다.':'연회비 12만원 납부 → 관리자 승인 → 정회원')}</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">${isReg?`<button class="btn btn-ghost" onclick="go('member')">마이페이지</button>${m.tier!=='pro'&&m.pro_status!=='pending'?`<button class="btn btn-gold" onclick="openProApply()">프로 정회원 신청</button>`:''}`:(m.fee_status==='pending'?'<span class="tag t-pending" style="padding:8px 14px">⏳ 승인 대기</span>':'<button class="btn btn-gold" onclick="openPay()">연회비 납부</button>')}</div></div>`;
   else cta.innerHTML=`<div class="panel"><h3>관리자 계정</h3><p class="ph-desc">회원 혜택은 회원 계정에 적용됩니다.</p></div>`;}
 
 const nav=document.getElementById('nav');addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>30));
