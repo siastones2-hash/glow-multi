@@ -218,12 +218,10 @@ async function initDB() {
     await query(`UPDATE sites SET bank=$1, margin=100, super_margin=100 WHERE id='default'`, [BANK_INFO]);
   }
 
-  // 본사(default) 환율 = 글로벌 기본 환율과 항상 동기화
+  // 모든 사이트 환율 = 글로벌 기본 환율과 항상 동기화
   try {
-    const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
-    if (globalEx >= 100) {
-      await query(`UPDATE sites SET exrate=$1 WHERE id='default'`, [globalEx]);
-    }
+    const globalEx = await getGlobalExrateNum();
+    if (globalEx >= 100) await syncAllSitesExrate(globalEx);
   } catch (e) { /* ignore */ }
 
   await normalizeAbnormalCredits();
@@ -593,6 +591,18 @@ async function getGlobalSetting(key) {
 }
 async function setGlobalSetting(key, value) {
   await query(`INSERT INTO global_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=$2`, [key, value]);
+}
+
+async function getGlobalExrateNum() {
+  return parseFloat((await getGlobalSetting('global_exrate')) || '1500');
+}
+
+/** 글로벌 환율 → 모든 사이트 sites.exrate 일괄 동기화 */
+async function syncAllSitesExrate(ex) {
+  const rate = parseFloat(ex);
+  if (isNaN(rate) || rate < 100 || rate > 5000) return { ok: false, count: 0 };
+  const r = await query(`UPDATE sites SET exrate=$1`, [rate]);
+  return { ok: true, count: r.rowCount || 0 };
 }
 
 /** credit_requests.amount = 원화(₩) → sites.credit = 달러($) */
@@ -3062,8 +3072,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
         if (sm < -1 || sm > 500) return res.json({ error: '슈퍼마진은 -1(글로벌) 또는 0~500 범위여야 합니다' });
       }
       if (key === 'exrate') {
-        const ex = parseFloat(value);
-        if (isNaN(ex) || ex < 500 || ex > 3000) return res.json({ error: '환율은 500~3000 범위여야 합니다' });
+        return res.json({ error: '환율은 슈퍼관리자 → 글로벌 기본 환율에서 일괄 관리됩니다' });
       }
       // 문자 필드 길이 제한
       if (typeof value === 'string' && value.length > 10000) {
@@ -3693,13 +3702,14 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     }
     const finalLogo = (logo && logo.trim() && logo.trim() !== '✨') ? logo.trim() : branding.logo;
 
+    const newSiteExrate = await getGlobalExrateNum();
     await query(`INSERT INTO sites(
       id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin,theme,
       hero_badge,hero_prefix,ui_layout,slogan,slogan_sub,description,
       stat1_num,stat1_label,stat2_num,stat2_label,stat3_num,stat3_label,stat4_num,stat4_label
     ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
       [siteId, domain, name, finalLogo, finalPrimary, finalAccent,
-        parseFloat(margin || 0), parseFloat(exrate || 1380), parseFloat(credit || 0), superMarginVal, finalTheme,
+        parseFloat(margin || 0), newSiteExrate, parseFloat(credit || 0), superMarginVal, finalTheme,
         branding.hero_badge, branding.hero_prefix, branding.ui_layout,
         branding.slogan, branding.slogan_sub, branding.description,
         branding.stat1_num, branding.stat1_label, branding.stat2_num, branding.stat2_label,
@@ -3819,10 +3829,7 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
     if (isNaN(marginNum) || marginNum < 0 || marginNum > 500) {
       return res.json({ error: '사이트마진은 0~500% 사이여야 합니다' });
     }
-    const exrateNum = parseFloat(exrate);
-    if (isNaN(exrateNum) || exrateNum < 500 || exrateNum > 3000) {
-      return res.json({ error: '환율은 500~3000 사이여야 합니다' });
-    }
+    const exrateNum = await getGlobalExrateNum();
 
     let superMarginVal = before.super_margin >= 0 ? before.super_margin : 50;
     if (req.body.superMargin !== undefined && req.body.superMargin !== null && String(req.body.superMargin).trim() !== '') {
@@ -3866,10 +3873,11 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
     if (key === 'global_exrate') {
       const ex = parseFloat(value);
       if (!isNaN(ex) && ex >= 100 && ex <= 5000) {
-        await query(`UPDATE sites SET exrate=$1 WHERE id='default'`, [ex]);
+        const sync = await syncAllSitesExrate(ex);
+        return res.json({ ok: true, sitesExrateSynced: sync.count });
       }
     }
-    res.json({ ok: true, defaultExrateSynced: key === 'global_exrate' });
+    res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
