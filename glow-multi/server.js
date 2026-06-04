@@ -214,9 +214,17 @@ async function initDB() {
       $1,
       100,1500,0,100)`, [BANK_INFO]);
   } else {
-    // 본사(default) 고객 마진 100% — 지인 사이트(50%)보다 낮게 팔면 파트너 불만 방지
-    await query(`UPDATE sites SET bank=$1, margin=100, super_margin=100, exrate=1500 WHERE id='default'`, [BANK_INFO]);
+    // 본사(default) 고객 마진 100% — 환율은 global_exrate 따름 (여기서 exrate 덮어쓰지 않음)
+    await query(`UPDATE sites SET bank=$1, margin=100, super_margin=100 WHERE id='default'`, [BANK_INFO]);
   }
+
+  // 본사(default) 환율 = 글로벌 기본 환율과 항상 동기화
+  try {
+    const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
+    if (globalEx >= 100) {
+      await query(`UPDATE sites SET exrate=$1 WHERE id='default'`, [globalEx]);
+    }
+  } catch (e) { /* ignore */ }
 
   await normalizeAbnormalCredits();
 
@@ -3646,7 +3654,13 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
     const allowed = ['super_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
     await setGlobalSetting(key, value);
-    res.json({ ok: true });
+    if (key === 'global_exrate') {
+      const ex = parseFloat(value);
+      if (!isNaN(ex) && ex >= 100 && ex <= 5000) {
+        await query(`UPDATE sites SET exrate=$1 WHERE id='default'`, [ex]);
+      }
+    }
+    res.json({ ok: true, defaultExrateSynced: key === 'global_exrate' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

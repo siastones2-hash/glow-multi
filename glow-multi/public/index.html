@@ -1104,7 +1104,7 @@ tr:last-child td{border-bottom:none}
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">💱 글로벌 기본 환율</div>
-              <div style="font-size:12px;color:var(--tm);margin-bottom:10px">모든 사이트에 기본 적용되는 환율입니다. 사이트별 환율 설정 시 해당 사이트는 개별 환율이 우선 적용됩니다.</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:10px">모든 사이트 기본 환율입니다. <b>GLOW 본사·단가표</b>와 자동 동기화됩니다. 지인 사이트는 개별 환율 설정 시 해당 값이 우선됩니다.</div>
               <div class="fg"><label>환율 (USD → KRW)</label><input type="number" id="spGlobalExrate" placeholder="1500" min="100" max="5000" oninput="updateExratePreview()"/></div>
               <div style="font-size:11px;color:var(--tl);margin-bottom:10px" id="exratePreview">예: $1 원가 × 환율 = 원화 원가</div>
               <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalExrate()">저장</button>
@@ -2510,13 +2510,24 @@ async function saveDefaultPricing(){
   loadDefaultPricing();
   loadSuperDash();
 }
+function syncPriceCalcExrate(ex){
+  var n=parseFloat(ex);
+  if(isNaN(n)||n<100)return;
+  _globalExrate=n;
+  var pc=ge('pcExrate');
+  if(pc)pc.value=String(n);
+}
 async function saveGlobalExrate(){
   var val=ge('spGlobalExrate').value;
   if(!val||isNaN(val)||parseFloat(val)<100){toast('올바른 환율을 입력하세요 (100 이상)','err');return}
-  var d=await api('/api/super/settings/save','POST',{key:'global_exrate',value:String(parseFloat(val))});
+  var ex=parseFloat(val);
+  var d=await api('/api/super/settings/save','POST',{key:'global_exrate',value:String(ex)});
   if(d.error){toast(d.error,'err');return}
-  toast('환율 저장 완료 ✨ 서비스 가격이 업데이트됩니다','ok');
+  syncPriceCalcExrate(ex);
+  toast('환율 '+ex+'원 저장 · 본사·단가표 동기화 ✨','ok');
   updateExratePreview();
+  calcPriceTable();
+  loadSuperDash();
 }
 function updateExratePreview(){
   var ex=parseFloat(ge('spGlobalExrate')?.value||1500);
@@ -2631,7 +2642,10 @@ async function loadSuperDash(){
   ge('sTotalPending').textContent=d.pendingCharges||0;
   if(ge('sApiBalance'))ge('sApiBalance').textContent=d.apiBalance?'$'+d.apiBalance:'-';
   if(ge('sMyProfit'))ge('sMyProfit').textContent=gf(d.myProfit||0);
-  if(d.globalExrate)_globalExrate=d.globalExrate;
+  if(d.globalExrate){
+    _globalExrate=d.globalExrate;
+    syncPriceCalcExrate(d.globalExrate);
+  }
   renderSiteList(d.sites||[]);
   loadDefaultPricing();
 
@@ -2643,7 +2657,11 @@ async function loadSuperDash(){
     if(st)st.value=s.tg_token||'';
     if(sc)sc.value=s.tg_chat||'';
     if(sm)sm.value=s.super_margin||'50';
-    if(se){se.value=s.global_exrate||'1500';updateExratePreview();}
+    if(se){
+      se.value=s.global_exrate||'1500';
+      syncPriceCalcExrate(se.value);
+      updateExratePreview();
+    }
   }
 }
 function goSuperTab(tab,el){
@@ -2654,7 +2672,12 @@ function goSuperTab(tab,el){
   if(tab==='allcharges')loadSuperCharges();
   if(tab==='creditreqs')loadSuperCreditReqs();
   if(tab==='services')loadSuperServices();
-  if(tab==='pricecalc')calcPriceTable();
+  if(tab==='pricecalc'){
+    var se=ge('spGlobalExrate');
+    if(se&&se.value)syncPriceCalcExrate(se.value);
+    else syncPriceCalcExrate(_globalExrate);
+    calcPriceTable();
+  }
 }
 function renderSiteList(sites){
   var el=ge('siteList');if(!el)return;
