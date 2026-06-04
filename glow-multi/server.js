@@ -1038,8 +1038,8 @@ function scorePeakerrService(s) {
   if (/lifetime|guarantee/.test(full)) score += 50;
   if (s.refill || /refill/.test(full)) score += 30;
   if (/instant|fast|speed|🔥/.test(full)) score += 25;
-  if (/monetiz|korea|korean|\bkr\b/.test(full)) score += 50;
-  if (/instagram|youtube|tiktok|threads/.test(full)) score += 20;
+  if (/monetiz|korea|korean|\bkr\b|한국|south korea/.test(full)) score += 50;
+  if (/instagram|youtube|tiktok|threads|pinterest/.test(full)) score += 20;
   if (/follow|subscriber|view|like|comment|share|watch hour|reel|story/.test(full)) score += 15;
   const pl = detectPlat(full);
   if (['youtube', 'instagram', 'tiktok'].includes(pl)) score += 30;
@@ -1129,7 +1129,7 @@ const NICHE_PLATFORMS = ['amazon', 'coupang', 'ecommerce', 'naver', 'kakao'];
 
 const BONUS_SERVICE_PATTERNS = [
   { re: /linkedin/i, pl: 'other', bucket: 'linkedin' },
-  { re: /pinterest/i, pl: 'other', bucket: 'pinterest' },
+  { re: /pinterest/i, pl: 'pinterest', bucket: 'pinterest' },
   { re: /snapchat/i, pl: 'other', bucket: 'snapchat' },
   { re: /discord/i, pl: 'other', bucket: 'discord' },
   { re: /reddit/i, pl: 'other', bucket: 'reddit' },
@@ -1273,6 +1273,165 @@ async function importNichePeakerrServices(opts = {}) {
   return { ok: true, added, count: added.length, scanned, candidates: toAdd.length };
 }
 
+const KR_IMPORT_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'naver', 'kakao'];
+
+function isKoreanMarketService(full) {
+  return /korea|korean|\bkr\b|south korea|한국|\bkr[\s-]target\b|\bkr[\s-]only\b/i.test(full);
+}
+
+function hasImportQualitySignal(full, score) {
+  const low = full.toLowerCase();
+  return /\bhq\b|high quality|\breal\b|premium|non[- ]?drop|refill|lifetime|organic|instant|guarantee|🔥/.test(low)
+    || score >= 130;
+}
+
+function qualifiesKoreanImport(s) {
+  const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+  if (BAD_SERVICE_NAME.test(full)) return null;
+  if (!isKoreanMarketService(full)) return null;
+  const score = scorePeakerrService(s);
+  if (score < 0 || !hasImportQualitySignal(full, score)) return null;
+  const pl = detectPlat(full);
+  if (!KR_IMPORT_PLATFORMS.includes(pl)) return null;
+  return { pl, bucket: `kr_${pl}`, qs: score + 120 };
+}
+
+function qualifiesPinterestImport(s) {
+  const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+  if (BAD_SERVICE_NAME.test(full)) return null;
+  if (!/pinterest/i.test(full)) return null;
+  const score = scorePeakerrService(s);
+  if (score < 0) return null;
+  const low = full.toLowerCase();
+  const useful = /\bhq\b|real|premium|non drop|refill|organic|follow|follower|pin|save|repin|board|like|view|impression/.test(low);
+  if (!useful) return null;
+  if (score < 70 && !/\bhq\b|\breal\b|premium|refill/.test(low)) return null;
+  return { pl: 'pinterest', bucket: 'pinterest', qs: score + 90 };
+}
+
+function formatKoreanImportName(name, pl) {
+  const plKo = {
+    youtube: '유튜브', instagram: '인스타', tiktok: '틱톡', threads: '스레드',
+    twitter: 'X', facebook: '페북', telegram: '텔레그램', naver: '네이버', kakao: '카카오'
+  };
+  const n = (name || '').trim();
+  if (/[\uAC00-\uD7AF]/.test(n)) return n.substring(0, 120);
+  if (/korea|korean|\bkr\b|한국/i.test(n)) return n.substring(0, 120);
+  const label = plKo[pl] || pl;
+  return `한국 ${label} — ${n}`.substring(0, 120);
+}
+
+function koreanImportDescription(pl, type) {
+  const base = {
+    youtube: '한국 타겟 유튜브 — 조회·구독·좋아요 등 국내 노출에 유리한 고품질 상품입니다.',
+    instagram: '한국 타겟 인스타 — 팔로워·좋아요·릴스 등 국내 탐색 노출에 최적화된 상품입니다.',
+    tiktok: '한국 타겟 틱톡 — 포유·팔로워·좋아요 등 국내 바이럴용 고품질 상품입니다.',
+    threads: '한국 타겟 스레드 — 팔로워·좋아요 등 국내 참여 강화용 상품입니다.',
+    twitter: '한국 타겟 X(트위터) — 팔로워·좋아요·조회 등 국내 도달 확대용입니다.',
+    facebook: '한국 타겟 페이스북 — 페이지·좋아요·팔로워 등 국내 마케팅용입니다.',
+    telegram: '한국 타겟 텔레그램 — 멤버·반응 등 채널 성장용 고품질 상품입니다.',
+    naver: '네이버·한국 타겟 — 스마트스토어·플레이스·블로그 등 국내 검색·쇼핑 연동용입니다.',
+    kakao: '카카오·한국 타겟 — 채널·스토어 등 국내 메신저 마케팅용입니다.',
+  };
+  const d = base[pl] || '한국 타겟 고품질 마케팅 상품입니다.';
+  return type ? `${d} (${type})` : d;
+}
+
+async function insertPeakerrImport(s, displayName, pl, description) {
+  const id = `pk_${s.service}`;
+  await query(`
+    INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,1)
+    ON CONFLICT(id) DO UPDATE SET
+      name=EXCLUDED.name, pl=EXCLUDED.pl, rate=EXCLUDED.rate,
+      min=EXCLUDED.min, max=EXCLUDED.max, description=EXCLUDED.description,
+      api_id=EXCLUDED.api_id, active=1
+  `, [
+    id, displayName, pl,
+    parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000),
+    description, String(s.service)
+  ]);
+  await linkServiceToAllSites(id);
+  return { id, name: displayName, pl, rate: s.rate, apiId: s.service };
+}
+
+/** Peakerr — 한국 타겟 HQ·Real + Pinterest 고품질만 (있을 때만 추가) */
+async function importKoreanAndPinterestServices(opts = {}) {
+  const maxKrPerPlatform = opts.maxKrPerPlatform ?? 4;
+  const maxPinterest = opts.maxPinterest ?? 5;
+  const dryRun = !!opts.dryRun;
+  const notify = opts.notify !== false;
+
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, korean: 0, pinterest: 0 };
+
+  const resp = await fetch('https://peakerr.com/api/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ key: apiKey, action: 'services' })
+  });
+  const services = await resp.json();
+  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0, korean: 0, pinterest: 0 };
+
+  const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  const existing = new Set(existingR.rows.map(r => String(r.api_id)));
+
+  const byBucket = {};
+  for (const s of services) {
+    if (existing.has(String(s.service))) continue;
+    const kr = qualifiesKoreanImport(s);
+    const pin = qualifiesPinterestImport(s);
+    const hit = kr || pin;
+    if (!hit) continue;
+    if (!byBucket[hit.bucket]) byBucket[hit.bucket] = [];
+    byBucket[hit.bucket].push({ ...s, ...hit, isKr: !!kr });
+  }
+
+  const toAdd = [];
+  for (const pl of KR_IMPORT_PLATFORMS) {
+    const list = (byBucket[`kr_${pl}`] || []).sort((a, b) => b.qs - a.qs);
+    toAdd.push(...list.slice(0, maxKrPerPlatform));
+  }
+  const pinList = (byBucket.pinterest || []).sort((a, b) => b.qs - a.qs);
+  toAdd.push(...pinList.slice(0, maxPinterest));
+
+  const added = [];
+  if (!dryRun) {
+    for (const s of toAdd) {
+      let displayName, desc;
+      if (s.isKr) {
+        displayName = formatKoreanImportName(s.name, s.pl);
+        desc = koreanImportDescription(s.pl, s.type || s.category || '');
+      } else {
+        displayName = /[\uAC00-\uD7AF]/.test(s.name || '') ? s.name : `Pinterest — ${(s.name || '').substring(0, 90)}`;
+        desc = `핀터레스트 고품질 — 팔로워·핀·저장·보드 등 노출·트래픽 강화용입니다.${s.type ? ' (' + s.type + ')' : ''}`;
+      }
+      const row = await insertPeakerrImport(s, displayName.substring(0, 120), s.pl, desc);
+      added.push({ ...row, bucket: s.bucket, isKr: s.isKr });
+    }
+    if (added.length) {
+      await repairAllPartnerSiteServices();
+      await pruneServiceCatalog({ maxPerPlatform: 32, notify: false }).catch(() => {});
+    }
+  }
+
+  const korean = added.filter(a => a.isKr).length;
+  const pinterest = added.filter(a => !a.isKr).length;
+
+  if (notify && added.length && !dryRun) {
+    let msg = `🇰🇷 <b>한국·Pinterest 상품 추가</b>\n\n`;
+    msg += `한국 ${korean}개 · Pinterest ${pinterest}개\n\n`;
+    added.slice(0, 8).forEach((s, i) => {
+      msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 42)}\n`;
+    });
+    if (added.length > 8) msg += `…외 ${added.length - 8}개\n`;
+    msg += `\n전체 사이트 연결 완료`;
+    await sendTelegramToSuper(msg);
+  }
+
+  return { ok: true, added, count: added.length, korean, pinterest, candidates: toAdd.length };
+}
+
 async function scanNewServices(opts = {}) {
   try {
     const maxPerPlatform = opts.maxPerPlatform ?? 2;
@@ -1361,7 +1520,7 @@ async function pruneServiceCatalog(opts = {}) {
     }
   }
 
-  const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'traffic', 'appstore', 'other'];
+  const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'pinterest', 'traffic', 'appstore', 'other'];
   for (const pl of platforms) {
     const activeR = await query(`
       SELECT id, name, pl, rate, description FROM services
@@ -1944,7 +2103,7 @@ app.get('/api/services', async (req, res) => {
       naver: 4, kakao: 5, coupang: 6, amazon: 7, ecommerce: 8,
       threads: 9, twitter: 10, spotify: 11,
       twitch: 12, facebook: 13, telegram: 14,
-      traffic: 15, appstore: 16, travel: 17, other: 99,
+      traffic: 15, appstore: 16, pinterest: 17, travel: 18, other: 99,
     };
     serviceRows.sort((a, b) => {
       const oa = platformOrder[a.pl] || 50;
@@ -3213,6 +3372,24 @@ app.post('/api/super/import-niche-services', requireSuperAdmin, async (req, res)
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 🇰🇷 슈퍼관리자: 한국 타겟 + Pinterest HQ 상품 (Peakerr 실존 시만)
+app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) => {
+  try {
+    const { maxKrPerPlatform, maxPinterest, dryRun } = req.body || {};
+    const result = await importKoreanAndPinterestServices({
+      maxKrPerPlatform: maxKrPerPlatform || 4,
+      maxPinterest: maxPinterest || 5,
+      dryRun: !!dryRun,
+      notify: !dryRun
+    });
+    if (result.error) return res.json({ error: result.error });
+    const msg = result.count > 0
+      ? `한국 ${result.korean}개 · Pinterest ${result.pinterest}개 추가`
+      : '추가할 한국·Pinterest HQ 상품 없음 (이미 등록 또는 Peakerr 미제공)';
+    res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 🆕 슈퍼관리자: 신규 서비스 스캔 (주간 자동 — 핫상품 추가)
 app.post('/api/super/scan-new-services', requireSuperAdmin, async (req, res) => {
   try {
@@ -3731,9 +3908,9 @@ function detectPlat(n) {
   if (/shopee|lazada|aliexpress|ali express|\bebay\b|etsy|shopify|wish\.com|walmart seller|tokopedia|mercado livre/.test(n)) return 'ecommerce';
   if (/naver|네이버|smartstore|스마트스토어|naver place|naver blog|naver cafe/.test(n)) return 'naver';
   if (/kakao|카카오|kakaotalk|ch channel|kakao channel/.test(n)) return 'kakao';
+  if (n.includes('pinterest')) return 'pinterest';
   if (n.includes('discord')) return 'other';
   if (n.includes('linkedin')) return 'other';
-  if (n.includes('pinterest')) return 'other';
   if (n.includes('reddit')) return 'other';
   if (n.includes('soundcloud')) return 'other';
   if (/google my business|google map|gmb |google review/.test(n)) return 'traffic';
@@ -3945,10 +4122,13 @@ app.listen(PORT, async () => {
     console.log('🔄 서버 시작 후 자동 동기화 실행');
     await syncAllOrderStatuses().catch(() => {});
     await runCatalogHealthCheck(true).catch(() => {});
-    const niche = await importNichePeakerrServices({ notify: true }).catch(e => ({ error: e.message, count: 0 }));
+    const niche = await importNichePeakerrServices({ notify: false }).catch(e => ({ error: e.message, count: 0 }));
     if (niche.count > 0) console.log(`🛒 이커머스·보너스 상품 ${niche.count}개 추가`);
-    else if (!niche.error) console.log('🛒 Peakerr 이커머스·보너스: 추가할 상품 없음');
-    else console.log('🛒 이커머스 스캔:', niche.error);
+    const krPin = await importKoreanAndPinterestServices({ notify: true }).catch(e => ({ error: e.message, count: 0 }));
+    if (krPin.count > 0) console.log(`🇰🇷 한국·Pinterest ${krPin.count}개 추가 (한국 ${krPin.korean || 0} / 핀 ${krPin.pinterest || 0})`);
+    else if (!krPin.error) console.log('🇰🇷 한국·Pinterest: Peakerr에 추가할 HQ 상품 없음');
+    else if (!niche.error && niche.count === 0) console.log('🛒 Peakerr 이커머스·보너스: 추가할 상품 없음');
+    else if (niche.error) console.log('🛒 이커머스 스캔:', niche.error);
   }, 5 * 60 * 1000);
 
   // 📊 매일 23:50 KST — 사이트별 당일 매출·신규 가입 텔레그램 요약

@@ -1080,6 +1080,7 @@ tr:last-child td{border-bottom:none}
                 <button class="bo bsm" onclick="manualSyncOrders()">🔄 주문 지금 동기화</button>
                 <button class="bo bsm" onclick="manualSyncServices()">📦 서비스 지금 체크</button>
                 <button class="bo bsm" onclick="importHotPeakerrServices()">🔥 Peakerr 핫상품 추가</button>
+                <button class="bo bsm" onclick="importKrPinterestServices()">🇰🇷 한국·Pinterest HQ</button>
                 <button class="bo bsm" onclick="importNicheServices()">🛒 아마zon·이커머스 스캔</button>
                 <button class="bo bsm" onclick="pruneServices()">🧹 불필요 상품 정리</button>
               </div>
@@ -1327,10 +1328,10 @@ async function loadChargeHis(){
   tb.innerHTML=h;
 }
 
-var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',kakao:'💬',twitch:'🎮',amazon:'🛒',ecommerce:'🛍',coupang:'🚀',traffic:'🌐',appstore:'📱',travel:'✈',delivery:'🍔',gaming:'🎮',other:'📡'};
-var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
+var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',kakao:'💬',twitch:'🎮',amazon:'🛒',ecommerce:'🛍',coupang:'🚀',pinterest:'📌',traffic:'🌐',appstore:'📱',travel:'✈',delivery:'🍔',gaming:'🎮',other:'📡'};
+var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',pinterest:'#E60023',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
 var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
-var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
+var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',pinterest:'핀터레스트 핀/보드 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
 var ORDERGUIDE={
   youtube:{title:'유튜브 링크 넣는 법',steps:['유튜브 앱이나 사이트에서 대상 영상을 엽니다.','영상 아래 <b>공유</b> 버튼을 누르고 <b>링크 복사</b>를 선택합니다.','복사한 주소(youtube.com/... 또는 youtu.be/...)를 그대로 붙여넣습니다.'],warn:'구독자 주문은 영상 링크가 아닌 <b>채널 주소</b>를 넣어주세요.'},
   instagram:{title:'인스타그램 링크 넣는 법',steps:['인스타그램에서 대상 게시물(또는 릴스)을 엽니다.','게시물 우측 상단 <b>···</b> 메뉴에서 <b>링크 복사</b>를 누릅니다.','복사한 주소(instagram.com/p/... 등)를 붙여넣습니다.'],warn:'팔로워 주문은 게시물이 아닌 <b>프로필 주소</b>(instagram.com/아이디)를 넣어주세요. 계정은 <b>공개</b> 상태여야 합니다.'},
@@ -2587,6 +2588,16 @@ async function manualSyncServices(){
 }
 
 // 🔥 Peakerr 핫상품 추가 (HQ·Real 등 자동 선별)
+async function importKrPinterestServices(){
+  if(!confirm('Peakerr에서 한국(KR/Korea) 타겟 HQ·Real 상품과\nPinterest 고품질 상품만 골라 추가합니다.\n\n없으면 추가하지 않습니다.\n\n계속할까요?'))return;
+  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>한국·Pinterest 스캔 중...';
+  var d=await api('/api/super/import-kr-pinterest','POST',{maxKrPerPlatform:4,maxPinterest:5});
+  if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
+  if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
+  toast(d.message||'완료','ok');
+  loadSuperSvcs&&loadSuperSvcs();
+}
+
 async function importNicheServices(){
   if(!confirm('Peakerr에서 아마zon·쿠팡·네이버·카카오·이커머스 및\nLinkedIn·Pinterest 등 — 실제 있는 상품만 추가합니다.\n\n없으면 아무 것도 추가하지 않습니다.\n\n계속할까요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>Peakerr 스캔 중...';
@@ -3287,7 +3298,7 @@ async function calcPriceTable(){
 
   var PLKlocal = {youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',
     twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',
-    twitch:'트위치',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
+    twitch:'트위치',pinterest:'Pinterest',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 
   var tbody = ge('pcTbody');
   if(!tbody) return;
