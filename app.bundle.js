@@ -1505,7 +1505,7 @@ const PageShell = ({
 }) => React.createElement("div", {
   className: "fc-page",
   style: {
-    paddingBottom: 64,
+    paddingBottom: "calc(64px + env(safe-area-inset-bottom,0px))",
     ...style
   }
 }, children);
@@ -2289,23 +2289,21 @@ function PriorityTop3Panel({
       lineHeight: 1.45
     }
   }, "매장마다 검색어·순위가 다릅니다 (통합 1위 아님)"), el("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
-      gap: 8,
-      alignItems: "stretch"
-    }
+    className: "fc-priority-grid"
   }, cards));
 }
 function StoreRankBadge({
   store,
   large,
-  compact
+  compact,
+  hideOnMobile
 }) {
   const el = React.createElement;
   const d = naverRankForStore(store);
+  const wrapCls = (hideOnMobile ? " fc-rank-hide-sm" : "") + (large ? " fc-rank-badge" : "");
   if (compact) {
     return el("div", {
+      className: "fc-store-row__rank" + wrapCls,
       style: {
         textAlign: "right",
         flexShrink: 0
@@ -2331,6 +2329,7 @@ function StoreRankBadge({
   }
   const mean = rankMeaningText(d);
   return el("div", {
+    className: wrapCls.trim(),
     style: {
       textAlign: "right",
       flexShrink: 0,
@@ -2396,13 +2395,10 @@ function StoreListRow({
   const url = purl(store.placeId);
   const actionText = a.text ? a.text.replace(/^[^\s]+\s*/, "") : "";
   return el("div", {
+    className: "fc-store-row",
     onClick: () => onDetail(store.id),
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr auto",
-      gap: 12,
-      alignItems: "stretch",
-      padding: "14px 14px",
+      padding: "14px 12px",
       marginBottom: 8,
       cursor: "pointer",
       background: "var(--bg-card)",
@@ -2474,15 +2470,8 @@ function StoreListRow({
       borderLeft: "3px solid " + a.color
     }
   }, actionText)), el("div", {
-    style: {
-      textAlign: "right",
-      flexShrink: 0,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      minWidth: 72
-    }
-  }, el("div", {
+    className: "fc-store-row__rank"
+  }, el("div", null, el("div", {
     className: "fc-rank",
     style: {
       color: d.color
@@ -2500,11 +2489,10 @@ function StoreListRow({
       maxWidth: 88,
       marginLeft: "auto"
     }
-  }, (d.sub || "").slice(0, 22)), el("div", {
+  }, (d.sub || "").slice(0, 22))), el("div", {
     className: "fc-body",
     style: {
       color: "var(--accent)",
-      marginTop: 8,
       fontWeight: 700,
       fontSize: FC.type.sm
     }
@@ -2957,11 +2945,7 @@ function ChannelTable({
   const ch = store.channels || {};
   if (compact) {
     return el("div", {
-      style: {
-        display: "grid",
-        gridTemplateColumns: "repeat(6,1fr)",
-        gap: 3
-      }
+      className: "fc-ch-compact"
     }, CH_KEYS.map(k => {
       const info = CH_INFO[k];
       const wk = ch[k]?.week || 0;
@@ -3009,10 +2993,9 @@ function ChannelTable({
       marginBottom: 8
     }
   }, "블로그·방문·영수증 = 네이버 실측 · 인스타·유튜브·카페 = 점주 입력"), el("div", {
-    style: {
-      overflowX: "auto"
-    }
+    className: "fc-table-wrap"
   }, el("table", {
+    className: "fc-ch-table",
     style: {
       width: "100%",
       borderCollapse: "collapse",
@@ -3076,6 +3059,7 @@ function ChannelTable({
         borderTop: "1px solid rgba(30,58,95,.5)"
       }
     }, el("td", {
+      "data-label": "채널",
       style: {
         padding: "6px"
       }
@@ -3101,6 +3085,7 @@ function ChannelTable({
         fontSize: ".65rem"
       }
     }, info.auto ? "자동" : "입력"))), el("td", {
+      "data-label": "오늘",
       style: {
         padding: "6px",
         textAlign: "center"
@@ -3112,6 +3097,7 @@ function ChannelTable({
         color: d.today > 0 ? info.color : "var(--dim)"
       }
     }, d.today)), el("td", {
+      "data-label": "주",
       style: {
         padding: "6px",
         textAlign: "center"
@@ -3122,6 +3108,7 @@ function ChannelTable({
         color: ok ? info.color : "#ef4444"
       }
     }, d.week)), el("td", {
+      "data-label": "월",
       style: {
         padding: "6px",
         textAlign: "center"
@@ -3132,6 +3119,7 @@ function ChannelTable({
         fontWeight: 600
       }
     }, d.month)), top5avg && el("td", {
+      "data-label": "벤치",
       style: {
         padding: "6px",
         textAlign: "center"
@@ -3143,6 +3131,7 @@ function ChannelTable({
         color: "var(--ok)"
       }
     }, bench)), top5avg && el("td", {
+      "data-label": "상태",
       style: {
         padding: "6px",
         textAlign: "center"
@@ -3153,7 +3142,8 @@ function ChannelTable({
       style: {
         display: "flex",
         flexDirection: "column",
-        gap: 2
+        gap: 2,
+        minWidth: 80
       }
     }, el(MBar, {
       r: Math.min(ratio, 100),
@@ -3653,6 +3643,7 @@ function StoreForm({
     },
     onClick: e => e.target === e.currentTarget && onCancel()
   }, el("div", {
+    className: "fc-sheet",
     style: {
       background: "#0c1629",
       borderRadius: "14px 14px 0 0",
@@ -4169,6 +4160,7 @@ function App({
     back,
     right
   }) => el("header", {
+    className: "fc-header",
     style: {
       background: "#070d1a",
       borderBottom: "1px solid #0f1e35",
@@ -4228,7 +4220,7 @@ function App({
     href: "https://siastreet.com",
     target: "_blank",
     rel: "noreferrer",
-    className: "sia-credit",
+    className: "sia-credit fc-sia-mark",
     style: {
       position: "fixed",
       bottom: 72,
@@ -4270,16 +4262,12 @@ function App({
     }
   }, "SIA STREET"));
   const BottomBar = () => el("div", {
+    className: "fc-bottom-bar",
     style: {
-      position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
       background: "#070d1a",
       borderTop: "1px solid #0f1e35",
       display: "flex",
-      zIndex: 40,
-      paddingBottom: "env(safe-area-inset-bottom,0)"
+      zIndex: 40
     }
   }, [{
     k: "list",
@@ -4388,10 +4376,9 @@ function App({
   if (page === "list") {
     const filtered = sorted.filter(s => !search || (s.name + s.region).includes(search));
     return el("div", {
+      className: "fc-shell",
       style: {
-        minHeight: "100vh",
-        background: "var(--bg)",
-        paddingBottom: 56
+        background: "var(--bg)"
       }
     }, el(Header, {
       onHome,
@@ -4573,10 +4560,9 @@ function App({
 
   // ── 랭킹 ───────────────────────────────────────────────
   if (page === "rank") return el("div", {
+    className: "fc-shell",
     style: {
-      minHeight: "100vh",
-      background: "var(--bg)",
-      paddingBottom: 68
+      background: "var(--bg)"
     }
   }, el(Header, {
     onHome
@@ -4691,10 +4677,9 @@ function App({
 
   // ── 매출 입력 ──────────────────────────────────────────
   if (page === "input") return el("div", {
+    className: "fc-shell",
     style: {
-      minHeight: "100vh",
-      background: "#070d1a",
-      paddingBottom: 68
+      background: "#070d1a"
     }
   }, el(Header, {
     onHome,
@@ -4704,7 +4689,7 @@ function App({
     onX: () => setDismissed(true)
   }), el("div", {
     style: {
-      padding: "11px 15px"
+      padding: "11px max(15px,env(safe-area-inset-left)) 11px max(15px,env(safe-area-inset-right))"
     }
   }, topStore && el("div", {
     style: {
@@ -4876,10 +4861,10 @@ function App({
       rank = sorted.findIndex(s => s.id === store.id) + 1,
       url = purl(store.placeId);
     return el("div", {
+      className: "fc-shell",
       style: {
-        minHeight: "100vh",
         background: "#070d1a",
-        paddingBottom: 20
+        paddingBottom: "calc(12px + env(safe-area-inset-bottom,0px))"
       }
     }, form && el(StoreForm, {
       store: form,
@@ -4925,7 +4910,7 @@ function App({
       }, "✏️"))
     }), el("div", {
       style: {
-        padding: "11px 15px"
+        padding: "11px max(15px,env(safe-area-inset-left)) 11px max(15px,env(safe-area-inset-right))"
       }
     }, el(StoreActionBox, {
       store,
@@ -4946,12 +4931,9 @@ function App({
         borderLeft: "4px solid " + SC[store.status]
       }
     }, el("div", {
+      className: "fc-detail-head",
       style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 10,
-        gap: 8
+        marginBottom: 10
       }
     }, el("div", {
       style: {
@@ -4959,8 +4941,8 @@ function App({
         minWidth: 0
       }
     }, el("div", {
+      className: "fc-h1",
       style: {
-        fontSize: 25,
         fontWeight: 900,
         color: "#e2e8f0"
       }
@@ -5001,10 +4983,11 @@ function App({
       }
     }, "예측 " + (store.predicted >= 0 ? "+" : "") + store.predicted + "%"))), el(StoreRankBadge, {
       store,
-      large: true
+      large: true,
+      hideOnMobile: true
     }), el("span", {
       style: {
-        fontSize: 18,
+        fontSize: FC.type.sm,
         fontWeight: 700,
         color: SC[store.status],
         background: SB[store.status],
@@ -5013,15 +4996,13 @@ function App({
         flexShrink: 0
       }
     }, store.status === "green" ? "🟢 정상" : store.status === "yellow" ? "⚠️ 주의" : "🔴 위험")), el("div", {
+      className: "fc-detail-kw",
       style: {
         background: "linear-gradient(135deg,rgba(245,158,11,.1),rgba(59,130,246,.06))",
         border: "1.5px solid rgba(245,158,11,.25)",
         borderRadius: 10,
         padding: "14px 16px",
-        marginBottom: 9,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
+        marginBottom: 9
       }
     }, el("div", null, el("div", {
       style: {
@@ -5368,10 +5349,9 @@ function App({
       });
     };
     return el("div", {
+      className: "fc-shell",
       style: {
-        minHeight: "100vh",
-        background: "var(--bg)",
-        paddingBottom: 68
+        background: "var(--bg)"
       }
     }, el(Header, {
       onHome,
@@ -5417,6 +5397,7 @@ function App({
       },
       onClick: e => e.target === e.currentTarget && setSvModal(null)
     }, el("div", {
+      className: "fc-sheet",
       style: {
         background: "#0c1629",
         borderRadius: "14px 14px 0 0",
@@ -5640,7 +5621,7 @@ function App({
       }
     }, "🗺️ 네이버 플레이스 바로가기"))), el("div", {
       style: {
-        padding: "11px 15px"
+        padding: "11px max(15px,env(safe-area-inset-left)) 11px max(15px,env(safe-area-inset-right))"
       }
     },
     // autoSync
@@ -5974,11 +5955,11 @@ function App({
     }))),
     // 탭
     el("div", {
+      className: "fc-scroll-x",
       style: {
         display: "flex",
         gap: 5,
         marginBottom: 10,
-        overflowX: "auto",
         paddingBottom: 2
       }
     }, [{
@@ -6260,14 +6241,14 @@ function App({
         marginBottom: 9
       }
     }, "📣 전체 매장 채널별 주간 활동량 현황"), el("div", {
-      style: {
-        overflowX: "auto"
-      }
+      className: "fc-table-wrap"
     }, el("table", {
+      className: "fc-admin-table",
       style: {
         width: "100%",
         borderCollapse: "collapse",
-        fontSize: 19
+        fontSize: FC.type.base,
+        minWidth: 480
       }
     }, el("thead", null, el("tr", {
       style: {
@@ -6278,7 +6259,7 @@ function App({
       style: {
         padding: "5px 6px",
         textAlign: "center",
-        fontSize: 16,
+        fontSize: FC.type.xs,
         color: "#475569",
         fontWeight: 700,
         textTransform: "uppercase",
@@ -7891,16 +7872,17 @@ function Landing({
     action: onAdmin
   }];
   return el("div", {
+    className: "fc-shell",
     style: {
-      minHeight: "100vh",
-      background: "var(--bg)"
+      background: "var(--bg)",
+      paddingBottom: 24
     }
   }, el("nav", {
+    className: "fc-landing-nav",
     style: {
       position: "sticky",
       top: 0,
       zIndex: 50,
-      padding: "12px 20px",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
@@ -7940,6 +7922,7 @@ function Landing({
       color: "var(--muted)"
     }
   }, "소림사 마케팅 관제"))), el("div", {
+    className: "fc-nav-btns",
     style: {
       display: "flex",
       gap: 8
@@ -7962,7 +7945,7 @@ function Landing({
     }
   }, "관제"))), el("main", {
     style: {
-      padding: "32px 20px 48px"
+      padding: "24px max(20px,env(safe-area-inset-left)) 48px max(20px,env(safe-area-inset-right))"
     }
   }, el("div", {
     style: W
@@ -7991,10 +7974,8 @@ function Landing({
       marginBottom: 28
     }
   }, "순위·리뷰 = 네이버 실측 · 본사 관제는 비밀번호 필요"), el("div", {
+    className: "fc-landing-stats",
     style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(4,1fr)",
-      gap: 10,
       marginBottom: 24
     }
   }, [{
@@ -8007,7 +7988,7 @@ function Landing({
     num: "실측",
     label: "순위·리뷰"
   }, {
-    num: "v5.9",
+    num: "v5.9.5",
     label: "관제"
   }].map(s => el("div", {
     key: s.label,
@@ -8037,11 +8018,7 @@ function Landing({
     stores: storeList,
     goDetail: onPriorityDetail || (id => onEnterDirect && onEnterDirect())
   })), el("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(3,1fr)",
-      gap: 12
-    }
+    className: "fc-landing-features"
   }, features.map(f => el("button", {
     key: f.title,
     type: "button",
@@ -8052,7 +8029,8 @@ function Landing({
       cursor: "pointer",
       textAlign: "left",
       border: "1px solid var(--border)",
-      background: "var(--bg-card)"
+      background: "var(--bg-card)",
+      width: "100%"
     }
   }, el("h3", {
     style: {
