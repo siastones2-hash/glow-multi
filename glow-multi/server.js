@@ -477,6 +477,8 @@ async function initDB() {
   )`); } catch(e) {}
   
   await repairAllPartnerSiteServices();
+  const nameFix = await repairEnglishServiceNames().catch(() => ({ count: 0 }));
+  if (nameFix.count > 0) console.log(`🇰🇷 영문 상품명 ${nameFix.count}건 한글화`);
   console.log('✅ DB 초기화 완료');
 }
 
@@ -1066,6 +1068,114 @@ async function linkServiceToAllSites(serviceId) {
   }
 }
 
+const PL_DISPLAY_KO = {
+  youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok',
+  threads: 'Threads', twitter: 'X', facebook: 'Facebook',
+  telegram: 'Telegram', spotify: 'Spotify', twitch: 'Twitch',
+  pinterest: 'Pinterest', naver: '네이버', kakao: '카카오',
+  coupang: '쿠팡', amazon: 'Amazon', ecommerce: '이커머스',
+  traffic: '웹 트래픽', appstore: '앱스토어', other: 'SNS'
+};
+
+function detectServiceTypeKo(full) {
+  const n = (full || '').toLowerCase();
+  if (/watch\s*time|watchtime|watch hour|4000 hour/.test(n)) return '시청시간';
+  if (/shorts/.test(n)) return /like/.test(n) ? '쇼츠 좋아요' : '쇼츠 조회수';
+  if (/\blive\b/.test(n) && /like/.test(n)) return '라이브 좋아요';
+  if (/reel/.test(n)) return /like/.test(n) ? '릴스 좋아요' : /view|play/.test(n) ? '릴스 조회수' : '릴스';
+  if (/story/.test(n)) return /view/.test(n) ? '스토리 조회수' : '스토리';
+  if (/comment/.test(n)) return '댓글';
+  if (/subscriber|subscription|\bsubs?\b/.test(n)) return '구독자';
+  if (/follower|\bfollow\b/.test(n)) return '팔로워';
+  if (/like/.test(n)) return '좋아요';
+  if (/view|views|\bplay\b|watch/.test(n)) return '조회수';
+  if (/share|retweet|repost/.test(n)) return '공유';
+  if (/save|bookmark/.test(n)) return '저장';
+  if (/impression|reach|exposure/.test(n)) return '노출';
+  if (/member|join/.test(n)) return '멤버';
+  if (/traffic|visit|visitor|website|direct/.test(n)) return '방문 트래픽';
+  if (/review|rating|star/.test(n)) return '리뷰';
+  if (/seo|search|organic|keyword/.test(n)) return '검색 유입';
+  if (/profile visit|profile view/.test(n)) return '프로필 방문';
+  if (/stream|listen|play count/.test(n)) return '재생';
+  return '서비스';
+}
+
+function extractQualityTagsKo(full) {
+  const n = (full || '').toLowerCase();
+  const tags = [];
+  if (/korea|korean|\bkr\b|south korea|한국/.test(n)) tags.push('한국');
+  else if (/global|world|worldwide|geo/.test(n)) tags.push('글로벌');
+  if (/\bhq\b|high quality|high-quality/.test(n)) tags.push('HQ');
+  if (/\breal\b|organic|native|active/.test(n)) tags.push('리얼');
+  if (/premium|mq\b|server/.test(n)) tags.push('프리미엄');
+  if (/lifetime|life time/.test(n)) tags.push('평생 보장');
+  if (/refill|♻/.test(n)) tags.push('드롭 보상');
+  else if (/non[- ]?drop|non drop|almost non drop|no drop/.test(n)) tags.push('논드롭');
+  if (/instant|instant start|0-5\s*min/.test(n)) tags.push('즉시');
+  if (/\bslow\b/.test(n)) tags.push('슬로우');
+  if (/fast|super fast|speed|100k\/d|50k\/d/.test(n)) tags.push('고속');
+  if (/30\s*day/.test(n)) tags.push('30일 보장');
+  if (/365/.test(n)) tags.push('365일 보장');
+  return [...new Set(tags)];
+}
+
+/** Peakerr 영문 상품명 → GLOW 한글 상품명 (큐레이션 스타일) */
+function formatPeakerrServiceName(name, pl, prefixLabel) {
+  const n = (name || '').trim();
+  if (!n) return `${PL_DISPLAY_KO[pl] || 'SNS'} 서비스 — 프리미엄`;
+  if (/[\uAC00-\uD7AF]/.test(n)) return n.substring(0, 120);
+
+  const plLabel = prefixLabel || PL_DISPLAY_KO[pl] || pl;
+  const typeKo = detectServiceTypeKo(n);
+  const tags = extractQualityTagsKo(n);
+
+  let mid = '프리미엄';
+  if (tags.includes('한국')) mid = '한국';
+  else if (tags.includes('글로벌')) mid = '글로벌';
+  else if (tags.includes('HQ')) mid = 'HQ';
+  else if (tags.includes('리얼')) mid = '리얼';
+
+  const extras = tags.filter(t => !['한국', '글로벌', 'HQ', '리얼', '프리미엄'].includes(t));
+  let title = `${plLabel} ${typeKo} — ${mid}`;
+  if (extras.length) title += ` (${extras.slice(0, 3).join(' · ')})`;
+  return title.substring(0, 120);
+}
+
+function formatPeakerrServiceDescription(name, pl, fallback) {
+  if (fallback && /[\uAC00-\uD7AF]/.test(fallback) && (fallback || '').length > 50) return fallback;
+  const plKo = {
+    youtube: '유튜브', instagram: '인스타그램', tiktok: '틱톡', threads: '스레드',
+    twitter: 'X(트위터)', facebook: '페이스북', telegram: '텔레그램', traffic: '웹사이트',
+    naver: '네이버', kakao: '카카오', amazon: 'Amazon', coupang: '쿠팡'
+  }[pl] || 'SNS';
+  const typeKo = detectServiceTypeKo(name || '');
+  const tags = extractQualityTagsKo(name || '');
+  const target = tags.includes('한국') ? '한국 타겟 ' : tags.includes('글로벌') ? '글로벌 ' : '';
+  let desc = `${target}${plKo} ${typeKo} 고품질 서비스입니다.`;
+  if (tags.includes('드롭 보상') || tags.includes('평생 보장')) desc += ' 드롭 발생 시 보상·리필이 제공됩니다.';
+  else if (tags.includes('논드롭')) desc += ' 안정적인 논드롭 처리로 장기 유지에 유리합니다.';
+  if (tags.includes('즉시')) desc += ' 주문 후 즉시 시작됩니다.';
+  if (tags.includes('고속')) desc += ' 고속 처리로 빠른 성장이 가능합니다.';
+  return desc.substring(0, 500);
+}
+
+/** API 자동등록(pk_/api_) 영문 상품명 일괄 한글화 */
+async function repairEnglishServiceNames() {
+  const r = await query(`SELECT id, name, pl, description FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  let count = 0;
+  for (const row of r.rows) {
+    if (/[\uAC00-\uD7AF]/.test(row.name || '')) continue;
+    const newName = formatPeakerrServiceName(row.name, row.pl);
+    const newDesc = /[\uAC00-\uD7AF]/.test(row.description || '')
+      ? row.description
+      : formatPeakerrServiceDescription(row.name, row.pl, row.description);
+    await query(`UPDATE services SET name=$1, description=$2 WHERE id=$3`, [newName, newDesc, row.id]);
+    count++;
+  }
+  return { count };
+}
+
 /** Peakerr에서 HQ·Real 등 핫상품만 골라 DB에 추가 (기존 상품은 유지) */
 async function importHotPeakerrServices(opts = {}) {
   const maxPerPlatform = opts.maxPerPlatform ?? 3;
@@ -1109,6 +1219,8 @@ async function importHotPeakerrServices(opts = {}) {
   if (!dryRun) {
     for (const s of toAdd) {
       const id = `pk_${s.service}`;
+      const displayName = formatPeakerrServiceName(s.name, s.pl);
+      const desc = formatPeakerrServiceDescription(s.name, s.pl, s.type || s.category || '');
       await query(`
         INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
         VALUES($1,$2,$3,$4,$5,$6,$7,$8,1)
@@ -1117,12 +1229,12 @@ async function importHotPeakerrServices(opts = {}) {
           min=EXCLUDED.min, max=EXCLUDED.max, description=EXCLUDED.description,
           api_id=EXCLUDED.api_id, active=1
       `, [
-        id, s.name, s.pl,
+        id, displayName, s.pl,
         parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000),
-        s.type || s.category || '', String(s.service)
+        desc, String(s.service)
       ]);
       await linkServiceToAllSites(id);
-      added.push({ id, name: s.name, pl: s.pl, rate: s.rate, score: s.qs, apiId: s.service });
+      added.push({ id, name: displayName, pl: s.pl, rate: s.rate, score: s.qs, apiId: s.service });
     }
     if (added.length) {
       await repairAllPartnerSiteServices();
@@ -1159,12 +1271,7 @@ function classifyBonusService(full) {
 }
 
 function formatNicheServiceName(name, pl) {
-  const ko = { amazon: 'Amazon', coupang: '쿠팡', ecommerce: '이커머스', naver: '네이버', kakao: '카카오' };
-  const n = (name || '').trim();
-  if (/[\uAC00-\uD7AF]/.test(n)) return n.substring(0, 120);
-  const prefix = ko[pl];
-  if (prefix && !n.toLowerCase().includes(pl)) return `${prefix} — ${n}`.substring(0, 120);
-  return n.substring(0, 120);
+  return formatPeakerrServiceName(name, pl);
 }
 
 function nicheServiceDescription(name, pl, type) {
@@ -1279,8 +1386,8 @@ async function importNichePeakerrServices(opts = {}) {
     for (const s of toAdd) {
       const id = `pk_${s.service}`;
       const displayName = s.label
-        ? `${s.label} — ${(s.name || '').substring(0, 80)}`
-        : (NICHE_PLATFORMS.includes(s.pl) ? formatNicheServiceName(s.name, s.pl) : formatNicheServiceName(s.name, s.pl));
+        ? formatPeakerrServiceName(s.name, s.pl, s.label)
+        : formatPeakerrServiceName(s.name, s.pl);
       const desc = nicheServiceDescription(s.name, s.pl, s.type || s.category || '');
       await query(`
         INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
@@ -1352,15 +1459,9 @@ function qualifiesPinterestImport(s) {
 }
 
 function formatKoreanImportName(name, pl) {
-  const plKo = {
-    youtube: '유튜브', instagram: '인스타', tiktok: '틱톡', threads: '스레드',
-    twitter: 'X', facebook: '페북', telegram: '텔레그램', naver: '네이버', kakao: '카카오'
-  };
   const n = (name || '').trim();
   if (/[\uAC00-\uD7AF]/.test(n)) return n.substring(0, 120);
-  if (/korea|korean|\bkr\b|한국/i.test(n)) return n.substring(0, 120);
-  const label = plKo[pl] || pl;
-  return `한국 ${label} — ${n}`.substring(0, 120);
+  return formatPeakerrServiceName(n, pl);
 }
 
 function koreanImportDescription(pl, type) {
@@ -3117,10 +3218,12 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
     for (const s of data) {
       const apiId = String(s.service);
       const pl = detectPlat(`${s.name || ''} ${s.category || ''}`);
+      const displayName = formatPeakerrServiceName(s.name, pl);
+      const desc = formatPeakerrServiceDescription(s.name, pl, s.type || s.category || '');
       const existing = await query(`SELECT id FROM services WHERE api_id=$1 LIMIT 1`, [apiId]);
       if (existing.rows.length) {
-        await query(`UPDATE services SET name=$1, pl=$2, rate=$3, min=$4, max=$5 WHERE api_id=$6`,
-          [s.name, pl, parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000), apiId]);
+        await query(`UPDATE services SET name=$1, pl=$2, rate=$3, min=$4, max=$5, description=$6 WHERE api_id=$7`,
+          [displayName, pl, parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000), desc, apiId]);
         updated++;
       } else {
         const id = `api_${s.service}`;
@@ -3128,8 +3231,8 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
           INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active)
           VALUES($1,$2,$3,$4,$5,$6,$7,$8,1)
           ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, rate=EXCLUDED.rate, active=1
-        `, [id, s.name, pl, parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000),
-          s.type || '', apiId]);
+        `, [id, displayName, pl, parseFloat(s.rate || 0), parseInt(s.min || 100), parseInt(s.max || 1000000),
+          desc, apiId]);
         await linkServiceToAllSites(id);
         added++;
       }
