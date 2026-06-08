@@ -2,7 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#4A6FA5"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <title>Church ERP — 사랑의교회</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -24,9 +27,17 @@
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
     @media (max-width: 767px) {
-      html, body { overflow-x: hidden; }
+      html, body { overflow-x: hidden; overscroll-behavior-x: none; }
       .erp-main { -webkit-overflow-scrolling: touch; }
-      .erp-main input, .erp-main select, .erp-main textarea, .erp-main button { font-size: 16px; }
+      .erp-main input, .erp-main select, .erp-main textarea { font-size: 16px; min-height: 44px; }
+      .erp-main button, .erp-nav-btn { font-size: 14px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      .erp-table-wrap { -webkit-overflow-scrolling: touch; margin: 0 -4px; padding: 0 4px; }
+      .erp-table-wrap table { min-width: 520px; }
+      .erp-card-pad { padding: 14px 16px !important; }
+      .erp-hero-pad { padding: 18px 16px !important; }
+    }
+    @media (max-width: 479px) {
+      .erp-table-wrap table { min-width: 440px; }
     }
   </style>
 </head>
@@ -35,7 +46,7 @@
   <script type="text/babel">
     const { useState, useCallback, useEffect, useRef } = React;
 // ═══════════════════════════════════════════════════════════
-// CHURCH ERP v5.4 — MOBILE (밝은 교회 테마 + 모바일 반응형)
+// CHURCH ERP v5.5 — MOBILE+ (밝은 교회 테마 + 모바일 최적화)
 // ✅ localStorage 영속성 (새로고침해도 데이터 유지)
 // ✅ Toast 알림 (저장/삭제/오류 피드백)
 // ✅ 입력값 유효성 검사 (전화번호·금액·날짜·필수값)
@@ -99,6 +110,7 @@ const toast = {
 
 function ToastContainer() {
   const [toasts, setToasts] = useState([]);
+  const isMobile = useIsMobile();
   useEffect(() => { toastSetter = setToasts; return () => { toastSetter = null; }; }, []);
   useEffect(() => {
     if(!toasts.length) return;
@@ -108,7 +120,11 @@ function ToastContainer() {
   const icons = {success:"✅",error:"❌",info:"ℹ️",warn:"⚠️"};
   const colors = {success:C.emerald,error:C.rose,info:C.sky,warn:C.amber};
   return (
-    <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,display:"flex",flexDirection:"column",gap:8}}>
+    <div style={{
+      position:"fixed", zIndex:9999, display:"flex", flexDirection:"column", gap:8,
+      bottom: isMobile ? "calc(72px + env(safe-area-inset-bottom, 0px))" : 24,
+      right: isMobile ? 12 : 24, left: isMobile ? 12 : "auto",
+    }}>
       {toasts.map(t=>(
         <div key={t.id} style={{
           background:C.s1, border:`1px solid ${colors[t.type]}66`,
@@ -117,7 +133,7 @@ function ToastContainer() {
           display:"flex", alignItems:"center", gap:10,
           boxShadow:"0 8px 32px rgba(26,43,60,.12)",
           animation:"slideIn .2s ease",
-          minWidth:260, maxWidth:380,
+          minWidth: isMobile ? 0 : 260, maxWidth: isMobile ? "100%" : 380,
         }}>
           <span style={{fontSize:16,flexShrink:0}}>{icons[t.type]}</span>
           <span style={{color:C.text,fontSize:13,fontFamily:F,flex:1}}>{t.msg}</span>
@@ -131,22 +147,25 @@ function ToastContainer() {
 
 // ── Confirm Dialog ─────────────────────────────────────
 function ConfirmDialog({ open, title, message, onConfirm, onCancel, confirmText="확인", confirmV="rose" }) {
+  const isMobile = useIsMobile();
   if(!open) return null;
   return (
     <div onClick={onCancel} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
-      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1100}}>
+      display:"flex",alignItems:isMobile?"flex-end":"center",justifyContent:"center",zIndex:1100,padding:isMobile?0:16}}>
       <div onClick={e=>e.stopPropagation()} style={{
-        background:C.s1,border:`1px solid ${C.borderHi}`,borderRadius:18,
-        padding:"28px 32px",width:380,maxWidth:"92vw",
+        background:C.s1,border:`1px solid ${C.borderHi}`,
+        borderRadius:isMobile?"20px 20px 0 0":18,
+        padding:isMobile?"24px 20px calc(20px + env(safe-area-inset-bottom, 0px))":"28px 32px",
+        width:isMobile?"100%":380,maxWidth:"100%",
       }}>
         <div style={{fontSize:32,textAlign:"center",marginBottom:12}}>
           {confirmV==="rose"?"⚠️":"✅"}
         </div>
         <div style={{color:C.text,fontFamily:FB,fontSize:16,fontWeight:700,textAlign:"center",marginBottom:8}}>{title}</div>
         <div style={{color:C.sub,fontFamily:F,fontSize:13,textAlign:"center",marginBottom:24,lineHeight:1.6}}>{message}</div>
-        <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-          <Btn v="ghost" onClick={onCancel}>취소</Btn>
-          <Btn v={confirmV} onClick={onConfirm}>{confirmText}</Btn>
+        <div style={{display:"flex",gap:10,justifyContent:"center",flexDirection:isMobile?"column-reverse":"row"}}>
+          <Btn v="ghost" onClick={onCancel} style={isMobile?{width:"100%",justifyContent:"center",padding:"12px 16px"}:{}}>취소</Btn>
+          <Btn v={confirmV} onClick={onConfirm} style={isMobile?{width:"100%",justifyContent:"center",padding:"12px 16px"}:{}}>{confirmText}</Btn>
         </div>
       </div>
     </div>
@@ -188,18 +207,22 @@ const Badge = ({ c, children }) => (
   <span style={{background:`${c}18`,color:c,border:`1px solid ${c}30`,
     borderRadius:6,padding:"2px 9px",fontSize:11,fontFamily:F,fontWeight:500,whiteSpace:"nowrap"}}>{children}</span>
 );
-const Card = ({ children, style={} }) => (
-  <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:"0 1px 4px rgba(26,43,60,.06)",...style}}>{children}</div>
+const Card = ({ children, style={}, className="" }) => (
+  <div className={className} style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:"0 1px 4px rgba(26,43,60,.06)",...style}}>{children}</div>
 );
-const SH = ({ title, sub, action }) => (
-  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
-    <div>
-      <div style={{color:C.text,fontFamily:FB,fontSize:14,fontWeight:700}}>{title}</div>
-      {sub&&<div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:2}}>{sub}</div>}
+const SH = ({ title, sub, action }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,
+      flexDirection:isMobile?"column":"row",gap:isMobile?10:0}}>
+      <div style={{minWidth:0,flex:1}}>
+        <div style={{color:C.text,fontFamily:FB,fontSize:isMobile?15:14,fontWeight:700}}>{title}</div>
+        {sub&&<div style={{color:C.muted,fontSize:11,fontFamily:F,marginTop:2}}>{sub}</div>}
+      </div>
+      {action&&<div style={{flexShrink:0,width:isMobile?"100%":"auto"}}>{action}</div>}
     </div>
-    {action}
-  </div>
-);
+  );
+};
 const Inp = ({ value, onChange, placeholder, type="text", style={}, error=false }) => (
   <input type={type} value={value??""} onChange={onChange} placeholder={placeholder}
     style={{background:C.s2,border:`1px solid ${error?C.rose:C.border}`,borderRadius:9,
@@ -227,12 +250,24 @@ function useIsMobile(bp = 768) {
   }, [bp]);
   return mob;
 }
-function adaptGridColumns(cols) {
+function useNarrowMobile(bp = 480) {
+  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.innerWidth < bp);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${bp - 1}px)`);
+    const fn = () => setNarrow(mq.matches);
+    fn();
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, [bp]);
+  return narrow;
+}
+function adaptGridColumns(cols, narrow=false) {
   if (!cols || cols === "none") return cols;
   const r = cols.match(/repeat\((\d+),\s*([^)]+)\)/);
   if (r) {
     const n = parseInt(r[1], 10);
-    if (n >= 3) return "repeat(2, 1fr)";
+    if (n >= 4) return narrow ? "1fr" : "repeat(2, 1fr)";
+    if (n >= 3) return narrow ? "1fr" : "repeat(2, 1fr)";
     if (n === 2) return "1fr";
   }
   if (/px/.test(cols) || /auto/.test(cols)) return "1fr";
@@ -241,6 +276,7 @@ function adaptGridColumns(cols) {
   return cols;
 }
 function useResponsiveGrids(mainRef, isMobile, tab) {
+  const narrow = useNarrowMobile();
   useEffect(() => {
     const root = mainRef.current;
     if (!root) return;
@@ -250,7 +286,7 @@ function useResponsiveGrids(mainRef, isMobile, tab) {
         if (cs.display !== "grid") return;
         if (isMobile) {
           if (!el.dataset.erpGridOrig) el.dataset.erpGridOrig = el.style.gridTemplateColumns || cs.gridTemplateColumns;
-          el.style.gridTemplateColumns = adaptGridColumns(el.dataset.erpGridOrig);
+          el.style.gridTemplateColumns = adaptGridColumns(el.dataset.erpGridOrig, narrow);
         } else if (el.dataset.erpGridOrig) {
           el.style.gridTemplateColumns = el.dataset.erpGridOrig;
           delete el.dataset.erpGridOrig;
@@ -258,53 +294,76 @@ function useResponsiveGrids(mainRef, isMobile, tab) {
       });
     };
     const t = setTimeout(apply, 0);
-    return () => clearTimeout(t);
-  }, [isMobile, tab, mainRef]);
+    window.addEventListener("resize", apply);
+    return () => { clearTimeout(t); window.removeEventListener("resize", apply); };
+  }, [isMobile, narrow, tab, mainRef]);
 }
 
 const Modal = ({ open, onClose, title, children, width=460 }) => {
+  const isMobile = useIsMobile();
   if(!open) return null;
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",
-      display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:16}}>
+      display:"flex",alignItems:isMobile?"flex-end":"center",justifyContent:"center",zIndex:999,padding:isMobile?0:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.s1,border:`1px solid ${C.borderHi}`,
-        borderRadius:20,padding:28,width,maxWidth:"95vw",maxHeight:"88vh",overflowY:"auto"}}>
+        borderRadius:isMobile?"20px 20px 0 0":20,padding:isMobile?"20px 16px calc(16px + env(safe-area-inset-bottom, 0px))":28,
+        width:isMobile?"100%":width,maxWidth:"100%",maxHeight:isMobile?"92vh":"88vh",overflowY:"auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
-          <span style={{color:C.text,fontFamily:FB,fontSize:16,fontWeight:700}}>{title}</span>
-          <button onClick={onClose} style={{background:"none",border:"none",color:C.muted,
-            fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
+          <span style={{color:C.text,fontFamily:FB,fontSize:isMobile?17:16,fontWeight:700}}>{title}</span>
+          <button onClick={onClose} className="erp-nav-btn" style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,
+            color:C.muted,fontSize:18,cursor:"pointer",lineHeight:1,width:40,height:40}}>✕</button>
         </div>
         {children}
       </div>
     </div>
   );
 };
-const Tbl = ({ heads, rows }) => (
-  <div style={{overflowX:"auto"}}>
-    <table style={{width:"100%",borderCollapse:"collapse"}}>
-      <thead>
-        <tr style={{background:C.s2}}>
-          {heads.map((h,i)=>(
-            <th key={i} style={{padding:"10px 14px",textAlign:"left",color:C.muted,
-              fontSize:11,fontFamily:F,fontWeight:500,borderBottom:`1px solid ${C.border}`,whiteSpace:"nowrap"}}>{h}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.length===0
-          ?<tr><td colSpan={heads.length} style={{padding:32,textAlign:"center",color:C.muted,fontFamily:F,fontSize:13}}>데이터 없음</td></tr>
-          :rows.map((row,i)=>(
-            <tr key={i} style={{borderBottom:i<rows.length-1?`1px solid ${C.border}`:"none",transition:"background .12s"}}
-              onMouseEnter={e=>e.currentTarget.style.background=C.s2}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              {row.map((cell,j)=><td key={j} style={{padding:"10px 14px",color:C.text,fontFamily:F,fontSize:13}}>{cell}</td>)}
-            </tr>
-          ))
-        }
-      </tbody>
-    </table>
-  </div>
-);
+const Tbl = ({ heads, rows }) => {
+  const isMobile = useIsMobile();
+  if (isMobile && rows.length > 0) {
+    return (
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {rows.map((row,i)=>(
+          <div key={i} style={{background:C.s2,borderRadius:12,padding:"12px 14px",border:`1px solid ${C.border}`}}>
+            {row.map((cell,j)=>(
+              <div key={j} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,
+                padding:"6px 0",borderBottom:j<row.length-1?`1px solid ${C.border}`:"none"}}>
+                <span style={{color:C.muted,fontSize:11,fontFamily:F,flexShrink:0}}>{heads[j]}</span>
+                <span style={{color:C.text,fontSize:13,fontFamily:F,textAlign:"right",wordBreak:"break-word"}}>{cell}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="erp-table-wrap" style={{overflowX:"auto"}}>
+      <table style={{width:"100%",borderCollapse:"collapse"}}>
+        <thead>
+          <tr style={{background:C.s2}}>
+            {heads.map((h,i)=>(
+              <th key={i} style={{padding:"10px 14px",textAlign:"left",color:C.muted,
+                fontSize:11,fontFamily:F,fontWeight:500,borderBottom:`1px solid ${C.border}`,whiteSpace:"nowrap"}}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length===0
+            ?<tr><td colSpan={heads.length} style={{padding:32,textAlign:"center",color:C.muted,fontFamily:F,fontSize:13}}>데이터 없음</td></tr>
+            :rows.map((row,i)=>(
+              <tr key={i} style={{borderBottom:i<rows.length-1?`1px solid ${C.border}`:"none",transition:"background .12s"}}
+                onMouseEnter={e=>e.currentTarget.style.background=C.s2}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                {row.map((cell,j)=><td key={j} style={{padding:"10px 14px",color:C.text,fontFamily:F,fontSize:13}}>{cell}</td>)}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  );
+};
 const Toggle = ({ on, onChange }) => (
   <div onClick={()=>onChange(!on)} style={{width:38,height:21,borderRadius:11,cursor:"pointer",
     background:on?C.emerald:C.s3,position:"relative",transition:"background .2s",flexShrink:0}}>
@@ -345,12 +404,15 @@ function useMemberFilters(members, pool) {
 }
 
 function MemberFilterBar({filters, setFilters, total, filtered, compact, showStatus=true}) {
+  const isMobile = useIsMobile();
+  const narrow = useNarrowMobile();
   const set=(k,v)=>setFilters(p=>({...p,[k]:v}));
+  const filterCols = isMobile ? (narrow ? "1fr" : "1fr 1fr") : (compact ? "1fr 1fr" : "repeat(auto-fit,minmax(108px,1fr))");
   return (
     <div style={{display:"flex",flexDirection:"column",gap:compact?8:10}}>
       <Inp value={filters.search} onChange={e=>set("search",e.target.value)}
         placeholder="🔍 이름·전화·부서·구역·직분"/>
-      <div style={{display:"grid",gridTemplateColumns:compact?"1fr 1fr":"repeat(auto-fit,minmax(108px,1fr))",gap:8}}>
+      <div style={{display:"grid",gridTemplateColumns:filterCols,gap:8}}>
         <Sel value={filters.role} onChange={v=>set("role",v)} opts={["전체",...ROLES]}/>
         <Sel value={filters.zone} onChange={v=>set("zone",v)} opts={["전체",...ZONES,"미배정"]}/>
         <Sel value={filters.dept} onChange={v=>set("dept",v)} opts={["전체",...DEPTS]}/>
@@ -604,6 +666,10 @@ function Trend({ up, label }) {
 
 // ══ 1. DASHBOARD ══════════════════════════════════════
 function DashboardTab({ members, offerings, attend, budgets }) {
+  const isMobile = useIsMobile();
+  const narrow = useNarrowMobile();
+  const kpiCols = isMobile ? (narrow ? "1fr" : "repeat(2,1fr)") : "repeat(4,1fr)";
+  const hiCols = isMobile ? "1fr" : "repeat(3,1fr)";
   const activeM = members.filter(m=>m.status==="active").length;
   const thisWeek = WEEKS[0];
   const attendData = attend[thisWeek]||{};
@@ -639,7 +705,7 @@ function DashboardTab({ members, offerings, attend, budgets }) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:20,animation:"fadeUp .4s ease"}}>
       {/* Hero */}
-      <div style={{borderRadius:20,padding:"28px 32px",position:"relative",overflow:"hidden",
+      <div className="erp-hero-pad" style={{borderRadius:20,padding:"28px 32px",position:"relative",overflow:"hidden",
         background:`linear-gradient(135deg, ${C.s1} 0%, ${C.s2} 45%, ${C.gold}18 100%)`,
         border:`1px solid ${C.gold}44`,boxShadow:"0 8px 32px rgba(201,146,42,.08)"}}>
         <div style={{position:"absolute",top:-40,right:-20,width:200,height:200,borderRadius:"50%",
@@ -650,8 +716,8 @@ function DashboardTab({ members, offerings, attend, budgets }) {
               <span style={{width:8,height:8,borderRadius:"50%",background:C.emerald,animation:"pulse 2s infinite"}}/>
               <span style={{color:C.emerald,fontSize:11,fontFamily:F,fontWeight:600}}>실시간 운영 중</span>
             </div>
-            <div style={{color:C.text,fontFamily:FB,fontSize:26,fontWeight:700}}>{CHURCH_NAME}</div>
-            <div style={{color:C.sub,fontSize:13,fontFamily:F,marginTop:4}}>{dateStr} · 오늘의 교회를 한눈에</div>
+            <div style={{color:C.text,fontFamily:FB,fontSize:isMobile?20:26,fontWeight:700}}>{CHURCH_NAME}</div>
+            <div style={{color:C.sub,fontSize:isMobile?12:13,fontFamily:F,marginTop:4}}>{dateStr} · 오늘의 교회를 한눈에</div>
           </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {[{l:"모듈",v:"15",c:C.violet},{l:"정착률",v:"87%",c:C.emerald},{l:"목표 달성",v:"94%",c:C.gold}].map(x=>(
@@ -691,14 +757,14 @@ function DashboardTab({ members, offerings, attend, budgets }) {
       </Card>
 
       {/* KPI with count-up */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:kpiCols,gap:14}}>
         {[
           {icon:"👥",label:"전체 성도",val:`${nMembers}명`,sub:`비활동 ${members.length-activeM}명`,c:C.violet,trend:"+3명",up:true},
           {icon:"🙏",label:"주일 1부 출석",val:`${nAttend}명`,sub:`출석률 ${attendPct}%`,c:C.emerald,trend:"+5%p",up:true},
           {icon:"💰",label:"확인 헌금",val:`₩${fmt(nOffer)}`,sub:`미확인 ${pendingCount}건`,c:C.gold,trend:"+12%",up:true},
           {icon:"📊",label:"예산 임박",val:`${budgetAlert}개 부서`,sub:"90% 이상 집행",c:C.rose,trend: budgetAlert?"주의":"양호",up:!budgetAlert},
         ].map(k=>(
-          <Card key={k.label} style={{padding:"18px 20px",position:"relative",overflow:"hidden"}}>
+          <Card key={k.label} className="erp-card-pad" style={{padding:"18px 20px",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,right:0,width:64,height:64,
               background:`radial-gradient(circle at top right,${k.c}22,transparent 70%)`}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -713,7 +779,7 @@ function DashboardTab({ members, offerings, attend, budgets }) {
       </div>
 
       {/* Highlights row */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:hiCols,gap:14}}>
         {[
           {icon:"⚡",title:"Excel 대비",desc:"수작업 입력 73% 감소",c:C.violet},
           {icon:"🔒",title:"보안 설계",desc:"RLS · 2인 승인 · 감사 로그",c:C.indigo},
@@ -2762,7 +2828,7 @@ function MobileViewTab({ members, offerings, budgets }) {
 
   const phoneUI = (
     <>
-          {/* 상태바 */}
+          {!isMobile && (
           <div style={{background:C.s1,padding:"10px 20px 6px",
             display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <span style={{color:C.muted,fontSize:10,fontFamily:F}}>9:41</span>
@@ -2770,16 +2836,16 @@ function MobileViewTab({ members, offerings, budgets }) {
               {["📶","🔋"].map(i=><span key={i} style={{fontSize:10}}>{i}</span>)}
             </div>
           </div>
+          )}
 
-          {/* 헤더 */}
-          <div style={{background:C.s1,padding:"12px 20px 10px",
+          <div style={{background:C.s1,padding:isMobile?"14px 16px 12px":"12px 20px 10px",
             borderBottom:`1px solid ${C.border}`,textAlign:"center"}}>
             <div style={{color:C.gold,fontSize:9,fontFamily:F,letterSpacing:2,marginBottom:2}}>사랑의교회</div>
             <div style={{color:C.text,fontSize:13,fontWeight:700,fontFamily:F}}>안녕하세요, {selMember}님 👋</div>
           </div>
 
           {/* 콘텐츠 */}
-          <div style={{padding:"16px 16px 80px",minHeight:isMobile?360:420}}>
+          <div style={{padding:isMobile?"14px 14px calc(72px + env(safe-area-inset-bottom, 0px))":"16px 16px 80px",minHeight:isMobile?280:420}}>
             {mobileTab==="home"&&(
               <div>
                 {/* 큰 버튼 3개 */}
@@ -2914,12 +2980,12 @@ function MobileViewTab({ members, offerings, budgets }) {
           <div style={{
             position:"absolute",bottom:0,left:0,right:0,
             background:C.s1,borderTop:`1px solid ${C.border}`,
-            display:"flex",padding:"8px 0 12px",
+            display:"flex",padding:isMobile?"6px 0 calc(8px + env(safe-area-inset-bottom, 0px))":"8px 0 12px",
           }}>
             {MOBILE_TABS.map(t=>(
-              <button key={t.k} onClick={()=>setMobileTab(t.k)} style={{
-                flex:1,background:"none",border:"none",cursor:"pointer",
-                display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+              <button key={t.k} onClick={()=>setMobileTab(t.k)} className="erp-nav-btn" style={{
+                flex:1,background:"none",border:"none",cursor:"pointer",minHeight:48,
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,
               }}>
                 <span style={{fontSize:18}}>{t.icon}</span>
                 <span style={{fontSize:9,fontFamily:F,
@@ -3009,10 +3075,10 @@ function MobileViewTab({ members, offerings, budgets }) {
 
       <div style={{display:"flex",justifyContent:"center",width:"100%"}}>
         <div style={{
-          width:"100%",maxWidth:isMobile?480:300,
-          background:"linear-gradient(180deg,#F8FAFD,#E2EAF4)",
-          border:isMobile?`1px solid ${C.border}`:`2px solid ${C.borderHi}`,
-          borderRadius:isMobile?16:32,
+          width:"100%",maxWidth:isMobile?"100%":300,
+          background:isMobile?C.s1:"linear-gradient(180deg,#F8FAFD,#E2EAF4)",
+          border:isMobile?"none":`2px solid ${C.borderHi}`,
+          borderRadius:isMobile?0:32,
           boxShadow:isMobile?"none":`0 24px 60px rgba(0,0,0,0.6)`,
           overflow:"hidden",position:"relative",
         }}>
@@ -3662,13 +3728,14 @@ function ChurchERPv5() {
 
         {isMobile && (
           <header style={{
-            position:"fixed",top:0,left:0,right:0,height:52,zIndex:8,
+            position:"fixed",top:0,left:0,right:0,zIndex:8,
             background:C.s1,borderBottom:`1px solid ${C.border}`,
-            display:"flex",alignItems:"center",padding:"0 14px",gap:10,
+            display:"flex",alignItems:"center",padding:"env(safe-area-inset-top, 0px) 14px 0",gap:10,
+            minHeight:"calc(52px + env(safe-area-inset-top, 0px))",
           }}>
-            <button onClick={()=>setMenuOpen(true)} aria-label="메뉴"
+            <button onClick={()=>setMenuOpen(true)} aria-label="메뉴" className="erp-nav-btn"
               style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,
-                width:36,height:36,cursor:"pointer",fontSize:16,fontFamily:F}}>☰</button>
+                width:44,height:44,cursor:"pointer",fontSize:18,fontFamily:F,flexShrink:0}}>☰</button>
             <div style={{flex:1,minWidth:0}}>
               <div style={{color:C.text,fontFamily:FB,fontSize:14,fontWeight:700,
                 overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{CHURCH_NAME}</div>
@@ -3689,7 +3756,7 @@ function ChurchERPv5() {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
               <div>
                 <div style={{color:C.gold,fontFamily:FB,fontSize:13,fontWeight:700,letterSpacing:1}}>CHURCH ERP</div>
-                <div style={{color:C.violet,fontSize:8,letterSpacing:3,fontFamily:F,marginTop:1}}>SaaS v5.4 MOBILE</div>
+                <div style={{color:C.violet,fontSize:8,letterSpacing:3,fontFamily:F,marginTop:1}}>SaaS v5.5 MOBILE+</div>
               </div>
               {isMobile && (
                 <button onClick={()=>setMenuOpen(false)} style={{
@@ -3745,7 +3812,7 @@ function ChurchERPv5() {
         {/* Main */}
         <main ref={mainRef} className="erp-main" style={{
           marginLeft:isMobile?0:200,flex:1,
-          padding:isMobile?"64px 14px 88px":24,
+          padding:isMobile?"calc(60px + env(safe-area-inset-top, 0px)) 12px calc(84px + env(safe-area-inset-bottom, 0px))":24,
           minHeight:"100vh",overflowX:"hidden",width:"100%",
         }}>
           {!isMobile ? (
@@ -3763,8 +3830,14 @@ function ChurchERPv5() {
             </div>
           </div>
           ) : (
-          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:14}}>
-            <Badge c={C.emerald}>실시간 저장</Badge>
+          <div style={{marginBottom:14}}>
+            <h1 style={{color:C.text,fontFamily:FB,fontSize:17,fontWeight:700,marginBottom:4}}>{curNav.label}</h1>
+            <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+              <Badge c={C.emerald}>실시간 저장</Badge>
+              <span style={{color:C.muted,fontSize:10,fontFamily:F}}>
+                {new Date().toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"short"})}
+              </span>
+            </div>
           </div>
           )}
           {content[tab]}
@@ -3774,24 +3847,27 @@ function ChurchERPv5() {
           <nav style={{
             position:"fixed",bottom:0,left:0,right:0,zIndex:8,
             background:C.s1,borderTop:`1px solid ${C.border}`,
-            display:"flex",padding:"6px 4px calc(6px + env(safe-area-inset-bottom, 0px))",
+            display:"flex",padding:"4px 2px calc(4px + env(safe-area-inset-bottom, 0px))",
+            boxShadow:"0 -4px 20px rgba(26,43,60,.06)",
           }}>
             {MOBILE_QUICK.map(n=>(
-              <button key={n.id} onClick={()=>goTab(n.id)} style={{
-                flex:1,background:"none",border:"none",cursor:"pointer",
-                display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 0",
+              <button key={n.id} onClick={()=>goTab(n.id)} className="erp-nav-btn" style={{
+                flex:1,background:tab===n.id?`${C.gold}12`:"none",border:"none",cursor:"pointer",
+                borderRadius:10,margin:"2px",minHeight:52,
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,
               }}>
-                <span style={{fontSize:17}}>{n.icon}</span>
-                <span style={{fontSize:9,fontFamily:F,
-                  color:tab===n.id?C.gold:C.muted,fontWeight:tab===n.id?700:400}}>{n.label}</span>
+                <span style={{fontSize:18}}>{n.icon}</span>
+                <span style={{fontSize:10,fontFamily:F,
+                  color:tab===n.id?C.gold:C.muted,fontWeight:tab===n.id?700:500}}>{n.label}</span>
               </button>
             ))}
-            <button onClick={()=>setMenuOpen(true)} style={{
-              flex:1,background:"none",border:"none",cursor:"pointer",
-              display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 0",
+            <button onClick={()=>setMenuOpen(true)} className="erp-nav-btn" style={{
+              flex:1,background:"none",border:"none",cursor:"pointer",minHeight:52,
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,
+              borderRadius:10,margin:"2px",
             }}>
-              <span style={{fontSize:17}}>☰</span>
-              <span style={{fontSize:9,fontFamily:F,color:C.muted}}>메뉴</span>
+              <span style={{fontSize:18}}>☰</span>
+              <span style={{fontSize:10,fontFamily:F,color:C.muted,fontWeight:500}}>메뉴</span>
             </button>
           </nav>
         )}
