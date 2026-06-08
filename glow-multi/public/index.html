@@ -1075,11 +1075,13 @@ tr:last-child td{border-bottom:none}
                 • 서비스는 <strong>6시간마다</strong> Peakerr 체크 · 삭제·저품질 자동 숨김<br>
                 • 신규 핫상품은 <strong>매주 일요일</strong> Peakerr에서 자동 추가<br>
                 • <strong>네이버·카카오·쿠팡</strong>은 Peakerr에 있을 때만 「아마zon·이커머스 스캔」으로 추가<br>
-                • 한국 SNS(인스타·유튜브 한국 타겟)는 기본 큐레이션 + 「🇰🇷 한국·Pinterest HQ」
+                • 한국 SNS(인스타·유튜브 한국 타겟)는 기본 큐레이션 + 「🇰🇷 한국·Pinterest HQ」<br>
+                • Peakerr 자동 추가 상품은 <strong>한글 상품명</strong>으로 등록 · GLOW·지인 사이트 <strong>동시</strong> 반영
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="bo bsm" onclick="manualSyncOrders()">🔄 주문 지금 동기화</button>
                 <button class="bo bsm" onclick="manualSyncServices()">📦 서비스 지금 체크</button>
+                <button class="bo bsm" onclick="localizeServiceNames()">🇰🇷 영문→한글 (전체 사이트)</button>
                 <button class="bo bsm" onclick="importHotPeakerrServices()">🔥 Peakerr 핫상품 추가</button>
                 <button class="bo bsm" onclick="importKrPinterestServices()">🇰🇷 한국·Pinterest HQ</button>
                 <button class="bo bsm" onclick="importNicheServices()">🛒 아마zon·이커머스 스캔</button>
@@ -2611,6 +2613,13 @@ async function importNicheServices(){
   loadSuperSvcs&&loadSuperSvcs();
 }
 
+async function localizeServiceNames(){
+  if(!confirm('영문 상품명을 한글로 바꿉니다.\nGLOW 본사 · no9story · 모든 지인 사이트에 동시 적용됩니다.\n\n계속할까요?'))return;
+  var el=ge('manualSyncRes');if(el)el.innerHTML='<span class="spin spin2"></span>한글화 중...';
+  var d=await api('/api/super/services/localize-names','POST',{});
+  if(el)el.innerHTML=d.ok?('<span style="color:#10B981">✅ '+(d.message||'완료')+'</span>'):('<span style="color:#EF4444">❌ '+(d.error||'실패')+'</span>');
+  if(d.ok){toast(d.message||'한글화 완료','ok');loadSuperServices();}
+}
 async function importHotPeakerrServices(){
   if(!confirm('Peakerr에서 HQ·Real·Non Drop 등 고품질 신규 상품만 골라 추가합니다.\n(유튜브·인스타·틱톡 등 플랫폼당 최대 5개 · 기존 상품 유지)\n\n계속할까요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>Peakerr 스캔 중...';

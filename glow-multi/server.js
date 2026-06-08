@@ -477,8 +477,8 @@ async function initDB() {
   )`); } catch(e) {}
   
   await repairAllPartnerSiteServices();
-  const nameFix = await repairEnglishServiceNames().catch(() => ({ count: 0 }));
-  if (nameFix.count > 0) console.log(`🇰🇷 영문 상품명 ${nameFix.count}건 한글화`);
+  const nameFix = await localizeAllSitesServiceNames().catch(() => ({ count: 0 }));
+  if (nameFix.count > 0) console.log(`🇰🇷 영문 상품명 ${nameFix.count}건 한글화 (GLOW·지인 사이트 전체)`);
   console.log('✅ DB 초기화 완료');
 }
 
@@ -1160,20 +1160,37 @@ function formatPeakerrServiceDescription(name, pl, fallback) {
   return desc.substring(0, 500);
 }
 
-/** API 자동등록(pk_/api_) 영문 상품명 일괄 한글화 */
+/** API 자동등록(pk_/api_) 영문 상품명 일괄 한글화 — GLOW·no9story 등 전 사이트 공통 DB */
 async function repairEnglishServiceNames() {
-  const r = await query(`SELECT id, name, pl, description FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  const r = await query(`
+    SELECT id, name, pl, description FROM services
+    WHERE (api_id IS NOT NULL AND api_id != '')
+       OR id LIKE 'pk_%' OR id LIKE 'api_%'
+  `);
   let count = 0;
   for (const row of r.rows) {
-    if (/[\uAC00-\uD7AF]/.test(row.name || '')) continue;
-    const newName = formatPeakerrServiceName(row.name, row.pl);
-    const newDesc = /[\uAC00-\uD7AF]/.test(row.description || '')
-      ? row.description
-      : formatPeakerrServiceDescription(row.name, row.pl, row.description);
-    await query(`UPDATE services SET name=$1, description=$2 WHERE id=$3`, [newName, newDesc, row.id]);
-    count++;
+    const nameNeedsFix = !/[\uAC00-\uD7AF]/.test(row.name || '');
+    const descNeedsFix = !/[\uAC00-\uD7AF]/.test(row.description || '');
+    if (!nameNeedsFix && !descNeedsFix) continue;
+    const newName = nameNeedsFix
+      ? formatPeakerrServiceName(row.name, row.pl)
+      : row.name;
+    const newDesc = descNeedsFix
+      ? formatPeakerrServiceDescription(row.name, row.pl, row.description)
+      : row.description;
+    if (newName !== row.name || newDesc !== row.description) {
+      await query(`UPDATE services SET name=$1, description=$2 WHERE id=$3`, [newName, newDesc, row.id]);
+      count++;
+    }
   }
   return { count };
+}
+
+/** 상품명 한글화 후 지인 사이트 site_services까지 동기화 */
+async function localizeAllSitesServiceNames() {
+  const localized = await repairEnglishServiceNames();
+  await repairAllPartnerSiteServices();
+  return localized;
 }
 
 /** Peakerr에서 HQ·Real 등 핫상품만 골라 DB에 추가 (기존 상품은 유지) */
@@ -1240,6 +1257,7 @@ async function importHotPeakerrServices(opts = {}) {
       await repairAllPartnerSiteServices();
       await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => {});
     }
+    await repairEnglishServiceNames();
   }
 
   return { ok: true, added, count: added.length, candidates: toAdd.length };
@@ -1408,6 +1426,7 @@ async function importNichePeakerrServices(opts = {}) {
       await repairAllPartnerSiteServices();
       await pruneServiceCatalog({ maxPerPlatform: 30, notify: false }).catch(() => {});
     }
+    await repairEnglishServiceNames();
   }
 
   if (notify && added.length && !dryRun) {
@@ -1556,6 +1575,7 @@ async function importKoreanAndPinterestServices(opts = {}) {
       await repairAllPartnerSiteServices();
       await pruneServiceCatalog({ maxPerPlatform: 32, notify: false }).catch(() => {});
     }
+    await repairEnglishServiceNames();
   }
 
   const korean = added.filter(a => a.isKr).length;
@@ -3238,6 +3258,7 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
       }
     }
     await repairAllPartnerSiteServices();
+    await repairEnglishServiceNames();
     res.json({ ok: true, count: data.length, added, updated });
   } catch(e) { res.json({ error: e.message }); }
 });
@@ -3531,6 +3552,17 @@ app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) =
       ? `한국 ${result.korean}개 · Pinterest ${result.pinterest}개 추가`
       : '추가할 한국·Pinterest HQ 상품 없음 (이미 등록 또는 Peakerr 미제공)';
     res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 🇰🇷 슈퍼관리자: 영문 상품명 → 한글 (GLOW·no9story 등 전 사이트 동시)
+app.post('/api/super/services/localize-names', requireSuperAdmin, async (req, res) => {
+  try {
+    const result = await localizeAllSitesServiceNames();
+    const msg = result.count > 0
+      ? `영문 상품 ${result.count}건 한글화 · GLOW·지인 사이트 전체 반영`
+      : '한글화할 영문 상품명 없음 (이미 한글)';
+    res.json({ ok: true, message: msg, count: result.count });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
