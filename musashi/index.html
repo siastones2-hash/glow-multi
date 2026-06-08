@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>인터네셔널 무사시 634 그룹 · 무사시골프채</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +57,9 @@ body.trinity-theme .brand-trinity{display:flex;}
 @media(max-width:900px){.prod-cat-grid{grid-template-columns:1fr;}.nav-divider{display:none;}}
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:'Sora','Noto Sans KR',sans-serif;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;overflow-x:hidden;word-break:keep-all;line-height:1.65;-webkit-font-smoothing:antialiased;}
+.en,.latin,.mono{font-family:'IBM Plex Mono',monospace;}
+.en-wide{letter-spacing:.12em;}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(800px circle at 20% 15%,rgba(77,124,255,.15),transparent 50%),radial-gradient(700px circle at 80% 70%,rgba(165,91,255,.12),transparent 50%);}
 body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55;background-image:linear-gradient(rgba(255,255,255,.016) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.016) 1px,transparent 1px);background-size:54px 54px;}
 .wrap{max-width:1280px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
@@ -77,14 +79,14 @@ nav.scrolled{background:rgba(10,11,16,.95);}
 .group-logo .num634{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px;background:linear-gradient(160deg,var(--gold-light),var(--gold),#9A7B1A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 24px rgba(201,162,39,.25);}
 .group-logo .musashi-name{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.28em;color:var(--text);margin-top:1px;}
 .brand-sub{font-size:9px;color:var(--muted);letter-spacing:.5px;display:block;margin-top:3px;font-weight:400;}
-.brand-text{font-size:11px;color:var(--muted);line-height:1.4;max-width:140px;}
+.brand-text{font-size:12px;color:var(--muted);line-height:1.55;max-width:148px;letter-spacing:0;}
 .asset-frame{border-radius:16px;overflow:hidden;border:1px solid var(--glass-bd);background:#111;}
 .asset-frame img{width:100%;display:block;}
 .asset-frame.no-overlay::after{display:none;}
 .group-intro{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin-top:40px;}
 @media(max-width:900px){.group-intro{grid-template-columns:1fr;}}
 .nav-links{display:flex;gap:6px;align-items:center;}
-.nav-links a{color:var(--muted);font-size:12px;padding:8px 14px;border-radius:8px;cursor:pointer;letter-spacing:.5px;transition:.2s;}
+.nav-links a{color:var(--muted);font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer;letter-spacing:0;transition:.2s;}
 .nav-links a:hover,.nav-links a.active{color:var(--text);}
 .nav-cta{color:#fff!important;background:linear-gradient(135deg,var(--cyan),var(--magenta))!important;}
 .hamburger{display:none;background:none;border:none;cursor:pointer;padding:8px;flex-direction:column;gap:5px;}
@@ -94,19 +96,19 @@ nav.menu-open .hamburger span:nth-child(2){opacity:0;}
 nav.menu-open .hamburger span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 .m-drawer{position:fixed;top:var(--nav-h);right:0;width:min(320px,88vw);height:calc(100vh - var(--nav-h));background:rgba(10,11,16,.98);border-left:1px solid var(--glass-bd);z-index:99;padding:20px;transform:translateX(100%);transition:.35s;display:flex;flex-direction:column;gap:6px;}
 .m-drawer.open{transform:translateX(0);}
-.m-drawer a{padding:14px 12px;border-radius:10px;color:var(--text);font-size:15px;cursor:pointer;}
+.m-drawer a{padding:14px 12px;border-radius:10px;color:var(--text);font-size:15px;cursor:pointer;min-height:48px;display:flex;align-items:center;}
 .m-drawer a:hover{background:rgba(57,230,255,.08);color:var(--cyan);}
 .m-backdrop{position:fixed;inset:0;top:var(--nav-h);background:rgba(0,0,0,.5);z-index:98;opacity:0;visibility:hidden;transition:.3s;}
 .m-backdrop.open{opacity:1;visibility:visible;}
-.btn{padding:14px 28px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;border:none;display:inline-block;letter-spacing:.5px;transition:.3s;text-align:center;}
+.btn{padding:14px 28px;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-block;letter-spacing:0;transition:.3s;text-align:center;}
 .btn-primary{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#fff;}
 .btn-primary:hover{box-shadow:0 0 36px rgba(255,0,110,.6);transform:translateY(-2px);}
 .btn-ghost{background:var(--glass);border:1px solid var(--glass-bd);color:var(--text);}
 .btn-ghost:hover{border-color:var(--cyan);}
 .btn-sm{padding:10px 18px;font-size:12px;}
-h1{font-weight:700;font-size:clamp(36px,6.5vw,72px);line-height:1.06;letter-spacing:-1.5px;}
-h2{font-weight:700;font-size:clamp(28px,4.5vw,52px);line-height:1.1;letter-spacing:-1px;}
-h3{font-weight:700;}
+h1{font-weight:700;font-size:clamp(36px,6.5vw,72px);line-height:1.25;letter-spacing:-0.02em;}
+h2{font-weight:700;font-size:clamp(28px,4.5vw,52px);line-height:1.3;letter-spacing:-0.02em;}
+h3{font-weight:700;line-height:1.4;}
 .grad{background:linear-gradient(120deg,var(--cyan),var(--magenta));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .sec-label{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;}
 section.pad{padding:72px 0;position:relative;z-index:2;}
@@ -132,13 +134,13 @@ section.pad{padding:72px 0;position:relative;z-index:2;}
 .marquee-content{display:flex;animation:marqueeScroll 28s linear infinite;white-space:nowrap;}
 .marquee-item{padding:0 36px;font-family:'IBM Plex Mono';font-size:13px;font-weight:600;letter-spacing:2px;flex-shrink:0;}
 .marquee-item:nth-child(odd){color:var(--text);}.marquee-item:nth-child(even){color:var(--cyan);}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:40px;}
 .stat-card{background:var(--glass);border:1px solid var(--glass-bd);border-radius:14px;padding:28px 20px;position:relative;transition:.3s;}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);border-radius:14px 14px 0 0;}
 .stat-card:hover{transform:translateY(-6px);border-color:rgba(57,230,255,.4);}
-.sc-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-bottom:8px;}
-.sc-val{font-size:38px;font-weight:700;font-family:'IBM Plex Mono';color:var(--cyan);}
-.sc-delta{font-size:11px;color:var(--green);margin-top:4px;font-family:'IBM Plex Mono';}
+.sc-label{font-size:12px;color:var(--muted);letter-spacing:0;margin-bottom:8px;font-weight:500;}
+.sc-val{font-size:38px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--cyan);}
+.sc-delta{font-size:12px;color:var(--green);margin-top:6px;letter-spacing:0;line-height:1.5;}
 .prod-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:32px;}
 .prod-card{background:var(--glass);border:1px solid var(--glass-bd);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;transition:.3s;}
 .prod-card:hover{border-color:var(--cyan);transform:translateY(-6px);}
@@ -207,7 +209,14 @@ section.pad{padding:72px 0;position:relative;z-index:2;}
 .contact-card .tel{color:var(--cyan);font-size:20px;font-weight:700;display:block;margin-top:8px;}
 .form-box{background:linear-gradient(135deg,rgba(77,124,255,.08),rgba(165,91,255,.06));border:1px solid var(--glass-bd);border-radius:16px;padding:36px;}
 .form-box label{display:block;font-size:11px;color:var(--cyan);font-weight:700;letter-spacing:1px;margin-bottom:8px;font-family:'IBM Plex Mono';}
-.form-box input,.form-box select,.form-box textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--glass-bd);color:var(--text);padding:12px 14px;border-radius:9px;font-family:inherit;font-size:14px;margin-bottom:16px;}
+.form-box input,.form-box select,.form-box textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--glass-bd);color:var(--text);padding:12px 14px;border-radius:9px;font-family:inherit;font-size:16px;margin-bottom:16px;-webkit-appearance:none;appearance:none;}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+.table-scroll::-webkit-scrollbar{height:6px;}
+.table-scroll::-webkit-scrollbar-thumb{background:var(--glass-bd);border-radius:3px;}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 8px;}
+.filter-row .btn-sm{min-height:40px;padding:10px 14px;}
+.touch-stack{display:flex;gap:12px;flex-wrap:wrap;}
+body.menu-open{overflow:hidden;}
 .form-box textarea{min-height:100px;resize:vertical;}
 .form-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6;}
 .site-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);z-index:300;background:rgba(10,11,16,.95);border:1px solid rgba(57,230,255,.45);color:var(--text);padding:16px 24px;border-radius:12px;font-size:14px;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:.4s;max-width:90vw;text-align:center;}
@@ -227,7 +236,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
 .foot-contact a:hover{text-decoration:underline;}
 .foot-links-row{display:flex;gap:56px;flex:1;justify-content:flex-end;}
 .foot-col{min-width:120px;}
-.foot-col h4{font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:14px;text-transform:uppercase;font-weight:600;}
+.foot-col h4{font-size:12px;color:var(--muted);letter-spacing:0;margin-bottom:14px;font-weight:600;}
 .foot-col ul{list-style:none;}
 .foot-col li{margin-bottom:10px;}
 .foot-col a,.foot-col .foot-tel{color:var(--text);font-size:13px;cursor:pointer;transition:.2s;text-decoration:none;display:inline;}
@@ -243,14 +252,63 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
 .img-clean::after{display:none;}
 .img-clean img{object-fit:contain;background:#fff;}
 @media(max-width:900px){
+  .nav-links{display:none;}
+  .hamburger{display:flex;flex-shrink:0;min-width:44px;min-height:44px;align-items:center;justify-content:center;}
+  .brand-text{display:none;}
+  .nav-inner{padding:10px 16px;gap:10px;}
+  .wrap{padding:0 16px;}
+  section.pad{padding:48px 0;}
+  .hero{padding:40px 0 28px;}
+  .hero p{font-size:15px;padding:0 4px;}
+  .hero-btns{flex-direction:column;align-items:stretch;max-width:360px;margin:0 auto;}
+  .hero-btns .btn{width:100%;min-height:48px;}
+  .stat-grid{grid-template-columns:1fr;gap:12px;margin-top:32px;}
+  .sc-val{font-size:32px;}
+  .stat-card{padding:22px 18px;}
   .brand-card{grid-template-columns:1fr;}
-  .stat-grid,.prod-grid{grid-template-columns:repeat(2,1fr);}
+  .prod-grid{grid-template-columns:repeat(2,1fr);}
   .use-grid,.feature-grid,.sys-grid,.model-grid,.membership-perks,.img-grid.g3,.img-grid.g4{grid-template-columns:1fr;}
   .img-grid.g2,.compare-row,.contact-grid{grid-template-columns:1fr;}
   .step-grid{grid-template-columns:1fr 1fr;}
-  .foot-main{flex-direction:column;gap:36px;}
+  .foot-main{flex-direction:column;gap:32px;}
   .foot-brand-col{flex:none;max-width:none;}
-  .foot-links-row{justify-content:flex-start;flex-wrap:wrap;gap:32px 48px;}
+  .foot-links-row{justify-content:flex-start;flex-wrap:wrap;gap:28px 40px;}
+  .prod-table{min-width:680px;font-size:13px;}
+  .prod-table th,.prod-table td{padding:12px 10px;}
+  .form-box{padding:24px 20px;}
+  .contact-card{padding:22px 20px;}
+  .promo-box,.franchise-cta,.membership-box{padding:32px 20px;margin:32px 0;}
+  .model-detail{margin:40px 0;padding-top:32px;}
+  .model-detail-head{flex-direction:column;align-items:flex-start;gap:12px;}
+  .franchise-grid{grid-template-columns:1fr;}
+  .group-intro{grid-template-columns:1fr;}
+  .prod-cat-grid{grid-template-columns:1fr;}
+  .assoc-grid{grid-template-columns:1fr;}
+  .pdetail-grid{grid-template-columns:1fr;}
+  .nav-divider{display:none;}
+  .touch-stack{flex-direction:column;}
+  .touch-stack .btn{width:100%;min-height:48px;}
+}
+@media(max-width:480px){
+  .group-logo .num634{font-size:22px;}
+  .group-logo .musashi-name{font-size:10px;letter-spacing:.2em;}
+  .trinity-logo{font-size:17px;}
+  h1{font-size:clamp(28px,8.5vw,40px);}
+  h2{font-size:clamp(22px,6.5vw,34px);}
+  .hero-slider{margin:32px 0;border-radius:14px;}
+  .step-grid{grid-template-columns:1fr;}
+  .foot-links-row{flex-direction:column;gap:24px;}
+  .foot-logos{flex-direction:column;align-items:flex-start;gap:10px;}
+  .foot-logo-div{width:48px;height:1px;}
+  .filter-row .btn-sm{flex:1 1 calc(50% - 4px);text-align:center;font-size:12px;}
+  .prod-grid{grid-template-columns:1fr;}
+  .site-toast{bottom:max(16px,env(safe-area-inset-bottom));left:16px;right:16px;transform:translateY(120px);max-width:none;}
+  .site-toast.show{transform:translateY(0);}
+  footer{padding-bottom:calc(28px + env(safe-area-inset-bottom));}
+  .m-drawer{padding-bottom:calc(20px + env(safe-area-inset-bottom));}
+}
+@media(hover:none){
+  .stat-card:hover,.prod-card:hover,.model-card:hover,.assoc-card:hover,.partner-card:hover{transform:none;}
 }
 </style>
 </head>
@@ -362,7 +420,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
     <div class="sec-label">Musashi Golf Clubs</div>
     <h2>무사시골프채 <span class="grad">10시리즈</span></h2>
     <p style="color:var(--muted);margin-top:12px;max-width:620px;line-height:1.75;">프리미엄 · 스탠다드 · 우먼스 · 입문 · 용품 — 일본 제조 10개 브랜드 라인업</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:28px 0 8px;">
+    <div class="filter-row">
       <button onclick="filterProducts('all')" class="filter-btn btn btn-primary btn-sm">전체</button>
       <button onclick="filterProducts('premium')" class="filter-btn btn btn-ghost btn-sm">프리미엄</button>
       <button onclick="filterProducts('iron')" class="filter-btn btn btn-ghost btn-sm">아이언·세트</button>
@@ -371,11 +429,13 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
       <button onclick="filterProducts('beginner')" class="filter-btn btn btn-ghost btn-sm">입문·퍼터</button>
       <button onclick="filterProducts('goods')" class="filter-btn btn btn-ghost btn-sm">용품·액세서리</button>
     </div>
-    <table class="prod-table reveal" id="productsTable">
+    <div class="table-scroll reveal">
+    <table class="prod-table" id="productsTable">
       <thead><tr><th>No</th><th>브랜드</th><th>분류</th><th>제품군</th><th>설명</th></tr></thead>
       <tbody id="productsTableBody"></tbody>
     </table>
-    <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:40px;font-family:'IBM Plex Mono';">브랜드명 클릭 → 상세 페이지</p>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px;">브랜드명 클릭 → 상세 페이지</p>
   </div></section>
 </div>
 
@@ -798,7 +858,7 @@ let currentProduct=null;
 function navGoProduct(id){currentProduct=products.find(p=>p.id===id);if(!currentProduct){navGo('products');return;}renderProductDetail();showPage('pdetail');}
 function renderProductDetail(){
   const p=currentProduct;if(!p)return;
-  document.getElementById('pdetailRoot').innerHTML=`<div class="pdetail-hero reveal on"><span class="back" onclick="navGo('products')">← 라인업으로</span><div class="sec-label">${String(p.no).padStart(2,'0')} · ${p.catLabel}</div><h1>${p.n}</h1><div class="pdetail-meta"><span class="pdetail-tag">${p.catLabel}</span><span class="pdetail-tag">${p.items}</span><span class="pdetail-tag">${p.origin}</span></div><p style="color:var(--muted);max-width:640px;line-height:1.85;font-size:16px;">${p.desc}</p></div><div class="pdetail-grid reveal on"><div class="pdetail-box"><h3>Features</h3><ul>${p.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${p.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div><div style="margin-top:32px;display:flex;gap:12px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="navGo('contact')">이 브랜드 문의</button><button class="btn btn-ghost" onclick="navGo('products')">다른 시리즈 보기</button></div>`;
+  document.getElementById('pdetailRoot').innerHTML=`<div class="pdetail-hero reveal on"><span class="back" onclick="navGo('products')">← 라인업으로</span><div class="sec-label">${String(p.no).padStart(2,'0')} · ${p.catLabel}</div><h1>${p.n}</h1><div class="pdetail-meta"><span class="pdetail-tag">${p.catLabel}</span><span class="pdetail-tag">${p.items}</span><span class="pdetail-tag">${p.origin}</span></div><p style="color:var(--muted);max-width:640px;line-height:1.85;font-size:16px;">${p.desc}</p></div><div class="pdetail-grid reveal on"><div class="pdetail-box"><h3>Features</h3><ul>${p.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${p.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div><div class="touch-stack" style="margin-top:32px;"><button class="btn btn-primary" onclick="navGo('contact')">이 브랜드 문의</button><button class="btn btn-ghost" onclick="navGo('products')">다른 시리즈 보기</button></div>`;
 }
 function navGo(id){closeMenu();showPage(id);}
 function showPage(id){
@@ -823,8 +883,8 @@ function filterProducts(t){filt=t;document.querySelectorAll('.filter-btn').forEa
 renderProducts();renderHomeCats();
 function toast(msg){const t=document.getElementById('siteToast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
 function handleSubmit(e,brand){e.preventDefault();toast('문의가 접수되었습니다. 담당자가 연락드리겠습니다.');e.target.reset();}
-function toggleMenu(){document.getElementById('nav').classList.toggle('menu-open');document.getElementById('mDrawer').classList.toggle('open');document.getElementById('mBackdrop').classList.toggle('open');}
-function closeMenu(){document.getElementById('nav').classList.remove('menu-open');document.getElementById('mDrawer').classList.remove('open');document.getElementById('mBackdrop').classList.remove('open');}
+function toggleMenu(){const open=document.getElementById('nav').classList.toggle('menu-open');document.getElementById('mDrawer').classList.toggle('open');document.getElementById('mBackdrop').classList.toggle('open');document.body.classList.toggle('menu-open',open);}
+function closeMenu(){document.getElementById('nav').classList.remove('menu-open');document.getElementById('mDrawer').classList.remove('open');document.getElementById('mBackdrop').classList.remove('open');document.body.classList.remove('menu-open');}
 const glow=document.getElementById('mouseGlow');
 document.addEventListener('mousemove',e=>{document.body.classList.add('mouse-active');glow.style.left=(e.clientX-140)+'px';glow.style.top=(e.clientY-140)+'px';});
 document.addEventListener('mouseleave',()=>document.body.classList.remove('mouse-active'));
