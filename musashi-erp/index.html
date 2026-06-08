@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUSASHI ERP · 골프 클럽 통합 관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a2420; --paper:#f6f8f7; --card:#ffffff;
+  --green:#1f4d36; --green-d:#143527; --green-l:#2e6e4e;
+  --gold:#b8893b; --gold-l:#d4a85a;
+  --line:#e8ebe9; --muted:#7c857f; --red:#b1402f; --blue:#33597a;
+  --shadow:0 1px 2px rgba(20,40,30,.06),0 8px 24px rgba(20,40,30,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5}
+.serif{font-family:'Noto Serif KR',serif}
+#app{display:flex;min-height:100vh}
+
+/* Sidebar */
+.side{width:240px;background:#ffffff;color:var(--ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0;border-right:1px solid var(--line)}
+.brand{padding:22px 22px 16px;border-bottom:1px solid var(--line)}
+.brand .logo{display:flex;align-items:center;gap:11px}
+.brand .mark{width:38px;height:38px;border:1.5px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-family:'Noto Serif KR',serif;font-weight:900;font-size:19px;flex-shrink:0}
+.brand h1{font-family:'Noto Serif KR',serif;font-size:21px;font-weight:900;letter-spacing:2px;color:var(--green-d)}
+.brand .sub{font-size:10.5px;letter-spacing:3px;color:var(--gold);margin-top:2px;text-transform:uppercase}
+.nav{padding:8px 12px;flex:1;overflow-y:auto}
+.nav-sec{font-size:10px;letter-spacing:1.5px;color:#aab0ac;text-transform:uppercase;padding:13px 12px 5px;font-weight:700}
+.nav a{display:flex;align-items:center;gap:11px;padding:8px 12px;border-radius:9px;color:#4a534d;cursor:pointer;font-weight:500;font-size:13px;transition:.15s;border:1px solid transparent}
+.nav a:hover{background:#f3f5f3;color:var(--green)}
+.nav a.on{background:rgba(31,77,54,.09);color:var(--green-d);border-color:rgba(31,77,54,.18);font-weight:700}
+.nav a .ic{width:18px;text-align:center;font-size:14px}
+.side .foot{padding:12px 20px;font-size:11px;color:#aab0ac;border-top:1px solid var(--line)}
+
+/* Main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:var(--card);border-bottom:1px solid var(--line);padding:15px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.top h2{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700}
+.top .crumb{font-size:11.5px;color:var(--muted);margin-top:2px}
+.content{padding:24px 28px 60px;max-width:1320px;width:100%}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold)}
+.kpi .k-lab{font-size:11.5px;color:var(--muted)}
+.kpi .k-val{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;margin-top:5px;letter-spacing:-.5px}
+.kpi .k-val small{font-size:14px;font-weight:500;color:var(--muted)}
+.kpi .k-sub{font-size:11px;color:var(--green-l);margin-top:3px;font-weight:500}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+.card-h{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-h h3{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700}
+.card-b{padding:18px 20px}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.3px;color:var(--muted);text-transform:uppercase;padding:10px 12px;border-bottom:1.5px solid var(--line);white-space:nowrap;font-weight:700}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#faf9f5}
+.t-wrap{overflow-x:auto}
+.t-num{text-align:right;font-variant-numeric:tabular-nums}
+.t-name{font-weight:700}
+.t-sub{font-size:11px;color:var(--muted)}
+
+/* Buttons / form */
+.btn{border:none;cursor:pointer;font-family:inherit;font-weight:700;border-radius:9px;padding:9px 15px;font-size:13px;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--green);color:#fff}.btn-p:hover{background:var(--green-l)}
+.btn-g{background:var(--gold);color:#fff}.btn-g:hover{background:var(--gold-l)}
+.btn-o{background:transparent;border:1px solid var(--line);color:var(--ink)}.btn-o:hover{border-color:var(--green);color:var(--green)}
+.btn-sm{padding:6px 11px;font-size:12px;border-radius:7px}
+.btn-x{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;padding:4px 7px;border-radius:6px}
+.btn-x:hover{background:#f0eee6;color:var(--red)}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:13.5px;background:#fff;color:var(--ink)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green-l);box-shadow:0 0 0 3px rgba(46,110,78,.12)}
+.f-row{display:grid;gap:12px}
+.f2{grid-template-columns:1fr 1fr}.f3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:560px){.f2,.f3{grid-template-columns:1fr}}
+
+/* Badge */
+.bdg{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.bdg-new{background:#e3f0e8;color:var(--green)}
+.bdg-used{background:#f3ead8;color:var(--gold)}
+.bdg-b2c{background:#e6eef5;color:var(--blue)}
+.bdg-b2b{background:#efe7f0;color:#7a4a7e}
+.bdg-ok{background:#e3f0e8;color:var(--green)}
+.bdg-wait{background:#fbf0d8;color:#9a7320}
+.bdg-prog{background:#e6eef5;color:var(--blue)}
+.bdg-low{background:#f6e0db;color:var(--red)}
+.bdg-in{background:#e3f0e8;color:var(--green)}
+.bdg-out{background:#f6e0db;color:var(--red)}
+.grade{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;font-weight:700;font-size:11px;color:#fff}
+
+/* Modal */
+.ov{position:fixed;inset:0;background:rgba(20,30,25,.5);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:34px 16px;overflow-y:auto}
+.ov.on{display:flex}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:720px;box-shadow:0 24px 70px rgba(0,0,0,.3);animation:pop .2s ease}
+@keyframes pop{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.modal-h{padding:17px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modal-h h3{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700}
+.modal-b{padding:22px;max-height:68vh;overflow-y:auto}
+.modal-f{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.close{background:none;border:none;font-size:24px;color:var(--muted);cursor:pointer;line-height:1}
+
+/* misc */
+.empty{text-align:center;padding:46px 20px;color:var(--muted)}
+.empty .e-ic{font-size:36px;opacity:.4;margin-bottom:8px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.search{border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-family:inherit;font-size:13px;min-width:160px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted)}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-lab{width:120px;font-size:12.5px;font-weight:600;flex-shrink:0;text-align:right}
+.bar-track{flex:1;height:22px;background:#eef1ee;border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-l));border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:11px;font-weight:700;min-width:32px}
+.li-row{display:grid;grid-template-columns:1fr 70px 100px 90px 30px;gap:8px;align-items:end;margin-bottom:8px}
+@media(max-width:560px){.li-row{grid-template-columns:1fr 1fr}}
+.tot-box{background:#f7f9f7;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-top:8px}
+.tot-line{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.tot-line.big{font-size:17px;font-weight:700;font-family:'Noto Serif KR',serif;border-top:1px dashed var(--line);margin-top:6px;padding-top:9px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:4px}
+.pill-link{font-weight:700;color:var(--green);cursor:pointer}.pill-link:hover{text-decoration:underline}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:5px;background:#eef1ee;color:#5a635c}
+
+/* Invoice preview */
+.inv{font-family:'Noto Sans KR',sans-serif;color:#1a2420}
+.inv h2{font-family:'Noto Serif KR',serif;text-align:center;font-size:22px;letter-spacing:6px;margin-bottom:14px}
+.inv .row{display:flex;gap:14px;margin-bottom:14px}
+.inv .box{flex:1;border:1px solid #cfd4d0;border-radius:8px;padding:11px 13px;font-size:12.5px}
+.inv .box b{display:block;font-size:11px;color:#7c857f;margin-bottom:5px}
+.inv table{font-size:12px;border:1px solid #cfd4d0}
+.inv th,.inv td{border:1px solid #e2e6e2;padding:8px 9px}
+.inv .tot{text-align:right;font-size:16px;font-weight:700;margin-top:12px;font-family:'Noto Serif KR',serif}
+@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{position:absolute;left:0;top:0;width:100%;padding:24px}}
+#printArea{display:none}
+#toast{position:fixed;bottom:24px;right:24px;z-index:200;background:var(--green-d);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;max-width:320px}
+#toast.on{opacity:1;transform:none}
+.nav-toggle{display:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:18px;margin-right:8px}
+.nav-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40}
+@media(max-width:900px){
+  .nav-toggle{display:inline-flex}
+  .side{position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);transition:.25s;box-shadow:var(--shadow)}
+  .side.open{transform:none}
+  .nav-backdrop.on{display:block}
+  .content{padding:18px 16px 48px}
+  .top{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">
+        <div class="mark serif">武</div>
+        <div><h1>MUSASHI</h1><div class="sub">Golf Club ERP</div></div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-sec">현황</div>
+      <a data-v="dash" class="on"><span class="ic">◎</span>대시보드</a>
+      <div class="nav-sec">영업</div>
+      <a data-v="quotes"><span class="ic">▱</span>견적서</a>
+      <a data-v="sales"><span class="ic">▤</span>판매·주문</a>
+      <a data-v="returns"><span class="ic">↺</span>반품·교환</a>
+      <a data-v="purchases"><span class="ic">▦</span>매입·입고</a>
+      <div class="nav-sec">재고</div>
+      <a data-v="products"><span class="ic">⛳</span>상품·재고</a>
+      <a data-v="used"><span class="ic">♺</span>중고매입·위탁</a>
+      <a data-v="ledger"><span class="ic">≡</span>입출고 수불부</a>
+      <div class="nav-sec">고객·정산</div>
+      <a data-v="partners"><span class="ic">◳</span>거래처</a>
+      <a data-v="members"><span class="ic">★</span>회원·포인트</a>
+      <a data-v="ar"><span class="ic">₩</span>미수금·수금</a>
+      <a data-v="invoices"><span class="ic">▣</span>세금계산서</a>
+      <div class="nav-sec">서비스</div>
+      <a data-v="fittings"><span class="ic">⚑</span>피팅 관리</a>
+      <a data-v="repairs"><span class="ic">⚒</span>AS·수리</a>
+      <div class="nav-sec">분석</div>
+      <a data-v="stats"><span class="ic">▥</span>매출 통계</a>
+      <div class="nav-sec">관리자</div>
+      <a data-v="staff"><span class="ic">⚇</span>직원 관리</a>
+      <a data-v="settings"><span class="ic">⚙</span>환경설정</a>
+      <a data-v="backup"><span class="ic">⤓</span>데이터 백업</a>
+    </nav>
+    <div class="foot">武蔵 · v2.2</div>
+  </aside>
+  <div class="nav-backdrop" id="navBackdrop" onclick="closeNav()"></div>
+
+  <main class="main">
+    <header class="top">
+      <div style="display:flex;align-items:flex-start;gap:4px;min-width:0">
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="메뉴" onclick="toggleNav()">☰</button>
+        <div><h2 id="ttl">대시보드</h2><div class="crumb" id="crumb"></div></div>
+      </div>
+      <div class="toolbar" id="topActions"></div>
+    </header>
+    <div class="content" id="view"></div>
+  </main>
+</div>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div id="printArea"></div>
+<div id="toast" role="status"></div>
+
+<script>
+/* ============ DATA LAYER ============ */
+const K='musashi_';
+const fmt=n=>(Math.round(n||0)).toLocaleString('ko-KR');
+const won=n=>'₩'+fmt(n);
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const today=()=>new Date().toISOString().slice(0,10);
+const load=(k,d)=>{try{const v=localStorage.getItem(K+k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>localStorage.setItem(K+k,JSON.stringify(v));
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const STORES=['products','partners','sales','purchases','members','fittings','repairs','quotes','returns','payments','invoices','ledger','staff'];
+const DATA_VERSION='2.2';
+const DB={};
+STORES.forEach(s=>DB[s]=load(s,null));
+DB.settings=load('settings',null);
+function persist(t){save(t,DB[t])}
+/* 버전만 갱신 — 실데이터 보존 (강제 초기화는 백업 화면에서만) */
+if(localStorage.getItem(K+'ver')!==DATA_VERSION){
+  localStorage.setItem(K+'ver',DATA_VERSION);
+}
+
+/* ---- seed ---- */
+function seed(){
+  if(DB.products) return;
+  DB.settings={company:'무사시 골프 (MUSASHI GOLF)',ceo:'대표이사',bizNo:'123-45-67890',addr:'인천 연수구 송도과학로 0',tel:'032-000-0000',email:'sales@musashi-golf.kr',pointRate:5,vatRate:10,lowStockThreshold:2};
+  DB.products=[
+    {id:uid('p'),brand:'MUSASHI',model:'MB-01 단조 드라이버',category:'드라이버',condition:'신품',grade:'',shaft:'MSI Tour 60',flex:'S',loft:'10.5',lie:'58',length:'45.75',grip:'순정',hand:'우',serial:'MSI-D-001',cost:430000,retail:690000,wholesale:560000,stock:8,location:'A-01',memo:'자체 브랜드'},
+    {id:uid('p'),brand:'Titleist',model:'T150 아이언세트 (5-P)',category:'아이언세트',condition:'신품',grade:'',shaft:'AMT Tour White',flex:'S',loft:'',lie:'',length:'',grip:'Tour Velvet',hand:'우',serial:'TT-T150-S5P',cost:980000,retail:1450000,wholesale:1190000,stock:3,location:'B-04',memo:'5번~P 7개'},
+    {id:uid('p'),brand:'Scotty Cameron',model:'Newport 2 퍼터',category:'퍼터',condition:'중고',grade:'A',shaft:'스틸',flex:'',loft:'3.5',lie:'70',length:'34',grip:'Pistol',hand:'우',serial:'SC-NP2-77',cost:280000,retail:480000,wholesale:400000,stock:1,location:'C-02',memo:'헤드 미세 사용감',acquire:'사입'},
+    {id:uid('p'),brand:'TaylorMade',model:'Stealth2 페어웨이우드 3W',category:'페어웨이우드',condition:'신품',grade:'',shaft:'Ventus Red',flex:'SR',loft:'15',lie:'',length:'43',grip:'순정',hand:'우',serial:'TM-ST2-3W',cost:330000,retail:520000,wholesale:420000,stock:4,location:'A-05',memo:''},
+    {id:uid('p'),brand:'Callaway',model:'Jaws Raw 웨지 56°',category:'웨지',condition:'신품',grade:'',shaft:'DG S200',flex:'S',loft:'56',lie:'64',length:'35.25',grip:'순정',hand:'우',serial:'CW-JAWS-56',cost:130000,retail:210000,wholesale:170000,stock:2,location:'B-09',memo:''},
+    {id:uid('p'),brand:'PING',model:'G430 유틸리티 4번',category:'유틸리티',condition:'중고',grade:'B',shaft:'PING TFC',flex:'R',loft:'22',lie:'',length:'39',grip:'순정',hand:'좌',serial:'PG-G430-U4L',cost:150000,retail:260000,wholesale:215000,stock:1,location:'C-07',memo:'좌타, 그립 교체 권장',acquire:'위탁',owner:'정세라',settle:200000,settled:false},
+  ];
+  DB.partners=[
+    {id:uid('c'),type:'사업자',name:'그린프로샵 (송도점)',bizNo:'214-81-55021',contact:'박상무',phone:'010-2345-6789',email:'green@shop.kr',channel:'도매',credit:5000000,memo:'월말 정산'},
+    {id:uid('c'),type:'사업자',name:'버디골프 아울렛',bizNo:'120-86-77310',contact:'이점장',phone:'010-9876-5432',email:'birdie@golf.kr',channel:'도매',credit:3000000,memo:''},
+    {id:uid('c'),type:'소비자',name:'김도윤',bizNo:'',contact:'',phone:'010-1111-2222',email:'',channel:'소매',credit:0,memo:'단골, 좌타'},
+  ];
+  DB.members=[
+    {id:uid('m'),name:'김도윤',phone:'010-1111-2222',grade:'GOLD',points:34000,join:'2024-03-12',memo:'좌타 / 드라이버 관심'},
+    {id:uid('m'),name:'정세라',phone:'010-3333-4444',grade:'SILVER',points:8200,join:'2024-09-01',memo:''},
+    {id:uid('m'),name:'한지훈',phone:'010-5555-6666',grade:'VIP',points:121000,join:'2023-06-20',memo:'풀세트 피팅'},
+  ];
+  DB.staff=[
+    {id:uid('e'),name:'이현석',role:'대표',phone:'010-0000-0001',hire:'2022-01-02',status:'재직',access:'전체',memo:''},
+    {id:uid('e'),name:'박판매',role:'판매팀장',phone:'010-0000-0002',hire:'2023-05-10',status:'재직',access:'영업/고객',memo:''},
+    {id:uid('e'),name:'최수리',role:'수리기사',phone:'010-0000-0003',hire:'2024-02-01',status:'재직',access:'서비스',memo:'리샤프트 전담'},
+  ];
+  const p=DB.products;
+  DB.sales=[
+    {id:uid('s'),date:today(),channel:'소매',partner:'김도윤',memberId:DB.members[0].id,staff:'박판매',items:[{name:p[0].brand+' '+p[0].model,qty:1,price:690000}],total:690000,payment:'카드',status:'완료',memo:''},
+    {id:uid('s'),date:today(),channel:'도매',partner:'그린프로샵 (송도점)',memberId:'',staff:'박판매',items:[{name:p[3].brand+' '+p[3].model,qty:3,price:420000},{name:p[4].brand+' '+p[4].model,qty:2,price:170000}],total:1600000,payment:'외상',status:'미수',memo:'월말 정산'},
+  ];
+  DB.purchases=[{id:uid('pu'),date:today(),supplier:'한국골프상사',items:[{name:'MUSASHI MB-01 드라이버',qty:8,price:430000}],total:3440000,status:'입고완료',memo:''}];
+  DB.quotes=[{id:uid('q'),date:today(),partner:'버디골프 아울렛',channel:'도매',items:[{name:'Callaway Jaws Raw 웨지 56°',qty:10,price:170000}],total:1700000,status:'견적',memo:'납기 협의중'}];
+  DB.fittings=[{id:uid('f'),date:today(),customer:'한지훈',memberId:DB.members[2].id,height:'178',hand:'우',swing:'중상급',headspeed:'44',rec:'드라이버 10.5° / S플렉스 / 45.5인치 / 라이각 58°',memo:'아이언 1° 업라이트 권장'}];
+  DB.repairs=[
+    {id:uid('r'),date:today(),customer:'정세라',memberId:DB.members[1].id,item:'TaylorMade 드라이버',type:'그립교체',status:'진행중',cost:25000,memo:'미드사이즈'},
+    {id:uid('r'),date:today(),customer:'김도윤',memberId:DB.members[0].id,item:'아이언 7번',type:'리샤프트',status:'접수',cost:80000,memo:'카본→스틸'},
+  ];
+  DB.payments=[]; DB.returns=[]; DB.invoices=[];
+  DB.ledger=[
+    {id:uid('l'),date:today(),type:'입고',product:'MUSASHI MB-01 드라이버',qty:8,ref:'매입(한국골프상사)'},
+    {id:uid('l'),date:today(),type:'출고',product:'MUSASHI MB-01 드라이버',qty:1,ref:'판매(김도윤)'},
+    {id:uid('l'),date:today(),type:'출고',product:'TaylorMade Stealth2 3W',qty:3,ref:'판매(그린프로샵)'},
+  ];
+  STORES.forEach(persist); persist('settings');
+}
+seed();
+/* 안전장치: 비어있는 저장소 보정 */
+STORES.forEach(s=>{if(!Array.isArray(DB[s])){DB[s]=[];persist(s)}});
+if(!DB.settings){DB.settings={company:'무사시 골프 (MUSASHI GOLF)',ceo:'대표이사',bizNo:'',addr:'',tel:'',email:'',pointRate:5,vatRate:10,lowStockThreshold:2};persist('settings')}
+if(DB.settings.lowStockThreshold==null)DB.settings.lowStockThreshold=2;
+
+/* ============ HELPERS ============ */
+let _toastT;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove('on'),2800)}
+function toggleNav(){document.querySelector('.side').classList.toggle('open');document.getElementById('navBackdrop').classList.toggle('on')}
+function closeNav(){document.querySelector('.side').classList.remove('open');document.getElementById('navBackdrop').classList.remove('on')}
+function lowStockLimit(){return Math.max(0,+DB.settings.lowStockThreshold||2)}
+function logStock(type,product,qty,ref){
+  DB.ledger.push({id:uid('l'),date:today(),type,product,qty:+qty||0,ref:ref||''});
+  persist('ledger');
+}
+function findProductByName(name){return DB.products.find(p=>`${p.brand} ${p.model}`===name)}
+function findProductById(id){return DB.products.find(p=>p.id===id)}
+function adjustStock(productName,qtyDelta,ref){
+  const p=findProductByName(productName);if(!p)return;
+  p.stock=Math.max(0,(+p.stock||0)+qtyDelta);
+  logStock(qtyDelta>0?'입고':'출고',productName,Math.abs(qtyDelta),ref);
+  persist('products');
+}
+function checkStockLines(lines,getId){
+  for(const l of lines){
+    const id=getId(l);if(!id)continue;
+    const p=findProductById(id);const q=+l.qty||1;
+    if(p&&(+p.stock||0)<q)return `${p.brand} ${p.model}: 재고 ${p.stock} (필요 ${q})`;
+  }
+  return null;
+}
+function reverseSaleStock(s){
+  (s.items||[]).forEach(i=>adjustStock(i.name,+i.qty,'판매삭제('+(s.partner||'')+')'));
+}
+function reversePurchaseStock(pu){
+  (pu.items||[]).forEach(i=>adjustStock(i.name,-i.qty,'매입삭제('+(pu.supplier||'')+')'));
+}
+function reverseReturnStock(r){
+  adjustStock(r.itemName,-r.qty,'반품삭제');
+}
+function reconcilePartnerAR(partner){
+  if(!partner)return;
+  let rem=DB.payments.filter(p=>p.partner===partner).reduce((a,p)=>a+p.amount,0);
+  DB.sales.filter(s=>s.partner===partner&&s.payment==='외상').sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
+    s.status='미수';
+    if(rem>=s.total){rem-=s.total;s.status='완료'}
+  });
+  persist('sales');
+}
+function partnerOutstanding(name){
+  const billed=DB.sales.filter(s=>s.partner===name&&s.status==='미수').reduce((a,s)=>a+s.total,0);
+  const paid=DB.payments.filter(p=>p.partner===name).reduce((a,p)=>a+p.amount,0);
+  return billed-paid;
+}
+function partnerSelectHtml(id,selected,allowEmpty){
+  const opts=(allowEmpty!==false?'<option value="">— 선택 —</option>':'')+DB.partners.map(c=>`<option value="${esc(c.name)}" ${c.name===selected?'selected':''}>${esc(c.name)} (${c.channel})</option>`).join('');
+  return `<select id="${id}" class="partner-sel" onchange="const t=document.getElementById('${id}_txt');if(t)t.value=this.value?this.options[this.selectedIndex].text.split(' (')[0]:''">${opts}</select>`;
+}
+function memberPickName(sel){
+  const o=sel.options[sel.selectedIndex];return o&&o.value?o.textContent.split(' (')[0]:'';
+}
+function statusBdg(s){const m={'완료':'bdg-ok','미수':'bdg-low','입고완료':'bdg-ok','진행중':'bdg-prog','접수':'bdg-wait','발행':'bdg-ok','견적':'bdg-wait','주문전환':'bdg-ok','반품':'bdg-low','교환':'bdg-prog'};return `<span class="bdg ${m[s]||'bdg-wait'}">${esc(s)}</span>`}
+function emptyRow(c){return `<tr><td colspan="${c}" class="empty" style="padding:28px">데이터가 없습니다</td></tr>`}
+
+/* ============ VIEW ENGINE ============ */
+const VIEW=document.getElementById('view'),TTL=document.getElementById('ttl'),CRUMB=document.getElementById('crumb'),ACT=document.getElementById('topActions');
+const META={
+  dash:['대시보드','오늘의 영업 현황'],quotes:['견적서','견적 작성 및 주문 전환'],sales:['판매·주문','소매/도매 판매 등록'],
+  returns:['반품·교환','반품/교환 접수 및 재입고'],purchases:['매입·입고','상품 매입 및 입고'],
+  products:['상품·재고','클럽 스펙·재고 관리'],used:['중고매입·위탁','사입/보상판매/위탁 관리'],ledger:['입출고 수불부','재고 입출고 이력'],
+  partners:['거래처','소비자·사업자 관리'],members:['회원·포인트','회원 등급/포인트'],ar:['미수금·수금','거래처 외상/수금 정산'],
+  invoices:['세금계산서','세금계산서·거래명세서 발행'],fittings:['피팅 관리','커스텀 피팅 이력'],repairs:['AS·수리','수리 접수 관리'],
+  stats:['매출 통계','채널·카테고리·담당자 분석'],staff:['직원 관리','직원·권한 관리'],settings:['환경설정','회사정보/적립률/부가세'],backup:['데이터 백업','내보내기·복원·초기화'],
+};
+const ROUTER={dash:rDash,quotes:rQuotes,sales:rSales,returns:rReturns,purchases:rPurchases,products:rProducts,used:rUsed,ledger:rLedger,partners:rPartners,members:rMembers,ar:rAR,invoices:rInvoices,fittings:rFittings,repairs:rRepairs,stats:rStats,staff:rStaff,settings:rSettings,backup:rBackup};
+document.getElementById('nav').addEventListener('click',e=>{const a=e.target.closest('a[data-v]');if(a)go(a.dataset.v)});
+function go(v){
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
+  TTL.textContent=META[v][0];CRUMB.textContent=META[v][1];ACT.innerHTML='';
+  closeNav();
+  ROUTER[v]();window.scrollTo(0,0);
+}
+
+/* ---------- DASHBOARD ---------- */
+function rDash(){
+  const t=today(),mo=t.slice(0,7);
+  const units=DB.products.reduce((s,p)=>s+(+p.stock||0),0);
+  const val=DB.products.reduce((s,p)=>s+(+p.stock||0)*(+p.cost||0),0);
+  const salesAll=DB.sales.reduce((s,x)=>s+x.total,0);
+  const salesToday=DB.sales.filter(s=>s.date===t).reduce((s,x)=>s+x.total,0);
+  const salesMonth=DB.sales.filter(s=>(s.date||'').slice(0,7)===mo).reduce((s,x)=>s+x.total,0);
+  const due=[...new Set(DB.sales.map(s=>s.partner))].reduce((a,n)=>a+Math.max(0,partnerOutstanding(n)),0);
+  const lim=lowStockLimit();
+  const lows=DB.products.filter(p=>(+p.stock||0)<=lim);
+  const repOpen=DB.repairs.filter(r=>r.status!=='완료').length;
+  const qOpen=DB.quotes.filter(q=>q.status==='견적').length;
+  const consign=DB.products.filter(p=>p.acquire==='위탁'&&!p.settled).length;
+  VIEW.innerHTML=`
+  <div class="kpis">
+    <div class="kpi"><div class="k-lab">오늘 매출</div><div class="k-val" style="font-size:20px">${won(salesToday)}</div><div class="k-sub">이번 달 ${won(salesMonth)}</div></div>
+    <div class="kpi"><div class="k-lab">누적 매출</div><div class="k-val" style="font-size:20px">${won(salesAll)}</div><div class="k-sub">${DB.sales.length}건</div></div>
+    <div class="kpi"><div class="k-lab">미수금</div><div class="k-val" style="font-size:20px;color:${due?'var(--red)':'inherit'}">${won(due)}</div><div class="k-sub pill-link" onclick="go('ar')">수금 관리 →</div></div>
+    <div class="kpi"><div class="k-lab">재고 / 자산</div><div class="k-val">${fmt(units)}<small> 점</small></div><div class="k-sub">매입가 ${won(val)}</div></div>
+    <div class="kpi"><div class="k-lab">견적 대기</div><div class="k-val">${qOpen}<small> 건</small></div><div class="k-sub">위탁 미정산 ${consign}</div></div>
+    <div class="kpi"><div class="k-lab">진행 AS</div><div class="k-val">${repOpen}<small> 건</small></div><div class="k-sub">회원 ${DB.members.length}명</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><h3>최근 판매</h3><button class="btn btn-o btn-sm" onclick="go('sales')">전체</button></div>
+      <div class="t-wrap"><table><thead><tr><th>일자</th><th>채널</th><th>거래처</th><th class="t-num">금액</th><th>상태</th></tr></thead><tbody>
+      ${DB.sales.slice().reverse().slice(0,6).map(s=>`<tr><td class="t-sub">${s.date}</td><td><span class="bdg ${s.channel==='소매'?'bdg-b2c':'bdg-b2b'}">${s.channel}</span></td><td class="t-name">${esc(s.partner)}</td><td class="t-num">${won(s.total)}</td><td>${statusBdg(s.status)}</td></tr>`).join('')||emptyRow(5)}
+      </tbody></table></div></div>
+    <div class="card"><div class="card-h"><h3>재고 부족 알림</h3></div><div style="padding:6px 0">
+      ${lows.length?lows.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid var(--line)"><div><div class="t-name" style="font-size:13px">${esc(p.brand)} ${esc(p.model)}</div><div class="t-sub">${p.category} · ${esc(p.location)||'-'}</div></div><span class="bdg bdg-low">잔여 ${p.stock}</span></div>`).join(''):'<div class="empty" style="padding:30px"><div class="e-ic">✓</div>부족 품목 없음</div>'}
+    </div></div>
+  </div>`;
+}
+
+/* ---------- PRODUCTS ---------- */
+let pFilter='전체',pSearch='';
+const CATS=['드라이버','페어웨이우드','유틸리티','아이언세트','웨지','퍼터','기타'];
+function rProducts(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="productModal()">＋ 상품 등록</button>`;
+  const cats=['전체',...CATS,'중고'];
+  let list=DB.products.filter(p=>{
+    const okF=pFilter==='전체'||(pFilter==='중고'?p.condition==='중고':p.category===pFilter);
+    const q=pSearch.toLowerCase();const okS=!q||[p.brand,p.model,p.serial,p.shaft].join(' ').toLowerCase().includes(q);
+    return okF&&okS;
+  });
+  VIEW.innerHTML=`<div class="card"><div class="card-h">
+    <div class="toolbar">${cats.map(c=>`<span class="chip ${pFilter===c?'on':''}" onclick="pFilter='${c}';rProducts()">${c}</span>`).join('')}</div>
+    <input class="search" placeholder="브랜드·모델·시리얼" value="${esc(pSearch)}" oninput="pSearch=this.value;clearTimeout(window._pt);window._pt=setTimeout(rProducts,250)"></div>
+    <div class="t-wrap"><table><thead><tr><th>상품</th><th>구분</th><th>스펙</th><th>좌/우</th><th class="t-num">소매가</th><th class="t-num">도매가</th><th class="t-num">재고</th><th></th></tr></thead><tbody>
+    ${list.map(p=>`<tr>
+      <td><div class="t-name">${esc(p.brand)} ${esc(p.model)}</div><div class="t-sub">${p.category} · ${esc(p.serial)} ${p.location?'· '+esc(p.location):''}</div></td>
+      <td>${p.condition==='중고'?`<span class="bdg bdg-used">중고 ${esc(p.grade)}</span>`:'<span class="bdg bdg-new">신품</span>'}</td>
+      <td class="t-sub">${[p.shaft,p.flex&&p.flex+'플렉스',p.loft&&p.loft+'°',p.length&&p.length+'″'].filter(Boolean).join(' / ')||'-'}</td>
+      <td>${esc(p.hand)||'-'}</td><td class="t-num">${won(p.retail)}</td><td class="t-num t-sub">${won(p.wholesale)}</td>
+      <td class="t-num"><b style="${+p.stock<=lowStockLimit()?'color:var(--red)':''}">${p.stock}</b></td>
+      <td style="white-space:nowrap"><button class="btn-x" onclick="productModal('${p.id}')">수정</button><button class="btn-x" onclick="delRow('products','${p.id}')">삭제</button></td>
+    </tr>`).join('')||emptyRow(8)}
+    </tbody></table></div></div>`;
+}
+function productModal(id){
+  const p=id?DB.products.find(x=>x.id===id):{condition:'신품',hand:'우'};
+  openModal(id?'상품 수정':'상품 등록',`
+    <div class="f-row f2"><div class="field"><label>브랜드</label><input id="i_brand" value="${esc(p.brand)}" placeholder="MUSASHI / Titleist..."></div><div class="field"><label>모델명</label><input id="i_model" value="${esc(p.model)}"></div></div>
+    <div class="f-row f3"><div class="field"><label>분류</label><select id="i_category">${CATS.map(c=>`<option ${p.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>상태</label><select id="i_condition" onchange="document.getElementById('gradeWrap').style.display=this.value==='중고'?'block':'none'"><option ${p.condition==='신품'?'selected':''}>신품</option><option ${p.condition==='중고'?'selected':''}>중고</option></select></div>
+      <div class="field" id="gradeWrap" style="display:${p.condition==='중고'?'block':'none'}"><label>중고등급</label><select id="i_grade">${['S','A','B','C'].map(g=>`<option ${p.grade===g?'selected':''}>${g}</option>`).join('')}</select></div></div>
+    <div class="f-row f3"><div class="field"><label>샤프트</label><input id="i_shaft" value="${esc(p.shaft)}"></div><div class="field"><label>플렉스</label><select id="i_flex"><option value="">-</option>${['L','R','SR','S','X'].map(f=>`<option ${p.flex===f?'selected':''}>${f}</option>`).join('')}</select></div><div class="field"><label>좌/우타</label><select id="i_hand"><option ${p.hand==='우'?'selected':''}>우</option><option ${p.hand==='좌'?'selected':''}>좌</option></select></div></div>
+    <div class="f-row f3"><div class="field"><label>로프트(°)</label><input id="i_loft" value="${esc(p.loft)}"></div><div class="field"><label>라이각(°)</label><input id="i_lie" value="${esc(p.lie)}"></div><div class="field"><label>길이(인치)</label><input id="i_length" value="${esc(p.length)}"></div></div>
+    <div class="f-row f3"><div class="field"><label>그립</label><input id="i_grip" value="${esc(p.grip)}"></div><div class="field"><label>시리얼/관리번호</label><input id="i_serial" value="${esc(p.serial)}"></div><div class="field"><label>보관위치</label><input id="i_location" value="${esc(p.location)}"></div></div>
+    <div class="f-row f3"><div class="field"><label>매입가</label><input id="i_cost" type="number" value="${p.cost||''}"></div><div class="field"><label>소매가(B2C)</label><input id="i_retail" type="number" value="${p.retail||''}"></div><div class="field"><label>도매가(B2B)</label><input id="i_wholesale" type="number" value="${p.wholesale||''}"></div></div>
+    <div class="f-row f2"><div class="field"><label>재고 수량</label><input id="i_stock" type="number" value="${p.stock||0}"></div><div class="field"><label>메모</label><input id="i_memo" value="${esc(p.memo)}"></div></div>
+  `,()=>{
+    const g=k=>document.getElementById('i_'+k).value;
+    const o={brand:g('brand'),model:g('model'),category:g('category'),condition:g('condition'),grade:g('condition')==='중고'?g('grade'):'',shaft:g('shaft'),flex:g('flex'),hand:g('hand'),loft:g('loft'),lie:g('lie'),length:g('length'),grip:g('grip'),serial:g('serial'),location:g('location'),cost:+g('cost')||0,retail:+g('retail')||0,wholesale:+g('wholesale')||0,stock:+g('stock')||0,memo:g('memo')};
+    if(!o.brand&&!o.model){alert('브랜드 또는 모델명을 입력하세요');return false}
+    if(id)Object.assign(p,o);else DB.products.push({id:uid('p'),...o});
+    persist('products');rProducts();toast(id?'상품이 수정되었습니다':'상품이 등록되었습니다');return true;
+  });
+}
+
+/* ---------- LINE-ITEM helper (shared by quote/sale) ---------- */
+function lineEditor(state,channelGetter,onChange){
+  const opts=sel=>'<option value="">상품 선택</option>'+DB.products.map(x=>`<option value="${x.id}" ${sel===x.id?'selected':''}>${esc(x.brand)} ${esc(x.model)} (재고${x.stock})</option>`).join('');
+  return state.map((l,i)=>`<div class="li-row">
+    <div class="field" style="margin:0"><select onchange="${onChange}.set(${i},'productId',this.value);${onChange}.auto(${i})">${opts(l.productId)}</select></div>
+    <div class="field" style="margin:0"><input type="number" min="1" value="${l.qty}" onchange="${onChange}.set(${i},'qty',this.value)"></div>
+    <div class="field" style="margin:0"><input type="number" value="${l.price}" onchange="${onChange}.set(${i},'price',this.value)"></div>
+    <div class="t-num" style="font-weight:700;padding-bottom:9px">${won((+l.qty||0)*(+l.price||0))}</div>
+    <button class="btn-x" type="button" onclick="${onChange}.rm(${i})" style="padding-bottom:9px">✕</button></div>`).join('');
+}
+
+/* ---------- QUOTES ---------- */
+let qLines=[];
+const QC={set:(i,k,v)=>{qLines[i][k]=v;qRender()},auto:i=>{const ch=document.getElementById('q_channel').value;const p=DB.products.find(x=>x.id===qLines[i].productId);if(p)qLines[i].price=ch==='도매'?p.wholesale:p.retail;qRender()},rm:i=>{qLines.splice(i,1);if(!qLines.length)qLines.push({productId:'',qty:1,price:0});qRender()},add:()=>{qLines.push({productId:'',qty:1,price:0});qRender()}};
+function rQuotes(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="quoteModal()">＋ 견적 작성</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>일자</th><th>채널</th><th>거래처</th><th>품목</th><th class="t-num">금액</th><th>상태</th><th></th></tr></thead><tbody>
+  ${DB.quotes.slice().reverse().map(q=>`<tr><td class="t-sub">${q.date}</td><td><span class="bdg ${q.channel==='소매'?'bdg-b2c':'bdg-b2b'}">${q.channel}</span></td><td class="t-name">${esc(q.partner)}</td><td class="t-sub">${q.items.map(i=>esc(i.name)+'×'+i.qty).join(', ')}</td><td class="t-num">${won(q.total)}</td><td>${statusBdg(q.status)}</td>
+    <td style="white-space:nowrap">${q.status==='견적'?`<button class="btn-x" style="color:var(--green)" onclick="quoteToSale('${q.id}')">주문전환</button>`:''}<button class="btn-x" onclick="delRow('quotes','${q.id}')">삭제</button></td></tr>`).join('')||emptyRow(7)}
+  </tbody></table></div></div>`;
+}
+function quoteModal(){
+  qLines=[{productId:'',qty:1,price:0}];
+  openModal('견적 작성',`
+    <div class="f-row f2"><div class="field"><label>견적일</label><input id="q_date" type="date" value="${today()}"></div><div class="field"><label>채널</label><select id="q_channel" onchange="qReprice()"><option>도매</option><option>소매</option></select></div></div>
+    <div class="field"><label>거래처</label>${partnerSelectHtml('q_partner')}</div>
+    <div class="field"><label>품목</label><div id="qLines"></div><button class="btn btn-o btn-sm" type="button" onclick="QC.add()">＋ 품목 추가</button></div>
+    <div class="tot-box" id="qTot"></div>
+    <div class="field" style="margin-top:13px"><label>메모</label><input id="q_memo"></div>`,()=>{
+    const items=qLines.filter(l=>l.productId).map(l=>{const p=DB.products.find(x=>x.id===l.productId);return{name:p?`${p.brand} ${p.model}`:'상품',qty:+l.qty||1,price:+l.price||0}});
+    if(!items.length){alert('품목을 추가하세요');return false}
+    const total=items.reduce((s,i)=>s+i.qty*i.price,0);
+    const partner=document.getElementById('q_partner').value;
+    if(!partner){alert('거래처를 선택하세요');return false}
+    DB.quotes.push({id:uid('q'),date:document.getElementById('q_date').value,channel:document.getElementById('q_channel').value,partner,items,total,status:'견적',memo:document.getElementById('q_memo').value});
+    persist('quotes');rQuotes();toast('견적이 등록되었습니다');return true;
+  });
+  qRender();
+}
+function qRender(){const b=document.getElementById('qLines');if(!b)return;b.innerHTML=lineEditor(qLines,()=>document.getElementById('q_channel').value,'QC');const t=qLines.reduce((s,l)=>s+(+l.qty||0)*(+l.price||0),0);document.getElementById('qTot').innerHTML=`<div class="tot-line big"><span>견적 합계</span><span>${won(t)}</span></div>`}
+function qReprice(){const ch=document.getElementById('q_channel')?.value;qLines.forEach(l=>{const p=findProductById(l.productId);if(p)l.price=ch==='도매'?p.wholesale:p.retail});qRender()}
+function quoteToSale(id){const q=DB.quotes.find(x=>x.id===id);if(!q)return;
+  for(const i of q.items){const p=findProductByName(i.name);if(p&&(+p.stock||0)<i.qty){alert(`재고 부족: ${i.name} (잔여 ${p.stock})`);return}}
+  if(!confirm('이 견적을 판매(주문)로 전환할까요? 재고가 차감됩니다.'))return;
+  DB.sales.push({id:uid('s'),date:today(),channel:q.channel,partner:q.partner,memberId:'',staff:'',items:q.items,total:q.total,payment:'외상',status:'미수',memo:'견적 전환'});
+  q.items.forEach(i=>adjustStock(i.name,-i.qty,'판매('+q.partner+')'));
+  q.status='주문전환';persist('quotes');persist('sales');rQuotes();toast('판매로 전환되었습니다');
+}
+
+/* ---------- SALES ---------- */
+let sLines=[],sFilter='전체',sSearch='';
+const SC={set:(i,k,v)=>{sLines[i][k]=v;sTotOnly()},auto:i=>{const ch=document.getElementById('s_channel').value;const p=DB.products.find(x=>x.id===sLines[i].productId);if(p)sLines[i].price=ch==='도매'?p.wholesale:p.retail;sRender()},rm:i=>{sLines.splice(i,1);if(!sLines.length)sLines.push({productId:'',qty:1,price:0});sRender()},add:()=>{sLines.push({productId:'',qty:1,price:0});sRender()}};
+function rSales(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="saleModal()">＋ 판매 등록</button>`;
+  const chips=['전체','소매','도매','미수','완료'];
+  let list=DB.sales.slice().reverse();
+  if(sFilter==='소매'||sFilter==='도매')list=list.filter(s=>s.channel===sFilter);
+  else if(sFilter==='미수'||sFilter==='완료')list=list.filter(s=>s.status===sFilter);
+  const q=sSearch.toLowerCase();
+  if(q)list=list.filter(s=>[s.partner,s.staff,s.memo,...s.items.map(i=>i.name)].join(' ').toLowerCase().includes(q));
+  VIEW.innerHTML=`<div class="card"><div class="card-h">
+    <div class="toolbar">${chips.map(c=>`<span class="chip ${sFilter===c?'on':''}" onclick="sFilter='${c}';rSales()">${c}</span>`).join('')}</div>
+    <input class="search" placeholder="거래처·상품·담당 검색" value="${esc(sSearch)}" oninput="sSearch=this.value;clearTimeout(window._st);window._st=setTimeout(rSales,250)">
+  </div><div class="t-wrap"><table><thead><tr><th>일자</th><th>채널</th><th>거래처</th><th>담당</th><th>상품</th><th class="t-num">금액</th><th>결제</th><th>상태</th><th></th></tr></thead><tbody>
+  ${list.map(s=>`<tr><td class="t-sub">${s.date}</td><td><span class="bdg ${s.channel==='소매'?'bdg-b2c':'bdg-b2b'}">${s.channel}</span></td><td class="t-name">${esc(s.partner)}</td><td class="t-sub">${esc(s.staff)||'-'}</td><td class="t-sub">${s.items.map(i=>esc(i.name)+'×'+i.qty).join(', ')}</td><td class="t-num">${won(s.total)}</td><td class="t-sub">${esc(s.payment)}</td><td>${s.status==='미수'?`<span class="pill-link" onclick="toggleDue('${s.id}')">${statusBdg(s.status)}</span>`:statusBdg(s.status)}</td><td style="white-space:nowrap"><button class="btn-x" style="color:var(--green)" onclick="saleView('${s.id}')">명세</button><button class="btn-x" onclick="delRow('sales','${s.id}')">삭제</button></td></tr>`).join('')||emptyRow(9)}
+  </tbody></table></div></div>`;
+}
+function saleView(id){
+  const s=DB.sales.find(x=>x.id===id);if(!s)return;const co=DB.settings;
+  const rows=s.items.map(i=>`<tr><td>${esc(i.name)}</td><td class="t-num">${i.qty}</td><td class="t-num">${won(i.price)}</td><td class="t-num">${won(i.qty*i.price)}</td></tr>`).join('');
+  const html=`<div class="inv"><h2>거래명세서</h2>
+    <div class="row"><div class="box"><b>공급자</b>${esc(co.company)}<br>TEL ${esc(co.tel)}</div>
+    <div class="box"><b>거래처</b>${esc(s.partner)}<br>일자 ${s.date} · ${s.channel} · ${esc(s.payment)}</div></div>
+    <table style="width:100%"><thead><tr><th>품목</th><th class="t-num">수량</th><th class="t-num">단가</th><th class="t-num">금액</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="tot">합계 ${won(s.total)} · ${statusBdg(s.status)}</div></div>`;
+  openModal('판매 명세',html,()=>{document.getElementById('printArea').innerHTML=html;window.print();return false},true,'인쇄');
+}
+function toggleDue(id){const s=DB.sales.find(x=>x.id===id);if(!s)return;s.status=s.status==='미수'?'완료':'미수';persist('sales');rSales()}
+function saleModal(){
+  sLines=[{productId:'',qty:1,price:0}];
+  const mOpt='<option value="">비회원</option>'+DB.members.map(m=>`<option value="${m.id}">${esc(m.name)} (${m.grade})</option>`).join('');
+  const stOpt='<option value="">담당 미지정</option>'+DB.staff.filter(s=>s.status==='재직').map(s=>`<option>${esc(s.name)}</option>`).join('');
+  openModal('판매 등록',`
+    <div class="f-row f3"><div class="field"><label>판매일</label><input id="s_date" type="date" value="${today()}"></div><div class="field"><label>채널</label><select id="s_channel" onchange="sReprice();sSyncPartner()"><option>소매</option><option>도매</option></select></div><div class="field"><label>결제수단</label><select id="s_pay"><option>카드</option><option>현금</option><option>계좌이체</option><option>외상</option></select></div></div>
+    <div class="f-row f3"><div class="field"><label>거래처/고객</label>${partnerSelectHtml('s_partner','',true)}<input id="s_partner_txt" placeholder="또는 직접 입력" style="margin-top:6px" oninput="document.getElementById('s_partner').value=''"></div><div class="field"><label>회원 연결</label><select id="s_member" onchange="sMemberPick()">${mOpt}</select></div><div class="field"><label>담당 직원</label><select id="s_staff">${stOpt}</select></div></div>
+    <div class="field"><label>판매 상품</label><div id="sLines"></div><button class="btn btn-o btn-sm" type="button" onclick="SC.add()">＋ 상품 추가</button></div>
+    <div class="tot-box" id="sTot"></div>
+    <div class="field" style="margin-top:13px"><label>메모</label><input id="s_memo"></div>`,()=>{
+    const stockErr=checkStockLines(sLines,l=>l.productId);
+    if(stockErr){alert('재고 부족: '+stockErr);return false}
+    const items=sLines.filter(l=>l.productId).map(l=>{const p=DB.products.find(x=>x.id===l.productId);return{productId:l.productId,name:p?`${p.brand} ${p.model}`:'상품',qty:+l.qty||1,price:+l.price||0}});
+    if(!items.length){alert('상품을 추가하세요');return false}
+    const total=items.reduce((s,i)=>s+i.qty*i.price,0);
+    const pay=document.getElementById('s_pay').value,memberId=document.getElementById('s_member').value,channel=document.getElementById('s_channel').value;
+    const partner=document.getElementById('s_partner').value||document.getElementById('s_partner_txt').value.trim();
+    if(!partner){alert('거래처/고객명을 입력하세요');return false}
+    DB.sales.push({id:uid('s'),date:document.getElementById('s_date').value,channel,partner,memberId,staff:document.getElementById('s_staff').value,items:items.map(({name,qty,price})=>({name,qty,price})),total,payment:pay,status:pay==='외상'?'미수':'완료',memo:document.getElementById('s_memo').value});
+    items.forEach(i=>adjustStock(i.name,-i.qty,'판매('+(partner||'고객')+')'));
+    if(memberId&&channel==='소매'){const m=DB.members.find(x=>x.id===memberId);if(m)m.points=(+m.points||0)+Math.round(total*(DB.settings.pointRate||0)/100)}
+    persist('sales');persist('members');rSales();toast('판매가 등록되었습니다');return true;
+  });
+  sRender();
+}
+function sRender(){const b=document.getElementById('sLines');if(!b)return;b.innerHTML=lineEditor(sLines,()=>document.getElementById('s_channel').value,'SC');sTot();if(document.getElementById('s_channel'))sSyncPartner()}
+function sReprice(){const ch=document.getElementById('s_channel').value;sLines.forEach(l=>{const p=DB.products.find(x=>x.id===l.productId);if(p)l.price=ch==='도매'?p.wholesale:p.retail});sRender()}
+function sTotOnly(){const t=document.querySelectorAll('#sLines .t-num');sLines.forEach((l,i)=>{if(t[i])t[i].textContent=won((+l.qty||0)*(+l.price||0))});sTot()}
+function sTot(){const box=document.getElementById('sTot');if(!box)return;const total=sLines.reduce((s,l)=>s+(+l.qty||0)*(+l.price||0),0);const ch=document.getElementById('s_channel')?.value,mid=document.getElementById('s_member')?.value;const rate=DB.settings.pointRate||0;const pts=(mid&&ch==='소매')?Math.round(total*rate/100):0;box.innerHTML=`<div class="tot-line"><span>상품 합계</span><span>${won(total)}</span></div>${pts?`<div class="tot-line" style="color:var(--gold)"><span>적립 예정 (${rate}%)</span><span>+${fmt(pts)}P</span></div>`:''}<div class="tot-line big"><span>총 결제금액</span><span>${won(total)}</span></div>`}
+function sMemberPick(){const sel=document.getElementById('s_member');const n=memberPickName(sel);if(n){document.getElementById('s_partner_txt').value=n;document.getElementById('s_partner').value=''}sTot()}
+function sSyncPartner(){const ch=document.getElementById('s_channel').value;const sel=document.getElementById('s_partner');[...sel.options].forEach(o=>{if(!o.value)return;const p=DB.partners.find(c=>c.name===o.value);if(p)o.hidden=p.channel!==ch});sReprice()}
+
+/* ---------- RETURNS ---------- */
+function rReturns(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="returnModal()">＋ 반품·교환 접수</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>일자</th><th>구분</th><th>거래처/고객</th><th>품목</th><th class="t-num">금액</th><th>사유</th><th></th></tr></thead><tbody>
+  ${DB.returns.slice().reverse().map(r=>`<tr><td class="t-sub">${r.date}</td><td>${statusBdg(r.kind)}</td><td class="t-name">${esc(r.partner)}</td><td class="t-sub">${esc(r.itemName)} ×${r.qty}</td><td class="t-num">${won(r.amount)}</td><td class="t-sub">${esc(r.reason)}</td><td><button class="btn-x" onclick="delRow('returns','${r.id}')">삭제</button></td></tr>`).join('')||emptyRow(7)}
+  </tbody></table></div></div>`;
+}
+function returnModal(){
+  const saleOpts='<option value="">— 원거래 선택 —</option>'+DB.sales.slice().reverse().map(s=>`<option value="${s.id}">${s.date} · ${esc(s.partner)} · ${won(s.total)}</option>`).join('');
+  openModal('반품·교환 접수',`
+    <div class="field"><label>원거래</label><select id="rt_sale" onchange="rtFill()">${saleOpts}</select></div>
+    <div class="f-row f2"><div class="field"><label>구분</label><select id="rt_kind"><option>반품</option><option>교환</option></select></div><div class="field"><label>처리일</label><input id="rt_date" type="date" value="${today()}"></div></div>
+    <div class="field"><label>품목</label><select id="rt_item"></select></div>
+    <div class="f-row f2"><div class="field"><label>수량</label><input id="rt_qty" type="number" value="1" min="1"></div><div class="field"><label>환불/조정 금액</label><input id="rt_amount" type="number" value="0"></div></div>
+    <div class="field"><label>사유</label><input id="rt_reason" placeholder="단순변심 / 불량 / 사이즈 등"></div>
+    <div class="hint">저장 시 해당 품목이 재고로 재입고되고 수불부에 기록됩니다.</div>`,()=>{
+    const itemName=document.getElementById('rt_item').value;
+    if(!itemName){alert('품목을 선택하세요');return false}
+    const qty=+document.getElementById('rt_qty').value||1;
+    const sale=DB.sales.find(s=>s.id===document.getElementById('rt_sale').value);
+    DB.returns.push({id:uid('rt'),date:document.getElementById('rt_date').value,kind:document.getElementById('rt_kind').value,partner:sale?sale.partner:'',itemName,qty,amount:+document.getElementById('rt_amount').value||0,reason:document.getElementById('rt_reason').value});
+    adjustStock(itemName,qty,'반품/교환');
+    persist('returns');rReturns();toast('반품·교환이 접수되었습니다');return true;
+  });
+  rtFill();
+}
+function rtFill(){
+  const s=DB.sales.find(x=>x.id===document.getElementById('rt_sale').value);
+  const sel=document.getElementById('rt_item');
+  sel.innerHTML=s?s.items.map(i=>`<option value="${esc(i.name)}">${esc(i.name)} (판매가 ${won(i.price)})</option>`).join(''):'<option value="">원거래를 먼저 선택</option>';
+  if(s&&s.items[0])document.getElementById('rt_amount').value=s.items[0].price;
+}
+
+/* ---------- PURCHASES ---------- */
+let puLines=[];
+function rPurchases(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="purModal()">＋ 매입 등록</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>일자</th><th>매입처</th><th>상품</th><th class="t-num">매입액</th><th>상태</th><th></th></tr></thead><tbody>
+  ${DB.purchases.slice().reverse().map(p=>`<tr><td class="t-sub">${p.date}</td><td class="t-name">${esc(p.supplier)}</td><td class="t-sub">${p.items.map(i=>esc(i.name)+'×'+i.qty).join(', ')}</td><td class="t-num">${won(p.total)}</td><td>${statusBdg(p.status)}</td><td><button class="btn-x" onclick="delRow('purchases','${p.id}')">삭제</button></td></tr>`).join('')||emptyRow(6)}
+  </tbody></table></div></div>`;
+}
+function purModal(){
+  puLines=[{name:'',qty:1,price:0}];
+  openModal('매입 등록',`
+    <div class="f-row f2"><div class="field"><label>매입일</label><input id="pu_date" type="date" value="${today()}"></div><div class="field"><label>매입처</label><input id="pu_supplier" placeholder="한국골프상사 등"></div></div>
+    <div class="field"><label>매입 상품</label><div id="puLines"></div><button class="btn btn-o btn-sm" type="button" onclick="puAdd()">＋ 품목 추가</button></div>
+    <div class="tot-box" id="puTot"></div><div class="field" style="margin-top:13px"><label>메모</label><input id="pu_memo"></div>
+    <div class="hint">입고완료 시 수불부에 입고로 기록됩니다.</div>`,()=>{
+    const items=puLines.filter(l=>l.name).map(l=>({name:l.name,qty:+l.qty||1,price:+l.price||0}));
+    if(!items.length){alert('품목을 입력하세요');return false}
+    const total=items.reduce((s,i)=>s+i.qty*i.price,0);
+    const supplier=document.getElementById('pu_supplier').value;
+    DB.purchases.push({id:uid('pu'),date:document.getElementById('pu_date').value,supplier,items,total,status:'입고완료',memo:document.getElementById('pu_memo').value});
+    items.forEach(i=>adjustStock(i.name,i.qty,'매입('+supplier+')'));
+    persist('purchases');rPurchases();toast('매입이 등록되었습니다');return true;
+  });
+  puRender();
+}
+function puAdd(){puLines.push({name:'',qty:1,price:0});puRender()}
+function puRender(){const b=document.getElementById('puLines');if(!b)return;b.innerHTML=puLines.map((l,i)=>`<div class="li-row" style="grid-template-columns:1fr 70px 110px 30px"><div class="field" style="margin:0"><input value="${esc(l.name)}" placeholder="상품명" onchange="puLines[${i}].name=this.value"></div><div class="field" style="margin:0"><input type="number" min="1" value="${l.qty}" onchange="puLines[${i}].qty=this.value;puT()"></div><div class="field" style="margin:0"><input type="number" value="${l.price}" onchange="puLines[${i}].price=this.value;puT()"></div><button class="btn-x" type="button" onclick="puLines.splice(${i},1);if(!puLines.length)puLines.push({name:'',qty:1,price:0});puRender()" style="padding-bottom:9px">✕</button></div>`).join('');puT()}
+function puT(){const b=document.getElementById('puTot');if(!b)return;const t=puLines.reduce((s,l)=>s+(+l.qty||0)*(+l.price||0),0);b.innerHTML=`<div class="tot-line big"><span>매입 총액</span><span>${won(t)}</span></div>`}
+
+/* ---------- USED INTAKE / CONSIGNMENT ---------- */
+function rUsed(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="usedModal()">＋ 중고 입고</button>`;
+  const list=DB.products.filter(p=>p.condition==='중고');
+  VIEW.innerHTML=`<div class="card"><div class="card-h"><h3>중고 매물 (사입·보상판매·위탁)</h3></div>
+    <div class="t-wrap"><table><thead><tr><th>상품</th><th>유입경로</th><th>위탁주</th><th class="t-num">매입가</th><th class="t-num">판매가</th><th>위탁정산</th><th class="t-num">재고</th><th></th></tr></thead><tbody>
+    ${list.map(p=>`<tr><td><div class="t-name">${esc(p.brand)} ${esc(p.model)}</div><div class="t-sub">중고 ${esc(p.grade)} · ${esc(p.serial)}</div></td>
+      <td><span class="tag">${esc(p.acquire)||'사입'}</span></td><td class="t-sub">${esc(p.owner)||'-'}</td>
+      <td class="t-num">${won(p.cost)}</td><td class="t-num">${won(p.retail)}</td>
+      <td>${p.acquire==='위탁'?(p.settled?'<span class="bdg bdg-ok">정산완료</span>':`<span class="pill-link" onclick="settleConsign('${p.id}')">정산하기 (${won(p.settle)})</span>`):'-'}</td>
+      <td class="t-num">${p.stock}</td><td><button class="btn-x" onclick="productModal('${p.id}')">상세</button></td></tr>`).join('')||emptyRow(8)}
+    </tbody></table></div>
+    <div style="padding:12px 20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">위탁 매물은 판매 후 위탁주에게 정산해야 하며, 정산 금액만큼 비용으로 처리됩니다.</div></div>`;
+}
+function usedModal(){
+  openModal('중고 입고',`
+    <div class="f-row f3"><div class="field"><label>유입경로</label><select id="u_acquire" onchange="document.getElementById('u_ownerWrap').style.display=this.value==='위탁'?'block':'none'"><option>사입</option><option>보상판매</option><option>위탁</option></select></div>
+      <div class="field"><label>분류</label><select id="u_category">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>등급</label><select id="u_grade">${['S','A','B','C'].map(g=>`<option>${g}</option>`).join('')}</select></div></div>
+    <div class="f-row f2"><div class="field"><label>브랜드</label><input id="u_brand"></div><div class="field"><label>모델명</label><input id="u_model"></div></div>
+    <div class="f-row f3"><div class="field"><label>샤프트</label><input id="u_shaft"></div><div class="field"><label>플렉스</label><select id="u_flex"><option value="">-</option>${['L','R','SR','S','X'].map(f=>`<option>${f}</option>`).join('')}</select></div><div class="field"><label>좌/우</label><select id="u_hand"><option>우</option><option>좌</option></select></div></div>
+    <div class="f-row f3"><div class="field"><label>매입가(사입원가)</label><input id="u_cost" type="number" value="0"></div><div class="field"><label>판매가</label><input id="u_retail" type="number" value="0"></div><div class="field"><label>관리번호</label><input id="u_serial"></div></div>
+    <div id="u_ownerWrap" style="display:none"><div class="f-row f2"><div class="field"><label>위탁주</label><input id="u_owner"></div><div class="field"><label>위탁 정산금액</label><input id="u_settle" type="number" value="0"></div></div></div>
+    <div class="field"><label>메모</label><input id="u_memo"></div>`,()=>{
+    const g=k=>document.getElementById('u_'+k).value;
+    if(!g('brand')&&!g('model')){alert('브랜드 또는 모델명을 입력하세요');return false}
+    const acq=g('acquire');
+    const name=`${g('brand')} ${g('model')}`;
+    DB.products.push({id:uid('p'),brand:g('brand'),model:g('model'),category:g('category'),condition:'중고',grade:g('grade'),shaft:g('shaft'),flex:g('flex'),hand:g('hand'),loft:'',lie:'',length:'',grip:'',serial:g('serial'),location:'',cost:+g('cost')||0,retail:+g('retail')||0,wholesale:Math.round((+g('retail')||0)*0.85),stock:1,memo:g('memo'),acquire:acq,owner:acq==='위탁'?g('owner'):'',settle:acq==='위탁'?(+g('settle')||0):0,settled:false});
+    logStock('입고',name,1,'중고'+acq);
+    persist('products');persist('ledger');rUsed();return true;
+  });
+}
+function settleConsign(id){const p=DB.products.find(x=>x.id===id);if(!p)return;if(!confirm(`${esc(p.owner)}님께 ${won(p.settle)} 위탁 정산 처리할까요?`))return;p.settled=true;persist('products');rUsed()}
+
+/* ---------- STOCK LEDGER ---------- */
+let lFilter='전체';
+function rLedger(){
+  const list=DB.ledger.filter(l=>lFilter==='전체'||l.type===lFilter).slice().reverse();
+  const tin=DB.ledger.filter(l=>l.type==='입고').reduce((a,l)=>a+l.qty,0);
+  const tout=DB.ledger.filter(l=>l.type==='출고').reduce((a,l)=>a+l.qty,0);
+  VIEW.innerHTML=`
+  <div class="kpis"><div class="kpi"><div class="k-lab">누적 입고</div><div class="k-val">${fmt(tin)}<small> 점</small></div></div><div class="kpi"><div class="k-lab">누적 출고</div><div class="k-val">${fmt(tout)}<small> 점</small></div></div><div class="kpi"><div class="k-lab">순증감</div><div class="k-val">${fmt(tin-tout)}<small> 점</small></div></div></div>
+  <div class="card"><div class="card-h"><div class="toolbar">${['전체','입고','출고'].map(f=>`<span class="chip ${lFilter===f?'on':''}" onclick="lFilter='${f}';rLedger()">${f}</span>`).join('')}</div></div>
+    <div class="t-wrap"><table><thead><tr><th>일자</th><th>구분</th><th>상품</th><th class="t-num">수량</th><th>사유/참조</th><th></th></tr></thead><tbody>
+    ${list.map(l=>`<tr><td class="t-sub">${l.date}</td><td><span class="bdg ${l.type==='입고'?'bdg-in':'bdg-out'}">${l.type}</span></td><td class="t-name">${esc(l.product)}</td><td class="t-num">${l.type==='출고'?'-':'+'}${l.qty}</td><td class="t-sub">${esc(l.ref)}</td><td><button class="btn-x" onclick="delRow('ledger','${l.id}')">삭제</button></td></tr>`).join('')||emptyRow(6)}
+    </tbody></table></div></div>`;
+}
+
+/* ---------- PARTNERS ---------- */
+function rPartners(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="partnerModal()">＋ 거래처 등록</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>거래처</th><th>유형</th><th>담당/연락처</th><th>사업자번호</th><th class="t-num">여신한도</th><th class="t-num">미수잔액</th><th></th></tr></thead><tbody>
+  ${DB.partners.map(c=>{const out=partnerOutstanding(c.name);const over=c.credit&&out>c.credit;return `<tr><td class="t-name">${esc(c.name)}</td><td>${c.type==='사업자'?'<span class="bdg bdg-b2b">사업자</span>':'<span class="bdg bdg-b2c">소비자</span>'}</td><td class="t-sub">${esc(c.contact)?esc(c.contact)+' · ':''}${esc(c.phone)}</td><td class="t-sub">${esc(c.bizNo)||'-'}</td><td class="t-num t-sub">${c.credit?won(c.credit):'-'}</td><td class="t-num"><b style="${out>0?'color:var(--red)':''}">${won(out)}</b>${over?' <span class="bdg bdg-low">한도초과</span>':''}</td><td style="white-space:nowrap"><button class="btn-x" onclick="partnerModal('${c.id}')">수정</button><button class="btn-x" onclick="delRow('partners','${c.id}')">삭제</button></td></tr>`}).join('')||emptyRow(7)}
+  </tbody></table></div></div>`;
+}
+function partnerModal(id){
+  const c=id?DB.partners.find(x=>x.id===id):{type:'사업자',channel:'도매',credit:0};
+  openModal(id?'거래처 수정':'거래처 등록',`
+    <div class="f-row f2"><div class="field"><label>거래처명</label><input id="c_name" value="${esc(c.name)}"></div><div class="field"><label>유형</label><select id="c_type"><option ${c.type==='사업자'?'selected':''}>사업자</option><option ${c.type==='소비자'?'selected':''}>소비자</option></select></div></div>
+    <div class="f-row f2"><div class="field"><label>담당자</label><input id="c_contact" value="${esc(c.contact)}"></div><div class="field"><label>연락처</label><input id="c_phone" value="${esc(c.phone)}"></div></div>
+    <div class="f-row f3"><div class="field"><label>사업자번호</label><input id="c_biz" value="${esc(c.bizNo)}"></div><div class="field"><label>이메일</label><input id="c_email" value="${esc(c.email)}"></div><div class="field"><label>거래채널</label><select id="c_channel"><option ${c.channel==='도매'?'selected':''}>도매</option><option ${c.channel==='소매'?'selected':''}>소매</option></select></div></div>
+    <div class="f-row f2"><div class="field"><label>여신한도</label><input id="c_credit" type="number" value="${c.credit||0}"></div><div class="field"><label>메모</label><input id="c_memo" value="${esc(c.memo)}"></div></div>`,()=>{
+    const g=k=>document.getElementById('c_'+k).value;
+    const o={name:g('name'),type:g('type'),contact:g('contact'),phone:g('phone'),bizNo:g('biz'),email:g('email'),channel:g('channel'),credit:+g('credit')||0,memo:g('memo')};
+    if(!o.name){alert('거래처명을 입력하세요');return false}
+    if(id)Object.assign(c,o);else DB.partners.push({id:uid('c'),...o});
+    persist('partners');rPartners();return true;
+  });
+}
+
+/* ---------- MEMBERS + 360 ---------- */
+function rMembers(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="memberModal()">＋ 회원 등록</button>`;
+  const gC={VIP:'#7a4a7e',GOLD:'var(--gold)',SILVER:'#7c857f',BRONZE:'#9a6a3a'};
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>회원</th><th>등급</th><th>연락처</th><th class="t-num">포인트</th><th>가입일</th><th></th></tr></thead><tbody>
+  ${DB.members.map(m=>`<tr><td><span class="pill-link" onclick="memberView('${m.id}')">${esc(m.name)}</span></td><td><span class="grade" style="background:${gC[m.grade]||'#999'}">${(m.grade||'')[0]||'-'}</span> ${m.grade}</td><td class="t-sub">${esc(m.phone)||'-'}</td><td class="t-num"><b style="color:var(--gold)">${fmt(m.points)}P</b></td><td class="t-sub">${m.join||'-'}</td><td style="white-space:nowrap"><button class="btn-x" onclick="memberModal('${m.id}')">수정</button><button class="btn-x" onclick="delRow('members','${m.id}')">삭제</button></td></tr>`).join('')||emptyRow(6)}
+  </tbody></table></div><div style="padding:10px 20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">회원명을 클릭하면 통합 이력(구매·피팅·AS)을 볼 수 있습니다.</div></div>`;
+}
+function memberView(id){
+  const m=DB.members.find(x=>x.id===id);if(!m)return;
+  const buys=DB.sales.filter(s=>s.memberId===id);
+  const fits=DB.fittings.filter(f=>f.memberId===id||f.customer===m.name);
+  const reps=DB.repairs.filter(r=>r.memberId===id||r.customer===m.name);
+  const spent=buys.reduce((a,s)=>a+s.total,0);
+  openModal(`${esc(m.name)} · ${m.grade}`,`
+    <div class="kpis" style="margin-bottom:16px"><div class="kpi"><div class="k-lab">누적 구매</div><div class="k-val" style="font-size:18px">${won(spent)}</div></div><div class="kpi"><div class="k-lab">보유 포인트</div><div class="k-val" style="font-size:18px;color:var(--gold)">${fmt(m.points)}P</div></div><div class="kpi"><div class="k-lab">연락처</div><div class="k-val" style="font-size:15px">${esc(m.phone)||'-'}</div></div></div>
+    <h4 style="font-family:'Noto Serif KR',serif;margin:6px 0 8px">구매 이력</h4>${buys.length?`<table><tbody>${buys.slice().reverse().map(s=>`<tr><td class="t-sub">${s.date}</td><td>${s.items.map(i=>esc(i.name)).join(', ')}</td><td class="t-num">${won(s.total)}</td></tr>`).join('')}</tbody></table>`:'<div class="t-sub" style="padding:4px 0 10px">없음</div>'}
+    <h4 style="font-family:'Noto Serif KR',serif;margin:14px 0 8px">피팅 이력</h4>${fits.length?fits.map(f=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div class="t-sub">${f.date} · 헤드스피드 ${esc(f.headspeed)||'-'}</div><div>${esc(f.rec)}</div></div>`).join(''):'<div class="t-sub">없음</div>'}
+    <h4 style="font-family:'Noto Serif KR',serif;margin:14px 0 8px">AS 이력</h4>${reps.length?reps.map(r=>`<div style="padding:6px 0;border-bottom:1px solid var(--line)"><span class="tag">${esc(r.type)}</span> ${esc(r.item)} — ${statusBdg(r.status)} <span class="t-sub">(${won(r.cost)})</span></div>`).join(''):'<div class="t-sub">없음</div>'}
+  `,null,true);
+}
+function memberModal(id){
+  const m=id?DB.members.find(x=>x.id===id):{grade:'BRONZE',join:today(),points:0};
+  openModal(id?'회원 수정':'회원 등록',`
+    <div class="f-row f2"><div class="field"><label>회원명</label><input id="m_name" value="${esc(m.name)}"></div><div class="field"><label>연락처</label><input id="m_phone" value="${esc(m.phone)}"></div></div>
+    <div class="f-row f3"><div class="field"><label>등급</label><select id="m_grade">${['BRONZE','SILVER','GOLD','VIP'].map(g=>`<option ${m.grade===g?'selected':''}>${g}</option>`).join('')}</select></div><div class="field"><label>포인트</label><input id="m_points" type="number" value="${m.points||0}"></div><div class="field"><label>가입일</label><input id="m_join" type="date" value="${m.join||today()}"></div></div>
+    <div class="field"><label>메모</label><input id="m_memo" value="${esc(m.memo)}"></div>`,()=>{
+    const g=k=>document.getElementById('m_'+k).value;
+    const o={name:g('name'),phone:g('phone'),grade:g('grade'),points:+g('points')||0,join:g('join'),memo:g('memo')};
+    if(!o.name){alert('회원명을 입력하세요');return false}
+    if(id)Object.assign(m,o);else DB.members.push({id:uid('m'),...o});
+    persist('members');rMembers();return true;
+  });
+}
+
+/* ---------- AR / RECEIPTS ---------- */
+function rAR(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="payModal()">＋ 수금 등록</button>`;
+  const rows=DB.partners.map(c=>({name:c.name,credit:c.credit,out:partnerOutstanding(c.name)})).filter(r=>r.out>0).sort((a,b)=>b.out-a.out);
+  const totOut=rows.reduce((a,r)=>a+r.out,0);
+  VIEW.innerHTML=`
+  <div class="kpis"><div class="kpi"><div class="k-lab">총 미수금</div><div class="k-val" style="font-size:20px;color:var(--red)">${won(totOut)}</div></div><div class="kpi"><div class="k-lab">미수 거래처</div><div class="k-val">${rows.length}<small> 곳</small></div></div><div class="kpi"><div class="k-lab">누적 수금</div><div class="k-val" style="font-size:20px">${won(DB.payments.reduce((a,p)=>a+p.amount,0))}</div></div></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><h3>거래처별 미수 잔액</h3></div><div class="t-wrap"><table><thead><tr><th>거래처</th><th class="t-num">여신한도</th><th class="t-num">미수잔액</th><th></th></tr></thead><tbody>
+      ${rows.map(r=>`<tr><td class="t-name">${esc(r.name)}${r.credit&&r.out>r.credit?' <span class="bdg bdg-low">초과</span>':''}</td><td class="t-num t-sub">${r.credit?won(r.credit):'-'}</td><td class="t-num"><b style="color:var(--red)">${won(r.out)}</b></td><td><button class="btn-sm btn-o" onclick="payModal('${esc(r.name)}')">수금</button></td></tr>`).join('')||emptyRow(4)}
+    </tbody></table></div></div>
+    <div class="card"><div class="card-h"><h3>수금 내역</h3></div><div class="t-wrap"><table><thead><tr><th>일자</th><th>거래처</th><th class="t-num">금액</th><th>수단</th><th></th></tr></thead><tbody>
+      ${DB.payments.slice().reverse().map(p=>`<tr><td class="t-sub">${p.date}</td><td class="t-name">${esc(p.partner)}</td><td class="t-num">${won(p.amount)}</td><td class="t-sub">${esc(p.method)}</td><td><button class="btn-x" onclick="delRow('payments','${p.id}')">삭제</button></td></tr>`).join('')||emptyRow(5)}
+    </tbody></table></div></div>
+  </div>`;
+}
+function payModal(name){
+  const opts='<option value="">거래처 선택</option>'+DB.partners.map(c=>`<option ${c.name===name?'selected':''}>${esc(c.name)}</option>`).join('');
+  const out=name?partnerOutstanding(name):0;
+  openModal('수금 등록',`
+    <div class="field"><label>거래처</label><select id="ar_partner" onchange="document.getElementById('ar_out').textContent='현재 미수: '+(window._outOf(this.value))">${opts}</select></div>
+    <div class="hint" id="ar_out">${name?'현재 미수: '+won(out):''}</div>
+    <div class="f-row f3" style="margin-top:8px"><div class="field"><label>수금일</label><input id="ar_date" type="date" value="${today()}"></div><div class="field"><label>금액</label><input id="ar_amount" type="number" value="${out||0}"></div><div class="field"><label>수단</label><select id="ar_method"><option>계좌이체</option><option>현금</option><option>카드</option></select></div></div>
+    <div class="hint">수금액만큼 오래된 미수 거래부터 자동으로 '완료' 처리됩니다.</div>`,()=>{
+    const partner=document.getElementById('ar_partner').value,amount=+document.getElementById('ar_amount').value||0;
+    if(!partner||amount<=0){alert('거래처와 금액을 확인하세요');return false}
+    DB.payments.push({id:uid('pay'),date:document.getElementById('ar_date').value,partner,amount,method:document.getElementById('ar_method').value});
+    persist('payments');reconcilePartnerAR(partner);rAR();toast('수금이 등록되었습니다');return true;
+  });
+}
+window._outOf=n=>won(partnerOutstanding(n));
+
+/* ---------- INVOICES ---------- */
+function rInvoices(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="invModal()">＋ 세금계산서 발행</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>발행일</th><th>종류</th><th>공급받는자</th><th class="t-num">공급가액</th><th class="t-num">세액</th><th class="t-num">합계</th><th></th></tr></thead><tbody>
+  ${DB.invoices.slice().reverse().map(v=>`<tr><td class="t-sub">${v.date}</td><td><span class="tag">${esc(v.kind)}</span></td><td class="t-name">${esc(v.partner)}</td><td class="t-num">${won(v.supply)}</td><td class="t-num t-sub">${won(v.vat)}</td><td class="t-num">${won(v.total)}</td><td style="white-space:nowrap"><button class="btn-x" style="color:var(--green)" onclick="invView('${v.id}')">보기/인쇄</button><button class="btn-x" onclick="delRow('invoices','${v.id}')">삭제</button></td></tr>`).join('')||emptyRow(7)}
+  </tbody></table></div></div>`;
+}
+function invModal(){
+  const saleOpts='<option value="">— 판매건 선택(선택) —</option>'+DB.sales.slice().reverse().map(s=>`<option value="${s.id}">${s.date} · ${esc(s.partner)} · ${won(s.total)}</option>`).join('');
+  openModal('세금계산서 / 거래명세서 발행',`
+    <div class="f-row f2"><div class="field"><label>종류</label><select id="v_kind"><option>세금계산서</option><option>거래명세서</option></select></div><div class="field"><label>발행일</label><input id="v_date" type="date" value="${today()}"></div></div>
+    <div class="field"><label>판매건 불러오기</label><select id="v_sale" onchange="invFill()">${saleOpts}</select></div>
+    <div class="field"><label>공급받는자(거래처)</label><input id="v_partner"></div>
+    <div class="field"><label>품목 요약</label><input id="v_items" placeholder="예: MUSASHI 드라이버 외 1건"></div>
+    <div class="f-row f2"><div class="field"><label>합계(부가세 포함)</label><input id="v_total" type="number" value="0" oninput="invCalc()"></div><div class="field"><label>비고</label><input id="v_memo"></div></div>
+    <div class="tot-box" id="v_calc"></div>`,()=>{
+    const total=+document.getElementById('v_total').value||0;const vat=Math.round(total/(1+(DB.settings.vatRate||10)/100)*(DB.settings.vatRate||10)/100);const supply=total-vat;
+    const partner=document.getElementById('v_partner').value;
+    if(!partner||total<=0){alert('거래처와 금액을 확인하세요');return false}
+    DB.invoices.push({id:uid('iv'),date:document.getElementById('v_date').value,kind:document.getElementById('v_kind').value,partner,items:document.getElementById('v_items').value,supply,vat,total,memo:document.getElementById('v_memo').value});
+    persist('invoices');rInvoices();return true;
+  });
+  invCalc();
+}
+function invFill(){const s=DB.sales.find(x=>x.id===document.getElementById('v_sale').value);if(!s)return;document.getElementById('v_partner').value=s.partner;document.getElementById('v_items').value=s.items.map(i=>i.name+'×'+i.qty).join(', ');document.getElementById('v_total').value=s.total;invCalc()}
+function invCalc(){const box=document.getElementById('v_calc');if(!box)return;const total=+document.getElementById('v_total').value||0;const rate=DB.settings.vatRate||10;const vat=Math.round(total/(1+rate/100)*rate/100);const supply=total-vat;box.innerHTML=`<div class="tot-line"><span>공급가액</span><span>${won(supply)}</span></div><div class="tot-line"><span>부가세(${rate}%)</span><span>${won(vat)}</span></div><div class="tot-line big"><span>합계</span><span>${won(total)}</span></div>`}
+function invView(id){
+  const v=DB.invoices.find(x=>x.id===id);if(!v)return;const co=DB.settings;
+  const html=`<div class="inv"><h2>${esc(v.kind)}</h2>
+    <div class="row"><div class="box"><b>공급자</b>상호: ${esc(co.company)}<br>대표: ${esc(co.ceo)}<br>등록번호: ${esc(co.bizNo)}<br>주소: ${esc(co.addr)}<br>TEL: ${esc(co.tel)}</div>
+    <div class="box"><b>공급받는자</b>상호: ${esc(v.partner)}<br>발행일: ${v.date}<br>품목: ${esc(v.items)}</div></div>
+    <table style="width:100%"><thead><tr><th>구분</th><th style="text-align:right">금액</th></tr></thead><tbody>
+      <tr><td>공급가액</td><td style="text-align:right">${won(v.supply)}</td></tr>
+      <tr><td>부가세 (${co.vatRate}%)</td><td style="text-align:right">${won(v.vat)}</td></tr>
+      <tr><td><b>합계금액</b></td><td style="text-align:right"><b>${won(v.total)}</b></td></tr></tbody></table>
+    <div class="tot">합계 ${won(v.total)}</div>
+    ${v.memo?`<div style="margin-top:10px;font-size:12px;color:#7c857f">비고: ${esc(v.memo)}</div>`:''}</div>`;
+  openModal(v.kind,html,()=>{document.getElementById('printArea').innerHTML=html;window.print();return false},true,'인쇄');
+}
+
+/* ---------- FITTINGS ---------- */
+function rFittings(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="fitModal()">＋ 피팅 기록</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>일자</th><th>고객</th><th>신장/타구</th><th>헤드스피드</th><th>추천 스펙</th><th></th></tr></thead><tbody>
+  ${DB.fittings.slice().reverse().map(f=>`<tr><td class="t-sub">${f.date}</td><td class="t-name">${esc(f.customer)}</td><td class="t-sub">${f.height?f.height+'cm':''} ${f.hand?'· '+f.hand+'타':''}</td><td class="t-sub">${f.headspeed?f.headspeed+' m/s':'-'}${f.swing?' ('+esc(f.swing)+')':''}</td><td style="max-width:300px">${esc(f.rec)||'-'}</td><td><button class="btn-x" onclick="delRow('fittings','${f.id}')">삭제</button></td></tr>`).join('')||emptyRow(6)}
+  </tbody></table></div></div>`;
+}
+function fitModal(){
+  const mOpt='<option value="">회원 미연결</option>'+DB.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  openModal('피팅 상담 기록',`
+    <div class="f-row f2"><div class="field"><label>상담일</label><input id="f_date" type="date" value="${today()}"></div><div class="field"><label>회원 연결</label><select id="f_member" onchange="if(this.value)document.getElementById('f_customer').value=memberPickName(this)">${mOpt}</select></div></div>
+    <div class="field"><label>고객명</label><input id="f_customer"></div>
+    <div class="f-row f3"><div class="field"><label>신장(cm)</label><input id="f_height" type="number"></div><div class="field"><label>주 타구</label><select id="f_hand"><option>우</option><option>좌</option></select></div><div class="field"><label>수준</label><select id="f_swing"><option>초급</option><option>중급</option><option>중상급</option><option>상급</option></select></div></div>
+    <div class="field"><label>헤드스피드(m/s)</label><input id="f_headspeed" type="number" placeholder="예: 44"></div>
+    <div class="field"><label>추천 스펙</label><textarea id="f_rec" rows="2" placeholder="드라이버 10.5° / S플렉스 / 45.5인치 / 라이각 58°"></textarea></div>
+    <div class="field"><label>메모</label><input id="f_memo"></div>`,()=>{
+    const g=k=>document.getElementById('f_'+k).value;
+    if(!g('customer')){alert('고객명을 입력하세요');return false}
+    DB.fittings.push({id:uid('f'),date:g('date'),memberId:g('member'),customer:g('customer'),height:g('height'),hand:g('hand'),swing:g('swing'),headspeed:g('headspeed'),rec:g('rec'),memo:g('memo')});
+    persist('fittings');rFittings();return true;
+  });
+}
+
+/* ---------- REPAIRS ---------- */
+const RTYPES=['리샤프트','그립교체','로프트/라이각 조정','헤드교체','길이조정','기타'];
+function rRepairs(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="repairModal()">＋ AS 접수</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>접수일</th><th>고객</th><th>대상 클럽</th><th>작업</th><th class="t-num">비용</th><th>상태</th><th></th></tr></thead><tbody>
+  ${DB.repairs.slice().reverse().map(r=>`<tr><td class="t-sub">${r.date}</td><td class="t-name">${esc(r.customer)}</td><td class="t-sub">${esc(r.item)||'-'}</td><td>${esc(r.type)}</td><td class="t-num">${won(r.cost)}</td><td><span class="pill-link" onclick="cycleRepair('${r.id}')">${statusBdg(r.status)}</span></td><td><button class="btn-x" onclick="delRow('repairs','${r.id}')">삭제</button></td></tr>`).join('')||emptyRow(7)}
+  </tbody></table></div><div style="padding:12px 20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">상태를 클릭하면 접수 → 진행중 → 완료 순으로 바뀝니다</div></div>`;
+}
+function cycleRepair(id){const r=DB.repairs.find(x=>x.id===id);if(!r)return;const o=['접수','진행중','완료'];r.status=o[(o.indexOf(r.status)+1)%o.length];persist('repairs');rRepairs()}
+function repairModal(){
+  const mOpt='<option value="">회원 미연결</option>'+DB.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  openModal('AS·수리 접수',`
+    <div class="f-row f2"><div class="field"><label>접수일</label><input id="r_date" type="date" value="${today()}"></div><div class="field"><label>회원 연결</label><select id="r_member" onchange="if(this.value)document.getElementById('r_customer').value=memberPickName(this)">${mOpt}</select></div></div>
+    <div class="field"><label>고객명</label><input id="r_customer"></div>
+    <div class="field"><label>대상 클럽</label><input id="r_item"></div>
+    <div class="f-row f3"><div class="field"><label>작업 종류</label><select id="r_type">${RTYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="field"><label>비용</label><input id="r_cost" type="number" value="0"></div><div class="field"><label>상태</label><select id="r_status"><option>접수</option><option>진행중</option><option>완료</option></select></div></div>
+    <div class="field"><label>메모</label><input id="r_memo"></div>`,()=>{
+    const g=k=>document.getElementById('r_'+k).value;
+    if(!g('customer')){alert('고객명을 입력하세요');return false}
+    DB.repairs.push({id:uid('r'),date:g('date'),memberId:g('member'),customer:g('customer'),item:g('item'),type:g('type'),cost:+g('cost')||0,status:g('status'),memo:g('memo')});
+    persist('repairs');rRepairs();return true;
+  });
+}
+
+/* ---------- STATS ---------- */
+function rStats(){
+  const byCh={'소매':0,'도매':0},byMonth={},byCat={},byStaff={};
+  DB.sales.forEach(s=>{byCh[s.channel]=(byCh[s.channel]||0)+s.total;const mo=(s.date||'').slice(0,7);byMonth[mo]=(byMonth[mo]||0)+s.total;if(s.staff)byStaff[s.staff]=(byStaff[s.staff]||0)+s.total});
+  DB.products.forEach(p=>{byCat[p.category]=(byCat[p.category]||0)+(+p.stock||0)*(+p.retail||0)});
+  const bar=(o,money=true)=>{const e=Object.entries(o).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);if(!e.length)return '<div class="empty" style="padding:20px">데이터 없음</div>';const max=Math.max(...e.map(x=>x[1]));return e.map(([k,v])=>`<div class="bar-row"><div class="bar-lab">${esc(k)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(8,v/max*100)}%">${money?won(v):fmt(v)}</div></div></div>`).join('')};
+  const total=DB.sales.reduce((s,x)=>s+x.total,0);
+  const cogs=DB.sales.reduce((s,x)=>s+x.items.reduce((a,i)=>{const p=findProductByName(i.name);return a+(p?p.cost*i.qty:0)},0),0);
+  const margin=total-cogs;
+  VIEW.innerHTML=`
+  <div class="kpis"><div class="kpi"><div class="k-lab">총 매출</div><div class="k-val" style="font-size:19px">${won(total)}</div></div><div class="kpi"><div class="k-lab">추정 원가</div><div class="k-val" style="font-size:19px">${won(cogs)}</div></div><div class="kpi"><div class="k-lab">추정 매출이익</div><div class="k-val" style="font-size:19px;color:var(--green-l)">${won(margin)}</div><div class="k-sub">이익률 ${total?Math.round(margin/total*100):0}%</div></div></div>
+  <div class="grid2"><div class="card"><div class="card-h"><h3>채널별 매출</h3></div><div class="card-b">${bar(byCh)}</div></div><div class="card"><div class="card-h"><h3>월별 매출</h3></div><div class="card-b">${bar(byMonth)}</div></div></div>
+  <div class="grid2"><div class="card"><div class="card-h"><h3>담당자별 매출</h3></div><div class="card-b">${bar(byStaff)}</div></div><div class="card"><div class="card-h"><h3>카테고리별 재고자산(소매가)</h3></div><div class="card-b">${bar(byCat)}</div></div></div>`;
+}
+
+/* ---------- STAFF ---------- */
+const ROLES=['대표','관리자','판매팀장','판매','수리기사','창고'];
+const ACCESS=['전체','영업/고객','서비스','재고','조회만'];
+function rStaff(){
+  ACT.innerHTML=`<button class="btn btn-p" onclick="staffModal()">＋ 직원 등록</button>`;
+  VIEW.innerHTML=`<div class="card"><div class="t-wrap"><table><thead><tr><th>이름</th><th>직책</th><th>연락처</th><th>입사일</th><th>권한</th><th>상태</th><th></th></tr></thead><tbody>
+  ${DB.staff.map(e=>`<tr><td class="t-name">${esc(e.name)}</td><td>${esc(e.role)}</td><td class="t-sub">${esc(e.phone)||'-'}</td><td class="t-sub">${e.hire||'-'}</td><td><span class="tag">${esc(e.access)}</span></td><td>${e.status==='재직'?'<span class="bdg bdg-ok">재직</span>':'<span class="bdg bdg-low">퇴사</span>'}</td><td style="white-space:nowrap"><button class="btn-x" onclick="staffModal('${e.id}')">수정</button><button class="btn-x" onclick="delRow('staff','${e.id}')">삭제</button></td></tr>`).join('')||emptyRow(7)}
+  </tbody></table></div><div style="padding:12px 20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">※ 권한 항목은 직원 역할 기록용입니다. 실제 직원별 로그인/접근 제한은 서버(예: Supabase) 연동이 필요합니다.</div></div>`;
+}
+function staffModal(id){
+  const e=id?DB.staff.find(x=>x.id===id):{role:'판매',status:'재직',access:'영업/고객',hire:today()};
+  openModal(id?'직원 수정':'직원 등록',`
+    <div class="f-row f2"><div class="field"><label>이름</label><input id="e_name" value="${esc(e.name)}"></div><div class="field"><label>직책</label><select id="e_role">${ROLES.map(r=>`<option ${e.role===r?'selected':''}>${r}</option>`).join('')}</select></div></div>
+    <div class="f-row f2"><div class="field"><label>연락처</label><input id="e_phone" value="${esc(e.phone)}"></div><div class="field"><label>입사일</label><input id="e_hire" type="date" value="${e.hire||today()}"></div></div>
+    <div class="f-row f2"><div class="field"><label>권한</label><select id="e_access">${ACCESS.map(a=>`<option ${e.access===a?'selected':''}>${a}</option>`).join('')}</select></div><div class="field"><label>상태</label><select id="e_status"><option ${e.status==='재직'?'selected':''}>재직</option><option ${e.status==='퇴사'?'selected':''}>퇴사</option></select></div></div>
+    <div class="field"><label>메모</label><input id="e_memo" value="${esc(e.memo)}"></div>`,()=>{
+    const g=k=>document.getElementById('e_'+k).value;
+    const o={name:g('name'),role:g('role'),phone:g('phone'),hire:g('hire'),access:g('access'),status:g('status'),memo:g('memo')};
+    if(!o.name){alert('이름을 입력하세요');return false}
+    if(id)Object.assign(e,o);else DB.staff.push({id:uid('e'),...o});
+    persist('staff');rStaff();return true;
+  });
+}
+
+/* ---------- SETTINGS ---------- */
+function rSettings(){
+  const c=DB.settings;
+  VIEW.innerHTML=`<div class="card" style="max-width:680px"><div class="card-h"><h3>회사 정보 (세금계산서 공급자)</h3></div><div class="card-b">
+    <div class="f-row f2"><div class="field"><label>상호</label><input id="set_company" value="${esc(c.company)}"></div><div class="field"><label>대표자</label><input id="set_ceo" value="${esc(c.ceo)}"></div></div>
+    <div class="field"><label>사업자등록번호</label><input id="set_biz" value="${esc(c.bizNo)}"></div>
+    <div class="field"><label>주소</label><input id="set_addr" value="${esc(c.addr)}"></div>
+    <div class="f-row f2"><div class="field"><label>전화</label><input id="set_tel" value="${esc(c.tel)}"></div><div class="field"><label>이메일</label><input id="set_email" value="${esc(c.email)}"></div></div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:8px 0 16px">
+    <div class="f-row f3"><div class="field"><label>포인트 적립률 (%)</label><input id="set_point" type="number" value="${c.pointRate}"></div><div class="field"><label>부가세율 (%)</label><input id="set_vat" type="number" value="${c.vatRate}"></div><div class="field"><label>재고 부족 기준 (이하)</label><input id="set_low" type="number" min="0" value="${c.lowStockThreshold??2}"><div class="hint">대시보드·상품 목록 알림에 사용</div></div></div>
+    <button class="btn btn-p" onclick="saveSettings()">저장</button> <span id="set_msg" class="hint"></span>
+  </div></div>`;
+}
+function saveSettings(){
+  const g=k=>document.getElementById('set_'+k).value;
+  DB.settings={company:g('company'),ceo:g('ceo'),bizNo:g('biz'),addr:g('addr'),tel:g('tel'),email:g('email'),pointRate:+g('point')||0,vatRate:+g('vat')||10,lowStockThreshold:+document.getElementById('set_low').value||2};
+  persist('settings');document.getElementById('set_msg').textContent='✓ 저장되었습니다';toast('환경설정이 저장되었습니다');
+}
+
+/* ---------- BACKUP ---------- */
+function rBackup(){
+  const counts=STORES.map(s=>`${s}: ${(DB[s]||[]).length}`).join(' · ');
+  VIEW.innerHTML=`<div class="card" style="max-width:680px"><div class="card-h"><h3>데이터 백업 / 복원</h3></div><div class="card-b">
+    <p class="hint" style="margin-bottom:14px">모든 데이터는 이 브라우저에 저장됩니다. 정기적으로 백업 파일을 내려받아 보관하세요.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="exportData()">⤓ 전체 백업(JSON) 내보내기</button>
+      <button class="btn btn-o" onclick="document.getElementById('imp').click()">⤒ 백업 복원</button>
+      <button class="btn btn-o" style="color:var(--red);border-color:var(--red)" onclick="resetData()">초기화(데모 재설정)</button>
+    </div>
+    <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(this)">
+    <div style="margin-top:16px;font-size:12px;color:var(--muted)">현재 저장 현황 — ${counts}</div>
+  </div></div>`;
+}
+function exportData(){
+  const out={};STORES.forEach(s=>out[s]=DB[s]);out.settings=DB.settings;out._dataVersion=DATA_VERSION;out._exportedAt=new Date().toISOString();
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='musashi-erp-backup-'+today()+'.json';a.click();URL.revokeObjectURL(a.href);
+}
+function importData(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.settings&&!d.products){alert('MUSASHI ERP 백업 파일이 아닙니다');return}
+    const n=STORES.reduce((a,s)=>a+((d[s]||[]).length),0);
+    if(!confirm(`현재 데이터를 백업본으로 덮어쓸까요?\n(레코드 약 ${n}건)`))return;
+    STORES.forEach(s=>{if(d[s]){DB[s]=d[s];persist(s)}});if(d.settings){DB.settings=d.settings;if(DB.settings.lowStockThreshold==null)DB.settings.lowStockThreshold=2;persist('settings')}
+    toast('복원되었습니다');go('dash')}catch(e){alert('파일을 읽을 수 없습니다: '+e.message)}};
+  r.readAsText(file);
+}
+function resetData(){if(!confirm('모든 데이터를 삭제하고 데모 상태로 되돌립니다. 계속할까요?'))return;STORES.forEach(s=>localStorage.removeItem(K+s));localStorage.removeItem(K+'settings');location.reload()}
+
+/* ---------- SHARED ---------- */
+function delRow(type,id){
+  const row=DB[type]?.find(x=>x.id===id);
+  const labels={sales:'판매',purchases:'매입',returns:'반품',payments:'수금',quotes:'견적'};
+  if(!confirm((labels[type]||'항목')+'을(를) 삭제할까요?'+(type==='sales'||type==='purchases'||type==='returns'?' 재고가 자동 복원됩니다.':'')))return;
+  if(type==='sales'&&row){
+    reverseSaleStock(row);
+    if(row.memberId&&row.channel==='소매'){const m=DB.members.find(x=>x.id===row.memberId);if(m)m.points=Math.max(0,(+m.points||0)-Math.round(row.total*(DB.settings.pointRate||0)/100));persist('members')}
+  }
+  if(type==='purchases'&&row)reversePurchaseStock(row);
+  if(type==='returns'&&row)reverseReturnStock(row);
+  if(type==='payments'&&row){
+    DB[type]=DB[type].filter(x=>x.id!==id);persist(type);reconcilePartnerAR(row.partner);rAR();toast('삭제되었습니다');return;
+  }
+  DB[type]=DB[type].filter(x=>x.id!==id);persist(type);
+  ROUTER[{products:'products',partners:'partners',sales:'sales',purchases:'purchases',members:'members',fittings:'fittings',repairs:'repairs',quotes:'quotes',returns:'returns',invoices:'invoices',staff:'staff',payments:'ar',ledger:'ledger'}[type]||'dash']();
+  toast('삭제되었습니다');
+}
+let _onSave=null;
+function openModal(title,body,onSave,showSave=true,saveLabel='저장'){
+  _onSave=onSave;
+  document.getElementById('modal').innerHTML=`<div class="modal-h"><h3>${esc(title)}</h3><button class="close" onclick="closeModal()">×</button></div><div class="modal-b">${body}</div><div class="modal-f"><button class="btn btn-o" onclick="closeModal()">닫기</button>${(onSave&&showSave!==false)?`<button class="btn btn-p" onclick="doSave()">${saveLabel}</button>`:''}</div>`;
+  document.getElementById('ov').classList.add('on');
+}
+function closeModal(){document.getElementById('ov').classList.remove('on');_onSave=null}
+function doSave(){if(_onSave&&_onSave()!==false)closeModal()}
+document.getElementById('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNav();if(e.key==='Escape'&&document.getElementById('ov').classList.contains('on'))closeModal()});
+
+go('dash');
+</script>
+</body>
+</html>
