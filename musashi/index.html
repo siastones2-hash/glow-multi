@@ -76,8 +76,10 @@ nav.scrolled{background:rgba(10,11,16,.95);}
 .nav-inner{max-width:1280px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .brand{display:flex;align-items:center;gap:14px;cursor:pointer;}
 .group-logo{display:flex;flex-direction:column;align-items:flex-start;line-height:1;}
-.group-logo .num634{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px;background:linear-gradient(160deg,var(--gold-light),var(--gold),#9A7B1A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 24px rgba(201,162,39,.25);}
-.group-logo .musashi-name{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.28em;color:var(--text);margin-top:1px;}
+.musashi-logo-img{display:block;height:auto;object-fit:contain;}
+.musashi-logo-img.nav{height:38px;width:auto;}
+.musashi-logo-img.hero{height:clamp(100px,22vw,140px);width:auto;margin:0 auto;}
+.musashi-logo-img.foot{height:34px;width:auto;}
 .brand-sub{font-size:9px;color:var(--muted);letter-spacing:.5px;display:block;margin-top:3px;font-weight:400;}
 .brand-text{font-size:12px;color:var(--muted);line-height:1.55;max-width:148px;letter-spacing:0;}
 .asset-frame{border-radius:16px;overflow:hidden;border:1px solid var(--glass-bd);background:#111;}
@@ -290,8 +292,8 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
   .touch-stack .btn{width:100%;min-height:48px;}
 }
 @media(max-width:480px){
-  .group-logo .num634{font-size:22px;}
-  .group-logo .musashi-name{font-size:10px;letter-spacing:.2em;}
+  .musashi-logo-img.nav{height:32px;}
+  .musashi-logo-img.foot{height:28px;}
   .trinity-logo{font-size:17px;}
   h1{font-size:clamp(28px,8.5vw,40px);}
   h2{font-size:clamp(22px,6.5vw,34px);}
@@ -329,10 +331,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
 <nav id="nav">
   <div class="nav-inner">
     <div class="brand brand-musashi" onclick="navGo('home')">
-      <div class="group-logo">
-        <span class="num634">634</span>
-        <span class="musashi-name">MUSASHI</span>
-      </div>
+      <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img nav" width="120" height="38">
       <div class="brand-text">인터네셔널<br>무사시 634 그룹</div>
     </div>
     <div class="brand brand-trinity" onclick="navGo('trinity')">
@@ -377,10 +376,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
         <p style="color:var(--muted);line-height:1.85;font-size:14px;">📍 인천광역시 서구 파랑로 495, 2동 906호 (청라동, 에이스하이테크시티청라지식산업센터)<br>☎ 032-577-9963 · 9964 &nbsp;|&nbsp; 📱 010-8395-3456</p>
       </div>
       <div style="background:var(--glass);border:1px solid var(--glass-bd);border-radius:20px;padding:40px;text-align:center;">
-        <div class="group-logo" style="align-items:center;margin:0 auto;width:fit-content;">
-          <span class="num634" style="font-size:72px;">634</span>
-          <span class="musashi-name" style="font-size:18px;">MUSASHI</span>
-        </div>
+        <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img hero" width="280" height="140">
         <p style="font-family:'IBM Plex Mono';font-size:12px;color:var(--muted);letter-spacing:.08em;margin-top:16px;">INTERNATIONAL MUSASHI 634 GROUP</p>
       </div>
     </div>
@@ -791,7 +787,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
   <div class="foot-main">
     <div class="foot-brand-col">
       <div class="foot-logos">
-        <div class="group-logo"><span class="num634">634</span><span class="musashi-name">MUSASHI</span></div>
+        <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img foot" width="100" height="34">
         <div class="foot-logo-div"></div>
         <div class="trinity-logo" style="font-size:15px;">TRINITY<small>SCREEN PARK GOLF</small></div>
       </div>
