@@ -684,7 +684,7 @@ tr:last-child td{border-bottom:none}
 .admtabs::-webkit-scrollbar{display:none}
 .admtab{flex-shrink:0;padding:10px 14px;font-size:13px;font-weight:500;color:var(--tl);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;white-space:nowrap}
 .admtab.on{color:var(--p2);border-bottom-color:var(--p2);font-weight:700}
-.apanel{display:none}.apanel.on{display:block}
+.atab-body{display:none}.atab-body.on{display:block}
 .ibox{background:rgba(114,9,183,.06);border:1px solid var(--bd2);border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--tm);line-height:1.75}
 .ibox strong{color:var(--p2)}
 /* 슈퍼어드민 전용 스타일 */
@@ -695,7 +695,7 @@ tr:last-child td{border-bottom:none}
 
 /* ── 사이트별 UI 레이아웃 ── */
 .hero-inner{max-width:920px;margin:0 auto}
-.hero-panel{display:none}
+.hero-visual{display:none}
 .lcta{padding:48px 16px;text-align:center;background:linear-gradient(160deg,var(--w),var(--bg))}
 .lfoot{background:color-mix(in srgb,var(--tx) 88%, var(--p2));padding:20px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .land-svc{padding:48px 16px 40px;background:var(--w);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}
@@ -746,10 +746,10 @@ tr:last-child td{border-bottom:none}
 
 [data-layout="split"] .hero{padding:48px 20px;display:flex;align-items:center;justify-content:center;gap:24px;text-align:left;background:linear-gradient(135deg,var(--w) 0%,var(--bg) 55%,color-mix(in srgb,var(--p2) 12%,var(--bg)) 100%)}
 [data-layout="split"] .hero-inner{flex:1;max-width:520px;margin:0}
-[data-layout="split"] .hero-panel{display:flex;flex:1;max-width:360px;min-height:280px;border-radius:24px;background:var(--g);box-shadow:0 20px 60px color-mix(in srgb,var(--p2) 35%,transparent);align-items:center;justify-content:center;font-size:72px;opacity:.95}
+[data-layout="split"] .hero-visual{display:flex;flex:1;max-width:360px;min-height:280px;border-radius:24px;background:var(--g);box-shadow:0 20px 60px color-mix(in srgb,var(--p2) 35%,transparent);align-items:center;justify-content:center;font-size:72px;opacity:.95}
 [data-layout="split"] .hero-chips{justify-content:flex-start}
 [data-layout="split"] .hero h1{font-size:clamp(26px,5vw,46px)}
-@media(max-width:760px){[data-layout="split"] .hero{flex-direction:column;text-align:center}[data-layout="split"] .hero-panel{width:100%;max-width:100%;min-height:180px;font-size:56px}[data-layout="split"] .hero-chips{justify-content:center}}
+@media(max-width:760px){[data-layout="split"] .hero{flex-direction:column;text-align:center}[data-layout="split"] .hero-visual{width:100%;max-width:100%;min-height:180px;font-size:56px}[data-layout="split"] .hero-chips{justify-content:center}}
 
 [data-layout="minimal"] .hero{padding:44px 20px 28px;text-align:left;background:var(--bg)}
 [data-layout="minimal"] .htag,[data-layout="minimal"] .hero-chips{display:none}
@@ -800,7 +800,7 @@ tr:last-child td{border-bottom:none}
 [data-layout="glow-hq"] #heroDesc{margin:0 0 32px 0!important;max-width:480px!important;font-size:16px!important}
 [data-layout="glow-hq"] .hero-cta{justify-content:flex-start!important;margin-bottom:0!important}
 [data-layout="glow-hq"] .hero-chips{display:none!important}
-[data-layout="glow-hq"] .hero-panel{
+[data-layout="glow-hq"] .hero-visual{
   display:flex!important;flex:1 1 300px;max-width:440px;min-height:400px;
   border-radius:20px;padding:0;overflow:hidden;font-size:13px;
   background:linear-gradient(160deg,#0C1628,#081018)!important;
@@ -950,7 +950,7 @@ tr:last-child td{border-bottom:none}
   [data-layout="glow-hq"] .hero-inner{max-width:100%}
   [data-layout="glow-hq"] .hero-cta{justify-content:center!important}
   [data-layout="glow-hq"] #heroDesc{margin-left:auto!important;margin-right:auto!important}
-  [data-layout="glow-hq"] .hero-panel{max-width:100%;min-height:320px}
+  [data-layout="glow-hq"] .hero-visual{max-width:100%;min-height:320px}
   [data-layout="glow-hq"] .glow-hq-bento{grid-template-columns:1fr}
   [data-layout="glow-hq"] .land-svc h2,[data-layout="glow-hq"] .land-svc-sub{text-align:center;margin-left:auto;margin-right:auto}
 }
@@ -1011,6 +1011,28 @@ tr:last-child td{border-bottom:none}
 [data-layout="glow-hq"] .hq-partner-perk span{font-size:11px;color:#7AA8D8;line-height:1.5}
 [data-layout="glow-hq"] .hq-partner-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 [data-layout="glow-hq"] .hq-partner-note{font-size:11px;color:#5A7A9A;margin-top:12px}
+[data-layout="glow-hq"] .hq-dual-path{
+  display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:24px;
+}
+@media(min-width:640px){[data-layout="glow-hq"] .hq-dual-path{grid-template-columns:1fr 1fr}}
+[data-layout="glow-hq"] .hq-path{
+  background:rgba(8,14,24,.65);border:1px solid rgba(0,180,255,.18);border-radius:16px;
+  padding:22px 20px;display:flex;flex-direction:column;gap:10px;min-height:100%;
+}
+[data-layout="glow-hq"] .hq-path-owner{border-color:rgba(99,102,241,.35);background:linear-gradient(145deg,rgba(99,102,241,.08),rgba(8,14,24,.7))}
+[data-layout="glow-hq"] .hq-path-tag{
+  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:#7DD3FC;display:inline-block;padding:4px 10px;border-radius:6px;
+  background:rgba(0,150,255,.12);border:1px solid rgba(0,180,255,.2);width:fit-content;
+}
+[data-layout="glow-hq"] .hq-path-owner .hq-path-tag{color:#A5B4FC;background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3)}
+[data-layout="glow-hq"] .hq-path b{font-size:16px;font-weight:800;color:#F0F8FF;line-height:1.35}
+[data-layout="glow-hq"] .hq-path span{font-size:12px;color:#7AA8D8;line-height:1.65;flex:1}
+[data-layout="glow-hq"] .hq-path .bp,[data-layout="glow-hq"] .hq-path .bo{margin-top:6px;width:100%;justify-content:center}
+[data-layout="glow-hq"] .hq-partner-bridge{
+  font-size:13px;color:#94B8E8;line-height:1.65;margin-bottom:20px;padding:12px 16px;
+  border-left:3px solid rgba(0,180,255,.45);background:rgba(0,150,255,.06);border-radius:0 10px 10px 0;
+}
 </style>
 </head>
 <body>
@@ -1043,7 +1065,7 @@ tr:last-child td{border-bottom:none}
       <div class="chip">▶ 구독자 UP</div><div class="chip">👁 조회수 UP</div><div class="chip">⚡ 오늘 시작</div>
     </div>
     </div>
-    <div class="hero-panel" id="heroPanel">✨</div>
+    <div class="hero-visual" id="heroVisual">✨</div>
   </div>
   <div class="land-svc" id="landServices">
     <div class="land-svc-inner">
@@ -1451,7 +1473,7 @@ tr:last-child td{border-bottom:none}
           <button class="admtab" onclick="goAdm('settings',this)">⚙️ 설정</button>
           <button class="admtab" id="svcMgmtTab" onclick="goAdm('svcmgmt',this)">🛍 서비스 관리</button>
         </div>
-        <div class="apanel" id="ap-revenue">
+        <div class="atab-body" id="ap-revenue">
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px">
             <div class="card" style="text-align:center">
               <div style="font-size:12px;color:var(--tl);margin-bottom:4px">오늘 매출</div>
@@ -1473,17 +1495,17 @@ tr:last-child td{border-bottom:none}
           <div style="font-size:14px;font-weight:700;margin-bottom:8px">최근 주문 (매출 기준)</div>
           <div class="tw"><table><thead><tr><th>날짜</th><th>회원</th><th>서비스</th><th>금액</th><th>상태</th></tr></thead><tbody id="revTb"></tbody></table></div>
         </div>
-        <div class="apanel on" id="ap-orders">
+        <div class="atab-body on" id="ap-orders">
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="ap-users">
+        <div class="atab-body" id="ap-users">
           <div class="tw"><table><thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead><tbody id="aUTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="ap-charges">
+        <div class="atab-body" id="ap-charges">
           <div class="ibox" style="margin-bottom:10px">✦ 입금 확인 후 <strong>승인</strong>을 누르면 잔액에 자동 추가됩니다.</div>
           <div class="tw"><table><thead><tr><th>회원</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="aCTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="ap-creditreq">
+        <div class="atab-body" id="ap-creditreq">
           <div class="card" style="margin-bottom:12px">
             <div style="font-size:15px;font-weight:800;margin-bottom:8px">💰 슈퍼관리자에게 크레딧 요청</div>
             <div style="font-size:12px;color:var(--tm);margin-bottom:12px">크레딧이 부족하면 슈퍼관리자에게 충전 요청하세요. 입금 후 요청하시면 됩니다.</div>
@@ -1499,7 +1521,7 @@ tr:last-child td{border-bottom:none}
           <div style="font-size:14px;font-weight:700;margin-bottom:8px">요청 내역</div>
           <div class="tw"><table><thead><tr><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>관리</th></tr></thead><tbody id="crTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="ap-svcmgmt">
+        <div class="atab-body" id="ap-svcmgmt">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <div style="font-size:15px;font-weight:800">🛍 내 사이트 서비스 관리</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1513,7 +1535,7 @@ tr:last-child td{border-bottom:none}
           <div id="svcMgmtList" style="display:flex;flex-direction:column;gap:6px"></div>
         </div>
 
-        <div class="apanel" id="ap-settings">
+        <div class="atab-body" id="ap-settings">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">📱 텔레그램 알림 <span class="super-badge" id="tgBadge" style="display:none">슈퍼관리자</span></div>
@@ -1698,7 +1720,7 @@ tr:last-child td{border-bottom:none}
         </div>
 
         <!-- 사이트 관리 -->
-        <div class="apanel on" id="sp-sites">
+        <div class="atab-body on" id="sp-sites">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <div style="font-size:14px;font-weight:800">사이트 목록</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1711,22 +1733,22 @@ tr:last-child td{border-bottom:none}
         </div>
 
         <!-- 전체 주문 -->
-        <div class="apanel" id="sp-allorders">
-          <div class="tw"><table><thead><tr><th>사이트</th><th>회원</th><th>서비스</th><th>링크</th><th>공급사 주문번호</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th></tr></thead><tbody id="spOTb"></tbody></table></div>
+        <div class="atab-body" id="sp-allorders">
+          <div class="tw"><table><thead><tr><th>사이트</th><th>회원</th><th>서비스</th><th>링크</th><th>연동 주문번호</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th></tr></thead><tbody id="spOTb"></tbody></table></div>
         </div>
 
         <!-- 전체 충전 -->
-        <div class="apanel" id="sp-allcharges">
+        <div class="atab-body" id="sp-allcharges">
           <div class="ibox" style="margin-bottom:10px">✦ 전체 사이트의 충전 요청을 관리합니다.</div>
           <div class="tw"><table><thead><tr><th>사이트</th><th>회원</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="spCTb"></tbody></table></div>
         </div>
 
         <!-- 글로벌 API/텔레그램 설정 -->
-        <div class="apanel" id="sp-creditreqs">
+        <div class="atab-body" id="sp-creditreqs">
           <div style="font-size:14px;font-weight:700;margin-bottom:8px">💰 사이트 크레딧 요청 내역</div>
           <div class="tw"><table><thead><tr><th>사이트</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="spCRTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="sp-services">
+        <div class="atab-body" id="sp-services">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div style="font-size:14px;font-weight:700">⚙ 서비스 관리</div>
             <div style="display:flex;gap:6px">
@@ -1736,7 +1758,7 @@ tr:last-child td{border-bottom:none}
           </div>
           <div class="tw"><table><thead><tr><th>플랫폼</th><th>서비스명</th><th>원가($)/1000</th><th>최소</th><th>최대</th><th>상태</th><th>관리</th></tr></thead><tbody id="spSvcTb"></tbody></table></div>
         </div>
-        <div class="apanel" id="sp-pricecalc">
+        <div class="atab-body" id="sp-pricecalc">
           <!-- 단가표 계산기 -->
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
             <div class="fg" style="margin:0;flex:0 0 140px">
@@ -1779,7 +1801,7 @@ tr:last-child td{border-bottom:none}
             </table>
           </div>
         </div>
-        <div class="apanel" id="sp-globalapi">
+        <div class="atab-body" id="sp-globalapi">
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔑 API 설정</div>
@@ -1795,26 +1817,26 @@ tr:last-child td{border-bottom:none}
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔄 자동 동기화</div>
               <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">
                 • 주문 상태는 <strong>30분마다 자동</strong> 동기화됩니다.<br>
-                • 서비스는 <strong>6시간마다</strong> Peakerr 체크 · 삭제·저품질 자동 숨김<br>
-                • 신규 핫상품은 <strong>매주 일요일</strong> Peakerr에서 자동 추가<br>
-                • <strong>네이버·카카오·쿠팡</strong>은 Peakerr에 있을 때만 「아마zon·이커머스 스캔」으로 추가<br>
-                • 한국 SNS(인스타·유튜브 한국 타겟)는 기본 큐레이션 + 「🇰🇷 한국·Pinterest HQ」<br>
-                • Peakerr 자동 추가 상품은 <strong>한글 상품명</strong>으로 등록 · GLOW·지인 사이트 <strong>동시</strong> 반영
+                • 서비스는 <strong>6시간마다</strong> API 연동 체크 · 삭제·저품질 자동 숨김<br>
+                • 신규 핫상품은 <strong>매주 일요일</strong> 자동 추가<br>
+                • <strong>네이버·카카오·쿠팡</strong>은 연동 목록에 있을 때만 「아마zon·이커머스 스캔」으로 추가<br>
+                • 한국 SNS(인스타·유튜브 한국 타겟)는 기본 큐레이션 + 「🇰🇷 한국·Pinterest 프리미엄」<br>
+                • 자동 추가 상품은 <strong>한글 상품명</strong>으로 등록 · GLOW·파트너 사이트 <strong>동시</strong> 반영
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="bo bsm" onclick="manualSyncOrders()">🔄 주문 지금 동기화</button>
                 <button class="bo bsm" onclick="manualSyncServices()">📦 서비스 지금 체크</button>
                 <button class="bo bsm" onclick="localizeServiceNames()">🇰🇷 영문→한글 (전체 사이트)</button>
-                <button class="bo bsm" onclick="importHotPeakerrServices()">🔥 Peakerr 핫상품 추가</button>
-                <button class="bo bsm" onclick="importKrPinterestServices()">🇰🇷 한국·Pinterest HQ</button>
+                <button class="bo bsm" onclick="importHotPeakerrServices()">🔥 핫상품 추가</button>
+                <button class="bo bsm" onclick="importKrPinterestServices()">🇰🇷 한국·Pinterest 프리미엄</button>
                 <button class="bo bsm" onclick="importNicheServices()">🛒 아마zon·이커머스 스캔</button>
                 <button class="bo bsm" onclick="pruneServices()">🧹 불필요 상품 정리</button>
               </div>
               <div id="manualSyncRes" style="font-size:12px;color:var(--tm);margin-top:8px"></div>
             </div>
             <div class="card">
-              <div style="font-size:15px;font-weight:800;margin-bottom:12px">💰 슈퍼관리자 마진율 (지인 도매)</div>
-              <div style="font-size:12px;color:var(--tm);margin-bottom:10px">지인 사이트에 넘기는 도매 마진입니다. <b>본사 고객 마진과 별개</b>입니다.</div>
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">💰 슈퍼관리자 마진율 (파트너 사이트)</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:10px">파트너 사이트에 적용하는 공급 마진입니다. <b>본사 고객 마진과 별개</b>입니다.</div>
               <div class="fg"><label>슈퍼 마진율 (%)</label><input type="number" id="spSuperMargin" placeholder="50" min="0" max="500"/></div>
               <div style="font-size:11px;color:var(--tl);margin-bottom:10px">예: 원가 $1 → 슈퍼마진 50% → $1.5 → 사이트마진 50% → 고객가 $2.25</div>
               <button class="bp bsm" style="padding:9px 16px" onclick="saveSuperMargin()">저장</button>
@@ -1873,7 +1895,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <input type="hidden" id="svcEditId"/>
     <div class="fg"><label>공급 상품 번호 (필수 — 숫자)</label><input type="text" id="svcApiId" placeholder="예: 13810" inputmode="numeric"/>
-      <div style="font-size:11px;color:#9A8AB0;margin-top:4px">⚠️ 공급사 상품 번호입니다. 비워두면 주문이 작동하지 않습니다.</div>
+      <div style="font-size:11px;color:#9A8AB0;margin-top:4px">⚠️ 연동 상품 번호입니다. 비워두면 주문이 작동하지 않습니다.</div>
     </div>
     <div class="fg"><label>서비스명</label><input type="text" id="svcName" placeholder="YouTube 조회수"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -2113,7 +2135,7 @@ function openKakaoInquiry(){
   toast('카카오 문의 링크를 준비 중입니다','warn');
 }
 function openPartnerInquiry(){
-  var msg='[GLOW 파트너 문의]\n안녕하세요. GLOW와 같은 독립 사이트를 만들어 운영하고 싶습니다.\n도메인·상품 연동·관리자 패널 안내 부탁드립니다.';
+  var msg='[GLOW 사이트 주인 문의]\n안녕하세요. 지금 보신 GLOW와 같은 독립 사이트를 내 브랜드로 운영하고 싶습니다.\n도메인·상품 연동·사이트 관리 안내 부탁드립니다.';
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(msg).then(function(){
       toast('문의 문구가 복사됐어요. 카카오톡에 붙여넣어 주세요','ok');
@@ -2154,7 +2176,7 @@ function resetLandingSections(){
   });
   document.querySelectorAll('.land-tasks,.land-svc-grid,.land-steps').forEach(function(el){el.style.display='';});
   var lh=ge('landHow');if(lh){lh.classList.remove('glow-hq-pipeline');}
-  var panel=ge('heroPanel');if(panel){panel.innerHTML='✨';panel.style.display='';}
+  var hv=ge('heroVisual');if(hv){hv.innerHTML='✨';hv.style.display='';}
   var bento=ge('glowHqBento');if(bento)bento.remove();
   var partnerCta=ge('glowHqPartnerCta');if(partnerCta)partnerCta.remove();
   var side=ge('pg-auth')?.querySelector('.hq-auth-side');if(side)side.remove();
@@ -2209,7 +2231,7 @@ function hqTermRollLine(){
   if(roll===3) return ['postgres.replica',ip2+' lag '+hqRandInt(0,3)+'ms · '+hqRandInt(120,890)+' conn','',''];
   if(roll===4) return [pl+'/'+svc,'qty '+hqNum()+' · src '+ip,'ok','ok'];
   if(roll===5) return ['link.ingest',hqRand(['https://','http://'])+pl+'.com/'+hqHex(5)+'… · '+ip,'parsed','ok'];
-  if(roll===6) return ['upstream.'+hqRand(['peakerr','vendor','relay']),ip+' latency '+hqMs(),'',''];
+  if(roll===6) return ['upstream.'+hqRand(['sync','relay','gateway']),ip+' latency '+hqMs(),'',''];
   if(roll===7) return ['cdn.'+hqRand(['purge','prefetch','edge'])+' '+ip2+' · zone glowsiax · '+hqPct(),'',''];
   if(roll===8) return ['tls.handshake',ipp+' → '+node+' · '+hqMs(),'',''];
   if(roll===9) return ['notify.'+hqRand(['telegram','email','webhook']),'event '+hqHex(6)+' · peer '+ip,'queued','ok'];
@@ -2257,7 +2279,7 @@ function hqTermBuildBoot(){
     function(){return ['cache.warm',hqRandInt(180,2400)+' keys · redis '+hqFakeIp()];},
     function(){return ['ssl.check','glowsiax.com · valid '+hqRandInt(30,120)+'d · '+hqFakeIp()];},
     function(){return ['router.map',hqRandInt(12,64)+' routes · gw '+hqFakeIp()];},
-    function(){return ['vendor.api',hqRand(['peakerr','relay','upstream'])+' '+hqFakeIp()+' handshake'];},
+    function(){return ['partner.api',hqRand(['sync','relay','core'])+' '+hqFakeIp()+' handshake'];},
     function(){return ['channels[]',hqRand(['ig','yt','tt','x'])+' · '+hqRand(['ig','yt','tt','th'])+' · '+hqRand(['tt','fb','tg'])];},
     function(){return ['queue.subscriber','listening · pid '+hqRandInt(1200,9999)+' · '+hqFakeIp()];},
     function(){return ['worker.spawn',hqRandInt(3,8)+' threads · node '+hqFakeIp()];},
@@ -2419,15 +2441,15 @@ function applyGlowHQLanding(d){
   var hpf=ge('heroPrefix');if(hpf)hpf.textContent=d.heroPrefix||'소셜 성장';
   var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'성장 플랫폼';
   var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'채널·브랜드·파트너를 하나로';
-  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'GLOW 본사에서 직접 운영하는 성장 인프라. 가입 후 링크만 넣으면 전 채널 자동 처리.';
+  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'고객으로 채널을 키우거나, 같은 방식으로 내 사이트 주인이 될 수 있습니다. 가입 후 링크만 넣으면 전 채널 자동 처리.';
 
-  var panel=ge('heroPanel');
-  if(panel){
+  var hv=ge('heroVisual');
+  if(hv){
     var s1=d.stat1Num||'10K+',s1l=d.stat1Label||'서비스';
     var s2=d.stat2Num||'24H',s2l=d.stat2Label||'처리';
     var s3=d.stat3Num||'LINK',s3l=d.stat3Label||'입력';
     var s4=d.stat4Num||'100%',s4l=d.stat4Label||'자동';
-    panel.innerHTML=
+    hv.innerHTML=
       '<div class="hq-terminal">'
       +'<div class="hq-term-bar"><span></span><span></span><span></span> glow-core · <span class="hq-live-dot"></span><span class="hq-live-txt">live</span></div>'
       +'<div class="hq-term-body">'
@@ -2448,7 +2470,7 @@ function applyGlowHQLanding(d){
     ls.style.display='block';
     var h2=ls.querySelector('h2');if(h2)h2.innerHTML='플랫폼 <span class="gt">커맨드 센터</span>';
     var sub=ls.querySelector('.land-svc-sub');
-    if(sub)sub.textContent='파트너 사이트와 다른 GLOW 본사 전용 대시보드. 채널별 성장 모듈을 한곳에서.';
+    if(sub)sub.textContent='고객으로 쓰면 채널 성장에 집중. 사이트 주인으로 쓰면 지금 보시는 것과 같은 독립 사이트를 내 브랜드로.';
     document.querySelectorAll('.land-tasks,.land-svc-grid,.land-svc-note').forEach(function(el){el.style.display='none';});
     if(!ge('glowHqBento')){
       var bento=document.createElement('div');
@@ -2489,18 +2511,24 @@ function applyGlowHQLanding(d){
     partner.className='hq-partner-cta';
     partner.innerHTML=
       '<div class="hq-partner-card">'
-      +'<h2>이 플랫폼, <span class="gt">내 사이트로</span> 운영하고 싶으신가요?</h2>'
-      +'<p class="hq-partner-sub">지금 보시는 것처럼 독립 도메인·자동 주문·충전·관리자 패널까지 갖춘 사이트를 만들 수 있습니다. 마케터·대행사·1인 사업자에게 인기 있는 GLOW 파트너 프로그램입니다.</p>'
-      +'<div class="hq-partner-perks">'
-      +'<div class="hq-partner-perk"><b>🏷 내 브랜드로 오픈</b><span>도메인·로고·테마를 내 이름으로</span></div>'
-      +'<div class="hq-partner-perk"><b>⚡ 상품 자동 연동</b><span>인스타·유튜브·틱톡 등 수천 종</span></div>'
-      +'<div class="hq-partner-perk"><b>📱 텔레그램·관리</b><span>주문·충전 알림 + 어드민 패널</span></div>'
+      +'<h2>두 가지로 <span class="gt">쓸 수 있습니다</span></h2>'
+      +'<p class="hq-partner-sub">지금 보시는 사이트 그대로입니다. 채널만 키우고 싶으면 고객으로, 내 도메인·내 이름으로 운영하고 싶으면 사이트 주인으로 시작하세요.</p>'
+      +'<p class="hq-partner-bridge">💡 <strong>고객으로 써보다가</strong> 「나도 이런 사이트 주인 해볼까?」 싶으면 그때 문의해도 늦지 않습니다. 먼저 체험해 보시는 분이 많아요.</p>'
+      +'<div class="hq-dual-path">'
+      +'<div class="hq-path hq-path-user">'
+      +'<span class="hq-path-tag">고객으로</span>'
+      +'<b>채널 성장에만 집중</b>'
+      +'<span>가입 → 충전 → 링크 입력. 인스타·유튜브·틱톡 팔로워·조회수·구독자를 바로 이용합니다.</span>'
+      +'<button type="button" class="bp bsm" onclick="goAuth(\'register\')">고객으로 시작 →</button>'
       +'</div>'
-      +'<div class="hq-partner-actions">'
-      +'<button type="button" class="bp bsm" onclick="openPartnerInquiry()">💬 파트너 사이트 문의하기</button>'
-      +'<button type="button" class="bo bsm" onclick="goAuth(\'register\')">먼저 본사 계정 체험 →</button>'
+      +'<div class="hq-path hq-path-owner">'
+      +'<span class="hq-path-tag">사이트 주인으로</span>'
+      +'<b>지금 이 사이트를 내 것으로</b>'
+      +'<span>독립 도메인·내 로고·자동 주문·충전·회원 관리까지. 대행사·마케터·1인 사업자에게 딱 맞습니다.</span>'
+      +'<button type="button" class="bp bsm" onclick="openPartnerInquiry()">내 사이트 문의 →</button>'
       +'</div>'
-      +'<p class="hq-partner-note">버튼을 누르면 문의 문구가 복사되고 카카오톡 상담으로 연결됩니다.</p>'
+      +'</div>'
+      +'<p class="hq-partner-note">사이트 주인 문의 시 문구가 복사되고 카카오톡 상담으로 연결됩니다.</p>'
       +'</div>';
     var land=ge('pg-land');
     var foot=land&&land.querySelector('.lfoot');
@@ -2511,7 +2539,10 @@ function applyGlowHQLanding(d){
   ['landFaq','landCta','landStats'].forEach(function(id){var el=ge(id);if(el)el.style.display='none';});
 
   var ctaBtns=document.querySelectorAll('.hero-cta .bp');
-  if(ctaBtns[0])ctaBtns[0].textContent='본사 계정 만들기 →';
+  if(ctaBtns[0])ctaBtns[0].textContent='고객으로 시작 →';
+  var ctaSec=document.querySelector('.hero-cta .bo');
+  if(ctaSec)ctaSec.textContent='사이트 주인 문의';
+  if(ctaSec)ctaSec.setAttribute('onclick','openPartnerInquiry()');
 
   setupGlowHQAuth(brand);
 }
@@ -2526,7 +2557,7 @@ function setupGlowHQAuth(brand){
     +'<span class="bnm gt" style="font-size:22px">'+brand+'</span></div>'
     +'<h2 style="font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1.15;margin-bottom:16px;color:#F0F8FF">'
     +'본사<br><span class="gt">커맨드 센터</span></h2>'
-    +'<p style="font-size:14px;color:#7AA8D8;line-height:1.75;max-width:320px">파트너 사이트와 분리된 GLOW 본사 전용 계정입니다. 로그인 후 바로 주문·충전이 가능합니다.</p>';
+    +'<p style="font-size:14px;color:#7AA8D8;line-height:1.75;max-width:320px">고객으로 쓰면 바로 주문·충전. 사이트 주인으로 쓰고 싶다면 하단에서 문의하세요 — 지금 보시는 것과 같은 사이트를 내 브랜드로 열 수 있습니다.</p>';
   var abox=pg.querySelector('.abox');
   if(abox)pg.insertBefore(side,abox);
 }
@@ -2593,7 +2624,7 @@ async function loadSiteConfig(){
   ['navLogo','authLogo','sbLogo','tbLogo'].forEach(function(id){var el=ge(id);if(el)el.textContent=logo});
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
-  var hp=ge('heroPanel');if(hp&&(d.uiLayout||'')!=='glow-hq')hp.textContent=logo;
+  var hp=ge('heroVisual');if(hp&&(d.uiLayout||'')!=='glow-hq')hp.textContent=logo;
   var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
 
   // 통계 숫자 (상단 2칸은 사이트별 설정 가능)
@@ -3063,7 +3094,7 @@ async function refreshOrder(orderId){
   toast('상태 확인 중...','ok');
   var d=await api('/api/orders/refresh/'+orderId,'POST');
   if(d.error){toast(d.error,'err');return}
-  toast('상태 업데이트 완료: '+(d.peakerrStatus||'확인됨'),'ok');
+  toast('상태 업데이트 완료: '+(d.status||d.peakerrStatus||'확인됨'),'ok');
   loadOrders();
   updBal();
 }
@@ -3170,7 +3201,7 @@ async function loadAdmDash(){
 }
 function goAdm(tab,el){
   document.querySelectorAll('.admtab').forEach(function(t){t.classList.remove('on')});
-  document.querySelectorAll('.apanel').forEach(function(p){p.classList.remove('on')});
+  document.querySelectorAll('.atab-body').forEach(function(p){p.classList.remove('on')});
   el.classList.add('on');ge('ap-'+tab).classList.add('on');
   if(tab==='orders')loadAdmOrders();
   if(tab==='users')loadAdmUsers();
@@ -3496,7 +3527,7 @@ async function autoCleanServices(){
 }
 
 async function pruneServices(){
-  if(!confirm('다음 상품을 숨깁니다 (고객 화면에서 안 보임):\n\n• Peakerr에서 사라진 것\n• bot/fake/testing 등 저품질\n• 같은 상품 중복\n• 플랫폼별 28개 초과\n\n주문 기록은 유지 · 최근 주문 상품은 보호\n\n계속할까요?'))return;
+  if(!confirm('다음 상품을 숨깁니다 (고객 화면에서 안 보임):\n\n• 연동 목록에서 사라진 것\n• 저품질·테스트 상품\n• 같은 상품 중복\n• 플랫폼별 28개 초과\n\n주문 기록은 유지 · 최근 주문 상품은 보호\n\n계속할까요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>정리 중...';
   var d=await api('/api/super/services/prune','POST',{maxPerPlatform:28});
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
@@ -3654,12 +3685,12 @@ async function testApi(){
   if(res)res.innerHTML=msg;
 }
 async function syncSvcs(){
-  if(!confirm('Peakerr 전체 목록을 가져와 기존 상품은 유지·신규만 추가합니다.\n(기존 98개 큐레이션 상품은 삭제되지 않습니다)\n\n계속하시겠습니까?'))return;
+  if(!confirm('연동 API 전체 목록을 가져와 기존 상품은 유지·신규만 추가합니다.\n(기존 큐레이션 상품은 삭제되지 않습니다)\n\n계속하시겠습니까?'))return;
   var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 중...';
   var d=await api('/api/admin/api-sync');
   var msg=d.ok?'<span style="color:#10B981">✅ 신규 '+d.added+'개 · 갱신 '+d.updated+'개</span>':'<span style="color:#EF4444">❌ '+d.error+'</span>';
   if(res)res.innerHTML=msg;
-  if(d.ok){loadSvcs();toast('Peakerr 동기화 완료 ✨','ok')}
+  if(d.ok){loadSvcs();toast('서비스 동기화 완료 ✨','ok')}
 }
 async function testTg(){
   var res=ge('tgRes')||ge('spTgRes');if(res)res.innerHTML='<span class="spin spin2"></span>테스트 중...';
@@ -3670,7 +3701,7 @@ async function testTg(){
 
 // 🔄 수동 주문 동기화
 async function manualSyncOrders(){
-  if(!confirm('모든 진행중 주문의 상태를 공급사에서 확인하고 자동 환불 처리합니다.\n계속하시겠어요?'))return;
+  if(!confirm('모든 진행중 주문의 상태를 연동 API에서 확인하고 자동 환불 처리합니다.\n계속하시겠어요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>동기화 시작...';
   var d=await api('/api/super/sync-orders','POST');
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
@@ -3680,7 +3711,7 @@ async function manualSyncOrders(){
 
 // 🔄 수동 서비스 체크
 async function manualSyncServices(){
-  if(!confirm('공급사에서 삭제된 서비스를 자동 비활성화하고, 가격 변동된 서비스를 업데이트합니다.\n계속하시겠어요?'))return;
+  if(!confirm('연동 목록에서 삭제된 서비스를 자동 비활성화하고, 가격 변동된 서비스를 업데이트합니다.\n계속하시겠어요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>체크 중...';
   var d=await api('/api/super/sync-services','POST');
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';return}
@@ -3688,9 +3719,9 @@ async function manualSyncServices(){
   toast('서비스 체크 시작됨 ✨','ok');
 }
 
-// 🔥 Peakerr 핫상품 추가 (HQ·Real 등 자동 선별)
+// 🔥 핫상품 추가 (프리미엄 등 자동 선별)
 async function importKrPinterestServices(){
-  if(!confirm('Peakerr에서 한국(KR/Korea) 타겟 HQ·Real 상품과\nPinterest 고품질 상품만 골라 추가합니다.\n\n없으면 추가하지 않습니다.\n\n계속할까요?'))return;
+  if(!confirm('한국 타겟 프리미엄 상품과\nPinterest 고품질 상품만 골라 추가합니다.\n\n없으면 추가하지 않습니다.\n\n계속할까요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>한국·Pinterest 스캔 중...';
   var d=await api('/api/super/import-kr-pinterest','POST',{maxKrPerPlatform:4,maxPinterest:5});
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
@@ -3700,8 +3731,8 @@ async function importKrPinterestServices(){
 }
 
 async function importNicheServices(){
-  if(!confirm('Peakerr에서 아마zon·쿠팡·네이버·카카오·이커머스 및\nLinkedIn·Pinterest 등 — 실제 있는 상품만 추가합니다.\n\n없으면 아무 것도 추가하지 않습니다.\n\n계속할까요?'))return;
-  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>Peakerr 스캔 중...';
+  if(!confirm('아마zon·쿠팡·네이버·카카오·이커머스 및\nLinkedIn·Pinterest 등 — 실제 있는 상품만 추가합니다.\n\n없으면 아무 것도 추가하지 않습니다.\n\n계속할까요?'))return;
+  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>상품 스캔 중...';
   var d=await api('/api/super/import-niche-services','POST',{maxNichePerPlatform:5,maxBonusPerBucket:3});
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
   if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
@@ -3717,8 +3748,8 @@ async function localizeServiceNames(){
   if(d.ok){toast(d.message||'한글화 완료','ok');loadSuperServices();}
 }
 async function importHotPeakerrServices(){
-  if(!confirm('Peakerr에서 HQ·Real·Non Drop 등 고품질 신규 상품만 골라 추가합니다.\n(유튜브·인스타·틱톡 등 플랫폼당 최대 5개 · 기존 상품 유지)\n\n계속할까요?'))return;
-  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>Peakerr 스캔 중...';
+  if(!confirm('고품질 신규 상품만 골라 추가합니다.\n(유튜브·인스타·틱톡 등 플랫폼당 최대 5개 · 기존 상품 유지)\n\n계속할까요?'))return;
+  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>상품 스캔 중...';
   var d=await api('/api/super/import-hot-services','POST',{maxPerPlatform:5});
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
   if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
@@ -3737,7 +3768,7 @@ async function manualScanNewServices(){
 }
 
 async function repairAllSiteServices(){
-  if(!confirm('지인 사이트(나인스토리 등)에 활성 상품 연결을 다시 맞춥니다.\nPeakerr에서 새 상품을 가져오지 않습니다.\n\n계속할까요?'))return;
+  if(!confirm('파트너 사이트에 활성 상품 연결을 다시 맞춥니다.\n새 상품을 가져오지 않습니다.\n\n계속할까요?'))return;
   var d=await api('/api/super/sites/repair-services','POST',{force:true});
   if(d.error){toast(d.error,'err');return}
   var n=(d.results&&d.results.length)||0;
@@ -3785,7 +3816,7 @@ async function loadSuperDash(){
 }
 function goSuperTab(tab,el){
   document.querySelectorAll('.admtab').forEach(function(t){t.classList.remove('on')});
-  document.querySelectorAll('.apanel').forEach(function(p){p.classList.remove('on')});
+  document.querySelectorAll('.atab-body').forEach(function(p){p.classList.remove('on')});
   el.classList.add('on');ge('sp-'+tab).classList.add('on');
   if(tab==='allorders')loadSuperOrders();
   if(tab==='allcharges')loadSuperCharges();
