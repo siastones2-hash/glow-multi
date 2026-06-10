@@ -4237,13 +4237,19 @@ app.get('*', async (req, res) => {
       neon: {
         attr: 'neon',
         css: `:root{
-  --p1:#39FF14 !important;--p2:#00FF88 !important;--p3:#00E5FF !important;
-  --g:linear-gradient(135deg,#39FF14,#00FF88,#00E5FF) !important;
-  --bg:#030806 !important;--w:#0A1210 !important;--tx:#F0FFF0 !important;
-  --tm:#9AFF9A !important;--tl:#5CB85C !important;
-  --bd:rgba(57,255,20,.22) !important;--bd2:rgba(57,255,20,.45) !important;
+  --p1:#39FF14 !important;--p2:#00FFAA !important;--p3:#00D4FF !important;
+  --g:linear-gradient(120deg,#39FF14,#00FFAA,#00D4FF,#00E8FF) !important;
+  --bg:#020807 !important;--w:#0B1412 !important;--tx:#F4FFF4 !important;
+  --tm:#B8FFC8 !important;--tl:#6DB88A !important;
+  --bd:rgba(57,255,20,.18) !important;--bd2:rgba(0,212,255,.32) !important;
 }
-body{background:#030806!important;color:#F0FFF0!important}`,
+body{
+  background:#020807!important;color:#F4FFF4!important;
+  background-image:
+    radial-gradient(ellipse 100% 80% at 50% -20%,rgba(57,255,20,.14),transparent 55%),
+    radial-gradient(circle at 15% 40%,rgba(0,232,255,.08),transparent 35%),
+    radial-gradient(circle at 85% 65%,rgba(0,201,167,.07),transparent 38%)!important;
+}`,
       },
       anonymous: {
         attr: 'anonymous',
