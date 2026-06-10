@@ -109,11 +109,11 @@ nav.scrolled{background:rgba(10,11,16,.95);}
 .brand{display:flex;align-items:center;gap:14px;cursor:pointer;}
 .group-logo{display:flex;flex-direction:column;align-items:flex-start;line-height:1;}
 .musashi-logo-img{display:block;height:auto;object-fit:contain;flex-shrink:0;}
-.musashi-logo-img.nav{height:42px;width:auto;}
-.musashi-logo-img.hero{height:clamp(108px,24vw,158px);width:auto;margin:0 auto;}
-.musashi-logo-img.foot{height:38px;width:auto;}
+.musashi-logo-img.nav{height:46px;width:auto;filter:drop-shadow(0 1px 10px rgba(201,162,39,.22));}
+.musashi-logo-img.hero{height:clamp(108px,24vw,158px);width:auto;margin:0 auto;filter:drop-shadow(0 2px 18px rgba(201,162,39,.18));}
+.musashi-logo-img.foot{height:40px;width:auto;filter:drop-shadow(0 1px 8px rgba(201,162,39,.15));}
 .brand-sub{font-size:9px;color:var(--muted);letter-spacing:.5px;display:block;margin-top:3px;font-weight:400;}
-.brand-text{font-size:12px;color:var(--muted);line-height:1.55;max-width:148px;letter-spacing:0;}
+.brand-text{font-size:11px;color:rgba(232,234,242,.88);line-height:1.55;max-width:148px;letter-spacing:.02em;font-weight:500;}
 .asset-frame{border-radius:16px;overflow:hidden;border:1px solid var(--glass-bd);background:#111;}
 .asset-frame img{width:100%;display:block;}
 .asset-frame.no-overlay::after{display:none;}
@@ -428,7 +428,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
 <nav id="nav">
   <div class="nav-inner">
     <div class="brand brand-musashi" onclick="navGo('home')">
-      <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img nav" width="132" height="42">
+      <img src="assets/musashi-logo-light.png" alt="MUSASHI 634" class="musashi-logo-img nav" width="140" height="46">
       <div class="brand-text">인터네셔널<br>무사시 634 그룹</div>
     </div>
     <div class="nav-links" id="navLinks">
@@ -486,7 +486,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
         <p style="color:var(--muted);line-height:1.85;font-size:14px;">📍 인천광역시 서구 파랑로 495, 2동 906호 (청라동, 에이스하이테크시티청라지식산업센터)<br>☎ 032-577-9963 · 9964 &nbsp;|&nbsp; 📱 010-8395-3456</p>
       </div>
       <div style="background:var(--glass);border:1px solid var(--glass-bd);border-radius:20px;padding:40px;text-align:center;">
-        <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img hero" width="300" height="158">
+        <img src="assets/musashi-logo-light.png" alt="MUSASHI 634" class="musashi-logo-img hero" width="300" height="158">
         <p style="font-family:'IBM Plex Mono';font-size:12px;color:var(--muted);letter-spacing:.08em;margin-top:16px;">INTERNATIONAL MUSASHI 634 GROUP</p>
       </div>
     </div>
@@ -1142,7 +1142,7 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
   <div class="foot-main">
     <div class="foot-brand-col">
       <div class="foot-logos">
-        <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img foot" width="112" height="38">
+        <img src="assets/musashi-logo-light.png" alt="MUSASHI 634" class="musashi-logo-img foot" width="118" height="40">
         <div class="foot-logo-div"></div>
         <div class="trinity-logo" style="font-size:15px;">TRINITY<small>SCREEN PARK GOLF</small></div>
         <div class="foot-logo-div"></div>
