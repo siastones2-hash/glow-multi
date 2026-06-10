@@ -208,18 +208,18 @@ async function initDB() {
   // GLOW 본사 도메인 (Render 커스텀 도메인 · env로 변경 가능)
   const GLOW_DOMAIN = (process.env.GLOW_DOMAIN || 'glowsiax.com').split(':')[0].replace(/^www\./, '');
 
-  // GLOW 본사 — neon 그린 글로우 (파트너 사이트와 분리)
+  // GLOW 본사 — glow-blue 다크 블루 (파트너 사이트와 분리)
   const GLOW_BRAND = {
     logo: '✦',
-    primary: '#39FF14',
-    accent: '#00FF88',
-    theme: 'neon',
+    primary: '#00B4FF',
+    accent: '#0096FF',
+    theme: 'glow-blue',
     uiLayout: 'classic',
-    heroBadge: '⚡ NEON GROWTH PLATFORM',
+    heroBadge: '◆ BLUE GROWTH PLATFORM',
     heroPrefix: '링크 하나면',
     slogan: '팔로워·조회·구독 UP',
-    sloganSub: '네온처럼 빠르게 · 오늘 바로 시작',
-    description: '가입 30초, 링크만 넣으면 끝. 유튜브·인스타·틱톡 채널을 네온 속도로 키우세요.',
+    sloganSub: '블루 속도로 · 오늘 바로 시작',
+    description: '가입 30초, 링크만 넣으면 끝. 유튜브·인스타·틱톡 채널을 빠르게 키우세요.',
     loginWelcome: '다시 만나요',
     loginSub: '계정에 로그인',
     registerWelcome: '지금 시작',
@@ -251,7 +251,7 @@ async function initDB() {
     await query(`UPDATE sites SET domain=$1 WHERE id='default'`, [GLOW_DOMAIN]);
     const curTheme = await query(`SELECT theme FROM sites WHERE id='default'`);
     const th = (curTheme.rows[0]?.theme || 'glow').trim();
-    if (!th || th === 'glow' || th === 'anonymous' || th === 'neon') {
+    if (!th || th === 'glow' || th === 'anonymous' || th === 'neon' || th === 'glow-blue') {
       await query(`
         UPDATE sites SET
           logo=$1, primary_color=$2, accent_color=$3, theme=$4, ui_layout=$5,
@@ -4234,21 +4234,21 @@ app.get('*', async (req, res) => {
     const siteTheme = (site && site.theme) ? String(site.theme).trim() : 'glow';
     const siteLayout = (site && site.ui_layout) ? String(site.ui_layout).trim() : 'classic';
     const PRESET_THEME_CSS = {
-      neon: {
-        attr: 'neon',
+      'glow-blue': {
+        attr: 'glow-blue',
         css: `:root{
-  --p1:#39FF14 !important;--p2:#00FFAA !important;--p3:#00D4FF !important;
-  --g:linear-gradient(120deg,#39FF14,#00FFAA,#00D4FF,#00E8FF) !important;
-  --bg:#020807 !important;--w:#0B1412 !important;--tx:#F4FFF4 !important;
-  --tm:#B8FFC8 !important;--tl:#6DB88A !important;
-  --bd:rgba(57,255,20,.18) !important;--bd2:rgba(0,212,255,.32) !important;
+  --p1:#00B4FF !important;--p2:#0096FF !important;--p3:#6366F1 !important;
+  --g:linear-gradient(120deg,#00E5FF,#00B4FF,#0096FF,#6366F1) !important;
+  --bg:#020818 !important;--w:#0A1220 !important;--tx:#E8F4FF !important;
+  --tm:#94B8E8 !important;--tl:#5A7A9A !important;
+  --bd:rgba(0,180,255,.16) !important;--bd2:rgba(99,102,241,.28) !important;
 }
 body{
-  background:#020807!important;color:#F4FFF4!important;
+  background:#020818!important;color:#E8F4FF!important;
   background-image:
-    radial-gradient(ellipse 100% 80% at 50% -20%,rgba(57,255,20,.14),transparent 55%),
-    radial-gradient(circle at 15% 40%,rgba(0,232,255,.08),transparent 35%),
-    radial-gradient(circle at 85% 65%,rgba(0,201,167,.07),transparent 38%)!important;
+    radial-gradient(ellipse 100% 80% at 50% -20%,rgba(0,150,255,.16),transparent 55%),
+    radial-gradient(circle at 12% 45%,rgba(99,102,241,.1),transparent 38%),
+    radial-gradient(circle at 88% 60%,rgba(0,229,255,.07),transparent 40%)!important;
 }`,
       },
       anonymous: {
