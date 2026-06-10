@@ -323,6 +323,24 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
 .iron-card h4{font-size:15px;margin-bottom:6px;}
 .iron-card p{color:var(--muted);font-size:13px;line-height:1.65;}
 .iron-card .ic-meta{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);margin-top:10px;}
+.iron-card .ic-price{font-family:'IBM Plex Mono';font-size:12px;color:var(--gold-light);margin-top:8px;}
+.iron-card.featured{border-color:rgba(201,162,39,.45);background:linear-gradient(145deg,rgba(201,162,39,.08),rgba(255,255,255,.02));}
+.iron-hero-img{width:100%;max-width:760px;border-radius:16px;border:1px solid var(--glass-bd);margin:20px 0;cursor:pointer;display:block;}
+.iron-price{font-family:'Sora',sans-serif;font-size:clamp(26px,4vw,34px);color:var(--gold-light);font-weight:700;margin:12px 0 4px;}
+.iron-price del{font-size:15px;color:var(--muted);font-weight:400;margin-right:10px;text-decoration:line-through;}
+.iron-bullets{list-style:none;margin:16px 0 24px;color:var(--text);line-height:1.85;font-size:15px;}
+.iron-bullets li{padding:4px 0;padding-left:20px;position:relative;}
+.iron-bullets li::before{content:'▸';position:absolute;left:0;color:var(--gold-light);}
+.iron-spec-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;}
+.iron-spec-table th,.iron-spec-table td{padding:10px 10px;border:1px solid var(--glass-bd);text-align:center;vertical-align:middle;}
+.iron-spec-table th{background:rgba(201,162,39,.08);font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);font-weight:500;}
+.iron-spec-table td{color:var(--text);}
+.iron-detail-long{width:100%;border-radius:12px;border:1px solid var(--glass-bd);margin-top:28px;cursor:pointer;display:block;}
+.iron-markings{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 8px;}
+.iron-markings span{font-family:'IBM Plex Mono';font-size:10px;padding:6px 12px;border:1px solid rgba(201,162,39,.3);border-radius:6px;color:var(--gold-light);}
+.iron-spec-block{margin-top:28px;}
+.iron-spec-block h4{font-size:15px;margin-bottom:10px;color:var(--gold-light);}
+.iron-gallery-row{display:grid;grid-template-columns:1fr;gap:16px;margin-top:24px;}
 @media(max-width:900px){
   .nav-links{display:none;}
   .hamburger{display:flex;flex-shrink:0;min-width:44px;min-height:44px;align-items:center;justify-content:center;}
@@ -642,7 +660,11 @@ footer{border-top:1px solid var(--glass-bd);padding:56px 0 28px;position:relativ
       <tbody id="productsTableBody"></tbody>
     </table>
     </div>
-    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px;">브랜드 클릭 → 상세 · 아이언 라인업 클릭 → 아이언 상세</p>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px;">브랜드 클릭 → 상세 · <strong style="color:var(--text)">MUSASHI 634</strong> → CPS 그래핀 7아이언 상세</p>
+    <div class="iron-section reveal" style="margin-top:32px;border-top:none;padding-top:0;">
+      <h3 style="font-size:18px;margin-bottom:12px;">대표 아이언 <span class="grad">CPS 그래핀</span></h3>
+      <div class="iron-grid" id="featuredIron"></div>
+    </div>
   </div></section>
 </div>
 
@@ -1182,13 +1204,14 @@ const pages=['home','products','pdetail','idetail','nigodemo','magnificat','trin
 const trinityPages=['trinity','franchise','tcontact'];
 const magnificatPages=['magnificat'];
 const productCats={premium:'프리미엄',iron:'아이언·세트',wedge:'웨지·스페셜',women:'우먼스',beginner:'입문·퍼터',goods:'용품·액세서리'};
+const CPS_IRON={id:'cps-graphene-7i',featured:true,name:'[비거리 전용] 634 CPS 그래핀 그라파이트 7아이언',compose:'#5 · #6 · #7 · #8 · #9 · PW · SW',loft:'24° ~ 55°',shaft:'CPS 그래핀 100% · R / SR / S',desc:'무사시 634 대표 비거리 아이언. JEHOVAH NISSI III · HYPER SPEED TECHNOLOGY 적용. 남녀공용 나노 그래핀 샤프트 7pc 세트.',price:'1,890,000',priceOrig:'2,490,000',hero:'assets/irons/cps-graphene/hero.jpg',detailImg:'assets/irons/cps-graphene/spec-detail.jpg',bullets:['비거리 절대 보장','인생 최고의 비거리','초경량 · 가장 쉬운 아이언'],markings:['JEHOVAH NISSI III','HYPER SPEED TECHNOLOGY','SOLI DEO GLORIA','MUSASHI 634'],features:['CPS(Nano Product System) 100% 그래핀 샤프트 — Self Control Flex','초경량 헤드 + 고탄성 샤프트로 비거리·이지 스윙','페이스 하단 이중 홈 — 볼 스피드·관용성 향상','샤프트 컬러: 오렌지 · 라임 · 실버 그라데이션','Musashi 블랙 그립 · 캐비티백 골드 포인트'],specs:[['품명','무사시 634 CPS 그래핀 그라파이트 7아이언'],['성별','남녀공용'],['구성','#5~SW 7pc 세트'],['재질','금속 + 그래핀'],['제조국','대한민국'],['출시','2025년'],['제조','무사시 634 / ㈜씨엔씨인터내셔널']],clubs:[['클럽','로프트','라이','길이','헤드중량'],['#5','24°','61°','38"','358g'],['#6','27°','61.5°','37.5"','365g'],['#7','31°','62°','37"','372g'],['#8','35°','62.5°','36.5"','379g'],['#9','40°','63°','36"','386g'],['PW','45°','63.5°','35.5"','393g'],['SW','55°','64°','35.25"','400g']],shafts:[['플렉스','중량','토크','CPM','킥포인트'],['R','48g','4.2','245','Low/Mid'],['SR','50g','4.0','255','Low/Mid'],['S','52g','3.8','265','Low/Mid']]};
 const products=[
   {id:'heroeszipangu',no:1,n:'HEROESZIPANGU',cat:'premium',catLabel:'프리미엄',items:'아이언 · 웨지 · 유틸리티',desc:'일본 전통 단조와 현대 기술의 플래그십 라인',origin:'일본',material:'소프트아이언 단조',target:'중·상급자 · 컬렉터',features:['전통 단조 공법 기반 프리미엄 헤드','아트워크·한정 컬렉션 컨셉','의미를 담은 시리즈 네이밍'],specs:[['제조국','일본'],['헤드','단조'],['라인','프리미엄'],['구성','시리즈별 상이 — 문의 안내']],irons:[{id:'forged-set',name:'단조 아이언 풀세트',compose:'#4~PW',loft:'#4 24° ~ PW 48°',shaft:'950S / DG · 문의',desc:'소프트아이언 단조 바디. 컬렉터·상급자용 정통 필.',features:['일본식 단조 공법','얇은 톱라인·클래식 실루엣','시리즈 아트워크 각인'],specs:[['헤드','소프트아이언 단조'],['구성','#4~PW 7pc'],['샤프트','Steel — 강도별'],['특징','프리미엄 · 한정']]},{id:'utility',name:'유틸리티 · 롱아이언',compose:'#3U · #4U',loft:'19° · 22°',shaft:'Graphite / Hybrid',desc:'아이언 세트와 매칭되는 유틸리티.',features:['아이언 라인 디자인 통일','관용성·비거리 보완'],specs:[['분류','유틸리티'],['로프트','19° · 22°'],['구성','단품·세트 연계']]}]},
-  {id:'jehovah-nishi',no:2,n:'JEHOVAH NISHI',cat:'iron',catLabel:'아이언·세트',items:'아이언 풀세트',desc:'「여호와는 나의 깃발」— 뜻을 담은 스탠다드 아이언 라인',origin:'일본',material:'캐비티백/포지드',target:'핸디 15~30 · 실력 향상형',features:['넓은 스위트 스팟으로 방향성 안정','일관된 볼 비거리·방향성 중심 설계','시리즈명에 담긴 제작 철학'],specs:[['제조국','일본'],['분류','스탠다드 아이언'],['구성','#5~PW 풀세트'],['샤프트','강도별 선택 — 문의']],irons:[{id:'full-set',name:'스탠다드 풀세트',compose:'#5~PW · AW',loft:'#5 28° ~ PW 44°',shaft:'Steel R / SR / S',desc:'실력 향상형 스탠다드 아이언. 넓은 스위트 스팟.',features:['캐비티백·포지드 하이브리드 구조','방향성·비거리 일관성','입문~중급 풀세트'],specs:[['구성','#5~PW 7pc + AW'],['타깃','핸디 15~30'],['샤프트','Steel R/SR/S']]},{id:'mid-short',name:'미드·숏 아이언',compose:'#6~SW',loft:'#6 31° ~ SW 56°',shaft:'Steel — 문의',desc:'세트 후반부 단품·보강 구성.',features:['그린 주변 안정성','세트 매칭 샤프트'],specs:[['구성','#6~SW 단품·세트'],['용도','세트 보강 · 교체']]}]},
+  {id:'jehovah-nishi',no:2,n:'JEHOVAH NISHI',cat:'iron',catLabel:'아이언·세트',items:'CPS 그래핀 아이언 · 풀세트',desc:'「여호와는 나의 깃발」— JEHOVAH NISSI III · 비거리 특화 CPS 그래핀 아이언',origin:'대한민국',material:'캐비티백 · CPS 그래핀',target:'비거리·입문~중급 · 남녀공용',features:['JEHOVAH NISSI III · HYPER SPEED TECHNOLOGY','SOLI DEO GLORIA 호젤 각인','CPS 100% 그래핀 샤프트 — Self Control Flex','비거리 절대 보장 컨셉'],specs:[['제조국','대한민국'],['분류','CPS 그래핀 7아이언'],['구성','#5~SW 7pc'],['출시','2025년']],irons:[CPS_IRON,{id:'mid-short',name:'미드·숏 아이언 단품',compose:'#6~SW',loft:'#6 31° ~ SW 55°',shaft:'CPS 그래핀 · R/SR/S',desc:'세트 후반부 단품·보강 구성.',features:['CPS 세트 매칭 샤프트','그린 주변 안정성'],specs:[['구성','단품'],['용도','세트 보강 · 교체']]}]},
   {id:'carbite',no:3,n:'CARBITE',cat:'iron',catLabel:'아이언·세트',items:'아이언 · 하이브리드',desc:'탄소·경량 소재 적용, 비거리와 관용성 균형',origin:'일본',material:'경량 소재 · 카본 요소',target:'비거리·관용성 동시 추구',features:['경량화 설계로 헤드 스피드 보조','탄소 계열 소재로 무게 배분 최적화','아이언·하이브리드 복합 라인'],specs:[['제조국','일본'],['분류','아이언·하이브리드'],['특징','경량·고반발'],['구성','시리즈별 — 문의']],irons:[{id:'iron-set',name:'CARBITE 아이언 세트',compose:'#5~PW',loft:'#5 26° ~ PW 46°',shaft:'Light Steel / Graphite',desc:'경량·고반발 아이언. 헤드 스피드 보조.',features:['카본 요소 경량화','넓은 관용성','비거리·탄도 균형'],specs:[['구성','#5~PW'],['특징','경량·고반발'],['샤프트','Light Steel / Graphite']]},{id:'hybrid',name:'CARBITE 하이브리드',compose:'#3H · #4H · #5H',loft:'19° · 22° · 25°',shaft:'Graphite R / SR',desc:'아이언 대체·롱아이언 보완.',features:['아이언 세트와 무게감 매칭','높은 관용성'],specs:[['분류','하이브리드'],['로프트','19°~25°'],['구성','단품·세트']]}]},
   {id:'woss',no:4,n:'WOSS',cat:'women',catLabel:'우먼스',items:'우먼스 풀세트',desc:'여성 체형·스윙에 맞춘 전용 설계',origin:'일본',material:'여성용 경량 샤프트 호환',target:'여성 골퍼 · L/Lite 플렉스',features:['여성 스윙 스피드에 맞춘 무게·길이','초고반발 드라이버·아이언 구성','풀세트 원스톱 구성'],specs:[['제조국','일본'],['분류','우먼스'],['플렉스','L / Lite'],['구성','드라이버~퍼터 풀세트 — 문의']],irons:[{id:'women-set',name:'우먼스 아이언 세트',compose:'#7~SW',loft:'#7 34° ~ SW 56°',shaft:'Lite · L · 여성용 Graphite',desc:'여성 스윙에 맞춘 경량·짧은 길이 아이언.',features:['가벼운 헤드·샤프트','높은 런치·캐리','풀세트 연계'],specs:[['구성','#7~SW'],['플렉스','L / Lite'],['타깃','여성 · 시니어']]}]},
   {id:'mla',no:5,n:'MLA',cat:'beginner',catLabel:'입문·퍼터',items:'퍼터 · 입문 세트',desc:'입문자·시니어를 위한 쉬운 조작과 퍼팅 라인',origin:'일본/협력 OEM',material:'스테인리스 · 말렛/블레이드',target:'입문자 · 퍼팅 특화',features:['말렛·블레이드 퍼터 라인','안정적 롤과 에이밍 보조','입문 세트 연계 구성'],specs:[['분류','퍼터 · 입문'],['길이','33~34인치'],['헤드','말렛 / 블레이드'],['구성','단품·세트 — 문의']]},
-  {id:'musashi-634',no:6,n:'MUSASHI 634',cat:'premium',catLabel:'프리미엄',items:'니고데모 드라이버 · 단조 웨지 · 퍼터',desc:'그룹 대표 플래그십. 니고데모(Nigo Demo) 초고반발·연철 단조 공법',origin:'일본',material:'연철 단조 · 니고데모',target:'프로·상급 아마추어',band:true,features:['니고데모 드라이버 · 니고데모2 9°·10° 라인','연철 단조 퍼터 — CNC 밀링 정밀 가공','634 블랙/골드 니고데모 웨지','45인치 표준 · R/SR/S 강도 구성'],specs:[['제조국','일본'],['드라이버','10.5° / 니고데모2 9°·10°'],['길이','45인치(114cm)'],['샤프트','R 49g · SR 53g · S 55g — 문의']],irons:[{id:'nigo-iron',name:'634 니고데모 아이언',compose:'#5~PW · 단품',loft:'#5 28° ~ PW 46°',shaft:'950S / 125S · N.S.PRO',desc:'니고데모 단조·포지드 기술 아이언. 드라이버·웨지와 세트 매칭.',features:['니고데모(Nigo Demo) 공법','634 블랙/골드 아이덴티티','단품·풀세트 구성'],specs:[['공법','니고데모 단조'],['구성','#5~PW · 단품'],['샤프트','950S / 125S'],['세트','니고데모 풀세트 연계']]}]},
+  {id:'musashi-634',no:6,n:'MUSASHI 634',cat:'premium',catLabel:'프리미엄',items:'CPS 아이언 · 니고데모 드라이버 · 웨지',desc:'그룹 대표 플래그십. CPS 그래핀 비거리 아이언 · 니고데모 드라이버',origin:'일본/한국',material:'CPS 그래핀 · 니고데모',target:'프로·상급·입문',band:true,features:['CPS 그래핀 7아이언 — 비거리 전용','니고데모 드라이버 · 니고데모2 9°·10°','634 블랙/골드 니고데모 웨지 · 연철 퍼터'],specs:[['제조국','일본 / 대한민국'],['아이언','CPS 그래핀 7pc'],['드라이버','10.5° / 9°·10°'],['샤프트','R · SR · S — 문의']],irons:[CPS_IRON,{id:'nigo-iron',name:'634 니고데모 아이언',compose:'#5~PW · 단품',loft:'#5 28° ~ PW 46°',shaft:'950S / 125S',desc:'니고데모 단조·포지드 아이언. 드라이버·웨지 세트 매칭.',features:['니고데모(Nigo Demo) 공법','634 블랙/골드','단품·풀세트'],specs:[['공법','니고데모 단조'],['구성','#5~PW · 단품'],['샤프트','950S / 125S']]}]},
   {id:'nicodemus',no:7,n:'NICODEMUS',cat:'wedge',catLabel:'웨지·스페셜',items:'니고데모 드라이버 · 웨지 · 아이언',desc:'634 NICODEMUS — 비거리·방향성을 위한 니고데모(Nigo Demo) 대표 라인',origin:'일본',material:'니고데모 단조',target:'드라이버·숏게임 플레이어',band:true,features:['공식 밴드 대표 모델 — 니고데모 드라이버','NICODEMUS 단조 웨지 48~60°','FST125 웨지 전용 샤프트','니고데모2 초고반발 · 골드/블루 헤드'],specs:[['제조국','일본'],['드라이버 로프트','10.5° / 9°·10° (니고데모2)'],['웨지 각도','48°~60°'],['샤프트','FST125 · 125S 등 — 문의']],irons:[{id:'nigo-set',name:'NICODEMUS 니고데모 아이언',compose:'#5~PW · 단품',loft:'#5 27° ~ PW 45°',shaft:'FST125 · Steel S',desc:'드라이버·웨지와 같은 니고데모 라인 아이언.',features:['니고데모 단조 헤드','드라이버·웨지 세트 매칭','단품 5번~S 중 선택 가능'],specs:[['브랜드','634 NICODEMUS'],['구성','단품 · 세트'],['샤프트','FST125 / Steel'],['연계','니고데모 풀세트']]}]},
   {id:'secretariat',no:8,n:'SECRETARIAT',cat:'goods',catLabel:'용품·액세서리',items:'캐디백 · 헤드커버 · 파우치',desc:'프리미엄 골프 백·액세서리 라인',origin:'일본/협력 OEM',material:'합성가죽 · 나일론',target:'전 연령 · 용품 구매',features:['캐디백 · 스탠드백 라인','헤드커버 · 볼 파우치','634 브랜드 아이덴티티 디자인'],specs:[['분류','용품·액세서리'],['품목','백 · 커버 · 파우치'],['색상','블랙 · 골드 등 — 문의'],['구성','단품·세트']]},
   {id:'passover',no:9,n:'PASSOVER',cat:'wedge',catLabel:'웨지·스페셜',items:'시즌 한정 · 기념 모델',desc:'뜻을 담은 시즌·기념 한정 에디션',origin:'일본',material:'한정 생산',target:'수집·기념 구매',features:['시즌별 한정 색상·스펙','기념·의미를 담은 에디션','소량 생산 컬렉션'],specs:[['분류','한정 · 시즌'],['생산','소량'],['구성','모델별 상이'],['문의','재고·입고 일정 안내']]},
@@ -1197,9 +1220,30 @@ const products=[
 let filt='all';
 let currentProduct=null;
 let currentIron=null;
+function ironCardHtml(p,i){
+  const cls=i.featured?'iron-card featured':'iron-card';
+  const price=i.price?`<div class="ic-price">₩ ${i.price} ${i.priceOrig?`<span style="color:var(--muted);font-size:11px;text-decoration:line-through;margin-left:6px;">₩${i.priceOrig}</span>`:''}</div>`:'';
+  return`<div class="${cls}" onclick="navGoIron('${p.id}','${i.id}')"><div class="ic-tag">${i.featured?'FLAGSHIP · IRON':'IRON'}</div><h4>${i.name}</h4><p>${i.desc}</p>${price}<div class="ic-meta">${i.compose}</div></div>`;
+}
 function ironSectionHtml(p){
   if(!p.irons||!p.irons.length)return'';
-  return`<div class="iron-section reveal on"><h3>아이언 <span class="grad">라인업</span></h3><p>클릭하면 아이언 상세 스펙을 확인할 수 있습니다.</p><div class="iron-grid">${p.irons.map(i=>`<div class="iron-card" onclick="navGoIron('${p.id}','${i.id}')"><div class="ic-tag">IRON</div><h4>${i.name}</h4><p>${i.desc}</p><div class="ic-meta">${i.compose} · ${i.loft}</div></div>`).join('')}</div></div>`;
+  return`<div class="iron-section reveal on"><h3>아이언 <span class="grad">라인업</span></h3><p>클릭하면 아이언 상세·스펙·이미지를 확인할 수 있습니다.</p><div class="iron-grid">${p.irons.map(i=>ironCardHtml(p,i)).join('')}</div></div>`;
+}
+function ironTableHtml(rows,title){
+  if(!rows||!rows.length)return'';
+  const head=rows[0],body=rows.slice(1);
+  return`<div class="iron-spec-block"><h4>${title}</h4><div class="table-scroll"><table class="iron-spec-table"><thead><tr>${head.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+}
+function renderIronDetail(){
+  const p=currentProduct,i=currentIron;if(!p||!i)return;
+  const hero=i.hero?`<img class="iron-hero-img reveal on" src="${i.hero}" alt="${i.name}" onclick="openLightbox(this.src)">`:'';
+  const price=i.price?`<div class="iron-price"><del>₩ ${i.priceOrig}</del>₩ ${i.price}</div><p class="mag-price-note">참고가 · VAT 포함 · 구성·강도별 상이 — 문의 안내</p>`:'';
+  const bullets=i.bullets?`<ul class="iron-bullets">${i.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>`:'';
+  const markings=i.markings?`<div class="iron-markings">${i.markings.map(m=>`<span>${m}</span>`).join('')}</div>`:'';
+  const detailImg=i.detailImg?`<img class="iron-detail-long reveal on" src="${i.detailImg}" alt="${i.name} 상세" onclick="openLightbox(this.src)">`:'';
+  const clubTable=i.clubs?ironTableHtml(i.clubs,'클럽별 스펙 (로프트 · 라이 · 길이 · 중량)'):'';
+  const shaftTable=i.shafts?ironTableHtml(i.shafts,'CPS 그래핀 샤프트 스펙'):'';
+  document.getElementById('idetailRoot').innerHTML=`<div class="pdetail-hero reveal on"><span class="back" onclick="navGoProduct('${p.id}')">← ${p.n}으로</span><div class="sec-label">${p.n} · IRON · ${i.featured?'FLAGSHIP':''}</div><h1>${i.name}</h1><div class="pdetail-meta"><span class="pdetail-tag">${i.compose}</span><span class="pdetail-tag">${i.loft}</span><span class="pdetail-tag">${i.shaft}</span></div>${price}${markings}${bullets}<p style="color:var(--muted);max-width:680px;line-height:1.85;font-size:15px;margin-top:12px;">${i.desc}</p></div>${hero}<div class="pdetail-grid reveal on"><div class="pdetail-box"><h3>Features</h3><ul>${i.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${i.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div>${clubTable}${shaftTable}${detailImg}<div class="touch-stack" style="margin-top:32px;"><button class="btn btn-primary" onclick="navGo('contact')">아이언 구매·피팅 문의</button><button class="btn btn-ghost" onclick="navGoProduct('${p.id}')">브랜드 상세</button><button class="btn btn-ghost" onclick="navGo('products')">라인업</button></div>`;
 }
 function navGoProduct(id){currentProduct=products.find(p=>p.id===id);if(!currentProduct){navGo('products');return;}renderProductDetail();showPage('pdetail');}
 function navGoIron(pid,iid){
@@ -1213,9 +1257,10 @@ function renderProductDetail(){
   const p=currentProduct;if(!p)return;
   document.getElementById('pdetailRoot').innerHTML=`<div class="pdetail-hero reveal on"><span class="back" onclick="navGo('products')">← 라인업으로</span><div class="sec-label">${String(p.no).padStart(2,'0')} · ${p.catLabel}</div><h1>${p.n}</h1><div class="pdetail-meta"><span class="pdetail-tag">${p.catLabel}</span><span class="pdetail-tag">${p.items}</span><span class="pdetail-tag">${p.origin}</span></div><p style="color:var(--muted);max-width:640px;line-height:1.85;font-size:16px;">${p.desc}</p>${p.band?`<div class="pdetail-band"><p><strong style="color:var(--text)">니고데모 드라이버 공식밴드</strong> — 제품 소식·피팅·회원 소통 (멤버 924)</p><div class="touch-stack"><a class="btn btn-band" href="https://band.us/@634nicodemus" target="_blank" rel="noopener">밴드 가입 →</a><button class="btn btn-ghost" onclick="navGo('nigodemo')">니고데모 상세</button></div></div>`:''}</div><div class="pdetail-grid reveal on"><div class="pdetail-box"><h3>Features</h3><ul>${p.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${p.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div>${ironSectionHtml(p)}<div class="touch-stack" style="margin-top:32px;"><button class="btn btn-primary" onclick="navGo('contact')">이 브랜드 문의</button><button class="btn btn-ghost" onclick="navGo('products')">다른 시리즈 보기</button></div>`;
 }
-function renderIronDetail(){
-  const p=currentProduct,i=currentIron;if(!p||!i)return;
-  document.getElementById('idetailRoot').innerHTML=`<div class="pdetail-hero reveal on"><span class="back" onclick="navGoProduct('${p.id}')">← ${p.n}으로</span><div class="sec-label">${p.n} · IRON</div><h1>${i.name}</h1><div class="pdetail-meta"><span class="pdetail-tag">${i.compose}</span><span class="pdetail-tag">${i.loft}</span><span class="pdetail-tag">${i.shaft}</span></div><p style="color:var(--muted);max-width:640px;line-height:1.85;font-size:16px;">${i.desc}</p></div><div class="pdetail-grid reveal on"><div class="pdetail-box"><h3>Features</h3><ul>${i.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${i.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div><div class="touch-stack" style="margin-top:32px;"><button class="btn btn-primary" onclick="navGo('contact')">아이언 문의</button><button class="btn btn-ghost" onclick="navGoProduct('${p.id}')">브랜드 상세</button><button class="btn btn-ghost" onclick="navGo('products')">라인업</button></div>`;
+function renderFeaturedIron(){
+  const el=document.getElementById('featuredIron');
+  if(!el)return;
+  el.innerHTML=ironCardHtml(products.find(p=>p.id==='musashi-634'),CPS_IRON);
 }
 function navGo(id){closeMenu();showPage(id);}
 function showPage(id){
@@ -1239,7 +1284,7 @@ function renderHomeCats(){
   document.getElementById('homeProdCats').innerHTML=Object.entries(groups).filter(([,a])=>a.length).map(([k,arr])=>`<div class="prod-cat-block"><h3>${productCats[k]}</h3><ul>${arr.map(p=>`<li style="cursor:pointer" onclick="navGoProduct('${p.id}')"><strong>${p.n}</strong><span>${p.items}</span></li>`).join('')}</ul></div>`).join('');
 }
 function filterProducts(t){filt=t;document.querySelectorAll('.filter-btn').forEach(b=>{b.className='filter-btn btn btn-ghost btn-sm';});event.target.className='filter-btn btn btn-primary btn-sm';renderProducts();}
-renderProducts();renderHomeCats();
+renderProducts();renderHomeCats();renderFeaturedIron();
 function toast(msg){const t=document.getElementById('siteToast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
 function handleSubmit(e,brand){e.preventDefault();toast('문의가 접수되었습니다. 담당자가 연락드리겠습니다.');e.target.reset();}
 function toggleMenu(){const open=document.getElementById('nav').classList.toggle('menu-open');document.getElementById('mDrawer').classList.toggle('open');document.getElementById('mBackdrop').classList.toggle('open');document.body.classList.toggle('menu-open',open);}
