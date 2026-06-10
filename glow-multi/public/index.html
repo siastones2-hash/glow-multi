@@ -2115,65 +2115,98 @@ var _hqTermTimer=null;
 var _hqTermBootTimer=null;
 var _hqTermVisBound=false;
 var _hqTermBootDone=false;
-var _hqTermTickPool=null;
-var _hqTermLastIdx=-1;
-var _hqTermPoolCache=null;
+var _hqTermRecent=[];
 
 function stopHqTerminalLive(clearLog){
   if(_hqTermTimer){clearTimeout(_hqTermTimer);_hqTermTimer=null;}
   if(_hqTermBootTimer){clearTimeout(_hqTermBootTimer);_hqTermBootTimer=null;}
-  if(clearLog){_hqTermBootDone=false;_hqTermTickPool=null;_hqTermLastIdx=-1;}
+  if(clearLog){_hqTermBootDone=false;_hqTermRecent=[];}
 }
 
-function buildHqTermMessagePool(){
-  if(_hqTermPoolCache&&_hqTermPoolCache.length)return _hqTermPoolCache;
-  var pool=[],seen={},key=function(a,b,c){return a+'|'+b+'|'+(c||'ok');};
-  var add=function(cmd,stat,cls){
-    var k=key(cmd,stat,cls);if(seen[k])return;seen[k]=1;
-    pool.push([cmd,stat,cls||'ok']);
-  };
-  var pls=['instagram','youtube','tiktok','twitter','threads','facebook','telegram','snapchat'];
-  var svc=['followers','likes','views','comments','subscribers','shares','reels','shorts','story views','live views'];
-  var nodes=['kr-seoul-1','kr-seoul-2','ap-northeast','edge-us','edge-eu','worker-a','worker-b','worker-c'];
-  var sys=[
-    ['platform.init','ready'],['order.queue','listening'],['status','automated'],
-    ['peakerr.api','balance ok'],['webhook.telegram','ping ok'],['exrate.sync','KRW updated'],
-    ['health.check','all nodes up'],['site.router','glowsiax.com active'],['auth.session','token valid'],
-    ['cache.warm','services loaded'],['db.pool','connected'],['ssl.cert','valid 89d'],
-    ['cdn.edge','HIT 98%'],['metrics.flush','ok'],['backup.snapshot','scheduled'],
-    ['queue.worker','processing batch'],['rate.engine','within limits'],['notify.email','queued'],
-    ['partner.api','200 OK'],['ref.track','active'],['points.ledger','synced']
+function hqRand(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function hqRandInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function hqHex(n){
+  var s='';for(var i=0;i<n;i++)s+=('0'+Math.floor(Math.random()*16).toString(16)).slice(-1);return s;
+}
+function hqTime(){
+  var d=new Date();
+  return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);
+}
+function hqMs(){return hqRandInt(6,420)+'ms';}
+function hqPct(){return hqRandInt(11,97)+'%';}
+function hqNum(){return hqRandInt(2,9999).toLocaleString();}
+function hqOid(){return '#'+hqRandInt(10000,998421);}
+
+function hqTermRollLine(){
+  var pl=hqRand(['instagram','youtube','tiktok','twitter','threads','facebook','telegram']);
+  var svc=hqRand(['followers','likes','views','comments','subscribers','reels','shorts','live']);
+  var node=hqRand(['edge-seoul','edge-bus','worker-'+hqRandInt(1,9),'ingest-'+hqRandInt(1,4),'relay-ap','gw-kr-'+hqRandInt(1,3)]);
+  var api=hqRand(['orders','services','balance','webhook','health','queue','auth','sites','refund']);
+  var code=hqRand([200,200,200,201,204,304]);
+  var t=hqTime();
+  var roll=hqRandInt(0,19);
+  if(roll===0) return [t+' GET /api/'+api+' '+code+' '+hqMs(),'',''];
+  if(roll===1) return ['['+node+'] batch '+hqOid()+' · '+hqRand(['committed','acked','flushed','dispatched']),'',''];
+  if(roll===2) return ['redis.session','pool '+hqRandInt(4,28)+' · hit '+hqPct(),'',''];
+  if(roll===3) return ['postgres.replica','lag '+hqRandInt(0,3)+'ms · '+hqRandInt(120,890)+' conn','',''];
+  if(roll===4) return [pl+'/'+svc,'qty '+hqNum()+' · route '+hqHex(3),'ok','ok'];
+  if(roll===5) return ['link.ingest',hqRand(['https://','http://'])+pl+'.com/'+hqHex(5)+'…','parsed','ok'];
+  if(roll===6) return ['upstream.'+hqRand(['peakerr','vendor','relay']),'latency '+hqMs(),'',''];
+  if(roll===7) return ['cdn.'+hqRand(['purge','prefetch','edge'])+'','zone glowsiax · '+hqPct(),'',''];
+  if(roll===8) return ['tls.handshake',node+' · '+hqMs(),'',''];
+  if(roll===9) return ['notify.'+hqRand(['telegram','email','webhook']),'event '+hqHex(6),'queued','ok'];
+  if(roll===10) return [t+' sync.orders','+'+hqRandInt(3,187)+' rows','',''];
+  if(roll===11) return ['order.complete',hqOid()+' · '+pl,'done','ok'];
+  if(roll===12) return ['queue.depth',hqRandInt(0,42)+' pending · p'+hqRandInt(50,99),'',''];
+  if(roll===13) return ['rate.guard','token bucket '+hqPct()+' free','',''];
+  if(roll===14) return ['dns.resolve','glowsiax.com → '+hqRandInt(1,4)+' A','',''];
+  if(roll===15) return ['metrics.push',hqRand(['cpu','mem','io','net'])+' '+hqPct(),'',''];
+  if(roll===16) return ['exrate.krw','₩'+hqRandInt(1280,1395)+' · src '+hqRand(['fixer','ecb','local']),'',''];
+  if(roll===17) return ['auth.jwt','rotate · exp '+hqRandInt(4,72)+'h','',''];
+  if(roll===18) return ['backup.delta','snapshot '+hqHex(4)+' · '+hqRandInt(12,890)+'KB','',''];
+  return [hqRand(['health','heartbeat','watchdog','scheduler'])+'.tick',node+' · '+hqMs(),hqRand(['ok','nominal','stable']),'ok'];
+}
+
+function hqTermPickLine(){
+  var guard=0,line,sig;
+  do{
+    line=hqTermRollLine();
+    sig=line[0]+'|'+line[1];
+    guard++;
+  }while(_hqTermRecent.indexOf(sig)>=0&&guard<30);
+  _hqTermRecent.push(sig);
+  if(_hqTermRecent.length>48)_hqTermRecent.shift();
+  return line;
+}
+
+function hqTermBuildBoot(){
+  var makers=[
+    function(){return ['kernel.boot','glow-core '+hqRandInt(2,5)+'.'+hqRandInt(0,9)+'.'+hqRandInt(1,12)];},
+    function(){return ['env.load',hqRand(['production','prod-asia','live'])+' · seoul'];},
+    function(){return ['region.lock','ap-northeast-2a'];},
+    function(){return ['db.pool',hqMs()+' · '+hqRandInt(6,24)+' conn'];},
+    function(){return ['cache.warm',hqRandInt(180,2400)+' keys'];},
+    function(){return ['ssl.check','glowsiax.com · valid '+hqRandInt(30,120)+'d'];},
+    function(){return ['router.map',hqRandInt(12,64)+' routes'];},
+    function(){return ['vendor.api',hqRand(['peakerr','relay','upstream'])+' handshake'];},
+    function(){return ['channels[]',hqRand(['ig','yt','tt','x'])+' · '+hqRand(['ig','yt','tt','th'])+' · '+hqRand(['tt','fb','tg'])];},
+    function(){return ['queue.subscriber','listening · pid '+hqRandInt(1200,9999)];},
+    function(){return ['worker.spawn',hqRandInt(3,8)+' threads'];},
+    function(){return ['ingest.buffer','cap '+hqRandInt(256,2048)+'MB'];},
+    function(){return ['session.id',hqHex(8)];},
+    function(){return [hqTime()+'.init','node '+hqRand(['alpha','beta','gamma','delta'])];}
   ];
-  sys.forEach(function(s){add(s[0],s[1],'ok');});
-  pls.forEach(function(p){
-    svc.forEach(function(s){add('order.dispatch',p+' · '+s,'ok');});
-  });
-  pls.forEach(function(p){
-    add('validate.link',p+' profile','ok');
-    add('validate.link',p+' post URL','ok');
-  });
-  nodes.forEach(function(n){
-    add('node.ping',n+' 12ms','ok');
-    add('node.load',n+' '+Math.floor(Math.random()*40+18)+'%','ok');
-  });
-  var tags=['#growth','#viral','#creator','#brand','#launch','#reels','#shorts'];
-  tags.forEach(function(t){add('tag.scan',t+' trending','ok');});
-  for(var i=0;i<120;i++){
-    add('order.complete','#'+Math.floor(Math.random()*90000+1000)+' done','ok');
-    add('sync.orders','+'+Math.floor(Math.random()*140+8)+' queued','ok');
-    add('order.refund','partial #'+Math.floor(Math.random()*5000+100),'warn');
-    add('queue.latency',Math.floor(Math.random()*800+80)+'ms avg','ok');
-    add('batch.flush',Math.floor(Math.random()*24+3)+' orders','ok');
+  var shuffled=makers.slice();
+  for(var i=shuffled.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1)),tmp=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=tmp;
   }
-  for(var j=0;j<60;j++){
-    var p=pls[j%pls.length],s=svc[j%svc.length];
-    add('order.start',p+' '+s+' ×'+(Math.floor(Math.random()*5000+100)*10).toLocaleString(),'ok');
-    add('link.resolve','https://'+p+'.com/…'+(Math.floor(Math.random()*9000+100)),'ok');
+  var boot=[];
+  for(var k=0;k<hqRandInt(4,6);k++){
+    var p=shuffled[k]();
+    boot.push([p[0],p[1],hqRand(['ok','ok','',''])]);
   }
-  var warns=[['await user.link','paste URL'],['rate.limit','cooldown 3s'],['retry.backoff','attempt 2/3'],['link.check','verify public profile']];
-  warns.forEach(function(w){add(w[0],w[1],'warn');});
-  _hqTermPoolCache=pool;
-  return pool;
+  boot.push([hqRand(['status','runtime','daemon'])+'.ready',hqRand(['automated','nominal','live']),'ok']);
+  return boot;
 }
 
 function hqTermLineHtml(text,status,statusClass){
@@ -2193,27 +2226,21 @@ function hqTermTrimLog(logEl,maxLines){
 function hqTermAppendLine(logEl,text,status,statusClass){
   if(!logEl||!logEl.isConnected)return;
   hqTermTrimLog(logEl,6);
-  logEl.insertAdjacentHTML('beforeend',hqTermLineHtml(text,status,statusClass));
+  logEl.insertAdjacentHTML('beforeend',hqTermLineHtml(text,status,statusClass||'ok'));
 }
 
 function hqTermScheduleNext(logEl){
   if(_hqTermTimer){clearTimeout(_hqTermTimer);_hqTermTimer=null;}
-  if(!logEl||!_hqTermTickPool||!_hqTermTickPool.length)return;
-  var delay=3800+Math.floor(Math.random()*2200);
+  if(!logEl)return;
+  var delay=3200+Math.floor(Math.random()*3400);
   _hqTermTimer=setTimeout(function(){
     _hqTermTimer=null;
     if(!logEl.isConnected)return;
     if(document.hidden){hqTermScheduleNext(logEl);return;}
-    var idx,guard=0;
-    do{
-      idx=Math.floor(Math.random()*_hqTermTickPool.length);
-      guard++;
-    }while(idx===_hqTermLastIdx&&guard<8&&_hqTermTickPool.length>1);
-    _hqTermLastIdx=idx;
-    var pick=_hqTermTickPool[idx];
-    hqTermAppendLine(logEl,pick[0],pick[1],pick[2]);
+    var pick=hqTermPickLine();
+    hqTermAppendLine(logEl,pick[0],pick[1],pick[2]||'ok');
     var statFlash=ge('hqStatFlash');
-    if(statFlash&&Math.random()<0.35){
+    if(statFlash&&Math.random()<0.28){
       statFlash.classList.remove('hq-stat-flash');void statFlash.offsetWidth;statFlash.classList.add('hq-stat-flash');
     }
     hqTermScheduleNext(logEl);
@@ -2221,7 +2248,7 @@ function hqTermScheduleNext(logEl){
 }
 
 function hqTermStartTick(logEl){
-  if(!logEl||!_hqTermTickPool)return;
+  if(!logEl)return;
   hqTermScheduleNext(logEl);
 }
 
@@ -2231,17 +2258,10 @@ function startHqTerminalLive(){
 
   stopHqTerminalLive(false);
   _hqTermBootDone=false;
-  _hqTermLastIdx=-1;
-  _hqTermTickPool=buildHqTermMessagePool();
+  _hqTermRecent=[];
 
   var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var boot=[
-    ['platform.init()','ready','ok'],
-    ['channels[] instagram · youtube · tiktok','',''],
-    ['order.queue','listening','ok'],
-    ['await user.link','paste URL','warn'],
-    ['status','automated','ok']
-  ];
+  var boot=hqTermBuildBoot();
 
   if(reduced){
     stopHqTerminalLive(true);
@@ -2262,7 +2282,7 @@ function startHqTerminalLive(){
     }
     var b=boot[bi++];
     hqTermAppendLine(logEl,b[0],b[1],b[2]||'ok');
-    _hqTermBootTimer=setTimeout(runBoot,520);
+    _hqTermBootTimer=setTimeout(runBoot,400+Math.floor(Math.random()*380));
   }
   runBoot();
 
