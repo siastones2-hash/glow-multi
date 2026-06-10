@@ -975,6 +975,17 @@ tr:last-child td{border-bottom:none}
 [data-layout="glow-hq"] .si{padding:11px 14px;border-radius:10px}
 [data-layout="glow-hq"] .si.on{border-left:3px solid #00B4FF;padding-left:11px}
 [data-layout="glow-hq"] .sg .sc{border-left:3px solid rgba(0,180,255,.35)}
+/* glow-hq — JS 적용 전 파트너 기본 문구 숨김 (SSR·land-ready 후 표시) */
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .hero,
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .land-svc,
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .land-how,
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .land-faq,
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .sts,
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .lcta,
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .lfoot{opacity:0;pointer-events:none}
+[data-layout="glow-hq"] #pg-land.land-ready .hero,
+[data-layout="glow-hq"] #pg-land.land-ready .land-svc,
+[data-layout="glow-hq"] #pg-land.land-ready .land-how{opacity:1;transition:opacity .2s ease}
 </style>
 </head>
 <body>
@@ -2136,6 +2147,13 @@ function hqMs(){return hqRandInt(6,420)+'ms';}
 function hqPct(){return hqRandInt(11,97)+'%';}
 function hqNum(){return hqRandInt(2,9999).toLocaleString();}
 function hqOid(){return '#'+hqRandInt(10000,998421);}
+function hqPort(){return hqRandInt(1024,65534);}
+function hqFakeIp(){
+  var pools=[[118,41],[118,42],[175,223],[211,234],[222,122],[43,201],[43,202],[52,79],[52,78],[104,28],[104,16],[13,124],[54,180],[3,34],[18,182],[59,6],[121,126],[210,89],[1,234],[27,0]];
+  var p=hqRand(pools);
+  return p[0]+'.'+p[1]+'.'+hqRandInt(1,254)+'.'+hqRandInt(1,254);
+}
+function hqFakeIpPort(){return hqFakeIp()+':'+hqPort();}
 
 function hqTermRollLine(){
   var pl=hqRand(['instagram','youtube','tiktok','twitter','threads','facebook','telegram']);
@@ -2143,28 +2161,39 @@ function hqTermRollLine(){
   var node=hqRand(['edge-seoul','edge-bus','worker-'+hqRandInt(1,9),'ingest-'+hqRandInt(1,4),'relay-ap','gw-kr-'+hqRandInt(1,3)]);
   var api=hqRand(['orders','services','balance','webhook','health','queue','auth','sites','refund']);
   var code=hqRand([200,200,200,201,204,304]);
+  var ip=hqFakeIp(),ipp=hqFakeIpPort(),ip2=hqFakeIp();
   var t=hqTime();
-  var roll=hqRandInt(0,19);
-  if(roll===0) return [t+' GET /api/'+api+' '+code+' '+hqMs(),'',''];
+  var roll=hqRandInt(0,29);
+  if(roll===0) return [t+' '+ip+' GET /api/'+api+' '+code+' '+hqMs(),'',''];
   if(roll===1) return ['['+node+'] batch '+hqOid()+' · '+hqRand(['committed','acked','flushed','dispatched']),'',''];
-  if(roll===2) return ['redis.session','pool '+hqRandInt(4,28)+' · hit '+hqPct(),'',''];
-  if(roll===3) return ['postgres.replica','lag '+hqRandInt(0,3)+'ms · '+hqRandInt(120,890)+' conn','',''];
-  if(roll===4) return [pl+'/'+svc,'qty '+hqNum()+' · route '+hqHex(3),'ok','ok'];
-  if(roll===5) return ['link.ingest',hqRand(['https://','http://'])+pl+'.com/'+hqHex(5)+'…','parsed','ok'];
-  if(roll===6) return ['upstream.'+hqRand(['peakerr','vendor','relay']),'latency '+hqMs(),'',''];
-  if(roll===7) return ['cdn.'+hqRand(['purge','prefetch','edge'])+'','zone glowsiax · '+hqPct(),'',''];
-  if(roll===8) return ['tls.handshake',node+' · '+hqMs(),'',''];
-  if(roll===9) return ['notify.'+hqRand(['telegram','email','webhook']),'event '+hqHex(6),'queued','ok'];
-  if(roll===10) return [t+' sync.orders','+'+hqRandInt(3,187)+' rows','',''];
-  if(roll===11) return ['order.complete',hqOid()+' · '+pl,'done','ok'];
-  if(roll===12) return ['queue.depth',hqRandInt(0,42)+' pending · p'+hqRandInt(50,99),'',''];
-  if(roll===13) return ['rate.guard','token bucket '+hqPct()+' free','',''];
-  if(roll===14) return ['dns.resolve','glowsiax.com → '+hqRandInt(1,4)+' A','',''];
-  if(roll===15) return ['metrics.push',hqRand(['cpu','mem','io','net'])+' '+hqPct(),'',''];
-  if(roll===16) return ['exrate.krw','₩'+hqRandInt(1280,1395)+' · src '+hqRand(['fixer','ecb','local']),'',''];
-  if(roll===17) return ['auth.jwt','rotate · exp '+hqRandInt(4,72)+'h','',''];
-  if(roll===18) return ['backup.delta','snapshot '+hqHex(4)+' · '+hqRandInt(12,890)+'KB','',''];
-  return [hqRand(['health','heartbeat','watchdog','scheduler'])+'.tick',node+' · '+hqMs(),hqRand(['ok','nominal','stable']),'ok'];
+  if(roll===2) return ['redis.session',ip+' · pool '+hqRandInt(4,28)+' · hit '+hqPct(),'',''];
+  if(roll===3) return ['postgres.replica',ip2+' lag '+hqRandInt(0,3)+'ms · '+hqRandInt(120,890)+' conn','',''];
+  if(roll===4) return [pl+'/'+svc,'qty '+hqNum()+' · src '+ip,'ok','ok'];
+  if(roll===5) return ['link.ingest',hqRand(['https://','http://'])+pl+'.com/'+hqHex(5)+'… · '+ip,'parsed','ok'];
+  if(roll===6) return ['upstream.'+hqRand(['peakerr','vendor','relay']),ip+' latency '+hqMs(),'',''];
+  if(roll===7) return ['cdn.'+hqRand(['purge','prefetch','edge'])+'',''+ip2+' · zone glowsiax · '+hqPct(),'',''];
+  if(roll===8) return ['tls.handshake',ipp+' → '+node+' · '+hqMs(),'',''];
+  if(roll===9) return ['notify.'+hqRand(['telegram','email','webhook']),'event '+hqHex(6)+' · peer '+ip,'queued','ok'];
+  if(roll===10) return [t+' sync.orders','+'+hqRandInt(3,187)+' rows · '+ip2,'',''];
+  if(roll===11) return ['order.complete',hqOid()+' · '+pl+' · '+ip,'done','ok'];
+  if(roll===12) return ['queue.depth',hqRandInt(0,42)+' pending · p'+hqRandInt(50,99)+' · '+ip,'',''];
+  if(roll===13) return ['rate.guard',ip+' token bucket '+hqPct()+' free','',''];
+  if(roll===14) return ['dns.resolve','glowsiax.com → '+ip+' '+hqRand(['A','A','AAAA']),'',''];
+  if(roll===15) return ['metrics.push',hqRand(['cpu','mem','io','net'])+' '+hqPct()+' · host '+ip2,'',''];
+  if(roll===16) return ['exrate.krw','₩'+hqRandInt(1280,1395)+' · src '+hqRand(['fixer','ecb','local'])+' · '+ip,'',''];
+  if(roll===17) return ['auth.jwt',ip+' rotate · exp '+hqRandInt(4,72)+'h','',''];
+  if(roll===18) return ['backup.delta','snapshot '+hqHex(4)+' · '+hqRandInt(12,890)+'KB · node '+ip2,'',''];
+  if(roll===19) return ['ingress.accept',ipp+' → '+node+' · tcp','',''];
+  if(roll===20) return ['fw.allow','tcp '+ipp+' · policy edge-kr','',''];
+  if(roll===21) return ['fw.deny','udp '+hqFakeIpPort()+' · dropped','',''];
+  if(roll===22) return ['auth.login',ip+' session '+hqHex(4),'ok','ok'];
+  if(roll===23) return ['auth.logout',ip2+' token revoked','',''];
+  if(roll===24) return ['geo.lookup',ip+' '+hqRand(['KR','KR','KR','JP','US','SG'])+' · '+hqRand(['Seoul','Busan','Tokyo','Virginia','Singapore']),'',''];
+  if(roll===25) return ['proxy.pass',ip+' X-Forwarded-For '+ip2+' /api/'+api,'',''];
+  if(roll===26) return ['ssh.attempt',hqFakeIpPort()+' · blocked','',''];
+  if(roll===27) return ['waf.scan',ip+' score '+hqRandInt(0,12)+' · clean','',''];
+  if(roll===28) return ['nat.map',ip+' → 10.'+hqRandInt(0,255)+'.'+hqRandInt(0,255)+'.'+hqRandInt(1,254)+' · '+node,'',''];
+  return [hqRand(['health','heartbeat','watchdog','scheduler'])+'.tick',node+' '+ip+' · '+hqMs(),hqRand(['ok','nominal','stable']),'ok'];
 }
 
 function hqTermPickLine(){
@@ -2183,18 +2212,20 @@ function hqTermBuildBoot(){
   var makers=[
     function(){return ['kernel.boot','glow-core '+hqRandInt(2,5)+'.'+hqRandInt(0,9)+'.'+hqRandInt(1,12)];},
     function(){return ['env.load',hqRand(['production','prod-asia','live'])+' · seoul'];},
-    function(){return ['region.lock','ap-northeast-2a'];},
-    function(){return ['db.pool',hqMs()+' · '+hqRandInt(6,24)+' conn'];},
-    function(){return ['cache.warm',hqRandInt(180,2400)+' keys'];},
-    function(){return ['ssl.check','glowsiax.com · valid '+hqRandInt(30,120)+'d'];},
-    function(){return ['router.map',hqRandInt(12,64)+' routes'];},
-    function(){return ['vendor.api',hqRand(['peakerr','relay','upstream'])+' handshake'];},
+    function(){return ['region.lock','ap-northeast-2a · '+hqFakeIp()];},
+    function(){return ['bind.listen','0.0.0.0:'+hqRand([3000,8080,443,8443])+' · public '+hqFakeIp()];},
+    function(){return ['db.pool',hqFakeIp()+':'+hqRandInt(5432,5434)+' · '+hqMs()+' · '+hqRandInt(6,24)+' conn'];},
+    function(){return ['cache.warm',hqRandInt(180,2400)+' keys · redis '+hqFakeIp()];},
+    function(){return ['ssl.check','glowsiax.com · valid '+hqRandInt(30,120)+'d · '+hqFakeIp()];},
+    function(){return ['router.map',hqRandInt(12,64)+' routes · gw '+hqFakeIp()];},
+    function(){return ['vendor.api',hqRand(['peakerr','relay','upstream'])+' '+hqFakeIp()+' handshake'];},
     function(){return ['channels[]',hqRand(['ig','yt','tt','x'])+' · '+hqRand(['ig','yt','tt','th'])+' · '+hqRand(['tt','fb','tg'])];},
-    function(){return ['queue.subscriber','listening · pid '+hqRandInt(1200,9999)];},
-    function(){return ['worker.spawn',hqRandInt(3,8)+' threads'];},
-    function(){return ['ingest.buffer','cap '+hqRandInt(256,2048)+'MB'];},
-    function(){return ['session.id',hqHex(8)];},
-    function(){return [hqTime()+'.init','node '+hqRand(['alpha','beta','gamma','delta'])];}
+    function(){return ['queue.subscriber','listening · pid '+hqRandInt(1200,9999)+' · '+hqFakeIp()];},
+    function(){return ['worker.spawn',hqRandInt(3,8)+' threads · node '+hqFakeIp()];},
+    function(){return ['ingest.buffer','cap '+hqRandInt(256,2048)+'MB · peer '+hqFakeIpPort()];},
+    function(){return ['session.id',hqHex(8)+' · origin '+hqFakeIp()];},
+    function(){return ['fw.bootstrap','allow '+hqFakeIp()+'/32 · edge policy'];},
+    function(){return [hqTime()+'.init','node '+hqRand(['alpha','beta','gamma','delta'])+' · '+hqFakeIp()];}
   ];
   var shuffled=makers.slice();
   for(var i=shuffled.length-1;i>0;i--){
