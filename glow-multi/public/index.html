@@ -706,6 +706,178 @@ tr:last-child td{border-bottom:none}
 
 [data-layout="card"] #pg-auth.on,[data-layout="split"] #pg-auth.on{background:linear-gradient(160deg,var(--w),var(--bg))}
 [data-layout="card"] .lnav,[data-layout="split"] .lnav{background:color-mix(in srgb,var(--w) 92%,transparent)}
+
+/* glow-hq — GLOW 본사 전용 레이아웃 (파트너 템플릿과 구조 분리) */
+[data-layout="glow-hq"] .lnav{
+  position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;
+  width:calc(100% - 28px);max-width:680px;height:auto;min-height:52px;
+  padding:6px 8px 6px 18px;border-radius:100px;
+  background:rgba(8,14,24,.88);border:1px solid rgba(0,180,255,.22);
+  box-shadow:0 8px 40px rgba(0,0,0,.45),0 0 24px rgba(0,150,255,.08);
+  backdrop-filter:blur(20px);
+}
+[data-layout="glow-hq"] .lnav .brand{gap:10px}
+[data-layout="glow-hq"] .bico{width:36px;height:36px;border-radius:10px;font-size:16px}
+[data-layout="glow-hq"] .bnm{font-size:17px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+[data-layout="glow-hq"] .lnav .bp.bsm{border-radius:100px;padding:10px 20px!important;font-size:12px!important}
+[data-layout="glow-hq"] .lnav .bp.bsm:first-of-type{background:transparent!important;color:var(--tm)!important;border:1px solid var(--bd)!important;box-shadow:none!important}
+[data-layout="glow-hq"] .hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;gap:clamp(24px,5vw,56px);
+  padding:100px 20px 72px;text-align:left;max-width:1180px;margin:0 auto;
+  flex-wrap:wrap;
+}
+[data-layout="glow-hq"] .hero-inner{flex:1 1 340px;max-width:540px;margin:0}
+[data-layout="glow-hq"] .htag{
+  margin-bottom:24px;font-size:10px;letter-spacing:.28em;padding:8px 16px;border-radius:6px;
+  font-family:ui-monospace,monospace;
+}
+[data-layout="glow-hq"] .hero h1{
+  font-size:clamp(32px,6.5vw,56px)!important;line-height:1.05!important;margin-bottom:20px;
+  letter-spacing:-.04em!important;
+}
+[data-layout="glow-hq"] #heroSloganSub{display:block;margin-top:10px;font-size:.42em;font-weight:500;color:var(--tm);letter-spacing:.02em}
+[data-layout="glow-hq"] #heroDesc{margin:0 0 32px 0!important;max-width:480px!important;font-size:16px!important}
+[data-layout="glow-hq"] .hero-cta{justify-content:flex-start!important;margin-bottom:0!important}
+[data-layout="glow-hq"] .hero-chips{display:none!important}
+[data-layout="glow-hq"] .hero-panel{
+  display:flex!important;flex:1 1 300px;max-width:440px;min-height:400px;
+  border-radius:20px;padding:0;overflow:hidden;font-size:13px;
+  background:linear-gradient(160deg,#0C1628,#081018)!important;
+  border:1px solid rgba(0,180,255,.25)!important;
+  box-shadow:0 24px 80px rgba(0,0,0,.5),0 0 60px rgba(0,150,255,.12)!important;
+  flex-direction:column;align-items:stretch;justify-content:flex-start;opacity:1!important;
+}
+[data-layout="glow-hq"] .hq-terminal{width:100%;height:100%;display:flex;flex-direction:column;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+[data-layout="glow-hq"] .hq-term-bar{
+  display:flex;align-items:center;gap:8px;padding:12px 16px;
+  background:rgba(0,0,0,.35);border-bottom:1px solid rgba(0,180,255,.15);
+  font-size:11px;color:var(--tl);letter-spacing:.06em;
+}
+[data-layout="glow-hq"] .hq-term-bar span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.12)}
+[data-layout="glow-hq"] .hq-term-bar span:first-child{background:#FF5F57}
+[data-layout="glow-hq"] .hq-term-bar span:nth-child(2){background:#FFBD2E}
+[data-layout="glow-hq"] .hq-term-bar span:nth-child(3){background:#28CA41}
+[data-layout="glow-hq"] .hq-term-body{flex:1;padding:18px 16px;line-height:1.9;color:#94B8E8;font-size:12px}
+[data-layout="glow-hq"] .hq-line{margin-bottom:4px}
+[data-layout="glow-hq"] .hq-prompt{color:#00B4FF;margin-right:6px}
+[data-layout="glow-hq"] .hq-ok{color:#38BDF8;font-size:11px;margin-left:8px}
+[data-layout="glow-hq"] .hq-warn{color:#FBBF24;font-size:11px;margin-left:8px}
+[data-layout="glow-hq"] .hq-term-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:rgba(0,180,255,.12);border-top:1px solid rgba(0,180,255,.15);
+}
+[data-layout="glow-hq"] .hq-term-stats div{
+  padding:14px 8px;text-align:center;background:rgba(8,14,24,.9);
+}
+[data-layout="glow-hq"] .hq-term-stats b{display:block;font-size:18px;font-weight:800;color:#00B4FF;line-height:1.2}
+[data-layout="glow-hq"] .hq-term-stats small{font-size:9px;color:var(--tl);letter-spacing:.04em;text-transform:uppercase}
+[data-layout="glow-hq"] .land-tasks,[data-layout="glow-hq"] .land-svc-grid,[data-layout="glow-hq"] .land-steps,
+[data-layout="glow-hq"] #landFaq,[data-layout="glow-hq"] #landCta,[data-layout="glow-hq"] #landStats{display:none!important}
+[data-layout="glow-hq"] .land-svc{
+  padding:72px 20px 56px;background:transparent!important;border:none!important;
+}
+[data-layout="glow-hq"] .land-svc-inner{max-width:1100px}
+[data-layout="glow-hq"] .land-svc h2{text-align:left;font-size:clamp(24px,4vw,36px);margin-bottom:12px}
+[data-layout="glow-hq"] .land-svc-sub{text-align:left;margin:0 0 36px 0;max-width:560px;font-size:15px}
+[data-layout="glow-hq"] .glow-hq-bento{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+}
+@media(min-width:720px){
+  [data-layout="glow-hq"] .glow-hq-bento{grid-template-columns:1.2fr 1fr 1fr;grid-template-rows:auto auto}
+  [data-layout="glow-hq"] .glow-hq-bento .hq-bento-main{grid-row:span 2}
+}
+[data-layout="glow-hq"] .hq-bento{
+  border-radius:18px;padding:22px 20px;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,rgba(12,22,36,.95),rgba(8,14,24,.98));
+  border:1px solid rgba(0,180,255,.18);
+  box-shadow:0 12px 40px rgba(0,0,0,.35);
+  transition:transform .2s,border-color .2s;
+}
+[data-layout="glow-hq"] .hq-bento:hover{transform:translateY(-4px);border-color:rgba(0,180,255,.35)}
+[data-layout="glow-hq"] .hq-bento-main{padding:28px 24px;min-height:220px;display:flex;flex-direction:column;justify-content:flex-end}
+[data-layout="glow-hq"] .hq-bento-ico{font-size:36px;margin-bottom:12px;line-height:1}
+[data-layout="glow-hq"] .hq-bento-title{font-size:18px;font-weight:800;color:#F0F8FF;margin-bottom:6px}
+[data-layout="glow-hq"] .hq-bento-desc{font-size:12px;color:#7AA8D8;line-height:1.6}
+[data-layout="glow-hq"] .hq-bento-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+[data-layout="glow-hq"] .hq-bento-tag{
+  font-size:10px;font-weight:700;padding:5px 10px;border-radius:6px;
+  background:rgba(0,150,255,.12);color:#7DD3FC;border:1px solid rgba(0,180,255,.2);
+}
+[data-layout="glow-hq"] .land-how.glow-hq-pipeline{
+  display:block!important;padding:56px 20px 64px;background:transparent!important;border:none!important;
+}
+[data-layout="glow-hq"] .glow-hq-pipeline-inner{max-width:900px;margin:0 auto}
+[data-layout="glow-hq"] .glow-hq-pipeline h2{text-align:center;font-size:clamp(20px,4vw,28px);margin-bottom:40px}
+[data-layout="glow-hq"] .hq-flow{
+  display:flex;flex-direction:column;gap:0;position:relative;
+}
+@media(min-width:640px){
+  [data-layout="glow-hq"] .hq-flow{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:16px}
+  [data-layout="glow-hq"] .hq-flow::before{
+    content:'';position:absolute;top:28px;left:12%;right:12%;height:2px;
+    background:linear-gradient(90deg,rgba(0,180,255,.1),rgba(0,180,255,.5),rgba(99,102,241,.5),rgba(0,180,255,.1));
+  }
+}
+[data-layout="glow-hq"] .hq-flow-step{
+  flex:1;text-align:center;padding:0 12px;position:relative;z-index:1;
+}
+[data-layout="glow-hq"] .hq-flow-num{
+  width:56px;height:56px;border-radius:16px;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;color:#020818;
+  background:linear-gradient(135deg,#00B4FF,#6366F1);
+  box-shadow:0 8px 32px rgba(0,150,255,.35);
+}
+[data-layout="glow-hq"] .hq-flow-step:nth-child(2) .hq-flow-num{background:linear-gradient(135deg,#6366F1,#818CF8)}
+[data-layout="glow-hq"] .hq-flow-step:nth-child(3) .hq-flow-num{background:linear-gradient(135deg,#00E5FF,#00B4FF)}
+[data-layout="glow-hq"] .hq-flow-title{font-size:15px;font-weight:800;color:#E8F4FF;margin-bottom:6px}
+[data-layout="glow-hq"] .hq-flow-desc{font-size:12px;color:#7AA8D8;line-height:1.55}
+[data-layout="glow-hq"] .lfoot{
+  flex-direction:column;text-align:center;justify-content:center;padding:28px 20px;gap:6px;
+}
+[data-layout="glow-hq"] .lfoot #footerName{font-size:14px!important;letter-spacing:.1em;text-transform:uppercase}
+[data-layout="glow-hq"] #pg-auth.on{
+  flex-direction:row;padding:0;min-height:100vh;
+}
+[data-layout="glow-hq"] #pg-auth .hq-auth-side{
+  display:flex;flex:1;min-width:0;padding:48px 32px;
+  flex-direction:column;justify-content:center;align-items:flex-start;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 20%,rgba(0,150,255,.18),transparent),
+    linear-gradient(160deg,#020818,#0A1424);
+  border-right:1px solid rgba(0,180,255,.12);
+}
+[data-layout="glow-hq"] #pg-auth .abox{
+  flex:0 0 auto;width:100%;max-width:420px;margin:0;border-radius:0;
+  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  box-shadow:none;border:none;background:var(--w);
+}
+@media(max-width:760px){
+  [data-layout="glow-hq"] #pg-auth.on{flex-direction:column}
+  [data-layout="glow-hq"] #pg-auth .hq-auth-side{display:none}
+  [data-layout="glow-hq"] #pg-auth .abox{min-height:auto;padding:32px 20px;border-radius:0}
+  [data-layout="glow-hq"] .hero{flex-direction:column;text-align:center;padding-top:88px}
+  [data-layout="glow-hq"] .hero-inner{max-width:100%}
+  [data-layout="glow-hq"] .hero-cta{justify-content:center!important}
+  [data-layout="glow-hq"] #heroDesc{margin-left:auto!important;margin-right:auto!important}
+  [data-layout="glow-hq"] .hero-panel{max-width:100%;min-height:320px}
+  [data-layout="glow-hq"] .glow-hq-bento{grid-template-columns:1fr}
+  [data-layout="glow-hq"] .land-svc h2,[data-layout="glow-hq"] .land-svc-sub{text-align:center;margin-left:auto;margin-right:auto}
+}
+[data-layout="glow-hq"] .dhdr{
+  background:linear-gradient(180deg,rgba(6,12,22,.98),rgba(4,8,16,.95))!important;
+  border-bottom:1px solid rgba(0,180,255,.15)!important;
+}
+[data-layout="glow-hq"] .sb{
+  background:linear-gradient(180deg,#060E18,#040A12)!important;
+  border-right:1px solid rgba(0,180,255,.12)!important;
+}
+[data-layout="glow-hq"] .sb::before{
+  content:'HEADQUARTERS';display:block;padding:14px 16px 8px;
+  font-size:9px;letter-spacing:.22em;color:var(--tl);font-weight:700;
+}
+[data-layout="glow-hq"] .bp{border-radius:10px!important}
+[data-layout="glow-hq"] .bo{border-radius:10px!important}
 </style>
 </head>
 <body>
@@ -1275,6 +1447,7 @@ tr:last-child td{border-bottom:none}
               <div class="fg"><label>메인 레이아웃</label>
                 <select id="stUiLayout">
                   <option value="classic">클래식 — GLOW 기본형</option>
+                  <option value="glow-hq">본사 HQ — GLOW 전용 (파트너와 다름)</option>
                   <option value="card">카드형 — 통계·히어로 넓게</option>
                   <option value="split">스플릿 — 좌 문구 / 우 비주얼</option>
                   <option value="minimal">미니멀 — 심플·비즈니스</option>
@@ -1828,8 +2001,20 @@ function showPg(id){
 }
 
 // ── 3. 동적 테마 적용 ──
-// ── 모든 사이트 공통 성장형 랜딩 (GLOW·히즈마케팅·지인 사이트 동일 구조) ──
+// ── 모든 사이트 공통 성장형 랜딩 ──
+function resetLandingSections(){
+  ['landServices','landHow','landFaq','landCta','landStats'].forEach(function(id){
+    var el=ge(id);if(el)el.style.display='';
+  });
+  document.querySelectorAll('.land-tasks,.land-svc-grid,.land-steps').forEach(function(el){el.style.display='';});
+  var lh=ge('landHow');if(lh){lh.classList.remove('glow-hq-pipeline');}
+  var panel=ge('heroPanel');if(panel){panel.innerHTML='✨';panel.style.display='';}
+  var bento=ge('glowHqBento');if(bento)bento.remove();
+  var side=ge('pg-auth')?.querySelector('.hq-auth-side');if(side)side.remove();
+}
+
 function applyGrowthLanding(d){
+  resetLandingSections();
   var ls=ge('landServices'),lh=ge('landHow');
   if(ls)ls.style.display='block';
   if(lh)lh.style.display='block';
@@ -1869,6 +2054,102 @@ function applyGrowthLanding(d){
   if(ct)ct.innerHTML=blue?'지금 가입 · <span class="gt">블루 속도 UP</span>':(neon?'지금 가입 · <span class="gt">네온 속도 UP</span>':(anon?'접근 권한을 <span class="gt">확보하세요</span>':'지금 가입하면 <span class="gt">오늘부터 UP</span>'));
   var cs=ge('lctaSub');
   if(cs)cs.textContent=(blue||neon||anon)?(brand+' · 무료 · 링크만 있으면 시작'):(brand+' · 무료 가입 · 링크만 있으면 바로 주문');
+}
+
+function applyGlowHQLanding(d){
+  resetLandingSections();
+  var brand=(d&&d.name)?d.name:'GLOW';
+  var hb=ge('heroBadge');if(hb)hb.textContent=d.heroBadge||'GLOW HEADQUARTERS';
+  var hpf=ge('heroPrefix');if(hpf)hpf.textContent=d.heroPrefix||'소셜 성장';
+  var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'원청 플랫폼';
+  var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'채널·브랜드·파트너를 하나로';
+  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'GLOW 본사에서 직접 운영하는 성장 인프라. 가입 후 링크만 넣으면 전 채널 자동 처리.';
+
+  var panel=ge('heroPanel');
+  if(panel){
+    var s1=d.stat1Num||'10K+',s1l=d.stat1Label||'서비스';
+    var s2=d.stat2Num||'24H',s2l=d.stat2Label||'처리';
+    var s3=d.stat3Num||'LINK',s3l=d.stat3Label||'입력';
+    var s4=d.stat4Num||'100%',s4l=d.stat4Label||'자동';
+    panel.innerHTML=
+      '<div class="hq-terminal">'
+      +'<div class="hq-term-bar"><span></span><span></span><span></span> glow-core · live</div>'
+      +'<div class="hq-term-body">'
+      +'<div class="hq-line"><span class="hq-prompt">›</span>platform.init() <span class="hq-ok">ready</span></div>'
+      +'<div class="hq-line"><span class="hq-prompt">›</span>channels[] instagram · youtube · tiktok</div>'
+      +'<div class="hq-line"><span class="hq-prompt">›</span>order.queue <span class="hq-ok">listening</span></div>'
+      +'<div class="hq-line"><span class="hq-prompt">›</span>await user.link <span class="hq-warn">paste URL</span></div>'
+      +'<div class="hq-line"><span class="hq-prompt">›</span>status <span class="hq-ok">automated</span></div>'
+      +'</div>'
+      +'<div class="hq-term-stats">'
+      +'<div><b>'+s1+'</b><small>'+s1l+'</small></div>'
+      +'<div><b>'+s2+'</b><small>'+s2l+'</small></div>'
+      +'<div><b>'+s3+'</b><small>'+s3l+'</small></div>'
+      +'<div><b>'+s4+'</b><small>'+s4l+'</small></div>'
+      +'</div></div>';
+  }
+
+  var ls=ge('landServices');
+  if(ls){
+    ls.style.display='block';
+    var h2=ls.querySelector('h2');if(h2)h2.innerHTML='플랫폼 <span class="gt">커맨드 센터</span>';
+    var sub=ls.querySelector('.land-svc-sub');
+    if(sub)sub.textContent='파트너 사이트와 다른 GLOW 본사 전용 대시보드. 채널별 성장 모듈을 한곳에서.';
+    document.querySelectorAll('.land-tasks,.land-svc-grid,.land-svc-note').forEach(function(el){el.style.display='none';});
+    if(!ge('glowHqBento')){
+      var bento=document.createElement('div');
+      bento.id='glowHqBento';bento.className='glow-hq-bento';
+      bento.innerHTML=
+        '<div class="hq-bento hq-bento-main">'
+        +'<div class="hq-bento-ico">📡</div>'
+        +'<div class="hq-bento-title">Multi-Channel Engine</div>'
+        +'<div class="hq-bento-desc">인스타·유튜브·틱톡·X·스레드 등 전 채널 주문을 단일 계정에서 처리합니다.</div>'
+        +'<div class="hq-bento-tags"><span class="hq-bento-tag">통합 주문</span><span class="hq-bento-tag">실시간 상태</span><span class="hq-bento-tag">자동 환불</span></div>'
+        +'</div>'
+        +'<div class="hq-bento"><div class="hq-bento-ico">📷</div><div class="hq-bento-title">Instagram</div><div class="hq-bento-desc">팔로워 · 릴스 · 좋아요</div></div>'
+        +'<div class="hq-bento"><div class="hq-bento-ico">▶</div><div class="hq-bento-title">YouTube</div><div class="hq-bento-desc">구독 · 조회 · 좋아요</div></div>'
+        +'<div class="hq-bento"><div class="hq-bento-ico">🎵</div><div class="hq-bento-title">TikTok · X</div><div class="hq-bento-desc">팔로워 · 바이럴 조회</div></div>'
+        +'<div class="hq-bento"><div class="hq-bento-ico">⚡</div><div class="hq-bento-title">24H Auto</div><div class="hq-bento-desc">링크 입력 즉시 큐 등록</div></div>';
+      var inner=ls.querySelector('.land-svc-inner');
+      if(inner)inner.appendChild(bento);
+    }
+  }
+
+  var lh=ge('landHow');
+  if(lh){
+    lh.style.display='block';
+    lh.className='land-how glow-hq-pipeline';
+    lh.innerHTML=
+      '<div class="glow-hq-pipeline-inner">'
+      +'<h2>시작은 <span class="gt">3단계</span></h2>'
+      +'<div class="hq-flow">'
+      +'<div class="hq-flow-step"><div class="hq-flow-num">1</div><div class="hq-flow-title">계정 생성</div><div class="hq-flow-desc">이메일 30초 가입</div></div>'
+      +'<div class="hq-flow-step"><div class="hq-flow-num">2</div><div class="hq-flow-title">잔액 충전</div><div class="hq-flow-desc">원하는 금액 입금</div></div>'
+      +'<div class="hq-flow-step"><div class="hq-flow-num">3</div><div class="hq-flow-title">링크 · 실행</div><div class="hq-flow-desc">URL 붙여넣기 → 자동 처리</div></div>'
+      +'</div></div>';
+  }
+
+  ['landFaq','landCta','landStats'].forEach(function(id){var el=ge(id);if(el)el.style.display='none';});
+
+  var ctaBtns=document.querySelectorAll('.hero-cta .bp');
+  if(ctaBtns[0])ctaBtns[0].textContent='본사 계정 만들기 →';
+
+  setupGlowHQAuth(brand);
+}
+
+function setupGlowHQAuth(brand){
+  var pg=ge('pg-auth');if(!pg||pg.querySelector('.hq-auth-side'))return;
+  var side=document.createElement('div');
+  side.className='hq-auth-side';
+  side.innerHTML=
+    '<div class="brand" style="margin-bottom:28px">'
+    +'<div class="bico" style="width:48px;height:48px;font-size:22px">✦</div>'
+    +'<span class="bnm gt" style="font-size:22px">'+brand+'</span></div>'
+    +'<h2 style="font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1.15;margin-bottom:16px;color:#F0F8FF">'
+    +'본사<br><span class="gt">커맨드 센터</span></h2>'
+    +'<p style="font-size:14px;color:#7AA8D8;line-height:1.75;max-width:320px">파트너·지인 사이트와 분리된 GLOW 원청 플랫폼입니다.</p>';
+  var abox=pg.querySelector('.abox');
+  if(abox)pg.insertBefore(side,abox);
 }
 
 async function loadSiteConfig(){
@@ -1939,7 +2220,8 @@ async function loadSiteConfig(){
   var s2n=ge('stat2Num');if(s2n)s2n.textContent=d.stat2Num||'24H';
   var s2l=ge('stat2Label');if(s2l)s2l.textContent=d.stat2Label||'빠른 처리';
 
-  applyGrowthLanding(d);
+  if((d.uiLayout||'')==='glow-hq')applyGlowHQLanding(d);
+  else applyGrowthLanding(d);
 
   // 충전 보너스 표시 — 금액 구간별 보너스율에 따라 프리셋 버튼에 동적 표시
   (function(){

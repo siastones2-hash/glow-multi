@@ -214,12 +214,12 @@ async function initDB() {
     primary: '#00B4FF',
     accent: '#0096FF',
     theme: 'glow-blue',
-    uiLayout: 'classic',
-    heroBadge: '◆ BLUE GROWTH PLATFORM',
-    heroPrefix: '링크 하나면',
-    slogan: '팔로워·조회·구독 UP',
-    sloganSub: '블루 속도로 · 오늘 바로 시작',
-    description: '가입 30초, 링크만 넣으면 끝. 유튜브·인스타·틱톡 채널을 빠르게 키우세요.',
+    uiLayout: 'glow-hq',
+    heroBadge: 'GLOW HEADQUARTERS',
+    heroPrefix: '소셜 성장',
+    slogan: '원청 플랫폼',
+    sloganSub: '채널·브랜드·파트너를 하나로',
+    description: 'GLOW 본사에서 직접 운영하는 성장 인프라. 가입 후 링크만 넣으면 전 채널 자동 처리.',
     loginWelcome: '다시 만나요',
     loginSub: '계정에 로그인',
     registerWelcome: '지금 시작',
@@ -3222,7 +3222,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
     const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','hero_prefix','ui_layout','theme','banner_text','banner_image','banner_link','charge_bonus_tiers'];
     if (siteFields.includes(key)) {
       if (key === 'ui_layout') {
-        const allowed = ['classic', 'card', 'split', 'minimal'];
+        const allowed = ['classic', 'card', 'split', 'minimal', 'glow-hq'];
         if (!allowed.includes(value)) return res.json({ error: '레이아웃 값이 올바르지 않습니다' });
       }
       if (key === 'theme') {
