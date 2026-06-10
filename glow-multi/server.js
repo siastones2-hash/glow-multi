@@ -55,6 +55,19 @@ async function query(text, params) {
   }
 }
 
+/** GLOW 본사(default) 전용 — 파트너·지인 사이트에 HQ 디자인 적용 방지 */
+function getEffectiveSitePresentation(site) {
+  if (!site) return { uiLayout: 'classic', theme: 'glow', isDefault: false };
+  const isDefault = site.id === 'default';
+  let uiLayout = String(site.ui_layout || 'classic').trim();
+  let theme = String(site.theme || 'glow').trim();
+  if (!isDefault) {
+    if (uiLayout === 'glow-hq') uiLayout = 'classic';
+    if (theme === 'glow-blue' || theme === 'anonymous') theme = 'glow';
+  }
+  return { uiLayout, theme, isDefault };
+}
+
 // ── DB 초기화 ──
 async function initDB() {
   await query(`
@@ -229,6 +242,7 @@ async function initDB() {
     stat3Num: 'LINK', stat3Label: '만 입력',
     stat4Num: '100%', stat4Label: '자동화',
   };
+
   const siteExists = await query(`SELECT id FROM sites WHERE id='default'`);
   if (siteExists.rows.length === 0) {
     await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,theme,ui_layout,
@@ -269,6 +283,12 @@ async function initDB() {
       ]);
     }
   }
+
+  // 파트너·지인 사이트에 본사 HQ 디자인이 붙어 있으면 원복
+  try {
+    await query(`UPDATE sites SET ui_layout='classic' WHERE id <> 'default' AND ui_layout='glow-hq'`);
+    await query(`UPDATE sites SET theme='glow' WHERE id <> 'default' AND theme IN ('glow-blue','anonymous')`);
+  } catch (e) { /* ignore */ }
 
   // 모든 사이트 환율 = 글로벌 기본 환율과 항상 동기화
   try {
@@ -1972,9 +1992,11 @@ app.get('/api/site-config', async (req, res) => {
     } catch(e) { superBank = ''; }
   }
 
+  const pres = getEffectiveSitePresentation(site);
+
   res.json({
     siteId: site.id,
-    isDefault: site.id === 'default',
+    isDefault: pres.isDefault,
     name: site.name, logo: site.logo,
     primaryColor: site.primary_color, accentColor: site.accent_color,
     kakao: site.kakao, bank: site.bank,
@@ -2002,9 +2024,9 @@ app.get('/api/site-config', async (req, res) => {
     orderGuide: site.order_guide || '주문 후 취소가 어려울 수 있습니다.',
     heroBadge: site.hero_badge || '소셜 성장 자동화 플랫폼',
     heroPrefix: site.hero_prefix || '콘텐츠가',
-    uiLayout: site.ui_layout || 'classic',
-    theme: site.theme || 'glow',
-    themeIsCustom: !!(site.theme && String(site.theme).trim().startsWith('{')),
+    uiLayout: pres.uiLayout,
+    theme: pres.theme,
+    themeIsCustom: !!(pres.theme && String(pres.theme).trim().startsWith('{')),
     superBank: superBank
   });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -3235,12 +3257,18 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
       if (key === 'ui_layout') {
         const allowed = ['classic', 'card', 'split', 'minimal', 'glow-hq'];
         if (!allowed.includes(value)) return res.json({ error: '레이아웃 값이 올바르지 않습니다' });
+        if (value === 'glow-hq' && req.siteId !== 'default') {
+          return res.json({ error: '본사 HQ 레이아웃은 GLOW 본사(glowsiax.com) 전용입니다' });
+        }
       }
       if (key === 'theme') {
         const t = String(value || '').trim();
         if (t && !t.startsWith('{')) {
-          const allowedThemes = ['glow', 'dark', 'minimal', 'neon', 'gold', 'ocean', 'sunset', 'forest', 'candy'];
+          const allowedThemes = ['glow', 'dark', 'minimal', 'neon', 'gold', 'ocean', 'sunset', 'forest', 'candy', 'glow-blue', 'anonymous'];
           if (!allowedThemes.includes(t)) return res.json({ error: '테마 값이 올바르지 않습니다' });
+          if ((t === 'glow-blue' || t === 'anonymous') && req.siteId !== 'default') {
+            return res.json({ error: '해당 테마는 GLOW 본사 전용입니다' });
+          }
         }
       }
       // 🛡️ 숫자 필드 검증
@@ -4242,8 +4270,9 @@ app.get('*', async (req, res) => {
     let p3Color = '#7209B7';
     
     const isDefaultSite = site && site.id === 'default';
-    const siteTheme = (site && site.theme) ? String(site.theme).trim() : 'glow';
-    const siteLayout = (site && site.ui_layout) ? String(site.ui_layout).trim() : 'classic';
+    const pres = getEffectiveSitePresentation(site);
+    const siteTheme = pres.theme;
+    const siteLayout = pres.uiLayout;
     const PRESET_THEME_CSS = {
       'glow-blue': {
         attr: 'glow-blue',

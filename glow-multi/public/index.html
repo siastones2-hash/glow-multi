@@ -1605,11 +1605,11 @@ tr:last-child td{border-bottom:none}
 
               <div style="height:1px;background:var(--bd);margin:8px 0 16px"></div>
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🎨 화면 스타일 (UI/UX)</div>
-              <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">사이트마다 메인 화면 분위기를 다르게 보이게 합니다. 저장 후 메인 페이지를 새로고침하세요.</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">사이트마다 메인 화면 분위기를 다르게 보이게 합니다. <strong>본사 HQ·본사형 테마</strong>는 glowsiax.com 본사만 사용할 수 있습니다. 저장 후 메인 페이지를 새로고침하세요.</div>
               <div class="fg"><label>메인 레이아웃</label>
                 <select id="stUiLayout">
                   <option value="classic">클래식 — GLOW 기본형</option>
-                  <option value="glow-hq">본사 HQ — GLOW 전용 (파트너와 다름)</option>
+                  <option value="glow-hq" id="stUiLayoutHq">본사 HQ — GLOW 본사 전용</option>
                   <option value="card">카드형 — 통계·히어로 넓게</option>
                   <option value="split">스플릿 — 좌 문구 / 우 비주얼</option>
                   <option value="minimal">미니멀 — 심플·비즈니스</option>
@@ -1619,7 +1619,7 @@ tr:last-child td{border-bottom:none}
                 <select id="stTheme">
                   <option value="glow">Glow 기본 (아래 색상 사용)</option>
                   <option value="dark">다크 · 사이버</option>
-                  <option value="anonymous">익명 · 다크 (본사형)</option>
+                  <option value="anonymous" id="stThemeAnonymous">익명 · 다크 (본사 전용)</option>
                   <option value="minimal">미니멀 · 흑백</option>
                   <option value="neon">네온 · 그린</option>
                   <option value="gold">골드 · 프리미엄</option>
@@ -2396,7 +2396,7 @@ function startHqTerminalLive(){
       if(document.hidden){
         if(_hqTermTimer){clearTimeout(_hqTermTimer);_hqTermTimer=null;}
         if(_hqTermBootTimer){clearTimeout(_hqTermBootTimer);_hqTermBootTimer=null;}
-      }else if(_hqTermBootDone&&ge('hqTermLog')&&document.documentElement.getAttribute('data-layout')==='glow-hq'){
+      }else if(_hqTermBootDone&&ge('hqTermLog')&&SITE_CONFIG&&SITE_CONFIG.isDefault&&document.documentElement.getAttribute('data-layout')==='glow-hq'){
         hqTermStartTick(ge('hqTermLog'));
       }
     });
@@ -2648,7 +2648,7 @@ async function loadSiteConfig(){
   var s2n=ge('stat2Num');if(s2n)s2n.textContent=d.stat2Num||'24H';
   var s2l=ge('stat2Label');if(s2l)s2l.textContent=d.stat2Label||'빠른 처리';
 
-  if((d.uiLayout||'')==='glow-hq')applyGlowHQLanding(d);
+  if(d.isDefault && (d.uiLayout||'')==='glow-hq')applyGlowHQLanding(d);
   else applyGrowthLanding(d);
 
   // 충전 보너스 표시 — 금액 구간별 보너스율에 따라 프리셋 버튼에 동적 표시
@@ -2691,6 +2691,7 @@ async function loadSiteConfig(){
   }
 
   // 사이드바 배너 (사이트별 홍보 배너) + 어드민 설정 입력칸 채우기
+  syncAdminUiStyleOptions(!!d.isDefault);
   if(ge('stUiLayout'))ge('stUiLayout').value=d.uiLayout||'classic';
   if(ge('stTheme')){
     var thSel=ge('stTheme');
@@ -2714,6 +2715,7 @@ async function loadSiteConfig(){
   if(ge('stStat3Label'))ge('stStat3Label').value=d.stat3Label||'';
   if(ge('stStat4Num'))ge('stStat4Num').value=d.stat4Num||'';
   if(ge('stStat4Label'))ge('stStat4Label').value=d.stat4Label||'';
+  syncAdminUiStyleOptions(!!d.isDefault);
   if(ge('stBannerText'))ge('stBannerText').value=d.bannerText||'';
   if(ge('stBannerImage'))ge('stBannerImage').value=d.bannerImage||'';
   if(ge('stBannerLink'))ge('stBannerLink').value=d.bannerLink||'';
@@ -3396,6 +3398,17 @@ async function changeRole(uid,role){
 }
 
 // 설정 저장
+
+function syncAdminUiStyleOptions(isDefault){
+  var hqOpt=ge('stUiLayoutHq');
+  if(hqOpt)hqOpt.hidden=!isDefault;
+  var anonOpt=ge('stThemeAnonymous');
+  if(anonOpt)anonOpt.hidden=!isDefault;
+  var layoutSel=ge('stUiLayout');
+  if(layoutSel&&!isDefault&&layoutSel.value==='glow-hq')layoutSel.value='classic';
+  var themeSel=ge('stTheme');
+  if(themeSel&&!isDefault&&(themeSel.value==='anonymous'||themeSel.value==='glow-blue'))themeSel.value='glow';
+}
 
 async function saveUiStyle(){
   var layout=ge('stUiLayout')?.value||'classic';
