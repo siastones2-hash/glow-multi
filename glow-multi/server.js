@@ -217,7 +217,7 @@ async function initDB() {
     uiLayout: 'glow-hq',
     heroBadge: 'GLOW HEADQUARTERS',
     heroPrefix: '소셜 성장',
-    slogan: '원청 플랫폼',
+    slogan: '성장 플랫폼',
     sloganSub: '채널·브랜드·파트너를 하나로',
     description: 'GLOW 본사에서 직접 운영하는 성장 인프라. 가입 후 링크만 넣으면 전 채널 자동 처리.',
     loginWelcome: '다시 만나요',
