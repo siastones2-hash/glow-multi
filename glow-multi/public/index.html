@@ -944,39 +944,6 @@ tr:last-child td{border-bottom:none}
   background:linear-gradient(160deg,#0C1424,#0A101C)!important;
   border-left:1px solid rgba(0,180,255,.12)!important;
 }
-/* glow-hq — PC(761px+) : 히어로 1화면 + 터미널 세로 채움(빈 공간 방지) */
-@media(min-width:761px){
-  [data-layout="glow-hq"] .hero{
-    max-width:1280px;padding:112px 40px 80px;gap:56px;flex-wrap:nowrap;
-    align-items:stretch;min-height:calc(100svh - 72px);box-sizing:border-box;
-  }
-  [data-layout="glow-hq"] .hero-inner{
-    flex:1 1 52%;max-width:620px;padding-right:20px;
-    display:flex;flex-direction:column;justify-content:center;
-  }
-  [data-layout="glow-hq"] .hero h1{font-size:clamp(40px,4.2vw,58px)!important;margin-bottom:28px!important}
-  [data-layout="glow-hq"] #heroDesc{max-width:520px!important;font-size:17px!important;margin-bottom:40px!important}
-  [data-layout="glow-hq"] .hero-visual{
-    flex:1 1 46%;max-width:540px;min-height:480px;align-self:stretch;
-  }
-  [data-layout="glow-hq"] .hq-terminal{min-height:100%}
-  [data-layout="glow-hq"] .hq-term-body{min-height:200px}
-  [data-layout="glow-hq"] .land-svc{padding:88px 40px 96px}
-  [data-layout="glow-hq"] .land-svc-inner{max-width:1200px;margin:0 auto}
-  [data-layout="glow-hq"] .land-svc-sub{max-width:640px;font-size:16px;margin-bottom:48px}
-  [data-layout="glow-hq"] .glow-hq-bento{gap:20px}
-  [data-layout="glow-hq"] .hq-bento{padding:26px 24px}
-  [data-layout="glow-hq"] .hq-bento-main{min-height:260px;padding:32px 28px}
-  [data-layout="glow-hq"] .land-how.glow-hq-pipeline{padding:88px 40px 96px}
-  [data-layout="glow-hq"] .glow-hq-pipeline-inner{max-width:1000px}
-  [data-layout="glow-hq"] .glow-hq-pipeline h2{margin-bottom:56px;font-size:clamp(24px,3vw,32px)}
-  [data-layout="glow-hq"] .hq-flow{gap:24px}
-  [data-layout="glow-hq"] .hq-partner-cta{padding:88px 40px 96px;max-width:1000px}
-  [data-layout="glow-hq"] .hq-partner-card{padding:40px 36px}
-  [data-layout="glow-hq"] .hq-partner-sub{max-width:680px;font-size:15px}
-  [data-layout="glow-hq"] .hq-dual-path{gap:22px}
-  [data-layout="glow-hq"] .hq-path{padding:28px 26px}
-}
 @media(max-width:760px){
   [data-layout="glow-hq"] #pg-auth.on{flex-direction:column}
   [data-layout="glow-hq"] #pg-auth .hq-auth-side{display:none}
