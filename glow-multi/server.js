@@ -2094,6 +2094,17 @@ app.post('/api/register', async (req, res) => {
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance,referral_code,referred_by,points,phone) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus, phone]);
     const token = createToken({ userId: id, role: 'user', siteId: req.siteId });
+    // 본사(default) 사이트 가입만 슈퍼관리자 텔레그램 알림 (파트너·지인 사이트 제외)
+    if (req.siteId === 'default') {
+      const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const siteLabel = esc(req.site?.name || 'GLOW');
+      let tgMsg = `👤 <b>신규 가입</b> [${siteLabel}]\n닉네임: ${esc(name)}\n이메일: ${esc(email)}`;
+      if (phone) tgMsg += `\n📱 ${esc(phone)}`;
+      if (referral_code) tgMsg += `\n🔗 추천코드 입력: ${esc(referral_code)}`;
+      if (signupBonus) tgMsg += `\n🎁 가입 보너스: ${signupBonus}P`;
+      tgMsg += `\n⏰ ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`;
+      sendTelegramToSuper(tgMsg).catch(() => {});
+    }
     res.json({ ok: true, token, user: { id, name, email, role: 'user', balance: 0, points: signupBonus, referral_code: refCode }});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

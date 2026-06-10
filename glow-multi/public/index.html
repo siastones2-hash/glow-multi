@@ -979,13 +979,38 @@ tr:last-child td{border-bottom:none}
 [data-layout="glow-hq"] #pg-land:not(.land-ready) .hero,
 [data-layout="glow-hq"] #pg-land:not(.land-ready) .land-svc,
 [data-layout="glow-hq"] #pg-land:not(.land-ready) .land-how,
+[data-layout="glow-hq"] #pg-land:not(.land-ready) .hq-partner-cta,
 [data-layout="glow-hq"] #pg-land:not(.land-ready) .land-faq,
 [data-layout="glow-hq"] #pg-land:not(.land-ready) .sts,
 [data-layout="glow-hq"] #pg-land:not(.land-ready) .lcta,
 [data-layout="glow-hq"] #pg-land:not(.land-ready) .lfoot{opacity:0;pointer-events:none}
 [data-layout="glow-hq"] #pg-land.land-ready .hero,
 [data-layout="glow-hq"] #pg-land.land-ready .land-svc,
-[data-layout="glow-hq"] #pg-land.land-ready .land-how{opacity:1;transition:opacity .2s ease}
+[data-layout="glow-hq"] #pg-land.land-ready .land-how,
+[data-layout="glow-hq"] #pg-land.land-ready .hq-partner-cta{opacity:1;transition:opacity .2s ease}
+[data-layout="glow-hq"] .hq-partner-cta{
+  padding:56px 20px 64px;max-width:900px;margin:0 auto;
+}
+[data-layout="glow-hq"] .hq-partner-card{
+  background:linear-gradient(145deg,rgba(0,150,255,.1),rgba(99,102,241,.06));
+  border:1px solid rgba(0,180,255,.28);border-radius:20px;padding:32px 28px;
+  box-shadow:0 12px 48px rgba(0,0,0,.25),0 0 32px rgba(0,150,255,.06);
+}
+[data-layout="glow-hq"] .hq-partner-card h2{
+  font-size:clamp(20px,4vw,28px);font-weight:800;color:#F0F8FF;margin-bottom:10px;line-height:1.35;
+}
+[data-layout="glow-hq"] .hq-partner-sub{font-size:14px;color:#94B8E8;line-height:1.7;margin-bottom:20px;max-width:560px}
+[data-layout="glow-hq"] .hq-partner-perks{
+  display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:24px;
+}
+@media(min-width:600px){[data-layout="glow-hq"] .hq-partner-perks{grid-template-columns:repeat(3,1fr)}}
+[data-layout="glow-hq"] .hq-partner-perk{
+  background:rgba(8,14,24,.6);border:1px solid rgba(0,180,255,.15);border-radius:12px;padding:14px 12px;
+}
+[data-layout="glow-hq"] .hq-partner-perk b{display:block;font-size:13px;color:#E8F4FF;margin-bottom:4px}
+[data-layout="glow-hq"] .hq-partner-perk span{font-size:11px;color:#7AA8D8;line-height:1.5}
+[data-layout="glow-hq"] .hq-partner-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+[data-layout="glow-hq"] .hq-partner-note{font-size:11px;color:#5A7A9A;margin-top:12px}
 </style>
 </head>
 <body>
@@ -2087,6 +2112,19 @@ function openKakaoInquiry(){
   }
   toast('카카오 문의 링크를 준비 중입니다','warn');
 }
+function openPartnerInquiry(){
+  var msg='[GLOW 파트너 문의]\n안녕하세요. GLOW와 같은 독립 사이트를 만들어 운영하고 싶습니다.\n도메인·상품 연동·관리자 패널 안내 부탁드립니다.';
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msg).then(function(){
+      toast('문의 문구가 복사됐어요. 카카오톡에 붙여넣어 주세요','ok');
+    }).catch(function(){});
+  }
+  if(window._kakao&&String(window._kakao).trim()){
+    setTimeout(function(){window.open(window._kakao,'_blank');},400);
+  }else{
+    toast('카카오 문의 링크를 준비 중입니다. 관리자에게 직접 연락해 주세요','warn');
+  }
+}
 function toggleFaq(btn){
   var item=btn&&btn.closest('.faq-item');
   if(!item)return;
@@ -2118,6 +2156,7 @@ function resetLandingSections(){
   var lh=ge('landHow');if(lh){lh.classList.remove('glow-hq-pipeline');}
   var panel=ge('heroPanel');if(panel){panel.innerHTML='✨';panel.style.display='';}
   var bento=ge('glowHqBento');if(bento)bento.remove();
+  var partnerCta=ge('glowHqPartnerCta');if(partnerCta)partnerCta.remove();
   var side=ge('pg-auth')?.querySelector('.hq-auth-side');if(side)side.remove();
   stopHqTerminalLive(true);
 }
@@ -2442,6 +2481,31 @@ function applyGlowHQLanding(d){
       +'<div class="hq-flow-step"><div class="hq-flow-num">2</div><div class="hq-flow-title">잔액 충전</div><div class="hq-flow-desc">원하는 금액 입금</div></div>'
       +'<div class="hq-flow-step"><div class="hq-flow-num">3</div><div class="hq-flow-title">링크 · 실행</div><div class="hq-flow-desc">URL 붙여넣기 → 자동 처리</div></div>'
       +'</div></div>';
+  }
+
+  if(!ge('glowHqPartnerCta')){
+    var partner=document.createElement('section');
+    partner.id='glowHqPartnerCta';
+    partner.className='hq-partner-cta';
+    partner.innerHTML=
+      '<div class="hq-partner-card">'
+      +'<h2>이 플랫폼, <span class="gt">내 사이트로</span> 운영하고 싶으신가요?</h2>'
+      +'<p class="hq-partner-sub">지금 보시는 것처럼 독립 도메인·자동 주문·충전·관리자 패널까지 갖춘 사이트를 만들 수 있습니다. 마케터·대행사·1인 사업자에게 인기 있는 GLOW 파트너 프로그램입니다.</p>'
+      +'<div class="hq-partner-perks">'
+      +'<div class="hq-partner-perk"><b>🏷 내 브랜드로 오픈</b><span>도메인·로고·테마를 내 이름으로</span></div>'
+      +'<div class="hq-partner-perk"><b>⚡ 상품 자동 연동</b><span>인스타·유튜브·틱톡 등 수천 종</span></div>'
+      +'<div class="hq-partner-perk"><b>📱 텔레그램·관리</b><span>주문·충전 알림 + 어드민 패널</span></div>'
+      +'</div>'
+      +'<div class="hq-partner-actions">'
+      +'<button type="button" class="bp bsm" onclick="openPartnerInquiry()">💬 파트너 사이트 문의하기</button>'
+      +'<button type="button" class="bo bsm" onclick="goAuth(\'register\')">먼저 본사 계정 체험 →</button>'
+      +'</div>'
+      +'<p class="hq-partner-note">버튼을 누르면 문의 문구가 복사되고 카카오톡 상담으로 연결됩니다.</p>'
+      +'</div>';
+    var land=ge('pg-land');
+    var foot=land&&land.querySelector('.lfoot');
+    if(land&&foot)land.insertBefore(partner,foot);
+    else if(land)land.appendChild(partner);
   }
 
   ['landFaq','landCta','landStats'].forEach(function(id){var el=ge(id);if(el)el.style.display='none';});
