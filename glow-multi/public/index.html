@@ -45,19 +45,93 @@
 [data-theme="minimal"] input,[data-theme="minimal"] select{border-radius:4px}
 [data-theme="minimal"] .btn,.bp,.bo,.ber,.bok{border-radius:4px}
 
-/* neon 테마 */
+/* neon — 네온 그린 글로우 (GLOW 본사 · 가독성 강화) */
 [data-theme="neon"]{
-  --p1:#39FF14;--p2:#00FF88;--p3:#00CCFF;
-  --g:linear-gradient(135deg,#39FF14,#00FF88,#00CCFF);
-  --bg:#050510;--w:#0A0A1E;--tx:#EEFFEE;--tm:#88FF88;--tl:#447744;
-  --bd:rgba(57,255,20,.2);--bd2:rgba(57,255,20,.4);
+  --p1:#39FF14;--p2:#00FF88;--p3:#00E5FF;
+  --g:linear-gradient(135deg,#39FF14 0%,#00FF88 50%,#00E5FF 100%);
+  --bg:#030806;--w:#0A1210;--tx:#F0FFF0;--tm:#9AFF9A;--tl:#5CB85C;
+  --bd:rgba(57,255,20,.22);--bd2:rgba(57,255,20,.45);
+  --ok:#39FF14;--wn:#FFD700;--er:#FF5555;
 }
-[data-theme="neon"] input,[data-theme="neon"] select,[data-theme="neon"] textarea{background:#0A0A1E;color:#EEFFEE;border-color:rgba(57,255,20,.3)}
-[data-theme="neon"] .card{background:#0A0A1E;border-color:rgba(57,255,20,.2);box-shadow:0 0 20px rgba(57,255,20,.05)}
-[data-theme="neon"] .nav{background:rgba(5,5,16,.95);border-color:rgba(57,255,20,.2)}
-[data-theme="neon"] .sb{background:#080818;border-color:rgba(57,255,20,.15)}
-[data-theme="neon"] body{font-family:'Courier New',monospace}
-[data-theme="neon"] .bp{box-shadow:0 0 15px rgba(57,255,20,.4)}
+[data-theme="neon"] body{
+  font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Courier New',monospace;
+  background:var(--bg);
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -15%,rgba(57,255,20,.12),transparent),
+    radial-gradient(circle at 80% 80%,rgba(0,229,255,.06),transparent 40%);
+  color:var(--tx);
+}
+[data-theme="neon"] .gt{
+  background:linear-gradient(90deg,#39FF14,#00FF88,#00E5FF);
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 12px rgba(57,255,20,.45));
+}
+[data-theme="neon"] input,[data-theme="neon"] select,[data-theme="neon"] textarea{
+  background:#081008;color:#F0FFF0;border-color:rgba(57,255,20,.35);border-radius:8px;
+}
+[data-theme="neon"] input:focus,[data-theme="neon"] select:focus{border-color:#39FF14;box-shadow:0 0 12px rgba(57,255,20,.25)}
+[data-theme="neon"] input::placeholder{color:#5CB85C}
+[data-theme="neon"] label{color:#9AFF9A}
+[data-theme="neon"] .card,[data-theme="neon"] .sc,[data-theme="neon"] .srow,[data-theme="neon"] .ofc,[data-theme="neon"] .site-card{
+  background:#0A1210;border-color:rgba(57,255,20,.25);
+  box-shadow:0 0 24px rgba(57,255,20,.08),inset 0 1px 0 rgba(57,255,20,.06);
+  border-radius:12px;
+}
+[data-theme="neon"] .lnav,[data-theme="neon"] .topbar,[data-theme="neon"] .dhdr{
+  background:rgba(3,8,6,.94);border-color:rgba(57,255,20,.25);backdrop-filter:blur(14px);
+}
+[data-theme="neon"] .bnav,[data-theme="neon"] .sb{background:#060D0A;border-color:rgba(57,255,20,.2)}
+[data-theme="neon"] .hero{background:transparent}
+[data-theme="neon"] .htag{
+  background:rgba(57,255,20,.08);border-color:rgba(57,255,20,.4);color:#9AFF9A;
+  box-shadow:0 0 20px rgba(57,255,20,.12);
+}
+[data-theme="neon"] .tdot{background:#39FF14;box-shadow:0 0 10px #39FF14}
+[data-theme="neon"] .hero h1{color:#F0FFF0;text-shadow:0 0 30px rgba(57,255,20,.15)}
+[data-theme="neon"] #heroDesc{color:#9AFF9A}
+[data-theme="neon"] .chip{
+  background:rgba(57,255,20,.08);border-color:rgba(57,255,20,.35);color:#C8FFC8;border-radius:6px;
+}
+[data-theme="neon"] .sts{background:rgba(57,255,20,.04);border-color:rgba(57,255,20,.2)}
+[data-theme="neon"] .st{border-color:rgba(57,255,20,.15)}
+[data-theme="neon"] .st strong,[data-theme="neon"] .st .gt{color:#39FF14}
+[data-theme="neon"] .bp{
+  background:linear-gradient(135deg,#39FF14,#00CC66);color:#031006;font-weight:800;
+  border:1px solid rgba(57,255,20,.6);box-shadow:0 0 28px rgba(57,255,20,.45);border-radius:10px;
+}
+[data-theme="neon"] .bo{background:transparent;color:#39FF14;border:1.5px solid rgba(57,255,20,.5);border-radius:10px}
+[data-theme="neon"] .bo:active{background:rgba(57,255,20,.08)}
+[data-theme="neon"] .bico{background:linear-gradient(135deg,#39FF14,#00CC66);box-shadow:0 0 20px rgba(57,255,20,.5);border-radius:8px}
+[data-theme="neon"] .bnm{color:#F0FFF0;text-shadow:0 0 12px rgba(57,255,20,.3)}
+[data-theme="neon"] #pg-auth.on{background:#030806}
+[data-theme="neon"] .abox{background:#0A1210;border-color:rgba(57,255,20,.3);box-shadow:0 0 40px rgba(57,255,20,.12)}
+[data-theme="neon"] .atabs{background:#081008;border-radius:8px}
+[data-theme="neon"] .atab.on{background:#0F1A12;color:#39FF14;box-shadow:0 0 12px rgba(57,255,20,.15)}
+[data-theme="neon"] th{background:#081008;color:#9AFF9A}
+[data-theme="neon"] td{border-color:rgba(57,255,20,.08);color:#C8FFC8}
+[data-theme="neon"] .si:hover{background:rgba(57,255,20,.08);color:#39FF14}
+[data-theme="neon"] .si.on{background:rgba(57,255,20,.12);border-color:rgba(57,255,20,.35);color:#39FF14}
+[data-theme="neon"] .sf.on{background:rgba(57,255,20,.15);color:#39FF14;border-color:rgba(57,255,20,.4)}
+[data-theme="neon"] .lsvc-card,[data-theme="neon"] .land-step,[data-theme="neon"] .land-task,[data-theme="neon"] .faq-item{
+  background:#0A1210;border-color:rgba(57,255,20,.22);
+  box-shadow:0 0 16px rgba(57,255,20,.06);
+}
+[data-theme="neon"] .lsvc-card{background:linear-gradient(160deg,#0A1210,#0F1A12)}
+[data-theme="neon"] .faq-q{background:#0A1210;color:#F0FFF0}
+[data-theme="neon"] .faq-q:hover{background:#0F1A12}
+[data-theme="neon"] .land-how,[data-theme="neon"] .land-svc,[data-theme="neon"] .lcta{background:transparent}
+[data-theme="neon"] .lfoot{background:#020504;border-top:1px solid rgba(57,255,20,.2);color:#9AFF9A}
+[data-theme="neon"] .ibox{background:rgba(57,255,20,.06);border-color:rgba(57,255,20,.25);color:#C8FFC8}
+[data-theme="neon"] .lsvc-tag{background:rgba(57,255,20,.12);color:#39FF14}
+[data-theme="neon"] .modal{background:#0A1210;border:1px solid rgba(57,255,20,.3)}
+[data-theme="neon"] .mbg{background:rgba(0,0,0,.8)}
+[data-theme="neon"] .nav{background:rgba(3,8,6,.95);border-color:rgba(57,255,20,.2)}
+[data-theme="neon"] .srow.sel,[data-theme="neon"] .srow:active{border-color:#39FF14;background:rgba(57,255,20,.06)}
+[data-theme="neon"] .admtab.on{color:#39FF14;border-bottom-color:#39FF14}
+[data-theme="neon"] .osum{background:rgba(57,255,20,.06);border-color:rgba(57,255,20,.25)}
+[data-theme="neon"] .bni.on{color:#39FF14}
+[data-theme="neon"] .land-step-num{box-shadow:0 0 16px rgba(57,255,20,.4)}
+[data-theme="neon"] .kakao-float{box-shadow:0 0 20px rgba(254,229,0,.35)}
 
 /* gold 테마 */
 [data-theme="gold"]{
@@ -1495,36 +1569,39 @@ function applyGrowthLanding(d){
   if(lh)lh.style.display='block';
 
   var brand=(d&&d.name)?d.name:'GLOW';
+  var neon=d.theme==='neon';
   var anon=d.theme==='anonymous';
   var hb=ge('heroBadge');
-  if(hb)hb.textContent=d.heroBadge||(anon?'· PRIVATE GROWTH ·':'🔥 인스타·유튜브·틱톡 즉시 성장');
+  if(hb)hb.textContent=d.heroBadge||(neon?'⚡ NEON GROWTH PLATFORM':(anon?'· PRIVATE GROWTH ·':'🔥 인스타·유튜브·틱톡 즉시 성장'));
   var hpf=ge('heroPrefix');
   if(hpf)hpf.textContent=d.heroPrefix||(anon?'노출 없이':'링크 하나면');
   var hs=ge('heroSloganSpan');
-  if(hs)hs.textContent=d.slogan||(anon?'숫자만 올린다':'팔로워·조회수·구독자 UP');
+  if(hs)hs.textContent=d.slogan||(neon?'팔로워·조회·구독 UP':(anon?'숫자만 올린다':'팔로워·조회수·구독자 UP'));
   var hss=ge('heroSloganSub');
-  if(hss)hss.textContent=d.sloganSub||(anon?'링크 하나 · 자동 처리':'좋아요부터 구독자까지 — 오늘 바로 키우세요');
+  if(hss)hss.textContent=d.sloganSub||(neon?'네온처럼 빠르게 · 오늘 바로 시작':(anon?'링크 하나 · 자동 처리':'좋아요부터 구독자까지 — 오늘 바로 키우세요'));
   var hd=ge('heroDesc');
-  if(hd)hd.textContent=d.description||(anon
-    ?'가입하고 링크만 넣으세요. 이름 안 밝혀도 채널은 커집니다.'
-    :'가입 30초, 링크만 넣으면 끝. '+brand+'에서 크리에이터·셀러·매장 채널을 바로 키우세요.');
+  if(hd)hd.textContent=d.description||(neon
+    ?'가입 30초, 링크만 넣으면 끝. 유튜브·인스타·틱톡 채널을 네온 속도로 키우세요.'
+    :(anon?'가입하고 링크만 넣으세요. 이름 안 밝혀도 채널은 커집니다.':'가입 30초, 링크만 넣으면 끝. '+brand+'에서 크리에이터·셀러·매장 채널을 바로 키우세요.'));
 
   var chips=ge('pg-land')?.querySelector('.hero-chips');
   if(chips){
-    chips.innerHTML=anon
+    chips.innerHTML=neon
+      ?'<div class="chip">📷 팔로워</div><div class="chip">▶ 조회수</div><div class="chip">❤️ 좋아요</div><div class="chip">👥 구독</div><div class="chip">⚡ 즉시처리</div>'
+      :(anon
       ?'<div class="chip">팔로워</div><div class="chip">조회수</div><div class="chip">구독</div><div class="chip">좋아요</div><div class="chip">자동처리</div>'
-      :'<div class="chip">📷 팔로워 UP</div><div class="chip">❤️ 좋아요 UP</div><div class="chip">▶ 구독자 UP</div><div class="chip">👁 조회수 UP</div><div class="chip">⚡ 오늘 시작</div>';
+      :'<div class="chip">📷 팔로워 UP</div><div class="chip">❤️ 좋아요 UP</div><div class="chip">▶ 구독자 UP</div><div class="chip">👁 조회수 UP</div><div class="chip">⚡ 오늘 시작</div>');
   }
 
-  if(!d.stat3Num){var s3n=ge('stat3Num');if(s3n)s3n.textContent=anon?'LINK':'링크';}
+  if(!d.stat3Num){var s3n=ge('stat3Num');if(s3n)s3n.textContent=(neon||anon)?'LINK':'링크';}
   if(!d.stat3Label){var s3l=ge('stat3Label');if(s3l)s3l.textContent=anon?'INPUT':'만 입력';}
   if(!d.stat4Num){var s4n=ge('stat4Num');if(s4n)s4n.textContent='24H';}
   if(!d.stat4Label){var s4l=ge('stat4Label');if(s4l)s4l.textContent=anon?'AUTO':'자동 처리';}
 
   var ct=ge('lctaTitle');
-  if(ct)ct.innerHTML=anon?'접근 권한을 <span class="gt">확보하세요</span>':'지금 가입하면 <span class="gt">오늘부터 UP</span>';
+  if(ct)ct.innerHTML=neon?'지금 가입 · <span class="gt">네온 속도 UP</span>':(anon?'접근 권한을 <span class="gt">확보하세요</span>':'지금 가입하면 <span class="gt">오늘부터 UP</span>');
   var cs=ge('lctaSub');
-  if(cs)cs.textContent=anon?(brand+' · 무료 · 링크만 있으면 시작'):(brand+' · 무료 가입 · 링크만 있으면 바로 주문');
+  if(cs)cs.textContent=(neon||anon)?(brand+' · 무료 · 링크만 있으면 시작'):(brand+' · 무료 가입 · 링크만 있으면 바로 주문');
 }
 
 async function loadSiteConfig(){

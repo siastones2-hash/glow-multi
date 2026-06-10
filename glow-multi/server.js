@@ -208,26 +208,26 @@ async function initDB() {
   // GLOW 본사 도메인 (Render 커스텀 도메인 · env로 변경 가능)
   const GLOW_DOMAIN = (process.env.GLOW_DOMAIN || 'glowsiax.com').split(':')[0].replace(/^www\./, '');
 
-  // GLOW 본사 — anonymous 다크 테마 (파트너 사이트와 분리)
+  // GLOW 본사 — neon 그린 글로우 (파트너 사이트와 분리)
   const GLOW_BRAND = {
-    logo: '◉',
-    primary: '#8A8A8A',
-    accent: '#D4D4D4',
-    theme: 'anonymous',
-    uiLayout: 'minimal',
-    heroBadge: '· PRIVATE GROWTH ·',
-    heroPrefix: '노출 없이',
-    slogan: '숫자만 올린다',
-    sloganSub: '링크 하나 · 자동 처리',
-    description: '가입하고 링크만 넣으세요. 이름 안 밝혀도 채널은 커집니다.',
-    loginWelcome: '다시 접속',
-    loginSub: '계정 인증',
-    registerWelcome: '접근 권한 생성',
-    registerSub: '무료 계정 · 30초',
+    logo: '✦',
+    primary: '#39FF14',
+    accent: '#00FF88',
+    theme: 'neon',
+    uiLayout: 'classic',
+    heroBadge: '⚡ NEON GROWTH PLATFORM',
+    heroPrefix: '링크 하나면',
+    slogan: '팔로워·조회·구독 UP',
+    sloganSub: '네온처럼 빠르게 · 오늘 바로 시작',
+    description: '가입 30초, 링크만 넣으면 끝. 유튜브·인스타·틱톡 채널을 네온 속도로 키우세요.',
+    loginWelcome: '다시 만나요',
+    loginSub: '계정에 로그인',
+    registerWelcome: '지금 시작',
+    registerSub: '무료 가입 · 30초',
     stat1Num: '10K+', stat1Label: '서비스',
-    stat2Num: '24H', stat2Label: '처리',
-    stat3Num: 'LINK', stat3Label: 'INPUT',
-    stat4Num: '100%', stat4Label: 'AUTO',
+    stat2Num: '24H', stat2Label: '빠른 처리',
+    stat3Num: 'LINK', stat3Label: '만 입력',
+    stat4Num: '100%', stat4Label: '자동화',
   };
   const siteExists = await query(`SELECT id FROM sites WHERE id='default'`);
   if (siteExists.rows.length === 0) {
@@ -251,7 +251,7 @@ async function initDB() {
     await query(`UPDATE sites SET domain=$1 WHERE id='default'`, [GLOW_DOMAIN]);
     const curTheme = await query(`SELECT theme FROM sites WHERE id='default'`);
     const th = (curTheme.rows[0]?.theme || 'glow').trim();
-    if (!th || th === 'glow' || th === 'anonymous') {
+    if (!th || th === 'glow' || th === 'anonymous' || th === 'neon') {
       await query(`
         UPDATE sites SET
           logo=$1, primary_color=$2, accent_color=$3, theme=$4, ui_layout=$5,
@@ -4233,22 +4233,41 @@ app.get('*', async (req, res) => {
     const isDefaultSite = site && site.id === 'default';
     const siteTheme = (site && site.theme) ? String(site.theme).trim() : 'glow';
     const siteLayout = (site && site.ui_layout) ? String(site.ui_layout).trim() : 'classic';
-    const useAnonymous = isDefaultSite && siteTheme === 'anonymous';
+    const PRESET_THEME_CSS = {
+      neon: {
+        attr: 'neon',
+        css: `:root{
+  --p1:#39FF14 !important;--p2:#00FF88 !important;--p3:#00E5FF !important;
+  --g:linear-gradient(135deg,#39FF14,#00FF88,#00E5FF) !important;
+  --bg:#030806 !important;--w:#0A1210 !important;--tx:#F0FFF0 !important;
+  --tm:#9AFF9A !important;--tl:#5CB85C !important;
+  --bd:rgba(57,255,20,.22) !important;--bd2:rgba(57,255,20,.45) !important;
+}
+body{background:#030806!important;color:#F0FFF0!important}`,
+      },
+      anonymous: {
+        attr: 'anonymous',
+        css: `:root{
+  --p1:#D8D8D8 !important;--p2:#8E8E8E !important;--p3:#4A4A4A !important;
+  --g:linear-gradient(135deg,#F0F0F0,#9A9A9A,#3A3A3A) !important;
+  --bg:#050505 !important;--w:#0E0E0E !important;--tx:#E2E2E2 !important;
+  --tm:#8A8A8A !important;--tl:#4E4E4E !important;
+  --bd:rgba(255,255,255,.07) !important;--bd2:rgba(255,255,255,.14) !important;
+}
+body{background:#050505!important;color:#E2E2E2!important}`,
+      },
+    };
+    const presetPack = isDefaultSite ? PRESET_THEME_CSS[siteTheme] : null;
 
     if (site) {
       siteName = (site.name || 'GLOW').replace(/[<>"']/g, '');
       siteLogo = (site.logo || '✨').replace(/[<>"']/g, '');
       if (site.primary_color) primaryColor = site.primary_color;
       if (site.accent_color) accentColor = site.accent_color;
-      if (useAnonymous) {
-        primaryColor = '#D8D8D8';
-        accentColor = '#8E8E8E';
-        p3Color = '#4A4A4A';
-      }
     }
 
-    if (useAnonymous) {
-      html = html.replace('<html lang="ko">', `<html lang="ko" data-theme="anonymous" data-layout="${siteLayout}">`);
+    if (presetPack) {
+      html = html.replace('<html lang="ko">', `<html lang="ko" data-theme="${presetPack.attr}" data-layout="${siteLayout}">`);
     } else if (siteLayout && siteLayout !== 'classic') {
       html = html.replace('<html lang="ko">', `<html lang="ko" data-layout="${siteLayout}">`);
     }
@@ -4258,17 +4277,8 @@ app.get('*', async (req, res) => {
     html = html.split('__SITE_LOGO__').join(siteLogo);
     
     // 커스텀 테마 색상 주입 (FOUC 방지)
-    const customTheme = useAnonymous
-      ? `<style id="dynamic-theme">
-:root{
-  --p1:#D8D8D8 !important;--p2:#8E8E8E !important;--p3:#4A4A4A !important;
-  --g:linear-gradient(135deg,#F0F0F0,#9A9A9A,#3A3A3A) !important;
-  --bg:#050505 !important;--w:#0E0E0E !important;--tx:#E2E2E2 !important;
-  --tm:#8A8A8A !important;--tl:#4E4E4E !important;
-  --bd:rgba(255,255,255,.07) !important;--bd2:rgba(255,255,255,.14) !important;
-}
-body{background:#050505!important;color:#E2E2E2!important}
-</style>`
+    const customTheme = presetPack
+      ? `<style id="dynamic-theme">${presetPack.css}</style>`
       : `<style id="dynamic-theme">
 :root{
   --p1:${primaryColor} !important;
