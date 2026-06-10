@@ -105,6 +105,82 @@
   --bd:rgba(255,10,84,.12);--bd2:rgba(255,10,84,.28);
 }
 [data-theme="candy"] body{font-family:'Comic Sans MS','Chalkboard SE',cursive}
+
+/* anonymous — GLOW 본사 전용 · 다크·무표·은은한 글로우 */
+[data-theme="anonymous"]{
+  --p1:#D8D8D8;--p2:#8E8E8E;--p3:#4A4A4A;
+  --g:linear-gradient(135deg,#F0F0F0 0%,#9A9A9A 45%,#3A3A3A 100%);
+  --bg:#050505;--w:#0E0E0E;--tx:#E2E2E2;--tm:#8A8A8A;--tl:#4E4E4E;
+  --bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.14);
+  --ok:#6B9E6B;--wn:#9E8A4A;--er:#9E5A5A;
+}
+[data-theme="anonymous"] body{
+  font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Courier New',monospace;
+  letter-spacing:.02em;
+  background:var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,255,255,.04),transparent),
+    linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
+  background-size:auto,28px 28px,28px 28px;
+}
+[data-theme="anonymous"] .gt{
+  background:linear-gradient(90deg,#fff,#aaa,#666);
+  -webkit-background-clip:text;background-clip:text;
+  text-shadow:0 0 40px rgba(255,255,255,.08);
+}
+[data-theme="anonymous"] input,[data-theme="anonymous"] select,[data-theme="anonymous"] textarea{
+  background:#0A0A0A;color:var(--tx);border-color:var(--bd2);border-radius:6px;
+}
+[data-theme="anonymous"] input:focus,[data-theme="anonymous"] select:focus{border-color:rgba(255,255,255,.35)}
+[data-theme="anonymous"] .card,[data-theme="anonymous"] .sc,[data-theme="anonymous"] .srow,[data-theme="anonymous"] .ofc{
+  background:#0C0C0C;border-color:var(--bd);box-shadow:0 0 24px rgba(0,0,0,.45);
+  border-radius:8px;
+}
+[data-theme="anonymous"] .lnav,[data-theme="anonymous"] .topbar,[data-theme="anonymous"] .dhdr{
+  background:rgba(5,5,5,.92);border-color:var(--bd);backdrop-filter:blur(12px);
+}
+[data-theme="anonymous"] .bnav,[data-theme="anonymous"] .sb{background:#080808;border-color:var(--bd)}
+[data-theme="anonymous"] .hero{background:transparent}
+[data-theme="anonymous"] .htag{
+  background:rgba(255,255,255,.04);border-color:var(--bd2);color:var(--tm);letter-spacing:.22em;
+}
+[data-theme="anonymous"] .tdot{background:var(--p1);box-shadow:0 0 8px rgba(255,255,255,.5)}
+[data-theme="anonymous"] .chip{background:#0A0A0A;border-color:var(--bd);color:var(--tm);border-radius:4px;font-size:11px}
+[data-theme="anonymous"] .sts{background:transparent;border-color:var(--bd)}
+[data-theme="anonymous"] .st{border-color:var(--bd)}
+[data-theme="anonymous"] .bp{
+  background:linear-gradient(135deg,#2A2A2A,#111);color:#E8E8E8;
+  border:1px solid var(--bd2);box-shadow:0 0 20px rgba(255,255,255,.06);border-radius:6px;
+}
+[data-theme="anonymous"] .bp:hover{box-shadow:0 0 28px rgba(255,255,255,.1)}
+[data-theme="anonymous"] .bo{background:transparent;color:var(--tx);border:1px solid var(--bd2);border-radius:6px}
+[data-theme="anonymous"] .bo:active{background:rgba(255,255,255,.04)}
+[data-theme="anonymous"] .bico{background:linear-gradient(135deg,#222,#111);box-shadow:0 0 16px rgba(255,255,255,.08);border-radius:6px}
+[data-theme="anonymous"] .bnm{letter-spacing:.12em;font-weight:700;text-transform:uppercase;font-size:15px}
+[data-theme="anonymous"] #pg-auth.on{background:#050505}
+[data-theme="anonymous"] .abox{background:#0C0C0C;border-color:var(--bd);box-shadow:0 24px 60px rgba(0,0,0,.6);border-radius:10px}
+[data-theme="anonymous"] .atabs{background:#0A0A0A;border-radius:6px}
+[data-theme="anonymous"] .atab.on{background:#141414;color:var(--tx);box-shadow:none}
+[data-theme="anonymous"] th{background:#0A0A0A;color:var(--tl)}
+[data-theme="anonymous"] td{border-color:rgba(255,255,255,.04)}
+[data-theme="anonymous"] .si:hover{background:rgba(255,255,255,.04);color:var(--tx)}
+[data-theme="anonymous"] .si.on{background:rgba(255,255,255,.06);border-color:var(--bd2);color:var(--tx)}
+[data-theme="anonymous"] .sf.on{background:#1A1A1A;color:var(--tx);border-color:var(--bd2)}
+[data-theme="anonymous"] .lsvc-card,[data-theme="anonymous"] .land-step,[data-theme="anonymous"] .land-task,[data-theme="anonymous"] .faq-item{
+  background:#0C0C0C;border-color:var(--bd);
+}
+[data-theme="anonymous"] .faq-q{background:#0C0C0C}
+[data-theme="anonymous"] .faq-q:hover{background:#111}
+[data-theme="anonymous"] .land-how,[data-theme="anonymous"] .land-svc{background:transparent}
+[data-theme="anonymous"] .lfoot{background:#030303;border-top:1px solid var(--bd)}
+[data-theme="anonymous"] .ibox{background:rgba(255,255,255,.03);border-color:var(--bd)}
+[data-theme="anonymous"] .lsvc-tag{background:rgba(255,255,255,.06);color:var(--tm)}
+[data-theme="anonymous"] .modal{background:#0E0E0E;border:1px solid var(--bd)}
+[data-theme="anonymous"] .mbg{background:rgba(0,0,0,.75)}
+[data-theme="anonymous"] .hero h1{letter-spacing:-.02em;font-weight:700}
+[data-theme="anonymous"] .kakao-float{filter:grayscale(.35) contrast(1.1)}
+
 html,body{min-height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
 .gt{background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 input,select,textarea{width:100%;padding:11px 13px;background:var(--w);border:1.5px solid var(--bd);border-radius:10px;font-size:14px;color:var(--tx);outline:none;font-family:inherit;-webkit-appearance:none}
@@ -868,6 +944,7 @@ tr:last-child td{border-bottom:none}
                 <select id="stTheme">
                   <option value="glow">Glow 기본 (아래 색상 사용)</option>
                   <option value="dark">다크 · 사이버</option>
+                  <option value="anonymous">익명 · 다크 (본사형)</option>
                   <option value="minimal">미니멀 · 흑백</option>
                   <option value="neon">네온 · 그린</option>
                   <option value="gold">골드 · 프리미엄</option>
@@ -1418,24 +1495,36 @@ function applyGrowthLanding(d){
   if(lh)lh.style.display='block';
 
   var brand=(d&&d.name)?d.name:'GLOW';
-  var hb=ge('heroBadge');if(hb)hb.textContent='🔥 인스타·유튜브·틱톡 즉시 성장';
-  var hpf=ge('heroPrefix');if(hpf)hpf.textContent='링크 하나면';
-  var hs=ge('heroSloganSpan');if(hs)hs.textContent='팔로워·조회수·구독자 UP';
-  var hss=ge('heroSloganSub');if(hss)hss.textContent='좋아요부터 구독자까지 — 오늘 바로 키우세요';
-  var hd=ge('heroDesc');if(hd)hd.textContent='가입 30초, 링크만 넣으면 끝. '+brand+'에서 크리에이터·셀러·매장 채널을 바로 키우세요.';
+  var anon=d.theme==='anonymous';
+  var hb=ge('heroBadge');
+  if(hb)hb.textContent=d.heroBadge||(anon?'· PRIVATE GROWTH ·':'🔥 인스타·유튜브·틱톡 즉시 성장');
+  var hpf=ge('heroPrefix');
+  if(hpf)hpf.textContent=d.heroPrefix||(anon?'노출 없이':'링크 하나면');
+  var hs=ge('heroSloganSpan');
+  if(hs)hs.textContent=d.slogan||(anon?'숫자만 올린다':'팔로워·조회수·구독자 UP');
+  var hss=ge('heroSloganSub');
+  if(hss)hss.textContent=d.sloganSub||(anon?'링크 하나 · 자동 처리':'좋아요부터 구독자까지 — 오늘 바로 키우세요');
+  var hd=ge('heroDesc');
+  if(hd)hd.textContent=d.description||(anon
+    ?'가입하고 링크만 넣으세요. 이름 안 밝혀도 채널은 커집니다.'
+    :'가입 30초, 링크만 넣으면 끝. '+brand+'에서 크리에이터·셀러·매장 채널을 바로 키우세요.');
 
   var chips=ge('pg-land')?.querySelector('.hero-chips');
   if(chips){
-    chips.innerHTML='<div class="chip">📷 팔로워 UP</div><div class="chip">❤️ 좋아요 UP</div><div class="chip">▶ 구독자 UP</div><div class="chip">👁 조회수 UP</div><div class="chip">⚡ 오늘 시작</div>';
+    chips.innerHTML=anon
+      ?'<div class="chip">팔로워</div><div class="chip">조회수</div><div class="chip">구독</div><div class="chip">좋아요</div><div class="chip">자동처리</div>'
+      :'<div class="chip">📷 팔로워 UP</div><div class="chip">❤️ 좋아요 UP</div><div class="chip">▶ 구독자 UP</div><div class="chip">👁 조회수 UP</div><div class="chip">⚡ 오늘 시작</div>';
   }
 
-  var s3n=ge('stat3Num');if(s3n)s3n.textContent='링크';
-  var s3l=ge('stat3Label');if(s3l)s3l.textContent='만 입력';
-  var s4n=ge('stat4Num');if(s4n)s4n.textContent='24H';
-  var s4l=ge('stat4Label');if(s4l)s4l.textContent='자동 처리';
+  if(!d.stat3Num){var s3n=ge('stat3Num');if(s3n)s3n.textContent=anon?'LINK':'링크';}
+  if(!d.stat3Label){var s3l=ge('stat3Label');if(s3l)s3l.textContent=anon?'INPUT':'만 입력';}
+  if(!d.stat4Num){var s4n=ge('stat4Num');if(s4n)s4n.textContent='24H';}
+  if(!d.stat4Label){var s4l=ge('stat4Label');if(s4l)s4l.textContent=anon?'AUTO':'자동 처리';}
 
-  var ct=ge('lctaTitle');if(ct)ct.innerHTML='지금 가입하면 <span class="gt">오늘부터 UP</span>';
-  var cs=ge('lctaSub');if(cs)cs.textContent=brand+' · 무료 가입 · 링크만 있으면 바로 주문';
+  var ct=ge('lctaTitle');
+  if(ct)ct.innerHTML=anon?'접근 권한을 <span class="gt">확보하세요</span>':'지금 가입하면 <span class="gt">오늘부터 UP</span>';
+  var cs=ge('lctaSub');
+  if(cs)cs.textContent=anon?(brand+' · 무료 · 링크만 있으면 시작'):(brand+' · 무료 가입 · 링크만 있으면 바로 주문');
 }
 
 async function loadSiteConfig(){

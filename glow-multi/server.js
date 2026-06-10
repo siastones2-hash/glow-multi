@@ -208,18 +208,66 @@ async function initDB() {
   // GLOW 본사 도메인 (Render 커스텀 도메인 · env로 변경 가능)
   const GLOW_DOMAIN = (process.env.GLOW_DOMAIN || 'glowsiax.com').split(':')[0].replace(/^www\./, '');
 
-  // GLOW 본사
+  // GLOW 본사 — anonymous 다크 테마 (파트너 사이트와 분리)
+  const GLOW_BRAND = {
+    logo: '◉',
+    primary: '#8A8A8A',
+    accent: '#D4D4D4',
+    theme: 'anonymous',
+    uiLayout: 'minimal',
+    heroBadge: '· PRIVATE GROWTH ·',
+    heroPrefix: '노출 없이',
+    slogan: '숫자만 올린다',
+    sloganSub: '링크 하나 · 자동 처리',
+    description: '가입하고 링크만 넣으세요. 이름 안 밝혀도 채널은 커집니다.',
+    loginWelcome: '다시 접속',
+    loginSub: '계정 인증',
+    registerWelcome: '접근 권한 생성',
+    registerSub: '무료 계정 · 30초',
+    stat1Num: '10K+', stat1Label: '서비스',
+    stat2Num: '24H', stat2Label: '처리',
+    stat3Num: 'LINK', stat3Label: 'INPUT',
+    stat4Num: '100%', stat4Label: 'AUTO',
+  };
   const siteExists = await query(`SELECT id FROM sites WHERE id='default'`);
   if (siteExists.rows.length === 0) {
-    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,kakao,bank,margin,exrate,credit,super_margin)
-      VALUES('default',$1,'GLOW','✨','#F72585','#B5179E',
-      '',
-      $2,
-      100,1500,0,100)`, [GLOW_DOMAIN, BANK_INFO]);
+    await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,theme,ui_layout,
+      hero_badge,hero_prefix,slogan,slogan_sub,description,
+      login_welcome,login_sub,register_welcome,register_sub,
+      stat1_num,stat1_label,stat2_num,stat2_label,stat3_num,stat3_label,stat4_num,stat4_label,
+      kakao,bank,margin,exrate,credit,super_margin)
+      VALUES('default',$1,'GLOW',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,
+      '',$25,100,1500,0,100)`, [
+      GLOW_DOMAIN, GLOW_BRAND.logo, GLOW_BRAND.primary, GLOW_BRAND.accent,
+      GLOW_BRAND.theme, GLOW_BRAND.uiLayout,
+      GLOW_BRAND.heroBadge, GLOW_BRAND.heroPrefix, GLOW_BRAND.slogan, GLOW_BRAND.sloganSub, GLOW_BRAND.description,
+      GLOW_BRAND.loginWelcome, GLOW_BRAND.loginSub, GLOW_BRAND.registerWelcome, GLOW_BRAND.registerSub,
+      GLOW_BRAND.stat1Num, GLOW_BRAND.stat1Label, GLOW_BRAND.stat2Num, GLOW_BRAND.stat2Label,
+      GLOW_BRAND.stat3Num, GLOW_BRAND.stat3Label, GLOW_BRAND.stat4Num, GLOW_BRAND.stat4Label,
+      BANK_INFO,
+    ]);
   } else {
-    // 본사(default) 고객 마진 100% — 환율은 global_exrate 따름 (여기서 exrate 덮어쓰지 않음)
     await query(`UPDATE sites SET bank=$1, margin=100, super_margin=100 WHERE id='default'`, [BANK_INFO]);
     await query(`UPDATE sites SET domain=$1 WHERE id='default'`, [GLOW_DOMAIN]);
+    const curTheme = await query(`SELECT theme FROM sites WHERE id='default'`);
+    const th = (curTheme.rows[0]?.theme || 'glow').trim();
+    if (!th || th === 'glow' || th === 'anonymous') {
+      await query(`
+        UPDATE sites SET
+          logo=$1, primary_color=$2, accent_color=$3, theme=$4, ui_layout=$5,
+          hero_badge=$6, hero_prefix=$7, slogan=$8, slogan_sub=$9, description=$10,
+          login_welcome=$11, login_sub=$12, register_welcome=$13, register_sub=$14,
+          stat1_num=$15, stat1_label=$16, stat2_num=$17, stat2_label=$18,
+          stat3_num=$19, stat3_label=$20, stat4_num=$21, stat4_label=$22
+        WHERE id='default'
+      `, [
+        GLOW_BRAND.logo, GLOW_BRAND.primary, GLOW_BRAND.accent, GLOW_BRAND.theme, GLOW_BRAND.uiLayout,
+        GLOW_BRAND.heroBadge, GLOW_BRAND.heroPrefix, GLOW_BRAND.slogan, GLOW_BRAND.sloganSub, GLOW_BRAND.description,
+        GLOW_BRAND.loginWelcome, GLOW_BRAND.loginSub, GLOW_BRAND.registerWelcome, GLOW_BRAND.registerSub,
+        GLOW_BRAND.stat1Num, GLOW_BRAND.stat1Label, GLOW_BRAND.stat2Num, GLOW_BRAND.stat2Label,
+        GLOW_BRAND.stat3Num, GLOW_BRAND.stat3Label, GLOW_BRAND.stat4Num, GLOW_BRAND.stat4Label,
+      ]);
+    }
   }
 
   // 모든 사이트 환율 = 글로벌 기본 환율과 항상 동기화
@@ -4182,19 +4230,46 @@ app.get('*', async (req, res) => {
     let accentColor = '#B5179E';
     let p3Color = '#7209B7';
     
+    const isDefaultSite = site && site.id === 'default';
+    const siteTheme = (site && site.theme) ? String(site.theme).trim() : 'glow';
+    const siteLayout = (site && site.ui_layout) ? String(site.ui_layout).trim() : 'classic';
+    const useAnonymous = isDefaultSite && siteTheme === 'anonymous';
+
     if (site) {
       siteName = (site.name || 'GLOW').replace(/[<>"']/g, '');
       siteLogo = (site.logo || '✨').replace(/[<>"']/g, '');
       if (site.primary_color) primaryColor = site.primary_color;
       if (site.accent_color) accentColor = site.accent_color;
+      if (useAnonymous) {
+        primaryColor = '#D8D8D8';
+        accentColor = '#8E8E8E';
+        p3Color = '#4A4A4A';
+      }
+    }
+
+    if (useAnonymous) {
+      html = html.replace('<html lang="ko">', `<html lang="ko" data-theme="anonymous" data-layout="${siteLayout}">`);
+    } else if (siteLayout && siteLayout !== 'classic') {
+      html = html.replace('<html lang="ko">', `<html lang="ko" data-layout="${siteLayout}">`);
     }
     
     // HTML placeholder를 실제 값으로 치환 (모든 발생 위치)
     html = html.split('__SITE_NAME__').join(siteName);
     html = html.split('__SITE_LOGO__').join(siteLogo);
     
-    // 커스텀 테마 색상 주입 (기본 CSS 변수를 덮어씀)
-    const customTheme = `<style id="dynamic-theme">
+    // 커스텀 테마 색상 주입 (FOUC 방지)
+    const customTheme = useAnonymous
+      ? `<style id="dynamic-theme">
+:root{
+  --p1:#D8D8D8 !important;--p2:#8E8E8E !important;--p3:#4A4A4A !important;
+  --g:linear-gradient(135deg,#F0F0F0,#9A9A9A,#3A3A3A) !important;
+  --bg:#050505 !important;--w:#0E0E0E !important;--tx:#E2E2E2 !important;
+  --tm:#8A8A8A !important;--tl:#4E4E4E !important;
+  --bd:rgba(255,255,255,.07) !important;--bd2:rgba(255,255,255,.14) !important;
+}
+body{background:#050505!important;color:#E2E2E2!important}
+</style>`
+      : `<style id="dynamic-theme">
 :root{
   --p1:${primaryColor} !important;
   --p2:${accentColor} !important;
