@@ -2171,7 +2171,7 @@ function hqTermRollLine(){
   if(roll===4) return [pl+'/'+svc,'qty '+hqNum()+' · src '+ip,'ok','ok'];
   if(roll===5) return ['link.ingest',hqRand(['https://','http://'])+pl+'.com/'+hqHex(5)+'… · '+ip,'parsed','ok'];
   if(roll===6) return ['upstream.'+hqRand(['peakerr','vendor','relay']),ip+' latency '+hqMs(),'',''];
-  if(roll===7) return ['cdn.'+hqRand(['purge','prefetch','edge'])+'',''+ip2+' · zone glowsiax · '+hqPct(),'',''];
+  if(roll===7) return ['cdn.'+hqRand(['purge','prefetch','edge'])+' '+ip2+' · zone glowsiax · '+hqPct(),'',''];
   if(roll===8) return ['tls.handshake',ipp+' → '+node+' · '+hqMs(),'',''];
   if(roll===9) return ['notify.'+hqRand(['telegram','email','webhook']),'event '+hqHex(6)+' · peer '+ip,'queued','ok'];
   if(roll===10) return [t+' sync.orders','+'+hqRandInt(3,187)+' rows · '+ip2,'',''];
@@ -2468,8 +2468,11 @@ function setupGlowHQAuth(brand){
 }
 
 async function loadSiteConfig(){
+  var landPg=ge('pg-land');
+  function markLandReady(){if(landPg)landPg.classList.add('land-ready');}
+  try{
   var d=await api('/api/site-config');
-  if(d.error)return;
+  if(d.error){markLandReady();return;}
   SITE_CONFIG=d;
 
   document.documentElement.setAttribute('data-layout', d.uiLayout||'classic');
@@ -2526,7 +2529,7 @@ async function loadSiteConfig(){
   ['navLogo','authLogo','sbLogo','tbLogo'].forEach(function(id){var el=ge(id);if(el)el.textContent=logo});
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
-  var hp=ge('heroPanel');if(hp)hp.textContent=logo;
+  var hp=ge('heroPanel');if(hp&&(d.uiLayout||'')!=='glow-hq')hp.textContent=logo;
   var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
 
   // 통계 숫자 (상단 2칸은 사이트별 설정 가능)
@@ -2650,6 +2653,7 @@ async function loadSiteConfig(){
   // 카카오 버튼 텍스트
   document.querySelectorAll('.kakao-btn-text').forEach(function(el){el.textContent=d.kakaoBtnText||'카카오톡 문의'});
   syncKakaoCta();
+  }finally{markLandReady();}
 }
 
 function goAuth(m){showPg('pg-auth');switchAuth(m)}
