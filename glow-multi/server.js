@@ -205,17 +205,21 @@ async function initDB() {
   // 기본 사이트 (계좌번호 포함)
   const BANK_INFO = '우리은행 1002-160-164625 (예금주: 조인호)';
   
+  // GLOW 본사 도메인 (Render 커스텀 도메인 · env로 변경 가능)
+  const GLOW_DOMAIN = (process.env.GLOW_DOMAIN || 'glowsiax.com').split(':')[0].replace(/^www\./, '');
+
   // GLOW 본사
   const siteExists = await query(`SELECT id FROM sites WHERE id='default'`);
   if (siteExists.rows.length === 0) {
     await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,kakao,bank,margin,exrate,credit,super_margin)
-      VALUES('default','localhost','GLOW','✨','#F72585','#B5179E',
+      VALUES('default',$1,'GLOW','✨','#F72585','#B5179E',
       '',
-      $1,
-      100,1500,0,100)`, [BANK_INFO]);
+      $2,
+      100,1500,0,100)`, [GLOW_DOMAIN, BANK_INFO]);
   } else {
     // 본사(default) 고객 마진 100% — 환율은 global_exrate 따름 (여기서 exrate 덮어쓰지 않음)
     await query(`UPDATE sites SET bank=$1, margin=100, super_margin=100 WHERE id='default'`, [BANK_INFO]);
+    await query(`UPDATE sites SET domain=$1 WHERE id='default'`, [GLOW_DOMAIN]);
   }
 
   // 모든 사이트 환율 = 글로벌 기본 환율과 항상 동기화
