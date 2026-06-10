@@ -219,7 +219,7 @@ async function initDB() {
     heroPrefix: '소셜 성장',
     slogan: '성장 플랫폼',
     sloganSub: '채널·브랜드·파트너를 하나로',
-    description: '고객으로 채널을 키우거나, 같은 방식으로 내 사이트 주인이 될 수 있습니다. 가입 후 링크만 넣으면 전 채널 자동 처리.',
+    description: '고객으로 채널을 키우거나, 같은 방식으로 내 브랜드 사이트를 독립 운영할 수 있습니다. 가입 후 링크만 넣으면 전 채널 자동 처리.',
     loginWelcome: '다시 만나요',
     loginSub: '계정에 로그인',
     registerWelcome: '지금 시작',
