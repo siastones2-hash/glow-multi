@@ -2441,7 +2441,7 @@ function applyGlowHQLanding(d){
   var hpf=ge('heroPrefix');if(hpf)hpf.textContent=d.heroPrefix||'소셜 성장';
   var hs=ge('heroSloganSpan');if(hs)hs.textContent=d.slogan||'성장 플랫폼';
   var hss=ge('heroSloganSub');if(hss)hss.textContent=d.sloganSub||'채널·브랜드·파트너를 하나로';
-  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'고객으로 채널을 키우거나, 같은 방식으로 내 브랜드 사이트를 독립 운영할 수 있습니다. 가입 후 링크만 넣으면 전 채널 자동 처리.';
+  var hd=ge('heroDesc');if(hd)hd.textContent=d.description||'채널을 키우거나, 같은 방식으로 내 브랜드 사이트를 독립 운영할 수 있습니다. 가입 후 링크만 넣으면 전 채널 자동 처리.';
 
   var hv=ge('heroVisual');
   if(hv){
@@ -2470,7 +2470,7 @@ function applyGlowHQLanding(d){
     ls.style.display='block';
     var h2=ls.querySelector('h2');if(h2)h2.innerHTML='플랫폼 <span class="gt">커맨드 센터</span>';
     var sub=ls.querySelector('.land-svc-sub');
-    if(sub)sub.textContent='고객으로 쓰면 채널 성장에 집중. 독립 운영으로 쓰면 지금 보시는 것과 같은 사이트를 내 브랜드로.';
+    if(sub)sub.textContent='가입 후 바로 채널 성장에 집중. 독립 운영으로는 지금 보시는 것과 같은 사이트를 내 브랜드로.';
     document.querySelectorAll('.land-tasks,.land-svc-grid,.land-svc-note').forEach(function(el){el.style.display='none';});
     if(!ge('glowHqBento')){
       var bento=document.createElement('div');
@@ -2512,14 +2512,14 @@ function applyGlowHQLanding(d){
     partner.innerHTML=
       '<div class="hq-partner-card">'
       +'<h2>두 가지로 <span class="gt">쓸 수 있습니다</span></h2>'
-      +'<p class="hq-partner-sub">지금 보시는 사이트 그대로입니다. 채널만 키우고 싶으면 고객으로, 내 도메인·내 이름으로 운영하고 싶으면 독립 운영으로 시작하세요.</p>'
-      +'<p class="hq-partner-bridge">💡 <strong>고객으로 써보다가</strong> 「나도 이런 사이트 직접 운영해볼까?」 싶으면 그때 문의해도 늦지 않습니다. 먼저 체험해 보시는 분이 많아요.</p>'
+      +'<p class="hq-partner-sub">지금 보시는 사이트 그대로입니다. 채널만 키우고 싶으면 가입 후 바로 이용, 내 도메인·내 이름으로 운영하고 싶으면 독립 운영으로 시작하세요.</p>'
+      +'<p class="hq-partner-bridge">💡 <strong>먼저 써보다가</strong> 「나도 이런 사이트 직접 운영해볼까?」 싶으면 그때 문의해도 늦지 않습니다. 체험 후 문의하시는 분이 많아요.</p>'
       +'<div class="hq-dual-path">'
       +'<div class="hq-path hq-path-user">'
-      +'<span class="hq-path-tag">고객으로</span>'
-      +'<b>채널 성장에만 집중</b>'
+      +'<span class="hq-path-tag">채널 성장</span>'
+      +'<b>지금 바로 이용</b>'
       +'<span>가입 → 충전 → 링크 입력. 인스타·유튜브·틱톡 팔로워·조회수·구독자를 바로 이용합니다.</span>'
-      +'<button type="button" class="bp bsm" onclick="goAuth(\'register\')">고객으로 시작 →</button>'
+      +'<button type="button" class="bp bsm" onclick="goAuth(\'register\')">무료 가입 →</button>'
       +'</div>'
       +'<div class="hq-path hq-path-owner">'
       +'<span class="hq-path-tag">독립 운영</span>'
@@ -2539,7 +2539,7 @@ function applyGlowHQLanding(d){
   ['landFaq','landCta','landStats'].forEach(function(id){var el=ge(id);if(el)el.style.display='none';});
 
   var ctaBtns=document.querySelectorAll('.hero-cta .bp');
-  if(ctaBtns[0])ctaBtns[0].textContent='고객으로 시작 →';
+  if(ctaBtns[0])ctaBtns[0].textContent='무료 가입하고 시작 →';
   var ctaSec=document.querySelector('.hero-cta .bo');
   if(ctaSec)ctaSec.style.display='none';
 
@@ -2556,7 +2556,7 @@ function setupGlowHQAuth(brand){
     +'<span class="bnm gt" style="font-size:22px">'+brand+'</span></div>'
     +'<h2 style="font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1.15;margin-bottom:16px;color:#F0F8FF">'
     +'본사<br><span class="gt">커맨드 센터</span></h2>'
-    +'<p style="font-size:14px;color:#7AA8D8;line-height:1.75;max-width:320px">고객으로 쓰면 바로 주문·충전. 독립 운영이 궁금하면 하단에서 문의하세요 — 지금 보시는 것과 같은 사이트를 내 브랜드로 열 수 있습니다.</p>';
+    +'<p style="font-size:14px;color:#7AA8D8;line-height:1.75;max-width:320px">가입하면 바로 주문·충전. 독립 운영이 궁금하면 하단에서 문의하세요 — 지금 보시는 것과 같은 사이트를 내 브랜드로 열 수 있습니다.</p>';
   var abox=pg.querySelector('.abox');
   if(abox)pg.insertBefore(side,abox);
 }
