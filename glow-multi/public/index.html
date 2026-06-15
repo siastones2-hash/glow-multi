@@ -1828,6 +1828,7 @@ tr:last-child td{border-bottom:none}
                 • 신규 핫상품은 <strong>매주 일요일</strong> 자동 추가<br>
                 • <strong>네이버·카카오·쿠팡</strong>은 연동 목록에 있을 때만 「아마zon·이커머스 스캔」으로 추가<br>
                 • 한국 SNS(인스타·유튜브 한국 타겟)는 기본 큐레이션 + 「🇰🇷 한국·Pinterest 프리미엄」<br>
+                • 베트남 Instagram·TikTok은 「🇻🇳 베트남 IG·TT」로 Peakerr에서 자동 추가<br>
                 • 자동 추가 상품은 <strong>한글 상품명</strong>으로 등록 · GLOW·파트너 사이트 <strong>동시</strong> 반영
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1836,6 +1837,7 @@ tr:last-child td{border-bottom:none}
                 <button class="bo bsm" onclick="localizeServiceNames()">🇰🇷 영문→한글 (전체 사이트)</button>
                 <button class="bo bsm" onclick="importHotPeakerrServices()">🔥 핫상품 추가</button>
                 <button class="bo bsm" onclick="importKrPinterestServices()">🇰🇷 한국·Pinterest 프리미엄</button>
+                <button class="bo bsm" onclick="importVietnamServices()">🇻🇳 베트남 IG·TT</button>
                 <button class="bo bsm" onclick="importNicheServices()">🛒 아마zon·이커머스 스캔</button>
                 <button class="bo bsm" onclick="pruneServices()">🧹 불필요 상품 정리</button>
               </div>
@@ -3752,6 +3754,16 @@ async function importKrPinterestServices(){
   if(!confirm('한국 타겟 프리미엄 상품과\nPinterest 고품질 상품만 골라 추가합니다.\n\n없으면 추가하지 않습니다.\n\n계속할까요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>한국·Pinterest 스캔 중...';
   var d=await api('/api/super/import-kr-pinterest','POST',{maxKrPerPlatform:4,maxPinterest:5});
+  if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
+  if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
+  toast(d.message||'완료','ok');
+  loadSuperSvcs&&loadSuperSvcs();
+}
+
+async function importVietnamServices(){
+  if(!confirm('베트남 타겟 Instagram·TikTok 상품을\nPeakerr에서 골라 전 사이트에 추가합니다.\n\n없으면 추가하지 않습니다.\n\n계속할까요?'))return;
+  var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>베트남 IG·TT 스캔 중...';
+  var d=await api('/api/super/import-vietnam','POST',{maxPerPlatform:10});
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
   if(res)res.innerHTML='<span style="color:#10B981">✅ '+d.message+'</span>';
   toast(d.message||'완료','ok');
