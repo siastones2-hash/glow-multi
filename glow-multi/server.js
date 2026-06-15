@@ -1673,7 +1673,7 @@ async function importKoreanAndPinterestServices(opts = {}) {
 const VN_IMPORT_PLATFORMS = ['instagram', 'tiktok'];
 
 function isVietnamMarketService(full) {
-  return /vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|\bvn[\s-]target\b|베트남|vietnam\s+only/i.test(full);
+  return /vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|베트남|vietnam\s+only|from vietnam|geo.*\bvn\b|target.*\bvn\b|\bvn[\s-]target|\bvn[\s-]only|country.*vietnam/i.test(full);
 }
 
 function qualifiesVietnamImport(s) {
@@ -1681,8 +1681,12 @@ function qualifiesVietnamImport(s) {
   if (BAD_SERVICE_NAME.test(full)) return null;
   if (!isVietnamMarketService(full)) return null;
   if (isKoreanMarketService(full)) return null;
+  const low = full.toLowerCase();
+  const usefulType = /follow|like|view|comment|share|reel|story|subscriber|save|member|impression|live/.test(low);
+  if (!usefulType) return null;
   const score = scorePeakerrService(s);
-  if (score < 0 || !hasImportQualitySignal(full, score)) return null;
+  if (score < 0) return null;
+  if (!hasImportQualitySignal(full, score) && score < 70) return null;
   const pl = detectPlat(full);
   if (!VN_IMPORT_PLATFORMS.includes(pl)) return null;
   return { pl, bucket: `vn_${pl}`, qs: score + 130 };
@@ -3741,6 +3745,41 @@ app.post('/api/super/import-niche-services', requireSuperAdmin, async (req, res)
       ? `${result.count}개 추가 (Peakerr 후보 ${result.scanned}개)`
       : `Peakerr에 추가할 아마zon·이커머스·보너스 상품 없음`;
     res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 🇻🇳 슈퍼관리자: Peakerr 베트남 IG·TT 후보 미리보기
+app.get('/api/super/peakerr-vietnam-preview', requireSuperAdmin, async (req, res) => {
+  try {
+    const apiKey = await getGlobalSetting('peakerr_api_key');
+    if (!apiKey) return res.json({ error: 'API 키가 설정되지 않았습니다' });
+    const resp = await fetch('https://peakerr.com/api/v2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ key: apiKey, action: 'services' })
+    });
+    const services = await resp.json();
+    if (!Array.isArray(services)) return res.json({ error: 'Peakerr API 응답 오류' });
+    const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+    const existing = new Set(existingR.rows.map(r => String(r.api_id)));
+    const items = [];
+    for (const s of services) {
+      const hit = qualifiesVietnamImport(s);
+      if (!hit) continue;
+      items.push({
+        apiId: String(s.service),
+        name: s.name,
+        category: s.category || '',
+        pl: hit.pl,
+        rate: s.rate,
+        min: s.min,
+        max: s.max,
+        displayName: formatVietnamImportName(s.name, hit.pl),
+        alreadyInDb: existing.has(String(s.service))
+      });
+    }
+    items.sort((a, b) => parseFloat(a.rate) - parseFloat(b.rate));
+    res.json({ ok: true, count: items.length, newCount: items.filter(i => !i.alreadyInDb).length, items: items.slice(0, 80) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
