@@ -2950,24 +2950,46 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       ? await getCreditBalanceKrw(siteId, credit, siteEx)
       : null;
 
-    // 슈퍼관리자 → 전부 합산 / 파트너 → 고객 주문만 매출, 관리자 주문은 별도
+    // 슈퍼관리자 → 크레딧·마진 기준 / 파트너 → 고객 주문만 매출
     const totalRev = custRev + admRev;
     const totalCost = custCost + admCost;
+    let creditSoldKrw = null, totalCreditBalanceKrw = null, superProfitKrw = null, peakerrCostKrw = null;
+    if (isSuper) {
+      const crAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM credit_requests WHERE status='approved' AND site_id <> 'default'`);
+      creditSoldKrw = Math.round(parseFloat(crAp.rows[0].s) || 0);
+      const apiCostR = await query(`
+        SELECT COALESCE(SUM(o.qty * s.rate / 1000.0),0) as s
+        FROM orders o JOIN services s ON o.sid = s.id
+        WHERE ${validStatuses}`);
+      const superMgPct = parseFloat((await getGlobalSetting('super_margin')) || '50') / 100;
+      peakerrCostKrw = Math.round((parseFloat(apiCostR.rows[0].s) || 0) * globalEx);
+      superProfitKrw = Math.round(peakerrCostKrw * superMgPct);
+      const partnerSitesR = await query(`SELECT id, credit, exrate FROM sites WHERE id <> 'default' AND active=1`);
+      let balSum = 0;
+      for (const ps of partnerSitesR.rows) {
+        const psEx = parseFloat(ps.exrate) > 0 ? parseFloat(ps.exrate) : globalEx;
+        balSum += await getCreditBalanceKrw(ps.id, ps.credit, psEx);
+      }
+      totalCreditBalanceKrw = balSum;
+    }
     res.json({
       users: parseInt(users.rows[0].c),
       orders: parseInt(orders.rows[0].c),
-      // 슈퍼관리자: 전체 합산 / 파트너: 고객 주문만
-      revenue: isSuper ? totalRev : custRev,
-      cost: isSuper ? totalCost : custCost,
-      profit: isSuper ? (totalRev - totalCost) : (custRev - custCost),
-      // 파트너용 — 관리자 본인 주문 분 (자기가 작업한 것)
+      revenue: isSuper ? custRev : custRev,
+      cost: isSuper ? admCost : custCost,
+      profit: isSuper ? (superProfitKrw || 0) : (custRev - custCost),
       adminRevenue: admRev,
       adminCost: admCost,
       pendingCharges: parseInt(pending.rows[0].c),
       credit,
       creditKrw,
       exrate: siteEx,
-      isSuper
+      isSuper,
+      creditSoldKrw,
+      totalCreditBalanceKrw,
+      superProfitKrw,
+      peakerrCostKrw,
+      partnerRetailRev: custRev,
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -3209,8 +3231,8 @@ app.get('/api/admin/charges', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     const r = siteId
-      ? await query(`SELECT * FROM charges WHERE site_id=$1 ORDER BY created DESC`, [siteId])
-      : await query(`SELECT * FROM charges ORDER BY created DESC`);
+      ? await query(`SELECT c.*, s.name as site_name FROM charges c LEFT JOIN sites s ON c.site_id=s.id WHERE c.site_id=$1 ORDER BY c.created DESC`, [siteId])
+      : await query(`SELECT c.*, s.name as site_name FROM charges c LEFT JOIN sites s ON c.site_id=s.id ORDER BY c.created DESC`);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

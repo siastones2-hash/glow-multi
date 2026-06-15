@@ -1460,11 +1460,21 @@ tr:last-child td{border-bottom:none}
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">총 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="aSO">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">충전 대기</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="aSC">0</div></div>
         </div>
-        <!-- 매출 · 원가 · 수익 -->
-        <div class="sg" style="margin-bottom:14px">
+        <!-- 파트너 관리자: 매출·원가·수익 -->
+        <div class="sg" style="margin-bottom:14px" id="aPartnerFinRow">
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 총 매출 (고객 결제)</div><div class="gt" style="font-size:22px;font-weight:800" id="aSR">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">📦 총 원가 (크레딧 사용)</div><div style="font-size:22px;font-weight:800;color:#c2410c" id="aSCost">₩0</div></div>
           <div class="sc" style="background:#ecfdf5;border:1px solid #6ee7b7"><div style="font-size:10px;letter-spacing:.1em;color:#047857;font-weight:700;text-transform:uppercase;margin-bottom:5px">✨ 내 수익 (매출−원가)</div><div style="font-size:22px;font-weight:800;color:#047857" id="aSProfit">₩0</div></div>
+        </div>
+        <!-- 슈퍼관리자: 크레딧·마진 (마이너스 오해 방지) -->
+        <div class="sg" style="margin-bottom:14px;display:none" id="aSuperFinRow">
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">💳 크레딧 판매 (파트너)</div><div style="font-size:22px;font-weight:800;color:#2563eb" id="aSCreditSold">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 파트너 크레딧 잔액</div><div style="font-size:22px;font-weight:800;color:#7c3aed" id="aSTotalCreditBal">₩0</div></div>
+          <div class="sc" style="background:#ecfdf5;border:1px solid #6ee7b7"><div style="font-size:10px;letter-spacing:.1em;color:#047857;font-weight:700;text-transform:uppercase;margin-bottom:5px">✨ 슈퍼 마진 수익 (예상)</div><div style="font-size:22px;font-weight:800;color:#047857" id="aSSuperProfit">₩0</div></div>
+        </div>
+        <div id="aSuperInfoBox" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#0369a1">
+          ℹ️ <strong>슈퍼 수익</strong>은 파트너에게 판 크레딧·Peakerr 마진 기준입니다.
+          파트너 고객 결제 <strong id="aSPartnerRetail">₩0</strong> · 파트너 관리자 작업 크레딧 <strong id="aSPartnerAdmWork">₩0</strong> — <span style="color:#64748b">슈퍼 손익과 별도</span>
         </div>
         <div id="aAdminOrderBox" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#64748b">
           🛠 <strong style="color:#475569">내가 직접 주문한 작업분</strong> — 크레딧 사용 <strong id="aAdmCost">₩0</strong>
@@ -1512,8 +1522,8 @@ tr:last-child td{border-bottom:none}
           <div class="tw"><table><thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead><tbody id="aUTb"></tbody></table></div>
         </div>
         <div class="atab-body" id="ap-charges">
-          <div class="ibox" style="margin-bottom:10px">✦ 입금 확인 후 <strong>승인</strong>을 누르면 잔액에 자동 추가됩니다.</div>
-          <div class="tw"><table><thead><tr><th>회원</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="aCTb"></tbody></table></div>
+          <div class="ibox" style="margin-bottom:10px" id="aChargeHint">✦ 입금 확인 후 <strong>승인</strong>을 누르면 잔액에 자동 추가됩니다.</div>
+          <div class="tw"><table><thead><tr><th id="aChargeSiteTh" style="display:none">사이트</th><th>회원</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="aCTb"></tbody></table></div>
         </div>
         <div class="atab-body" id="ap-creditreq">
           <div class="card" style="margin-bottom:12px">
@@ -1713,7 +1723,7 @@ tr:last-child td{border-bottom:none}
         <div class="sg" style="margin-bottom:16px">
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 회원</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalUsers">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="sTotalOrders">0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800" class="gt amount-mask" id="sTotalRevenue">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">파트너 고객 매출</div><div class="gt" style="font-size:22px;font-weight:800" class="gt amount-mask" id="sTotalRevenue">₩0</div></div>
           <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 내 순수익 (예상)</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sMyProfit" class="amount-mask">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">충전 대기</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="sTotalPending">0</div></div>
           <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 전체 크레딧 잔액</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sTotalCreditBal" class="amount-mask">₩0</div></div>
@@ -3222,9 +3232,31 @@ async function loadAdmDash(){
   if(!d||d.error){return;}
   if(ge('aSU'))ge('aSU').textContent=d.users||0;
   if(ge('aSO'))ge('aSO').textContent=d.orders||0;
-  if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
-  if(ge('aSCost'))ge('aSCost').textContent=gf(d.cost||0);
-  if(ge('aSProfit'))ge('aSProfit').textContent=gf(d.profit||0);
+  var pFin=ge('aPartnerFinRow'),sFin=ge('aSuperFinRow'),sInfo=ge('aSuperInfoBox');
+  if(d.isSuper){
+    if(pFin)pFin.style.display='none';
+    if(sFin)sFin.style.display='grid';
+    if(sInfo)sInfo.style.display='block';
+    if(ge('aSCreditSold'))ge('aSCreditSold').textContent=gf(d.creditSoldKrw||0);
+    if(ge('aSTotalCreditBal'))ge('aSTotalCreditBal').textContent=gf(d.totalCreditBalanceKrw||0);
+    if(ge('aSSuperProfit'))ge('aSSuperProfit').textContent=gf(d.superProfitKrw||0);
+    if(ge('aSPartnerRetail'))ge('aSPartnerRetail').textContent=gf(d.partnerRetailRev||0);
+    if(ge('aSPartnerAdmWork'))ge('aSPartnerAdmWork').textContent=gf(d.adminCost||0);
+    var ci=ge('creditInfo');if(ci)ci.style.display='none';
+    var cHint=ge('aChargeHint');
+    if(cHint)cHint.innerHTML='✦ <strong>전체 사이트</strong> 고객 잔액 충전 · 파트너 관리자 충전은 차단 · <strong>회수</strong>=승인 취소';
+    var cTh=ge('aChargeSiteTh');if(cTh)cTh.style.display='';
+  }else{
+    if(pFin)pFin.style.display='grid';
+    if(sFin)sFin.style.display='none';
+    if(sInfo)sInfo.style.display='none';
+    if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
+    if(ge('aSCost'))ge('aSCost').textContent=gf(d.cost||0);
+    if(ge('aSProfit'))ge('aSProfit').textContent=gf(d.profit||0);
+    var cHint=ge('aChargeHint');
+    if(cHint)cHint.innerHTML='✦ 입금 확인 후 <strong>승인</strong>을 누르면 잔액에 자동 추가됩니다.';
+    var cTh=ge('aChargeSiteTh');if(cTh)cTh.style.display='none';
+  }
   // 관리자 본인 주문분 (크레딧 사용) — 금액이 있을 때만 표시
   var admBox=ge('aAdminOrderBox');
   if(admBox){
@@ -3239,7 +3271,7 @@ async function loadAdmDash(){
   if(ge('aSC'))ge('aSC').textContent=d.pendingCharges||0;
 
   // 크레딧 표시 (파트너·지인 사이트 어드민) - 원화 환산
-  if(['admin','partner'].includes(CUR.role)&&d.credit!==undefined){
+  if(!d.isSuper&&['admin','partner'].includes(CUR.role)&&d.credit!==undefined){
     var ci=ge('creditInfo');if(ci)ci.style.display='block';
     var cb=ge('creditBal');
     if(cb){
@@ -3357,13 +3389,17 @@ async function _loadAdmUsersInline(){
 }
 async function loadAdmCharges(){
   var d=await api('/api/admin/charges');var tb=ge('aCTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
+  var isSuper=CUR.role==='superadmin';
+  var cols=isSuper?7:6;
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="'+cols+'" style="text-align:center;padding:22px;color:#9A8AB0">충전 요청이 없습니다</td></tr>';return}
   d.forEach(function(c){
     var actions=(c.status==='pending'
       ?'<button class="btn bok bxs" onclick="procCharge(\''+c.id+'\',\'approve\')">✓ 승인</button><button class="btn ber bxs" onclick="procCharge(\''+c.id+'\',\'reject\')">✗ 거절</button>'
       :'<span style="font-size:11px;color:#9A8AB0">완료</span>')
       +'<button class="btn bxs" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1" onclick="delCharge(\''+c.id+'\')">🗑 삭제</button>';
-    h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
+    h+='<tr>'
+      +(isSuper?'<td style="font-size:11px;color:#64748b;white-space:nowrap">'+(c.site_name||c.site_id||'-')+'</td>':'')
+      +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+c.uname+'</td>'
       +'<td style="font-weight:700;color:#B5179E">'+gf(c.amount)+'</td>'
       +'<td style="font-size:12px">'+(c.note||'-')+'</td>'
       +'<td>'+badge(c.status)+'</td>'
