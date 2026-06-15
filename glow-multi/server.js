@@ -700,6 +700,17 @@ async function krwToCreditUsd(siteId, krwAmount) {
   return krw / exrate;
 }
 
+/** 크레딧 잔액 원화 표시 — 충전 당시 원화 기준(지급합−사용합). 환율 변경해도 ₩10만 충전은 ₩10만으로 보임 */
+async function getCreditBalanceKrw(siteId, creditUsd, siteEx) {
+  const EXCLUDE = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+  const crAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM credit_requests WHERE site_id=$1 AND status='approved'`, [siteId]);
+  const usedR = await query(`SELECT COALESCE(SUM(cost),0) as s FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [siteId]);
+  const received = parseFloat(crAp.rows[0].s) || 0;
+  const used = parseFloat(usedR.rows[0].s) || 0;
+  if (received > 0) return Math.max(0, Math.round(received - used));
+  return Math.round((parseFloat(creditUsd) || 0) * siteEx);
+}
+
 // 🛡️ ── 보안 & 검증 유틸 ──
 
 // 📝 활동 로그 기록
@@ -2886,6 +2897,9 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
     const credit = isSuper ? null : (req.site?.credit || 0);
     const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
     const siteEx = (req.site && req.site.exrate > 0) ? req.site.exrate : globalEx;
+    const creditKrw = (!isSuper && siteId)
+      ? await getCreditBalanceKrw(siteId, credit, siteEx)
+      : null;
 
     // 슈퍼관리자 → 전부 합산 / 파트너 → 고객 주문만 매출, 관리자 주문은 별도
     const totalRev = custRev + admRev;
@@ -2902,6 +2916,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       adminCost: admCost,
       pendingCharges: parseInt(pending.rows[0].c),
       credit,
+      creditKrw,
       exrate: siteEx,
       isSuper
     });
@@ -4401,6 +4416,7 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       const crAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM credit_requests WHERE site_id=$1 AND status='approved'`, [s.id]);
       const siteEx = parseFloat(s.exrate) || parseFloat(await getGlobalSetting('global_exrate')) || 1500;
       const creditUsd = parseFloat(s.credit) || 0;
+      const creditBalanceKrw = await getCreditBalanceKrw(s.id, creditUsd, siteEx);
       return {
         ...s,
         userCount: parseInt(uc.rows[0].c),
@@ -4410,7 +4426,7 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
         chargeApprovedTotal: parseFloat(chAp.rows[0].s) || 0,
         chargeReversedTotal: parseFloat(chRev.rows[0].s) || 0,
         creditReceivedTotal: parseFloat(crAp.rows[0].s) || 0,
-        creditBalanceKrw: Math.round(creditUsd * siteEx),
+        creditBalanceKrw,
         creditUsd,
       };
     }));

@@ -2920,11 +2920,11 @@ async function enterDash(){
   loadOrders();loadChargeHis();
   if(!aco)loadBankInfo();
   if(aco){
-    var dash=await api('/api/admin/dashboard');
-    if(dash&&dash.credit!==undefined){
+    var dash=await api('/api/admin/stats');
+    if(dash&&(dash.creditKrw!==undefined||dash.credit!==undefined)){
       var aEx=(dash.exrate&&dash.exrate>0)?dash.exrate:_globalExrate;
       var hbl2=ge('homeBalLabel');if(hbl2)hbl2.textContent='API 크레딧';
-      var sb=ge('stBal');if(sb)sb.textContent=gf(parseFloat(dash.credit||0)*aEx);
+      var sb=ge('stBal');if(sb)sb.textContent=gf(dash.creditKrw!=null?dash.creditKrw:parseFloat(dash.credit||0)*aEx);
     }
   }
   goTab('home');
@@ -3223,7 +3223,7 @@ async function loadAdmDash(){
     var cb=ge('creditBal');
     if(cb){
       var aEx=(d.exrate&&d.exrate>0)?d.exrate:_globalExrate;
-      cb.textContent=gf(parseFloat(d.credit||0)*aEx);
+      cb.textContent=gf(d.creditKrw!=null?d.creditKrw:parseFloat(d.credit||0)*aEx);
     }
   }
 
@@ -3935,8 +3935,8 @@ function renderSiteList(sites){
   el.innerHTML=sites.map(function(s){
     // 크레딧($) → 원화(₩) 환산: 사이트 환율 우선, 없으면 글로벌 환율
     var siteEx=(s.exrate&&s.exrate>0)?s.exrate:_globalExrate;
-    var creditUsd=parseFloat(s.credit||0);
-    var creditKrw=creditUsd*siteEx;
+    var creditUsd=parseFloat(s.creditUsd!=null?s.creditUsd:s.credit||0);
+    var creditKrw=s.creditBalanceKrw!=null?s.creditBalanceKrw:(creditUsd*siteEx);
     var lowCredit=creditKrw<1000;
     return'<div class="site-card">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
