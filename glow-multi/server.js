@@ -164,6 +164,7 @@ async function initDB() {
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS starts_count INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS remains INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cost REAL DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS api_cost REAL DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL`).catch(()=>{});
@@ -711,6 +712,88 @@ async function getCreditBalanceKrw(siteId, creditUsd, siteEx) {
   return Math.round((parseFloat(creditUsd) || 0) * siteEx);
 }
 
+/** 사이트별 마진·환율 (주문/환불 공통) */
+async function getSiteMargins(site) {
+  const globalExrateStr = await getGlobalSetting('global_exrate');
+  const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrateStr || '1500');
+  let superMg;
+  if (site && site.super_margin >= 0) superMg = site.super_margin;
+  else superMg = parseFloat((await getGlobalSetting('super_margin')) || '50');
+  const globalSiteMg = parseFloat((await getGlobalSetting('global_site_margin')) || '50');
+  const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
+  return { ex, superMg, globalSiteMg, siteMg };
+}
+
+/** 주문 금액·크레딧 차감액 계산 (서버 단일 진실) */
+function computeOrderAmounts(svc, qtyNum, site, margins) {
+  const { ex, superMg, globalSiteMg, siteMg } = margins;
+  const isDefaultSite = !site || site.id === 'default';
+  let charge, apiCost;
+  if (isDefaultSite) {
+    const sellPer1000 = svc.rate * ex * (1 + superMg / 100) * (1 + siteMg / 100);
+    const sellPerUnit = Math.max(Math.round(sellPer1000 / 1000), 1);
+    charge = sellPerUnit * qtyNum;
+    apiCost = svc.rate / 1000 * qtyNum * (1 + superMg / 100);
+  } else {
+    const glowPricePer1000 = svc.rate * (1 + superMg / 100) * (1 + globalSiteMg / 100);
+    const sellPer1000 = glowPricePer1000 * ex * (1 + siteMg / 100);
+    const sellPerUnit = Math.max(Math.round(sellPer1000 / 1000), 1);
+    charge = sellPerUnit * qtyNum;
+    apiCost = glowPricePer1000 / 1000 * qtyNum;
+  }
+  const orderCostKrw = isDefaultSite ? 0 : apiCost * ex;
+  return { charge, apiCost, orderCostKrw, isDefaultSite };
+}
+
+/** 환불 시 크레딧 USD 복구량 (저장된 api_cost 우선) */
+async function computeCreditRefundUsd(order, refundPercent) {
+  const pct = Math.min(Math.max(parseFloat(refundPercent) || 0, 0), 100) / 100;
+  if (order.api_cost > 0) return order.api_cost * pct;
+  const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [order.sid]);
+  if (!svcR.rows[0]) return 0;
+  const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [order.site_id]);
+  const margins = await getSiteMargins(siteR.rows[0]);
+  const { apiCost } = computeOrderAmounts({ rate: svcR.rows[0].rate }, order.qty, siteR.rows[0], margins);
+  return apiCost * pct;
+}
+
+/** 주문 환불 — 잔액·크레딧·orders.cost 동시 복구 */
+async function restoreRefundFinancials(order, refundPercent, opts = {}) {
+  const pct = Math.min(Math.max(parseFloat(refundPercent) || 0, 0), 100);
+  if (pct <= 0) return { ok: true, refundAmount: 0, creditRefund: 0 };
+  const refundAmount = Math.round((order.charge || 0) * pct / 100);
+  const costRefund = Math.round((order.cost || 0) * pct / 100);
+  if (refundAmount > 0) {
+    const userR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
+    const user = userR.rows[0];
+    if (user) {
+      const beforeBal = user.balance || 0;
+      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [refundAmount, order.uid]);
+      const afterR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
+      await logBalance(order.site_id, order.uid, user.name, refundAmount, beforeBal, afterR.rows[0]?.balance || 0,
+        opts.reason || `주문 환불 (${pct}%)`, opts.adminId || 'system');
+    }
+  }
+  let creditRefund = 0;
+  if (order.site_id && order.site_id !== 'default') {
+    creditRefund = await computeCreditRefundUsd(order, pct);
+    if (creditRefund > 0)
+      await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditRefund, order.site_id]);
+  }
+  const newCost = Math.max(0, (order.cost || 0) - costRefund);
+  return { ok: true, refundAmount, creditRefund, costRefund, newCost, pct };
+}
+
+/** 슈퍼 수동 크레딧 지급 → credit_requests에도 기록 (원화 표시 정합) */
+async function recordManualCreditGrant(siteId, krwAmount, note) {
+  const krw = parseFloat(krwAmount);
+  if (!krw || krw <= 0) return;
+  const siteR = await query(`SELECT name FROM sites WHERE id=$1`, [siteId]);
+  const id = 'CR' + Date.now();
+  await query(`INSERT INTO credit_requests(id,site_id,site_name,amount,note,status) VALUES($1,$2,$3,$4,$5,$6)`,
+    [id, siteId, siteR.rows[0]?.name || siteId, krw, note || '슈퍼관리자 직접 충전', 'approved']);
+}
+
 // 🛡️ ── 보안 & 검증 유틸 ──
 
 // 📝 활동 로그 기록
@@ -915,50 +998,18 @@ async function autoRefundOrder(order, peakerrData) {
       await earnPoints({ ...order, status: 'processing' }); // status를 completed 이전으로 전달
     }
     
-    // 환불 처리
-    if (refundPercent > 0 && order.status !== 'refunded' && order.status !== 'partial_refunded') {
-      const refundAmount = Math.round(order.charge * refundPercent / 100);
-      
-      // 고객 잔액 복구
-      const userR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
-      const user = userR.rows[0];
-      if (user) {
-        const beforeBal = user.balance || 0;
-        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [refundAmount, order.uid]);
-        const afterR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
-        
-        await logBalance(
-          order.site_id, order.uid, user.name, refundAmount,
-          beforeBal, afterR.rows[0]?.balance || 0,
-          `자동 환불 (주문 ${status}) - 주문 ${order.id}`,
-          'system'
-        );
-      }
-      
-      // 지인 크레딧도 복구 (default 사이트 아니면)
-      if (order.site_id !== 'default') {
-        // 공급가 비율로 크레딧 복구 (원가 × 슈퍼마진)
-        const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [order.site_id]);
-        const site = siteR.rows[0];
-        if (site) {
-          // 대략적인 원가 비율로 크레딧 복구 (서비스 rate 조회)
-          const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [order.sid]);
-          if (svcR.rows[0]) {
-            const superMgStr = await getGlobalSetting('super_margin');
-            const superMg = (site.super_margin >= 0) ? site.super_margin : parseFloat(superMgStr || '50');
-            const globalSiteMgStr = await getGlobalSetting('global_site_margin');
-            const globalSiteMg = parseFloat(globalSiteMgStr || '50');
-            // 지인이 지불한 크레딧 = GLOW 판매가 ($)
-            const creditRefund = svcR.rows[0].rate / 1000 * order.qty * (1 + superMg/100) * (1 + globalSiteMg/100) * (refundPercent / 100);
-            await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditRefund, order.site_id]);
-          }
-        }
-      }
-      
+    // 환불 처리 (이미 환불된 주문 중복 방지)
+    if (refundPercent > 0 && !['refunded', 'partial_refunded'].includes(order.status)) {
+      const fin = await restoreRefundFinancials(order, refundPercent, {
+        reason: `자동 환불 (Peakerr ${status}) - 주문 ${order.id}`,
+        adminId: 'system'
+      });
+      await query(`UPDATE orders SET cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
       await logActivity(
         order.site_id, 'system', '자동환불',
         `자동 환불 (${refundPercent}%)`, 'order', order.id,
-        `주문 ${status} → ₩${refundAmount.toLocaleString()} 환불`
+        `Peakerr ${status} → ₩${(fin.refundAmount || 0).toLocaleString()} 환불` +
+          (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : '')
       );
     }
     
@@ -2607,42 +2658,11 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     }
     
     const site = req.site;
-    const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
-    const globalExrate2 = await getGlobalSetting('global_exrate');
-    const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate2 || '1500');
-    let superMg2;
-    if (site && site.super_margin >= 0) {
-      superMg2 = site.super_margin;
-    } else {
-      const superMgStr2 = await getGlobalSetting('super_margin');
-      superMg2 = parseFloat(superMgStr2 || '50');
-    }
+    const margins = await getSiteMargins(site);
+    const { ex } = margins;
     const isDefaultSite2 = !site || site.id === 'default';
-    const globalSiteMgStr2 = await getGlobalSetting('global_site_margin');
-    const globalSiteMg2 = parseFloat(globalSiteMgStr2 || '50');
-    
-    // 🔧 결제 금액 및 크레딧 차감 계산
-    // - GLOW(default): 고객 결제 = 원가 × 슈퍼 × 사이트마진
-    // - 지인 사이트: 고객 결제 = GLOW 판매가 × (1 + 지인마진)
-    //                크레딧 차감 = GLOW 판매가 (지인 입장의 "원가")
-    // ⚠️ charge는 서비스목록 sell과 동일하게 "1개당 가격 반올림 × 수량"으로 계산
-    //    → 화면 표시 총액과 실제 차감액이 100% 일치 (고객 혼란 방지)
-    let charge, apiCost;
-    if (isDefaultSite2) {
-      // 1000개당 판매가(₩) → 1개당 반올림(최소 1원) → × 수량
-      const sellPer1000 = svc.rate * ex * (1 + superMg2 / 100) * (1 + siteMg / 100);
-      const sellPerUnit = Math.max(Math.round(sellPer1000 / 1000), 1);
-      charge = sellPerUnit * qtyNum;
-      apiCost = svc.rate / 1000 * qtyNum * (1 + superMg2 / 100); // 공급가($) - default는 크레딧 안 씀
-    } else {
-      // GLOW 판매가($/1000) → 지인 고객가(₩/1000) → 1개당 반올림 → × 수량
-      const glowPricePer1000 = svc.rate * (1 + superMg2 / 100) * (1 + globalSiteMg2 / 100); // $/1000
-      const sellPer1000 = glowPricePer1000 * ex * (1 + siteMg / 100); // ₩/1000
-      const sellPerUnit = Math.max(Math.round(sellPer1000 / 1000), 1);
-      charge = sellPerUnit * qtyNum;
-      // 지인 크레딧 차감 = GLOW 판매가 ($)
-      apiCost = glowPricePer1000 / 1000 * qtyNum;
-    }
+    const { charge: calcCharge, apiCost, orderCostKrw } = computeOrderAmounts(svc, qtyNum, site, margins);
+    let charge = calcCharge;
     const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
     const user = userR.rows[0];
     // 파트너·지인 사이트 관리자 본인 작업 → 크레딧만 차감 (잔액 충전 불필요)
@@ -2707,11 +2727,9 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     }
 
     const orderId = 'O' + Date.now();
-    // 💰 cost = 지인(파트너) 입장의 원가 = 슈퍼시아에게 크레딧으로 지불한 금액(원화 환산)
-    //    default 사이트는 크레딧을 안 쓰므로 0
-    const orderCost = (site && site.id !== 'default') ? (apiCost * ex) : 0;
-    await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, 'processing', orderCost]);
+    const orderCost = orderCostKrw;
+    await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, 'processing', orderCost, apiCost]);
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
     const creditLine = adminCreditOnly
@@ -2763,15 +2781,11 @@ app.post('/api/orders/cancel/:orderId', requireAuth, async (req, res) => {
       return res.json({ error: '이미 완료되거나 환불된 주문입니다' });
     }
     if (!order.api_order_id) {
-      // Peakerr 주문 ID 없으면 바로 취소 + 환불
-      const userR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
-      const user = userR.rows[0];
-      if (user) {
-        const beforeBal = user.balance || 0;
-        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [order.charge, order.uid]);
-        await logBalance(order.site_id, order.uid, user.name, order.charge, beforeBal, beforeBal + order.charge, `주문 취소 (API 미전송) - ${order.id}`, 'system');
-      }
-      await query(`UPDATE orders SET status='refunded' WHERE id=$1`, [order.id]);
+      const fin = await restoreRefundFinancials(order, 100, {
+        reason: `주문 취소 (API 미전송) - ${order.id}`,
+        adminId: 'system'
+      });
+      await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
       return res.json({ ok: true, message: '주문이 취소되고 전액 환불되었습니다' });
     }
     
@@ -2948,29 +2962,15 @@ app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
     // ⚠️ '취소'로 변경 시 자동 환불 — 이미 환불/취소된 주문이 아닐 때만
     const alreadyDone = ['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status);
     if ((status === 'cancelled' || status === 'canceled') && !alreadyDone) {
-      // 고객 잔액 복구
-      const userR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
-      const user = userR.rows[0];
-      if (user) {
-        const beforeBal = user.balance || 0;
-        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [order.charge, order.uid]);
-        await logBalance(order.site_id, order.uid, user.name, order.charge,
-          beforeBal, beforeBal + order.charge, `주문 취소 자동 환불 - ${order.sname}`, req.session.userId);
-      }
-      // 지인 사이트면 크레딧도 복구
-      if (order.site_id && order.site_id !== 'default') {
-        const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [order.sid]);
-        if (svcR.rows[0]) {
-          const superMg = parseFloat((await getGlobalSetting('super_margin')) || '50');
-          const globalSiteMg = parseFloat((await getGlobalSetting('global_site_margin')) || '50');
-          const creditRefund = svcR.rows[0].rate / 1000 * order.qty * (1 + superMg/100) * (1 + globalSiteMg/100);
-          await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditRefund, order.site_id]);
-        }
-      }
-      await query(`UPDATE orders SET status='cancelled' WHERE id=$1`, [id]);
+      const fin = await restoreRefundFinancials(order, 100, {
+        reason: `주문 취소 자동 환불 - ${order.sname}`,
+        adminId: req.session.userId
+      });
+      await query(`UPDATE orders SET status='cancelled', cost=$1 WHERE id=$2`, [fin.newCost, id]);
       await logActivity(req.siteId, req.session.userId, '', '주문 취소+환불', 'order', id,
-        `₩${Math.round(order.charge).toLocaleString()} 환불`);
-      return res.json({ ok: true, refunded: true, refundAmount: Math.round(order.charge) });
+        `₩${Math.round(fin.refundAmount || 0).toLocaleString()} 환불` +
+          (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : ''));
+      return res.json({ ok: true, refunded: true, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund });
     }
 
     // 그 외 상태 변경은 단순 변경
@@ -2989,44 +2989,32 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
     const orderR = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
     const order = orderR.rows[0];
     if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
-    if (order.status === 'refunded') return res.json({ error: '이미 환불된 주문입니다' });
+    if (['refunded', 'partial_refunded'].includes(order.status)) {
+      return res.json({ error: '이미 환불된 주문입니다' });
+    }
     
     // 사이트 권한 체크
     if (req.session.role !== 'superadmin' && order.site_id !== req.siteId) {
       return res.json({ error: '다른 사이트 주문은 환불할 수 없습니다' });
     }
     
-    // 환불 금액 계산
-    const refundAmount = Math.round(order.charge * pct / 100);
+    const fin = await restoreRefundFinancials(order, pct, {
+      reason: `주문 환불 (${pct}%) - 주문 ${id}`,
+      adminId: req.session.userId
+    });
+    if (fin.error) return res.json({ error: fin.error });
     
-    // 잔액 복구
-    const userR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
-    const user = userR.rows[0];
-    if (user) {
-      const beforeBal = user.balance || 0;
-      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [refundAmount, order.uid]);
-      const afterR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
-      const afterBal = afterR.rows[0].balance || 0;
-      
-      await logBalance(
-        order.site_id, order.uid, user.name, refundAmount,
-        beforeBal, afterBal,
-        `주문 환불 (${pct}%) - 주문 ${id}`,
-        req.session.userId
-      );
-    }
-    
-    // 주문 상태 변경
     const newStatus = pct >= 100 ? 'refunded' : 'partial_refunded';
-    await query(`UPDATE orders SET status=$1 WHERE id=$2`, [newStatus, id]);
+    await query(`UPDATE orders SET status=$1, cost=$2 WHERE id=$3`, [newStatus, fin.newCost, id]);
     
     await logActivity(
       req.siteId, req.session.userId, '',
       '주문 환불', 'order', id,
-      `${pct}% 환불 (₩${refundAmount.toLocaleString()})`
+      `${pct}% 환불 (₩${(fin.refundAmount || 0).toLocaleString()})` +
+        (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : '')
     );
     
-    res.json({ ok: true, refundAmount });
+    res.json({ ok: true, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -3226,7 +3214,7 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
       await logBalance(
         charge.site_id, charge.uid, charge.uname, totalAdd,
         beforeBal, afterBal,
-        `충전 승인 (${charge.memo || '메모 없음'})${bonusNote}`,
+        `충전 승인 (${charge.note || '메모 없음'})${bonusNote}`,
         req.session.userId
       );
       tgAlert(`✅ 충전승인 [${req.site?.name}]\n👤 ${charge.uname}\n💰 ₩${Math.round(charge.amount).toLocaleString()}${bonusNote}`, req.site);
@@ -3417,6 +3405,7 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       site_tg_token: site?.tg_token || '',
       site_tg_chat: site?.tg_chat || '',
       super_margin: isSuperAdmin ? (super_margin || '50') : undefined,
+      global_site_margin: isSuperAdmin ? ((await getGlobalSetting('global_site_margin')) || '50') : undefined,
       global_exrate: isSuperAdmin ? (global_exrate || '1500') : undefined,
       isSuperAdmin,
       supplyExamples  // 관리자용 공급가 샘플
@@ -4238,11 +4227,11 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
 
 app.post('/api/super/sites/credit', requireSuperAdmin, async (req, res) => {
   try {
-    const { siteId, amount } = req.body;
-    // amount는 프론트엔드에서 이미 USD로 환산되어 전달됨
+    const { siteId, amount, krwAmount } = req.body;
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return res.json({ error: '금액을 입력하세요' });
     await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [amt, siteId]);
+    if (krwAmount) await recordManualCreditGrant(siteId, krwAmount, '슈퍼관리자 직접 충전');
     const r = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
     res.json({ ok: true, credit: r.rows[0].credit });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -4369,7 +4358,7 @@ app.post('/api/super/sites/delete', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
-    const allowed = ['super_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
+    const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
     await setGlobalSetting(key, value);
     if (key === 'global_exrate') {

@@ -1388,8 +1388,8 @@ tr:last-child td{border-bottom:none}
             <div id="orderGuideBox" style="display:none;background:#f5f0ff;border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.7"></div>
             <div class="fg"><label>수량 <span id="qHint" style="color:var(--p2);font-size:10px;font-weight:500;letter-spacing:0;text-transform:none"></span></label><input type="number" id="o수량" placeholder="수량" min="1" inputmode="numeric" oninput="calcPrice()"/></div>
             <div class="osum">
-              <div class="osr"><span style="color:var(--tm);font-weight:300">내 잔액</span><span id="oBal">-</span></div>
-              <div class="osr"><span>총 결제</span><span class="gt" style="font-size:17px;font-weight:800" id="oTotal">₩0</span></div>
+              <div class="osr" id="oBalRow"><span style="color:var(--tm);font-weight:300" id="oBalLabel">내 잔액</span><span id="oBal">-</span></div>
+              <div class="osr"><span id="oTotalLabel">총 결제</span><span class="gt" style="font-size:17px;font-weight:800" id="oTotal">₩0</span></div>
             </div>
             <button class="bp bpf" id="orderBtn" onclick="placeOrder()">✨ 주문하기</button>
             <div style="font-size:11px;color:var(--tl);text-align:center;margin-top:8px">주문 후 취소가 어려울 수 있습니다</div>
@@ -1860,7 +1860,8 @@ tr:last-child td{border-bottom:none}
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">💰 슈퍼관리자 마진율 (파트너 사이트)</div>
               <div style="font-size:12px;color:var(--tm);margin-bottom:10px">파트너 사이트에 적용하는 공급 마진입니다. <b>본사 고객 마진과 별개</b>입니다.</div>
               <div class="fg"><label>슈퍼 마진율 (%)</label><input type="number" id="spSuperMargin" placeholder="50" min="0" max="500"/></div>
-              <div style="font-size:11px;color:var(--tl);margin-bottom:10px">예: 원가 $1 → 슈퍼마진 50% → $1.5 → 사이트마진 50% → 고객가 $2.25</div>
+              <div class="fg"><label>파트너 도매 마진 (%)</label><input type="number" id="spGlobalSiteMargin" placeholder="50" min="0" max="500"/></div>
+              <div style="font-size:11px;color:var(--tl);margin-bottom:10px">Peakerr 원가 → +슈퍼마진 → +파트너도매마진 = <strong>파트너 크레딧 단가</strong> → +파트너자기마진 = 고객가</div>
               <button class="bp bsm" style="padding:9px 16px" onclick="saveSuperMargin()">저장</button>
             </div>
             <div class="card" style="border-color:rgba(16,185,129,.35)">
@@ -3080,9 +3081,20 @@ function selSvc(id){
 function calcPrice(){
   if(!SEL||!CUR)return;
   var qty=parseInt(ge('o수량').value)||0;
-  ge('oBal').textContent=gf(CUR.balance||0);
-  // 서버와 동일하게 반올림 → 화면 표시값과 실제 차감액 일치
-  ge('oTotal').textContent=qty?gf(Math.round(SEL.sell*qty)):'₩0';
+  var aco=window._adminCreditOnly;
+  var balRow=ge('oBalRow'), balLbl=ge('oBalLabel'), totLbl=ge('oTotalLabel');
+  if(aco){
+    if(balRow)balRow.style.display='none';
+    if(totLbl)totLbl.textContent='크레딧 차감(예상)';
+    var cpu=SEL.baseCost!=null?SEL.baseCost:SEL.sell;
+    ge('oTotal').textContent=qty?gf(Math.round(cpu*qty)):'₩0';
+  }else{
+    if(balRow)balRow.style.display='';
+    if(balLbl)balLbl.textContent='내 잔액';
+    if(totLbl)totLbl.textContent='총 결제';
+    ge('oBal').textContent=gf(CUR.balance||0);
+    ge('oTotal').textContent=qty?gf(Math.round(SEL.sell*qty)):'₩0';
+  }
 }
 function renderQCards(){
   var el=ge('qCards');if(!el)return;
@@ -3107,7 +3119,17 @@ async function placeOrder(){
   if(d.error){toast(d.error,'err');return}
   toast(d.apiOrderId?'✨ 주문완료! #'+d.apiOrderId:'✨ 주문접수!','ok');
   ge('o링크').value='';ge('o수량').value='';
-  CUR.balance=d.balance;updBal();loadOrderStats();
+  if(window._adminCreditOnly){
+    var dash=await api('/api/admin/stats');
+    if(dash&&dash.creditKrw!=null){
+      var sb=ge('stBal');if(sb)sb.textContent=gf(dash.creditKrw);
+      var cb=ge('creditBal');if(cb)cb.textContent=gf(dash.creditKrw);
+    }
+    calcPrice();
+  }else{
+    CUR.balance=d.balance;updBal();
+  }
+  loadOrderStats();
 }
 async function loadOrders(){
   var d=await api('/api/orders/my');var tb=ge('ordersTb'),h='';
@@ -3679,10 +3701,16 @@ async function saveGlobalSetting(key,inputId){
 }
 async function saveSuperMargin(){
   var val=ge('spSuperMargin').value;
-  if(!val||isNaN(val)){toast('올바른 마진율을 입력하세요','err');return}
+  var gsm=ge('spGlobalSiteMargin')?.value;
+  if(!val||isNaN(val)){toast('올바른 슈퍼 마진율을 입력하세요','err');return}
+  if(gsm!==undefined&&gsm!==''&&isNaN(gsm)){toast('올바른 파트너 도매 마진을 입력하세요','err');return}
   var d=await api('/api/super/settings/save','POST',{key:'super_margin',value:String(parseFloat(val))});
   if(d.error){toast(d.error,'err');return}
-  toast('슈퍼 마진율 저장 완료 ✨','ok');
+  if(gsm!==undefined&&gsm!==''){
+    var d2=await api('/api/super/settings/save','POST',{key:'global_site_margin',value:String(parseFloat(gsm))});
+    if(d2.error){toast(d2.error,'err');return}
+  }
+  toast('마진율 저장 완료 ✨','ok');
 }
 
 async function loadDefaultPricing(){
@@ -3884,11 +3912,12 @@ async function loadSuperDash(){
   // 글로벌 설정 로드
   var s=await api('/api/admin/settings');
   if(s){
-    var sk=ge('spApiKey'),st=ge('spTgToken'),sc=ge('spTgChat'),sm=ge('spSuperMargin'),se=ge('spGlobalExrate');
+    var sk=ge('spApiKey'),st=ge('spTgToken'),sc=ge('spTgChat'),sm=ge('spSuperMargin'),sgm=ge('spGlobalSiteMargin'),se=ge('spGlobalExrate');
     if(sk)sk.value=s.apikey||'';
     if(st)st.value=s.tg_token||'';
     if(sc)sc.value=s.tg_chat||'';
     if(sm)sm.value=s.super_margin||'50';
+    if(sgm)sgm.value=s.global_site_margin||'50';
     if(se){
       se.value=s.global_exrate||'1500';
       syncPriceCalcExrate(se.value);
@@ -4146,7 +4175,7 @@ async function addCredit(){
   var siteId=ge('creditSiteId').value,krw=parseFloat(ge('credit금액').value);
   if(!krw||krw<=0){toast('금액을 입력하세요','err');return}
   var usd=krw/_creditModalEx; // 원화 → 달러 환산
-  var d=await api('/api/super/sites/credit','POST',{siteId:siteId,amount:usd});
+  var d=await api('/api/super/sites/credit','POST',{siteId:siteId,amount:usd,krwAmount:krw});
   if(d.error){toast(d.error,'err');return}
   toast('크레딧 '+gf(krw)+' 충전 완료! ✨','ok');
   closeM('mCredit');loadSuperDash();
