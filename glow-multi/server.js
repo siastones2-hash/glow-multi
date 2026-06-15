@@ -298,6 +298,7 @@ async function initDB() {
   } catch (e) { /* ignore */ }
 
   await normalizeAbnormalCredits();
+  await fixLegacyPartnerAdminOrders();
 
   // 파트너 관리자에게 잘못 승인된 잔액 충전 자동 회수
   try {
@@ -743,6 +744,37 @@ function computeOrderAmounts(svc, qtyNum, site, margins) {
   }
   const orderCostKrw = isDefaultSite ? 0 : apiCost * ex;
   return { charge, apiCost, orderCostKrw, isDefaultSite };
+}
+
+/** 파트너 관리자 레거시 주문 — charge만 있고 cost/api_cost 없음 → 크레딧 사용으로 정규화 */
+async function fixLegacyPartnerAdminOrders() {
+  try {
+    const EXCLUDE = `o.status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+    const r = await query(`
+      SELECT o.*, u.role
+      FROM orders o
+      JOIN users u ON o.uid = u.id
+      JOIN sites s ON o.site_id = s.id
+      WHERE s.id <> 'default'
+        AND u.role IN ('admin','partner')
+        AND ${EXCLUDE}
+        AND (COALESCE(o.cost,0) = 0 OR COALESCE(o.api_cost,0) = 0)
+    `);
+    for (const o of r.rows) {
+      const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [o.sid]);
+      if (!svcR.rows[0]) continue;
+      const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [o.site_id]);
+      const margins = await getSiteMargins(siteR.rows[0]);
+      const { apiCost, orderCostKrw } = computeOrderAmounts(
+        { rate: parseFloat(svcR.rows[0].rate) }, o.qty, siteR.rows[0], margins);
+      if (apiCost <= 0 && orderCostKrw <= 0) continue;
+      await query(
+        `UPDATE orders SET charge=0, cost=$1, api_cost=$2 WHERE id=$3`,
+        [Math.round(orderCostKrw), apiCost, o.id]
+      );
+      console.log(`✓ 레거시 관리자주문 보정: ${o.id} (${o.site_id}) cost=₩${Math.round(orderCostKrw)}`);
+    }
+  } catch (e) { console.log('레거시 관리자주문 보정:', e.message); }
 }
 
 /** 환불 시 크레딧 USD 복구량 (저장된 api_cost 우선) */
@@ -2906,7 +2938,10 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       const rev = parseFloat(r.revenue) || 0;
       const cst = parseFloat(r.cost) || 0;
       if (r.role === 'user') { custRev += rev; custCost += cst; }
-      else { admRev += rev; admCost += cst; }  // admin/partner/superadmin = 본인 주문
+      else {
+        // 파트너 관리자 본인 작업 = 크레딧(cost)만 집계, charge(구 잔액차감)는 무시
+        admCost += cst > 0 ? cst : rev;
+      }
     });
     const credit = isSuper ? null : (req.site?.credit || 0);
     const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
@@ -2941,8 +2976,8 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     const r = siteId
-      ? await query(`SELECT * FROM orders WHERE site_id=$1 ORDER BY created DESC`, [siteId])
-      : await query(`SELECT * FROM orders ORDER BY created DESC`);
+      ? await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id WHERE o.site_id=$1 ORDER BY o.created DESC`, [siteId])
+      : await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id ORDER BY o.created DESC`);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

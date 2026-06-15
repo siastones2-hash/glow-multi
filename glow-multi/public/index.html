@@ -1467,8 +1467,8 @@ tr:last-child td{border-bottom:none}
           <div class="sc" style="background:#ecfdf5;border:1px solid #6ee7b7"><div style="font-size:10px;letter-spacing:.1em;color:#047857;font-weight:700;text-transform:uppercase;margin-bottom:5px">✨ 내 수익 (매출−원가)</div><div style="font-size:22px;font-weight:800;color:#047857" id="aSProfit">₩0</div></div>
         </div>
         <div id="aAdminOrderBox" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#64748b">
-          🛠 <strong style="color:#475569">내가 직접 주문한 작업분</strong> — 결제액 <strong id="aAdmRev">₩0</strong> / 크레딧 원가 <strong id="aAdmCost">₩0</strong>
-          <span style="color:#94a3b8">(고객 매출과 별도로 집계됩니다)</span>
+          🛠 <strong style="color:#475569">내가 직접 주문한 작업분</strong> — 크레딧 사용 <strong id="aAdmCost">₩0</strong>
+          <span style="color:#94a3b8">(고객 매출·잔액과 별도 · API 크레딧에서 차감)</span>
         </div>
         <!-- API 크레딧 표시 -->
         <div class="ibox" style="margin-bottom:14px" id="creditInfo" style="display:none">
@@ -1494,15 +1494,15 @@ tr:last-child td{border-bottom:none}
               <div style="font-size:22px;font-weight:800;color:var(--p2)" id="rev-month">₩0</div>
             </div>
             <div class="card" style="text-align:center">
-              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">전체 매출</div>
+              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">전체 고객 매출</div>
               <div style="font-size:22px;font-weight:800;color:var(--p1)" id="rev-total">₩0</div>
             </div>
             <div class="card" style="text-align:center">
-              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">총 주문 수</div>
+              <div style="font-size:12px;color:var(--tl);margin-bottom:4px">고객 주문 수</div>
               <div style="font-size:22px;font-weight:800;color:var(--p1)" id="rev-orders">0</div>
             </div>
           </div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:8px">최근 주문 (매출 기준)</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">최근 주문 (고객 결제만)</div>
           <div class="tw"><table><thead><tr><th>날짜</th><th>회원</th><th>서비스</th><th>금액</th><th>상태</th></tr></thead><tbody id="revTb"></tbody></table></div>
         </div>
         <div class="atab-body on" id="ap-orders">
@@ -3225,13 +3225,12 @@ async function loadAdmDash(){
   if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
   if(ge('aSCost'))ge('aSCost').textContent=gf(d.cost||0);
   if(ge('aSProfit'))ge('aSProfit').textContent=gf(d.profit||0);
-  // 관리자 본인 주문분 (작업분) — 금액이 있을 때만 표시
+  // 관리자 본인 주문분 (크레딧 사용) — 금액이 있을 때만 표시
   var admBox=ge('aAdminOrderBox');
   if(admBox){
-    var admRev=d.adminRevenue||0;
-    if(!d.isSuper && admRev>0){
-      if(ge('aAdmRev'))ge('aAdmRev').textContent=gf(admRev);
-      if(ge('aAdmCost'))ge('aAdmCost').textContent=gf(d.adminCost||0);
+    var admCost=d.adminCost||0;
+    if(!d.isSuper && admCost>0){
+      if(ge('aAdmCost'))ge('aAdmCost').textContent=gf(admCost);
       admBox.style.display='block';
     }else{
       admBox.style.display='none';
@@ -3289,6 +3288,13 @@ function goAdm(tab,el){
   if(tab==='svcmgmt')loadSvcMgmt();
   if(tab==='charges')loadAdmCharges();
 }
+function _isStaffOrder(o){return ['admin','partner','superadmin'].includes(o.user_role||'');}
+function _orderAmtCell(o){
+  if(_isStaffOrder(o)&&CUR.role!=='superadmin'){
+    return gf(o.cost||0)+' <span style="font-size:10px;color:#64748b;font-weight:600">크레딧</span>';
+  }
+  return gf(o.charge||0);
+}
 async function loadAdmOrders(){
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
@@ -3304,7 +3310,7 @@ async function loadAdmOrders(){
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
       +'<td style="white-space:nowrap">'+linkCell+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
-      +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
+      +'<td style="font-weight:700">'+_orderAmtCell(o)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
       +'<td><select onchange="chgOSt(\''+o.id+'\',this.value)" style="font-size:12px;padding:5px 8px;width:80px;background:#f5f0ff;border:1px solid rgba(114,9,183,.2);border-radius:6px">'
@@ -4337,6 +4343,7 @@ async function loadRevenue(){
   var validCount=0;
   var rows='';
   d.forEach(function(o){
+    if(_isStaffOrder(o)) return;
     var dateStr = (o.created||'').slice(0,10);
     var monthS = (o.created||'').slice(0,7);
     var charge = o.charge||0;
