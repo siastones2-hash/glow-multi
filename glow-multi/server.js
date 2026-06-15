@@ -1123,6 +1123,7 @@ function scorePeakerrService(s) {
   if (s.refill || /refill/.test(full)) score += 30;
   if (/instant|fast|speed|🔥/.test(full)) score += 25;
   if (/monetiz|korea|korean|\bkr\b|한국|south korea/.test(full)) score += 50;
+  if (/vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|베트남/.test(full)) score += 45;
   if (/instagram|youtube|tiktok|threads|pinterest/.test(full)) score += 20;
   if (/follow|subscriber|view|like|comment|share|watch hour|reel|story/.test(full)) score += 15;
   const pl = detectPlat(full);
@@ -1177,6 +1178,7 @@ function extractQualityTagsKo(full) {
   const n = (full || '').toLowerCase();
   const tags = [];
   if (/korea|korean|\bkr\b|south korea|한국/.test(n)) tags.push('한국');
+  else if (/vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|베트남/.test(n)) tags.push('베트남');
   else if (/global|world|worldwide|geo/.test(n)) tags.push('글로벌');
   if (/\bhq\b|high quality|high-quality/.test(n)) tags.push('HQ');
   if (/\breal\b|organic|native|active/.test(n)) tags.push('리얼');
@@ -1204,6 +1206,7 @@ function formatPeakerrServiceName(name, pl, prefixLabel) {
 
   let mid = '프리미엄';
   if (tags.includes('한국')) mid = '한국';
+  else if (tags.includes('베트남')) mid = '베트남';
   else if (tags.includes('글로벌')) mid = '글로벌';
   else if (tags.includes('HQ')) mid = 'HQ';
   else if (tags.includes('리얼')) mid = '리얼';
@@ -1223,7 +1226,7 @@ function formatPeakerrServiceDescription(name, pl, fallback) {
   }[pl] || 'SNS';
   const typeKo = detectServiceTypeKo(name || '');
   const tags = extractQualityTagsKo(name || '');
-  const target = tags.includes('한국') ? '한국 타겟 ' : tags.includes('글로벌') ? '글로벌 ' : '';
+  const target = tags.includes('한국') ? '한국 타겟 ' : tags.includes('베트남') ? '베트남 타겟 ' : tags.includes('글로벌') ? '글로벌 ' : '';
   let desc = `${target}${plKo} ${typeKo} 고품질 서비스입니다.`;
   if (tags.includes('드롭 보상') || tags.includes('평생 보장')) desc += ' 드롭 발생 시 보상·리필이 제공됩니다.';
   else if (tags.includes('논드롭')) desc += ' 안정적인 논드롭 처리로 장기 유지에 유리합니다.';
@@ -1667,6 +1670,117 @@ async function importKoreanAndPinterestServices(opts = {}) {
   return { ok: true, added, count: added.length, korean, pinterest, candidates: toAdd.length };
 }
 
+const VN_IMPORT_PLATFORMS = ['instagram', 'tiktok'];
+
+function isVietnamMarketService(full) {
+  return /vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|\bvn[\s-]target\b|베트남|vietnam\s+only/i.test(full);
+}
+
+function qualifiesVietnamImport(s) {
+  const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+  if (BAD_SERVICE_NAME.test(full)) return null;
+  if (!isVietnamMarketService(full)) return null;
+  if (isKoreanMarketService(full)) return null;
+  const score = scorePeakerrService(s);
+  if (score < 0 || !hasImportQualitySignal(full, score)) return null;
+  const pl = detectPlat(full);
+  if (!VN_IMPORT_PLATFORMS.includes(pl)) return null;
+  return { pl, bucket: `vn_${pl}`, qs: score + 130 };
+}
+
+function formatVietnamImportName(name, pl) {
+  const typeKo = detectServiceTypeKo(name || '');
+  const plLabel = PL_DISPLAY_KO[pl] || pl;
+  const tags = extractQualityTagsKo(name || '');
+  let suffix = '베트남 타겟';
+  const extras = [];
+  if (tags.includes('드롭 보상')) extras.push('드롭 보상');
+  if (tags.includes('평생 보장')) extras.push('평생 보장');
+  if (tags.includes('리얼')) extras.push('리얼');
+  if (tags.includes('HQ')) extras.push('HQ');
+  if (extras.length) suffix += ` (${extras.slice(0, 2).join(' · ')})`;
+  return `${plLabel} ${typeKo} — ${suffix}`.substring(0, 120);
+}
+
+function vietnamImportDescription(pl, type) {
+  const market = '베트남은 동남아 핵심 디지털·이커머스 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다.';
+  const base = {
+    instagram: `베트남 기반 고품질 Instagram 서비스입니다. ${market} 팔로워·좋아요·릴스 등 현지 탐색 노출과 브랜드 신뢰도 향상에 유리합니다.`,
+    tiktok: `베트남 기반 고품질 TikTok 서비스입니다. ${market} 포유 탭·팔로워·좋아요 등 현지 바이럴 성장에 최적화되어 있습니다.`,
+  };
+  const d = base[pl] || `베트남 타겟 고품질 마케팅 상품입니다. ${market}`;
+  return type ? `${d} (${type})` : d;
+}
+
+/** Peakerr — 베트남 타겟 Instagram·TikTok (전 사이트 연결) */
+async function importVietnamInstagramTiktokServices(opts = {}) {
+  const maxPerPlatform = opts.maxPerPlatform ?? 10;
+  const dryRun = !!opts.dryRun;
+  const notify = opts.notify !== false;
+
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, instagram: 0, tiktok: 0 };
+
+  const resp = await fetch('https://peakerr.com/api/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ key: apiKey, action: 'services' })
+  });
+  const services = await resp.json();
+  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0, instagram: 0, tiktok: 0 };
+
+  const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  const existing = new Set(existingR.rows.map(r => String(r.api_id)));
+
+  const byBucket = {};
+  let scanned = 0;
+  for (const s of services) {
+    if (existing.has(String(s.service))) continue;
+    const hit = qualifiesVietnamImport(s);
+    if (!hit) continue;
+    scanned++;
+    if (!byBucket[hit.bucket]) byBucket[hit.bucket] = [];
+    byBucket[hit.bucket].push({ ...s, ...hit });
+  }
+
+  const toAdd = [];
+  for (const pl of VN_IMPORT_PLATFORMS) {
+    const list = (byBucket[`vn_${pl}`] || []).sort((a, b) => b.qs - a.qs);
+    toAdd.push(...list.slice(0, maxPerPlatform));
+  }
+
+  const added = [];
+  if (!dryRun) {
+    for (const s of toAdd) {
+      const displayName = formatVietnamImportName(s.name, s.pl);
+      const desc = vietnamImportDescription(s.pl, s.type || s.category || '');
+      const row = await insertPeakerrImport(s, displayName, s.pl, desc);
+      added.push({ ...row, bucket: s.bucket });
+    }
+    if (added.length) {
+      await repairAllPartnerSiteServices();
+      await pruneServiceCatalog({ maxPerPlatform: 34, notify: false }).catch(() => {});
+    }
+    await repairEnglishServiceNames();
+  }
+
+  const instagram = added.filter(a => a.pl === 'instagram').length;
+  const tiktok = added.filter(a => a.pl === 'tiktok').length;
+
+  if (notify && added.length && !dryRun) {
+    let msg = `🇻🇳 <b>베트남 Instagram·TikTok 상품 추가</b>\n\n`;
+    msg += `인스타 ${instagram}개 · 틱톡 ${tiktok}개\n\n`;
+    added.slice(0, 8).forEach((s, i) => {
+      msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 42)}\n`;
+    });
+    if (added.length > 8) msg += `…외 ${added.length - 8}개\n`;
+    msg += `\nGLOW·지인 사이트 전체 연결 완료`;
+    await sendTelegramToSuper(msg);
+  }
+
+  return { ok: true, added, count: added.length, instagram, tiktok, scanned, candidates: toAdd.length };
+}
+
 async function scanNewServices(opts = {}) {
   try {
     const maxPerPlatform = opts.maxPerPlatform ?? 2;
@@ -1689,11 +1803,13 @@ async function scanNewServices(opts = {}) {
 }
 
 function scoreServiceRow(row) {
-  return scorePeakerrService({
+  let score = scorePeakerrService({
     name: row.name,
     category: row.description || '',
     refill: /refill/i.test(`${row.name} ${row.description || ''}`)
   });
+  if (/베트남|vietnam/i.test(`${row.name} ${row.description || ''}`)) score += 55;
+  return score;
 }
 
 function serviceIdPriority(id) {
@@ -3628,6 +3744,23 @@ app.post('/api/super/import-niche-services', requireSuperAdmin, async (req, res)
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 🇻🇳 슈퍼관리자: 베트남 타겟 Instagram·TikTok (Peakerr 실존 시만)
+app.post('/api/super/import-vietnam', requireSuperAdmin, async (req, res) => {
+  try {
+    const { maxPerPlatform, dryRun } = req.body || {};
+    const result = await importVietnamInstagramTiktokServices({
+      maxPerPlatform: maxPerPlatform || 10,
+      dryRun: !!dryRun,
+      notify: !dryRun
+    });
+    if (result.error) return res.json({ error: result.error });
+    const msg = result.count > 0
+      ? `베트남 인스타 ${result.instagram}개 · 틱톡 ${result.tiktok}개 추가 (Peakerr 후보 ${result.scanned}개)`
+      : '추가할 베트남 Instagram·TikTok 상품 없음 (이미 등록 또는 Peakerr 미제공)';
+    res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 🇰🇷 슈퍼관리자: 한국 타겟 + Pinterest HQ 상품 (Peakerr 실존 시만)
 app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) => {
   try {
@@ -4438,7 +4571,11 @@ app.listen(PORT, async () => {
     const krPin = await importKoreanAndPinterestServices({ notify: true }).catch(e => ({ error: e.message, count: 0 }));
     if (krPin.count > 0) console.log(`🇰🇷 한국·Pinterest ${krPin.count}개 추가 (한국 ${krPin.korean || 0} / 핀 ${krPin.pinterest || 0})`);
     else if (!krPin.error) console.log('🇰🇷 한국·Pinterest: Peakerr에 추가할 HQ 상품 없음');
-    else if (!niche.error && niche.count === 0) console.log('🛒 Peakerr 이커머스·보너스: 추가할 상품 없음');
+    const vn = await importVietnamInstagramTiktokServices({ notify: true }).catch(e => ({ error: e.message, count: 0 }));
+    if (vn.count > 0) console.log(`🇻🇳 베트남 IG·TT ${vn.count}개 추가 (인스타 ${vn.instagram || 0} / 틱톡 ${vn.tiktok || 0})`);
+    else if (!vn.error) console.log('🇻🇳 베트남 Instagram·TikTok: Peakerr에 추가할 상품 없음');
+    else console.log('🇻🇳 베트남 스캔:', vn.error);
+    if (!niche.error && niche.count === 0) console.log('🛒 Peakerr 이커머스·보너스: 추가할 상품 없음');
     else if (niche.error) console.log('🛒 이커머스 스캔:', niche.error);
   }, 5 * 60 * 1000);
 
