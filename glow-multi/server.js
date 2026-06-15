@@ -298,6 +298,18 @@ async function initDB() {
 
   await normalizeAbnormalCredits();
 
+  // 파트너 관리자에게 잘못 승인된 잔액 충전 자동 회수
+  try {
+    const wrongR = await query(`
+      SELECT c.* FROM charges c
+      JOIN users u ON c.uid = u.id
+      WHERE c.site_id <> 'default' AND u.role IN ('admin','partner') AND c.status = 'approved'`);
+    for (const charge of wrongR.rows) {
+      const r = await reverseApprovedCharge(charge, 'system', { reason: '관리자 잔액충전 오류 자동 회수' });
+      if (r.ok) console.log(`✓ 충전 회수: ${charge.site_id} ${charge.uname} ₩${charge.amount}`);
+    }
+  } catch (e) { console.log('관리자 잔액충전 회수:', e.message); }
+
   // 나인스토리
   const no9Exists = await query(`SELECT id FROM sites WHERE domain='no9story.com'`);
   if (no9Exists.rows.length === 0) {
@@ -1997,6 +2009,33 @@ function calcChargeBonus(amount, tiersJson) {
   } catch(e) { return 0; }
 }
 
+/** 승인된 충전 회수 — 잔액 차감 + 상태 reversed */
+async function reverseApprovedCharge(charge, adminId, opts = {}) {
+  if (!charge || charge.status !== 'approved') return { error: '승인된 충전만 회수 가능' };
+  const userR = await query(`SELECT * FROM users WHERE id=$1`, [charge.uid]);
+  const user = userR.rows[0];
+  if (!user) return { error: '회원 없음' };
+  const chargerRole = user.role || 'user';
+  let bonus = 0;
+  if (chargerRole === 'user') {
+    const bSiteR = await query(`SELECT charge_bonus_tiers FROM sites WHERE id=$1`, [charge.site_id]);
+    bonus = calcChargeBonus(charge.amount, bSiteR.rows[0]?.charge_bonus_tiers);
+  }
+  const totalRevoke = charge.amount + bonus;
+  const beforeBal = user.balance || 0;
+  const afterBal = Math.max(0, beforeBal - totalRevoke);
+  await query(`UPDATE users SET balance=$1 WHERE id=$2`, [afterBal, charge.uid]);
+  if (opts.markReversed !== false)
+    await query(`UPDATE charges SET status='reversed' WHERE id=$1`, [charge.id]);
+  await logBalance(
+    charge.site_id, charge.uid, charge.uname, -totalRevoke,
+    beforeBal, afterBal,
+    opts.reason || '충전 승인 회수',
+    adminId || 'system'
+  );
+  return { ok: true, revoked: totalRevoke, balance: afterBal };
+}
+
 async function tgAlert(msg, site) {
   const siteObj = typeof site === 'object' ? site : null;
   const isDefaultSite = !siteObj || siteObj.id === 'default';
@@ -2595,11 +2634,16 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     }
     const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
     const user = userR.rows[0];
-    if ((user.balance || 0) < charge)
+    // 파트너·지인 사이트 관리자 본인 작업 → 크레딧만 차감 (잔액 충전 불필요)
+    const adminCreditOnly = !isDefaultSite2 && user && ['admin', 'partner'].includes(user.role);
+    if (adminCreditOnly) charge = 0;
+
+    if (!adminCreditOnly && (user.balance || 0) < charge)
       return res.json({ error: `잔액 부족. 현재 ₩${Math.round(user.balance || 0).toLocaleString()}` });
     if (site && site.credit < apiCost && site.id !== 'default')
-      return res.json({ error: '사이트 API 크레딧이 부족합니다.' });
-    await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, user.id]);
+      return res.json({ error: '사이트 API 크레딧이 부족합니다. 관리자 → 크레딧 요청으로 충전하세요.' });
+    if (!adminCreditOnly)
+      await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, user.id]);
     if (site && site.id !== 'default')
       await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, site.id]);
     let apiOrderId = null;
@@ -2629,8 +2673,8 @@ app.post('/api/orders', requireAuth, async (req, res) => {
 
     // ⚠️ 공급사 전송 실패 → 즉시 자동 환불 + 주문 실패 처리 ("돈 냈는데 작업 안 됨" 방지)
     if (apiError) {
-      // 고객 잔액 복구
-      await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge, user.id]);
+      if (!adminCreditOnly)
+        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge, user.id]);
       // 지인 크레딧 복구
       if (site && site.id !== 'default')
         await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [apiCost, site.id]);
@@ -2639,9 +2683,10 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       try {
         await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, link, qtyNum, charge, 'failed']);
-        await logBalance(req.siteId, user.id, user.name, charge,
-          (user.balance || 0) - charge, user.balance || 0,
-          `주문 실패 자동 환불 - ${svc.name}`, 'system');
+        if (!adminCreditOnly)
+          await logBalance(req.siteId, user.id, user.name, charge,
+            (user.balance || 0) - charge, user.balance || 0,
+            `주문 실패 자동 환불 - ${svc.name}`, 'system');
       } catch(e) {}
       // 서비스가 공급사에 없으면 즉시 비활성화 (다른 고객 추가 피해 방지)
       if (/not\s*found|invalid\s*service|존재|없/i.test(apiError) || apiError === '주문 접수 실패') {
@@ -2658,7 +2703,10 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, 'processing', orderCost]);
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
-    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n💳 주문 후 잔액: ₩${custBal.toLocaleString()}\n🔗 ${link}`, site);
+    const creditLine = adminCreditOnly
+      ? `\n💰 크레딧 차감: $${apiCost.toFixed(4)}`
+      : `\n💰 ₩${Math.round(charge).toLocaleString()}\n💳 주문 후 잔액: ₩${custBal.toLocaleString()}`;
+    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}${adminCreditOnly ? ' (관리자)' : ''}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개${creditLine}\n🔗 ${link}`, site);
     
     // 💵 Peakerr 잔액 체크 (비동기, 주문 처리와 별도로)
     checkPeakerrBalance().catch(e => console.log('잔액 체크 실패:', e.message));
@@ -2761,11 +2809,15 @@ app.post('/api/points/convert', requireAuth, async (req, res) => {
 
 app.post('/api/charges', requireAuth, async (req, res) => {
   try {
+    const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
+    const user = userR.rows[0];
+    const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [req.siteId]);
+    const site = siteR.rows[0];
+    if (site && site.id !== 'default' && user && ['admin', 'partner'].includes(user.role))
+      return res.json({ error: '관리자는 API 크레딧으로 주문하세요. 관리자 → 크레딧 요청을 이용해주세요.' });
     const { amount, note } = req.body;
     const amt = parseFloat(amount);
     if (!amt || amt < 5000) return res.json({ error: '최소 ₩5,000 이상' });
-    const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
-    const user = userR.rows[0];
     const id = 'C' + Date.now();
     await query(`INSERT INTO charges(id,site_id,uid,uname,amount,note,status) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       [id, req.siteId, user.id, user.name, amt, note || '', 'pending']);
@@ -3131,6 +3183,12 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
     const r = await query(`SELECT * FROM charges WHERE id=$1`, [id]);
     const charge = r.rows[0];
     if (!charge) return res.json({ error: '충전 요청을 찾을 수 없습니다' });
+    if (action === 'approve') {
+      const reqUserR = await query(`SELECT role FROM users WHERE id=$1`, [charge.uid]);
+      const chargerRole = reqUserR.rows[0]?.role || 'user';
+      if (charge.site_id && charge.site_id !== 'default' && ['admin', 'partner'].includes(chargerRole))
+        return res.json({ error: '관리자는 API 크레딧으로 주문합니다. 잔액 충전 승인 불가.' });
+    }
     const status = action === 'approve' ? 'approved' : 'rejected';
     await query(`UPDATE charges SET status=$1 WHERE id=$2`, [status, id]);
     if (action === 'approve') {
@@ -3568,6 +3626,18 @@ app.post('/api/tg-webhook', async (req, res) => {
       return res.json({ ok: true });
     }
     if (action === 'approve') {
+      let requesterRole = 'user';
+      try {
+        const reqUserR = await query(`SELECT role FROM users WHERE id=$1`, [charge.uid]);
+        requesterRole = reqUserR.rows[0]?.role || 'user';
+      } catch(e) {}
+      if (charge.site_id && charge.site_id !== 'default' && ['admin', 'partner'].includes(requesterRole)) {
+        await fetch(`https://api.telegram.org/bot${cbToken}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '관리자는 크레딧으로 주문합니다' })
+        });
+        return res.json({ ok: true });
+      }
       // 잔액 변동 로그 포함 (process 라우트와 동일하게 정합성 유지)
       const beforeR = await query(`SELECT balance, role FROM users WHERE id=$1`, [charge.uid]);
       const beforeBal = beforeR.rows[0]?.balance || 0;
@@ -4326,8 +4396,28 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
       const rv = await query(`SELECT SUM(charge) as v FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
       const pc = await query(`SELECT COUNT(*) as c FROM charges WHERE site_id=$1 AND status='pending'`, [s.id]);
-      return { ...s, userCount: parseInt(uc.rows[0].c), orderCount: parseInt(oc.rows[0].c), revenue: rv.rows[0].v || 0, pendingCharge: parseInt(pc.rows[0].c) };
+      const chAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM charges WHERE site_id=$1 AND status='approved'`, [s.id]);
+      const chRev = await query(`SELECT COALESCE(SUM(amount),0) as s FROM charges WHERE site_id=$1 AND status='reversed'`, [s.id]);
+      const crAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM credit_requests WHERE site_id=$1 AND status='approved'`, [s.id]);
+      const siteEx = parseFloat(s.exrate) || parseFloat(await getGlobalSetting('global_exrate')) || 1500;
+      const creditUsd = parseFloat(s.credit) || 0;
+      return {
+        ...s,
+        userCount: parseInt(uc.rows[0].c),
+        orderCount: parseInt(oc.rows[0].c),
+        revenue: rv.rows[0].v || 0,
+        pendingCharge: parseInt(pc.rows[0].c),
+        chargeApprovedTotal: parseFloat(chAp.rows[0].s) || 0,
+        chargeReversedTotal: parseFloat(chRev.rows[0].s) || 0,
+        creditReceivedTotal: parseFloat(crAp.rows[0].s) || 0,
+        creditBalanceKrw: Math.round(creditUsd * siteEx),
+        creditUsd,
+      };
     }));
+    const partnerSites = siteStats.filter(s => s.id !== 'default');
+    const totalCreditBalanceKrw = partnerSites.reduce((sum, s) => sum + (s.creditBalanceKrw || 0), 0);
+    const totalChargeApprovedKrw = siteStats.reduce((sum, s) => sum + (s.chargeApprovedTotal || 0), 0);
+    const totalCreditReceivedKrw = partnerSites.reduce((sum, s) => sum + (s.creditReceivedTotal || 0), 0);
     const superMgForProfit = await getGlobalSetting('super_margin');
     const superMgPct = parseFloat(superMgForProfit || '50') / 100;
     const globalEx = await getGlobalSetting('global_exrate');
@@ -4342,6 +4432,9 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       totalOrders: parseInt(totalOrders.rows[0].c),
       totalRevenue: totalRevenue.rows[0].s || 0,
       pendingCharges: parseInt(pendingCharges.rows[0].c),
+      totalCreditBalanceKrw,
+      totalChargeApprovedKrw,
+      totalCreditReceivedKrw,
       apiBalance,
       myProfit: Math.round(myProfitKrw),
       globalExrate: parseFloat((await getGlobalSetting('global_exrate')) || '1500')
@@ -4426,6 +4519,22 @@ app.get('/api/super/charges', requireSuperAdmin, async (req, res) => {
       FROM charges c LEFT JOIN sites s ON c.site_id = s.id
       ORDER BY c.created DESC LIMIT 200`);
     res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 승인된 충전 회수 (잔액 차감 + 상태 reversed)
+app.post('/api/super/charges/reverse', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (!id) return res.json({ error: '충전 ID 필요' });
+    const r = await query(`SELECT * FROM charges WHERE id=$1`, [id]);
+    const charge = r.rows[0];
+    if (!charge) return res.json({ error: '충전 내역을 찾을 수 없습니다' });
+    const result = await reverseApprovedCharge(charge, req.session.userId, { reason: '충전 승인 회수 (관리자 오류 정정)' });
+    if (result.error) return res.json({ error: result.error });
+    await logActivity(req.siteId, req.session.userId, '', '충전 회수', 'charge', id,
+      `₩${Math.round(charge.amount).toLocaleString()} 회수 → 잔액 ₩${Math.round(result.balance || 0).toLocaleString()}`);
+    res.json(result);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

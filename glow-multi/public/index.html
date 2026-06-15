@@ -1317,8 +1317,8 @@ tr:last-child td{border-bottom:none}
     <div class="dhdr">
       <div style="font-size:15px;font-weight:800" id="dhTitle">대시보드</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <div onclick="goTab('charge')" style="background:rgba(114,9,183,.08);border:1px solid var(--bd2);padding:7px 16px;border-radius:100px;font-size:13px;font-weight:700;color:var(--p2);cursor:pointer">✨ <span id="hBal">₩0</span></div>
-        <button class="bp bsm" style="padding:8px 16px" onclick="goTab('charge')">충전</button>
+        <div onclick="goTab('charge')" id="hdrBalChip" style="background:rgba(114,9,183,.08);border:1px solid var(--bd2);padding:7px 16px;border-radius:100px;font-size:13px;font-weight:700;color:var(--p2);cursor:pointer">✨ <span id="hBal">₩0</span></div>
+        <button class="bp bsm" id="hdrChargeBtn" style="padding:8px 16px" onclick="goTab('charge')">충전</button>
       </div>
     </div>
     <div class="topbar">
@@ -1326,23 +1326,23 @@ tr:last-child td{border-bottom:none}
         <div class="bico" style="width:28px;height:28px;font-size:13px;border-radius:7px" id="tbLogo">__SITE_LOGO__</div>
         <span class="bnm gt" style="font-size:15px" id="tbName">__SITE_NAME__</span>
       </div>
-      <div onclick="goTab('charge')" style="background:rgba(114,9,183,.08);border:1px solid var(--bd2);padding:6px 12px;border-radius:100px;font-size:12px;font-weight:700;color:var(--p2);cursor:pointer">✨ <span id="mBal">₩0</span></div>
+      <div onclick="goTab('charge')" id="topBalChip" style="background:rgba(114,9,183,.08);border:1px solid var(--bd2);padding:6px 12px;border-radius:100px;font-size:12px;font-weight:700;color:var(--p2);cursor:pointer">✨ <span id="mBal">₩0</span></div>
     </div>
     <div class="dbody">
       <!-- 홈 -->
       <div class="tab on" id="tab-home">
         <div class="sg">
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">잔액</div><div class="gt" style="font-size:22px;font-weight:800" id="stBal">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px" id="homeBalLabel">잔액</div><div class="gt" style="font-size:22px;font-weight:800" id="stBal">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">포인트</div><div style="font-size:22px;font-weight:800;color:#F59E0B" id="stPoints">0P</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">처리 중</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="stPend">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">완료</div><div style="font-size:22px;font-weight:800;color:var(--ok)" id="stDone">0</div></div>
         </div>
         <div class="card dash-welcome" style="margin-bottom:16px">
           <div style="font-size:18px;font-weight:800;margin-bottom:6px;color:var(--tx)">안녕하세요, <span class="gt" id="welName">-</span>님</div>
-          <div style="font-size:14px;color:var(--tm);margin-bottom:16px;font-weight:400;line-height:1.65">아래 메뉴에서 <strong style="color:var(--tx)">서비스 주문</strong> 또는 <strong style="color:var(--tx)">잔액 충전</strong>을 선택하세요.</div>
+          <div style="font-size:14px;color:var(--tm);margin-bottom:16px;font-weight:400;line-height:1.65" id="welMsg">아래 메뉴에서 <strong style="color:var(--tx)">서비스 주문</strong> 또는 <strong style="color:var(--tx)">잔액 충전</strong>을 선택하세요.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="bp bsm" onclick="goTab('order')">✨ 주문하기</button>
-            <button class="bo bsm" onclick="goTab('charge')">💳 충전</button>
+            <button class="bo bsm" id="welChargeBtn" onclick="goTab('charge')">💳 충전</button>
             <button class="bo bsm" onclick="goTab('orders')">📦 주문내역</button>
           </div>
         </div>
@@ -1369,6 +1369,9 @@ tr:last-child td{border-bottom:none}
       </div>
       <!-- 주문 -->
       <div class="tab" id="tab-order">
+        <div class="ibox" id="adminCreditNote" style="display:none;margin-bottom:12px;background:#ecfdf5;border-color:#6ee7b7;color:#065f46">
+          💰 관리자 주문은 <strong>API 크레딧</strong>에서 차감됩니다. 크레딧 부족 시 관리자 → 크레딧 요청.
+        </div>
         <div style="margin-bottom:10px">
           <input type="text" id="svcSearch" placeholder="🔍 서비스 검색..." oninput="renderSvcList()" style="border-radius:100px;padding:10px 18px;font-size:14px"/>
         </div>
@@ -1713,11 +1716,15 @@ tr:last-child td{border-bottom:none}
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">전체 매출</div><div class="gt" style="font-size:22px;font-weight:800" class="gt amount-mask" id="sTotalRevenue">₩0</div></div>
           <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 내 순수익 (예상)</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sMyProfit" class="amount-mask">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">충전 대기</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="sTotalPending">0</div></div>
+          <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 전체 크레딧 잔액</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sTotalCreditBal" class="amount-mask">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">고객 충전 승인합</div><div style="font-size:22px;font-weight:800;color:#2563eb" id="sTotalChargeAp" class="amount-mask">₩0</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">크레딧 지급합</div><div style="font-size:22px;font-weight:800;color:#c2410c" id="sTotalCreditRecv" class="amount-mask">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">🔑 API 잔액</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sApiBalance">-</div></div>
         </div>
 
         <div class="admtabs">
           <button class="admtab on" onclick="goSuperTab('sites',this)">🌐 사이트 관리</button>
+          <button class="admtab" onclick="goSuperTab('summary',this)">📊 사이트 현황</button>
           <button class="admtab" onclick="goSuperTab('allorders',this)">📦 전체 주문</button>
           <button class="admtab" onclick="goSuperTab('allcharges',this)">💳 전체 충전</button>
           <button class="admtab" onclick="goSuperTab('creditreqs',this)">💰 크레딧 요청</button>
@@ -1737,6 +1744,12 @@ tr:last-child td{border-bottom:none}
             </div>
           </div>
           <div id="siteList"></div>
+        </div>
+
+        <!-- 사이트별 충전·크레딧 현황 -->
+        <div class="atab-body" id="sp-summary">
+          <div class="ibox" style="margin-bottom:12px">✦ 사이트별 <strong>크레딧 잔액</strong>(API 작업 예산) · <strong>크레딧 지급합</strong>(슈퍼 승인) · <strong>고객 충전 승인합</strong>(회원 잔액 충전)을 한눈에 확인합니다.</div>
+          <div class="tw"><table><thead><tr><th>사이트</th><th>크레딧 잔액</th><th>크레딧 지급합</th><th>고객충전 승인</th><th>충전 대기</th><th>회원</th><th>주문</th></tr></thead><tbody id="spSummaryTb"></tbody></table></div>
         </div>
 
         <!-- 전체 주문 -->
@@ -2162,8 +2175,8 @@ function toggleFaq(btn){
   item.classList.toggle('on');
 }
 function badge(s){
-  var m={pending:'background:#FEF3C7;color:#F59E0B',processing:'background:rgba(114,9,183,.1);color:#B5179E',completed:'background:#D1FAE5;color:#10B981',cancelled:'background:#FEE2E2;color:#EF4444',canceled:'background:#FEE2E2;color:#EF4444',refunded:'background:#DBEAFE;color:#3B82F6',partial_refunded:'background:#FEF3C7;color:#F59E0B',failed:'background:#FEE2E2;color:#EF4444',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444'};
-  var l={pending:'대기',processing:'처리중',completed:'완료',cancelled:'취소',canceled:'취소',refunded:'환불완료',partial_refunded:'부분환불',failed:'실패',approved:'승인',rejected:'거절'};
+  var m={pending:'background:#FEF3C7;color:#F59E0B',processing:'background:rgba(114,9,183,.1);color:#B5179E',completed:'background:#D1FAE5;color:#10B981',cancelled:'background:#FEE2E2;color:#EF4444',canceled:'background:#FEE2E2;color:#EF4444',refunded:'background:#DBEAFE;color:#3B82F6',partial_refunded:'background:#FEF3C7;color:#F59E0B',failed:'background:#FEE2E2;color:#EF4444',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444',reversed:'background:#FEE2E2;color:#EF4444'};
+  var l={pending:'대기',processing:'처리중',completed:'완료',cancelled:'취소',canceled:'취소',refunded:'환불완료',partial_refunded:'부분환불',failed:'실패',approved:'승인',rejected:'거절',reversed:'회수'};
   var k=(s||'').toLowerCase();
   return'<span class="bdg" style="'+(m[k]||m.pending)+'">'+(l[k]||s||'-')+'</span>';
 }
@@ -2882,6 +2895,21 @@ async function enterDash(){
   ge('si-super').style.display=isSuper?'flex':'none';
   ge('bni-super').style.display=isSuper?'flex':'none';
 
+  // 파트너·지인 사이트 관리자 → 크레딧만 사용 (잔액 충전 메뉴 숨김)
+  window._adminCreditOnly = SITE_CONFIG && !SITE_CONFIG.isDefault && (CUR.role==='admin'||CUR.role==='partner');
+  var aco = window._adminCreditOnly;
+  ['si-charge','bni-charge'].forEach(function(id){var el=ge(id);if(el)el.style.display=aco?'none':'flex';});
+  ['hdrBalChip','hdrChargeBtn','topBalChip','welChargeBtn'].forEach(function(id){var el=ge(id);if(el)el.style.display=aco?'none':'';});
+  var acn=ge('adminCreditNote');if(acn)acn.style.display=aco?'block':'none';
+  var wm=ge('welMsg');
+  if(wm){
+    if(!window._welMsgDefault)window._welMsgDefault=wm.innerHTML;
+    wm.innerHTML=aco
+      ? '관리자 작업은 <strong style="color:var(--tx)">API 크레딧</strong>으로 처리됩니다. 크레딧 부족 시 <strong style="color:var(--tx)">관리자 → 크레딧 요청</strong>을 이용하세요.'
+      : window._welMsgDefault;
+  }
+  var hbl=ge('homeBalLabel');if(hbl&&!aco)hbl.textContent='잔액';
+
   // 최신 유저 정보 (포인트, 추천코드 포함)
   var me = await api('/api/me');
   if(me && me.id) CUR = Object.assign({}, CUR, me);
@@ -2889,7 +2917,16 @@ async function enterDash(){
   updBal();
   await loadSvcs();
   renderQCards();renderSfBar();
-  loadOrders();loadChargeHis();loadBankInfo();
+  loadOrders();loadChargeHis();
+  if(!aco)loadBankInfo();
+  if(aco){
+    var dash=await api('/api/admin/dashboard');
+    if(dash&&dash.credit!==undefined){
+      var aEx=(dash.exrate&&dash.exrate>0)?dash.exrate:_globalExrate;
+      var hbl2=ge('homeBalLabel');if(hbl2)hbl2.textContent='API 크레딧';
+      var sb=ge('stBal');if(sb)sb.textContent=gf(parseFloat(dash.credit||0)*aEx);
+    }
+  }
   goTab('home');
 }
 function updBal(){
@@ -2960,6 +2997,7 @@ async function changePassword(){
 }
 
 function goTab(tab){
+  if(tab==='charge'&&window._adminCreditOnly){toast('관리자는 크레딧으로 주문합니다. 관리자 → 크레딧 요청을 이용하세요','err');return}
   if(tab==='admin'&&(!CUR||!['admin','partner','superadmin'].includes(CUR.role))){toast('접근 권한이 없습니다','err');return}
   if(tab==='super'&&(!CUR||CUR.role!=='superadmin')){toast('슈퍼관리자 전용입니다','err');return}
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
@@ -3179,8 +3217,8 @@ async function loadAdmDash(){
   }
   if(ge('aSC'))ge('aSC').textContent=d.pendingCharges||0;
 
-  // 크레딧 표시 (일반 어드민만) - 원화 환산
-  if(CUR.role==='admin'&&d.credit!==undefined){
+  // 크레딧 표시 (파트너·지인 사이트 어드민) - 원화 환산
+  if(['admin','partner'].includes(CUR.role)&&d.credit!==undefined){
     var ci=ge('creditInfo');if(ci)ci.style.display='block';
     var cb=ge('creditBal');
     if(cb){
@@ -3830,6 +3868,9 @@ async function loadSuperDash(){
   ge('sTotalOrders').textContent=d.totalOrders||0;
   ge('sTotalRevenue').textContent=gf(d.totalRevenue||0);
   ge('sTotalPending').textContent=d.pendingCharges||0;
+  if(ge('sTotalCreditBal'))ge('sTotalCreditBal').textContent=gf(d.totalCreditBalanceKrw||0);
+  if(ge('sTotalChargeAp'))ge('sTotalChargeAp').textContent=gf(d.totalChargeApprovedKrw||0);
+  if(ge('sTotalCreditRecv'))ge('sTotalCreditRecv').textContent=gf(d.totalCreditReceivedKrw||0);
   if(ge('sApiBalance'))ge('sApiBalance').textContent=d.apiBalance?'$'+d.apiBalance:'-';
   if(ge('sMyProfit'))ge('sMyProfit').textContent=gf(d.myProfit||0);
   if(d.globalExrate){
@@ -3837,6 +3878,7 @@ async function loadSuperDash(){
     syncPriceCalcExrate(d.globalExrate);
   }
   renderSiteList(d.sites||[]);
+  renderSiteSummary(d.sites||[]);
   loadDefaultPricing();
 
   // 글로벌 설정 로드
@@ -3860,6 +3902,7 @@ function goSuperTab(tab,el){
   el.classList.add('on');ge('sp-'+tab).classList.add('on');
   if(tab==='allorders')loadSuperOrders();
   if(tab==='allcharges')loadSuperCharges();
+  if(tab==='summary')renderSiteSummary(window._lastSuperSites||[]);
   if(tab==='creditreqs')loadSuperCreditReqs();
   if(tab==='services')loadSuperServices();
   if(tab==='pricecalc'){
@@ -3868,6 +3911,23 @@ function goSuperTab(tab,el){
     else syncPriceCalcExrate(_globalExrate);
     calcPriceTable();
   }
+}
+function renderSiteSummary(sites){
+  window._lastSuperSites=sites;
+  var tb=ge('spSummaryTb');if(!tb)return;
+  if(!sites.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:22px;color:#9A8AB0">사이트가 없습니다</td></tr>';return}
+  tb.innerHTML=sites.map(function(s){
+    var lowCredit=(s.creditBalanceKrw||0)<1000&&s.id!=='default';
+    return'<tr>'
+      +'<td style="font-weight:700">'+(s.logo||'')+' '+s.name+'<div style="font-size:11px;color:var(--tl)">'+s.domain+'</div></td>'
+      +'<td style="font-weight:800;color:'+(lowCredit?'#EF4444':'#10B981')+'">'+gf(s.creditBalanceKrw||0)+(s.id!=='default'?' <span style="font-size:10px;color:var(--tl);font-weight:400">($'+(s.creditUsd||0).toFixed(2)+')</span>':'')+'</td>'
+      +'<td style="font-weight:700;color:#c2410c">'+gf(s.creditReceivedTotal||0)+'</td>'
+      +'<td style="font-weight:700;color:#2563eb">'+gf(s.chargeApprovedTotal||0)+'</td>'
+      +'<td style="font-weight:700;color:'+(s.pendingCharge>0?'#F59E0B':'var(--tl)')+'">'+(s.pendingCharge||0)+'건</td>'
+      +'<td>'+(s.userCount||0)+'</td>'
+      +'<td>'+(s.orderCount||0)+'</td>'
+      +'</tr>';
+  }).join('');
 }
 function renderSiteList(sites){
   var el=ge('siteList');if(!el)return;
@@ -3887,9 +3947,14 @@ function renderSiteList(sites){
       +'<span class="bdg" style="'+(s.active?'background:#D1FAE5;color:#10B981':'background:#FEE2E2;color:#EF4444')+'">'+(s.active?'활성':'비활성')+'</span>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
+      +'<div style="text-align:center;background:'+(lowCredit?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(lowCredit?'#EF4444':'#10B981')+'">'+gf(creditKrw)+'</div><div style="font-size:10px;color:var(--tl)">크레딧 잔액</div></div>'
+      +'<div style="text-align:center;background:#fff7ed;border-radius:8px;padding:8px"><div style="font-size:13px;font-weight:800;color:#c2410c">'+gf(s.creditReceivedTotal||0)+'</div><div style="font-size:10px;color:var(--tl)">크레딧 지급합</div></div>'
+      +'<div style="text-align:center;background:#eff6ff;border-radius:8px;padding:8px"><div style="font-size:13px;font-weight:800;color:#2563eb">'+gf(s.chargeApprovedTotal||0)+'</div><div style="font-size:10px;color:var(--tl)">고객충전 승인</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.userCount||0)+'</div><div style="font-size:10px;color:var(--tl)">회원</div></div>'
       +'<div style="text-align:center;background:#f5f0ff;border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--p2)">'+(s.orderCount||0)+'</div><div style="font-size:10px;color:var(--tl)">주문</div></div>'
-      +'<div style="text-align:center;background:'+(lowCredit?'#fef2f2':'#ecfdf5')+';border-radius:8px;padding:8px"><div style="font-size:14px;font-weight:800;color:'+(lowCredit?'#EF4444':'#10B981')+'">'+gf(creditKrw)+'</div><div style="font-size:10px;color:var(--tl)">크레딧</div></div>'
+      +'<div style="text-align:center;background:'+(s.pendingCharge>0?'#fef3c7':'#f5f0ff')+';border-radius:8px;padding:8px"><div style="font-size:18px;font-weight:800;color:'+(s.pendingCharge>0?'#F59E0B':'var(--p2)')+'">'+(s.pendingCharge||0)+'</div><div style="font-size:10px;color:var(--tl)">충전 대기</div></div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'
       +'<div style="text-align:center;background:#eff6ff;border-radius:8px;padding:8px"><div style="font-size:13px;font-weight:800;color:#2563eb">'+gf(s.stat_revenue||0)+'</div><div style="font-size:10px;color:var(--tl)">고객 매출</div></div>'
@@ -3902,7 +3967,7 @@ function renderSiteList(sites){
       +'<button class="btn binf bxs" onclick="openEditSite(\''+s.id+'\')">' + '수정</button>'
       +'<button class="btn bpu bxs" onclick="manageAdmin(\''+s.id+'\')">👤 관리자</button>'
       +(s.id!=='default'?'<button class="btn ber bxs" onclick="deleteSite(\''+s.id+'\',\''+s.name+'\')">🗑 삭제</button>':'')
-      +(s.pending충전하기>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pending충전하기+'건</button>':'')
+      +(s.pendingCharge>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pendingCharge+'건</button>':'')
       +'</div>'
       +'</div>';
   }).join('');
@@ -3946,6 +4011,8 @@ async function loadSuperCharges(){
   d.forEach(function(c){
     var actions=(c.status==='pending'
       ?'<button class="btn bok bxs" onclick="procChargeSuper(\''+c.id+'\',\'approve\')">✓</button><button class="btn ber bxs" onclick="procChargeSuper(\''+c.id+'\',\'reject\')">✗</button>'
+      :c.status==='approved'
+      ?'<button class="btn bxs" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74" onclick="revChargeSuper(\''+c.id+'\','+Math.round(c.amount)+')">↩ 회수</button>'
       :'<span style="font-size:11px;color:#9A8AB0">완료</span>')
       +'<button class="btn bxs" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1" onclick="delChargeSuper(\''+c.id+'\')">🗑</button>';
     h+='<tr><td style="font-size:11px;color:var(--p2);font-weight:600">'+(c.site_name||c.site_id||'-')+'</td>'
@@ -3969,6 +4036,13 @@ async function delChargeSuper(id){
   var d=await api('/api/admin/charges/delete','POST',{id:id});
   if(d.error){toast(d.error,'err');return}
   toast('충전 내역 삭제됨','ok');
+  loadSuperCharges();
+}
+async function revChargeSuper(id,amt){
+  if(!confirm('₩'+amt.toLocaleString()+' 충전 승인을 회수하시겠습니까?\n회원 잔액에서 차감됩니다.'))return;
+  var d=await api('/api/super/charges/reverse','POST',{id:id});
+  if(d.error){toast(d.error,'err');return}
+  toast('충전 회수 완료 (잔액 ₩'+Math.round(d.balance||0).toLocaleString()+')','ok');
   loadSuperCharges();
 }
 
