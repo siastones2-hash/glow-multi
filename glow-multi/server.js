@@ -3763,7 +3763,18 @@ app.get('/api/super/peakerr-vietnam-preview', requireSuperAdmin, async (req, res
     const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
     const existing = new Set(existingR.rows.map(r => String(r.api_id)));
     const items = [];
+    let tiktokTotal = 0;
+    let tiktokVnLoose = 0;
+    const looseTt = [];
     for (const s of services) {
+      const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+      const low = full.toLowerCase();
+      if (low.includes('tiktok') || low.includes('tik tok')) tiktokTotal++;
+      const vnLoose = /vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|🇻🇳|베트남/.test(full);
+      if ((low.includes('tiktok') || low.includes('tik tok')) && vnLoose) {
+        tiktokVnLoose++;
+        looseTt.push({ apiId: String(s.service), name: s.name, category: s.category || '', rate: s.rate, alreadyInDb: existing.has(String(s.service)) });
+      }
       const hit = qualifiesVietnamImport(s);
       if (!hit) continue;
       items.push({
@@ -3779,7 +3790,15 @@ app.get('/api/super/peakerr-vietnam-preview', requireSuperAdmin, async (req, res
       });
     }
     items.sort((a, b) => parseFloat(a.rate) - parseFloat(b.rate));
-    res.json({ ok: true, count: items.length, newCount: items.filter(i => !i.alreadyInDb).length, items: items.slice(0, 80) });
+    res.json({
+      ok: true,
+      count: items.length,
+      newCount: items.filter(i => !i.alreadyInDb).length,
+      peakerrTiktokTotal: tiktokTotal,
+      peakerrTiktokVnLoose: tiktokVnLoose,
+      looseTiktokVn: looseTt.slice(0, 20),
+      items: items.slice(0, 80)
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
