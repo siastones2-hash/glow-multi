@@ -968,7 +968,7 @@ async function checkPeakerrBalance() {
       const lastAlert = await getGlobalSetting('peakerr_low_balance_alert');
       const today = new Date().toDateString();
       if (lastAlert !== today) {
-        await sendTelegramToSuper(`⚠️ <b>공급사 잔액 부족</b>\n\n현재 잔액: <b>$${balance.toFixed(2)}</b>\n\n공급사 사이트에서 충전해주세요.`);
+        await sendTelegramToSuper(`⚠️ <b>공급 API 잔액 부족</b>\n\n현재 잔액: <b>$${balance.toFixed(2)}</b>\n\n공급 API에서 충전해주세요.`);
         await setGlobalSetting('peakerr_low_balance_alert', today);
       }
     }
@@ -1057,14 +1057,14 @@ async function autoRefundOrder(order, peakerrData) {
     // 환불 처리 (이미 환불된 주문 중복 방지)
     if (refundPercent > 0 && !['refunded', 'partial_refunded'].includes(order.status)) {
       const fin = await restoreRefundFinancials(order, refundPercent, {
-        reason: `자동 환불 (Peakerr ${status}) - 주문 ${order.id}`,
+        reason: `자동 환불 (공급 ${status}) - 주문 ${order.id}`,
         adminId: 'system'
       });
       await query(`UPDATE orders SET cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
       await logActivity(
         order.site_id, 'system', '자동환불',
         `자동 환불 (${refundPercent}%)`, 'order', order.id,
-        `Peakerr ${status} → ₩${(fin.refundAmount || 0).toLocaleString()} 환불` +
+        `공급 ${status} → ₩${(fin.refundAmount || 0).toLocaleString()} 환불` +
           (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : '')
       );
     }
@@ -1413,7 +1413,7 @@ async function importHotPeakerrServices(opts = {}) {
     body: new URLSearchParams({ key: apiKey, action: 'services' })
   });
   const services = await resp.json();
-  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0 };
+  if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0 };
 
   const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
   const existing = new Set(existingR.rows.map(r => String(r.api_id)));
@@ -1572,7 +1572,7 @@ async function importNichePeakerrServices(opts = {}) {
     body: new URLSearchParams({ key: apiKey, action: 'services' })
   });
   const services = await resp.json();
-  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0, scanned: 0 };
+  if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0, scanned: 0 };
 
   const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
   const existing = new Set(existingR.rows.map(r => String(r.api_id)));
@@ -1738,7 +1738,7 @@ async function importKoreanAndPinterestServices(opts = {}) {
     body: new URLSearchParams({ key: apiKey, action: 'services' })
   });
   const services = await resp.json();
-  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0, korean: 0, pinterest: 0 };
+  if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0, korean: 0, pinterest: 0 };
 
   const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
   const existing = new Set(existingR.rows.map(r => String(r.api_id)));
@@ -1861,7 +1861,7 @@ async function importVietnamInstagramTiktokServices(opts = {}) {
     body: new URLSearchParams({ key: apiKey, action: 'services' })
   });
   const services = await resp.json();
-  if (!Array.isArray(services)) return { error: 'Peakerr API 응답 오류', added: [], count: 0, instagram: 0, tiktok: 0 };
+  if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0, instagram: 0, tiktok: 0 };
 
   const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
   const existing = new Set(existingR.rows.map(r => String(r.api_id)));
@@ -1924,7 +1924,7 @@ async function scanNewServices(opts = {}) {
       return result;
     }
     if (result.added.length > 0) {
-      let msg = `🔥 <b>Peakerr 핫상품 자동 추가</b>\n\n`;
+      let msg = `🔥 <b>핫상품 자동 추가</b>\n\n`;
       result.added.forEach((s, i) => {
         msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 45)}\n`;
         msg += `   💰 $${s.rate}/1K\n\n`;
@@ -2062,7 +2062,7 @@ async function runCatalogHealthCheck(autoRepair = true) {
   if (totalActive < 10) issues.push(`활성 상품 극소 (${totalActive}개)`);
 
   const apiKey = await getGlobalSetting('peakerr_api_key');
-  if (!apiKey) issues.push('Peakerr API 키 미설정');
+  if (!apiKey) issues.push('공급 API 키 미설정');
 
   const sitesR = await query(`SELECT id, name, domain FROM sites WHERE id != 'default' AND active=1`);
   const minHealthy = Math.max(5, Math.floor(totalActive * 0.1));
@@ -2088,7 +2088,7 @@ async function runCatalogHealthCheck(autoRepair = true) {
   }
 
   const balance = await checkPeakerrBalance().catch(() => null);
-  if (balance !== null && balance < 10) issues.push(`Peakerr 잔액 위험 ($${balance.toFixed(2)})`);
+  if (balance !== null && balance < 10) issues.push(`공급 API 잔액 위험 ($${balance.toFixed(2)})`);
 
   if (issues.length > 0) {
     const today = new Date().toDateString();
@@ -2874,7 +2874,7 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
     
     const result = await autoRefundOrder(order, peakerrData);
     const updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
-    res.json({ ok: true, order: updR.rows[0], peakerrStatus: peakerrData.status });
+    res.json({ ok: true, order: updR.rows[0], apiStatus: peakerrData.status, status: updR.rows[0]?.status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -3181,7 +3181,13 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     const r = siteId
       ? await query(`SELECT * FROM users WHERE site_id=$1 AND role!='superadmin' ORDER BY joined DESC`, [siteId])
-      : await query(`SELECT * FROM users WHERE role!='superadmin' ORDER BY joined DESC`);
+      : await query(`
+          SELECT u.*, s.name AS site_name, s.domain AS site_domain
+          FROM users u
+          LEFT JOIN sites s ON u.site_id = s.id
+          WHERE u.role != 'superadmin'
+          ORDER BY COALESCE(s.name, u.site_id), u.role, u.joined DESC
+        `);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -3948,8 +3954,8 @@ app.post('/api/super/import-niche-services', requireSuperAdmin, async (req, res)
     });
     if (result.error) return res.json({ error: result.error });
     const msg = result.count > 0
-      ? `${result.count}개 추가 (Peakerr 후보 ${result.scanned}개)`
-      : `Peakerr에 추가할 아마zon·이커머스·보너스 상품 없음`;
+      ? `${result.count}개 추가 (후보 ${result.scanned}개)`
+      : `추가할 아마zon·이커머스·보너스 상품 없음`;
     res.json({ ok: true, message: msg, ...result });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3965,7 +3971,7 @@ app.get('/api/super/peakerr-vietnam-preview', requireSuperAdmin, async (req, res
       body: new URLSearchParams({ key: apiKey, action: 'services' })
     });
     const services = await resp.json();
-    if (!Array.isArray(services)) return res.json({ error: 'Peakerr API 응답 오류' });
+    if (!Array.isArray(services)) return res.json({ error: '공급 API 응답 오류' });
     const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
     const existing = new Set(existingR.rows.map(r => String(r.api_id)));
     const items = [];
@@ -4019,8 +4025,8 @@ app.post('/api/super/import-vietnam', requireSuperAdmin, async (req, res) => {
     });
     if (result.error) return res.json({ error: result.error });
     const msg = result.count > 0
-      ? `베트남 인스타 ${result.instagram}개 · 틱톡 ${result.tiktok}개 추가 (Peakerr 후보 ${result.scanned}개)`
-      : '추가할 베트남 Instagram·TikTok 상품 없음 (이미 등록 또는 Peakerr 미제공)';
+      ? `베트남 인스타 ${result.instagram}개 · 틱톡 ${result.tiktok}개 추가 (후보 ${result.scanned}개)`
+      : '추가할 베트남 Instagram·TikTok 상품 없음 (이미 등록 또는 공급 목록 미제공)';
     res.json({ ok: true, message: msg, ...result });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -4038,7 +4044,7 @@ app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) =
     if (result.error) return res.json({ error: result.error });
     const msg = result.count > 0
       ? `한국 ${result.korean}개 · Pinterest ${result.pinterest}개 추가`
-      : '추가할 한국·Pinterest HQ 상품 없음 (이미 등록 또는 Peakerr 미제공)';
+      : '추가할 한국·Pinterest HQ 상품 없음 (이미 등록 또는 공급 목록 미제공)';
     res.json({ ok: true, message: msg, ...result });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

@@ -1481,7 +1481,7 @@ tr:last-child td{border-bottom:none}
           <div class="sc" style="background:#ecfdf5;border:1px solid #6ee7b7"><div style="font-size:10px;letter-spacing:.1em;color:#047857;font-weight:700;text-transform:uppercase;margin-bottom:5px">✨ 슈퍼 마진 수익 (예상)</div><div style="font-size:22px;font-weight:800;color:#047857" id="aSSuperProfit">₩0</div></div>
         </div>
         <div id="aSuperInfoBox" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#0369a1">
-          ℹ️ <strong>슈퍼 수익</strong>은 파트너에게 판 크레딧·Peakerr 마진 기준입니다.
+          ℹ️ <strong>슈퍼 수익</strong>은 파트너에게 판 크레딧·슈퍼 마진 기준입니다.
           파트너 고객 결제 <strong id="aSPartnerRetail">₩0</strong> · 파트너 관리자 작업 크레딧 <strong id="aSPartnerAdmWork">₩0</strong> — <span style="color:#64748b">슈퍼 손익과 별도</span>
         </div>
         <div id="aAdminOrderBox" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#64748b">
@@ -1527,7 +1527,28 @@ tr:last-child td{border-bottom:none}
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
         <div class="atab-body" id="ap-users">
-          <div class="tw"><table><thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead><tbody id="aUTb"></tbody></table></div>
+          <div id="aUserFilters" style="display:none;margin-bottom:12px;flex-wrap:wrap;gap:8px;align-items:center">
+            <select id="aUserSiteFilter" onchange="renderAdmUsersFilter()" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);min-width:160px">
+              <option value="">전체 사이트</option>
+            </select>
+            <select id="aUserRoleFilter" onchange="renderAdmUsersFilter()" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd)">
+              <option value="">전체 등급</option>
+              <option value="admin">관리자</option>
+              <option value="partner">파트너</option>
+              <option value="user">일반 회원</option>
+            </select>
+            <input type="search" id="aUserSearch" placeholder="이름·이메일 검색" oninput="renderAdmUsersFilter()" style="flex:1;min-width:140px;font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid var(--bd)"/>
+            <select id="aUserSort" onchange="renderAdmUsersFilter()" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd)">
+              <option value="site">사이트 → 등급</option>
+              <option value="joined">가입일 최신</option>
+              <option value="name">이름순</option>
+            </select>
+            <span id="aUserCount" style="font-size:12px;color:var(--tl);white-space:nowrap"></span>
+          </div>
+          <div class="tw"><table><thead><tr>
+            <th id="aUserSiteTh" style="display:none">사이트</th>
+            <th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th>
+          </tr></thead><tbody id="aUTb"></tbody></table></div>
         </div>
         <div class="atab-body" id="ap-charges">
           <div class="ibox" style="margin-bottom:10px" id="aChargeHint">✦ 입금 확인 후 <strong>승인</strong>을 누르면 잔액에 자동 추가됩니다.</div>
@@ -1859,14 +1880,14 @@ tr:last-child td{border-bottom:none}
                 • 신규 핫상품은 <strong>매주 일요일</strong> 자동 추가<br>
                 • <strong>네이버·카카오·쿠팡</strong>은 연동 목록에 있을 때만 「아마zon·이커머스 스캔」으로 추가<br>
                 • 한국 SNS(인스타·유튜브 한국 타겟)는 기본 큐레이션 + 「🇰🇷 한국·Pinterest 프리미엄」<br>
-                • 베트남 Instagram·TikTok은 「🇻🇳 베트남 IG·TT」로 Peakerr에서 자동 추가<br>
+                • 베트남 Instagram·TikTok은 「🇻🇳 베트남 IG·TT」로 공급 API에서 자동 추가<br>
                 • 자동 추가 상품은 <strong>한글 상품명</strong>으로 등록 · GLOW·파트너 사이트 <strong>동시</strong> 반영
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="bo bsm" onclick="manualSyncOrders()">🔄 주문 지금 동기화</button>
                 <button class="bo bsm" onclick="manualSyncServices()">📦 서비스 지금 체크</button>
                 <button class="bo bsm" onclick="localizeServiceNames()">🇰🇷 영문→한글 (전체 사이트)</button>
-                <button class="bo bsm" onclick="importHotPeakerrServices()">🔥 핫상품 추가</button>
+                <button class="bo bsm" onclick="importHotServices()">🔥 핫상품 추가</button>
                 <button class="bo bsm" onclick="importKrPinterestServices()">🇰🇷 한국·Pinterest 프리미엄</button>
                 <button class="bo bsm" onclick="importVietnamServices()">🇻🇳 베트남 IG·TT</button>
                 <button class="bo bsm" onclick="importNicheServices()">🛒 아마zon·이커머스 스캔</button>
@@ -1879,7 +1900,7 @@ tr:last-child td{border-bottom:none}
               <div style="font-size:12px;color:var(--tm);margin-bottom:10px">파트너 사이트에 적용하는 공급 마진입니다. <b>본사 고객 마진과 별개</b>입니다.</div>
               <div class="fg"><label>슈퍼 마진율 (%)</label><input type="number" id="spSuperMargin" placeholder="50" min="0" max="500"/></div>
               <div class="fg"><label>파트너 도매 마진 (%)</label><input type="number" id="spGlobalSiteMargin" placeholder="50" min="0" max="500"/></div>
-              <div style="font-size:11px;color:var(--tl);margin-bottom:10px">Peakerr 원가 → +슈퍼마진 → +파트너도매마진 = <strong>파트너 크레딧 단가</strong> → +파트너자기마진 = 고객가</div>
+              <div style="font-size:11px;color:var(--tl);margin-bottom:10px">공급 원가 → +슈퍼마진 → +파트너도매마진 = <strong>파트너 크레딧 단가</strong> → +파트너자기마진 = 고객가</div>
               <button class="bp bsm" style="padding:9px 16px" onclick="saveSuperMargin()">저장</button>
             </div>
             <div class="card" style="border-color:rgba(16,185,129,.35)">
@@ -3219,7 +3240,7 @@ async function refreshOrder(orderId){
   toast('상태 확인 중...','ok');
   var d=await api('/api/orders/refresh/'+orderId,'POST');
   if(d.error){toast(d.error,'err');return}
-  toast('상태 업데이트 완료: '+(d.status||d.peakerrStatus||'확인됨'),'ok');
+  toast('상태 업데이트 완료: '+(d.status||d.apiStatus||'확인됨'),'ok');
   loadOrders();
   updBal();
 }
@@ -3401,28 +3422,7 @@ async function delOrder(id){
   toast('주문 내역 삭제됨','ok');
   loadAdmOrders();
 }
-async function _loadAdmUsersInline(){
-  var d=await api('/api/admin/users');var tb=ge('aUTb'),h='';if(!Array.isArray(d))return;
-  d.forEach(function(u){
-    var is정지=u.status==='banned';
-    var isAdmin=['admin','partner','superadmin'].includes(u.role);
-    h+='<tr style="'+(is정지?'opacity:.5':'')+'">'
-      +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+(isAdmin?' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+u.role+'</span>':'')+'</td>'
-      +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
-      +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
-      +'<td><span class="bdg" style="'+(is정지?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(is정지?'정지':'정상')+'</span></td>'
-      +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
-      +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
-      +'<button class="btn binf bxs" onclick="openBalM(this)" data-uid="'+u.id+'" data-uname="'+u.name+'" data-bal="'+(u.balance||0)+'">잔액</button>'
-      +'<button class="btn binf bxs" onclick="openUserDetail(\''+u.id+'\')">상세</button>'
-      +(!isAdmin?(is정지
-        ?'<button class="btn bok bxs" onclick="banUser(\''+u.id+'\',\''+u.name+'\')">해제</button>'
-        :'<button class="btn ber bxs" onclick="banUser(\''+u.id+'\',\''+u.name+'\')">정지</button>'
-        )+'<button class="btn ber bxs" onclick="deleteUser(\''+u.id+'\',\''+u.name+'\')">탈퇴</button>':'')
-      +'</div></td></tr>';
-  });
-  ge('aUTb').innerHTML=h;
-}
+async function _loadAdmUsersInline(){ loadAdmUsers(); }
 async function loadAdmCharges(){
   var d=await api('/api/admin/charges');var tb=ge('aCTb'),h='';
   var isSuper=CUR.role==='superadmin';
@@ -3905,7 +3905,7 @@ async function importKrPinterestServices(){
 }
 
 async function importVietnamServices(){
-  if(!confirm('베트남 타겟 Instagram·TikTok 상품을\nPeakerr에서 골라 전 사이트에 추가합니다.\n\n없으면 추가하지 않습니다.\n\n계속할까요?'))return;
+  if(!confirm('베트남 타겟 Instagram·TikTok 상품을\n공급 API에서 골라 전 사이트에 추가합니다.\n\n없으면 추가하지 않습니다.\n\n계속할까요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>베트남 IG·TT 스캔 중...';
   var d=await api('/api/super/import-vietnam','POST',{maxPerPlatform:10});
   if(d.error){if(res)res.innerHTML='<span style="color:#EF4444">❌ '+d.error+'</span>';toast(d.error,'err');return}
@@ -3931,7 +3931,7 @@ async function localizeServiceNames(){
   if(el)el.innerHTML=d.ok?('<span style="color:#10B981">✅ '+(d.message||'완료')+'</span>'):('<span style="color:#EF4444">❌ '+(d.error||'실패')+'</span>');
   if(d.ok){toast(d.message||'한글화 완료','ok');loadSuperServices();}
 }
-async function importHotPeakerrServices(){
+async function importHotServices(){
   if(!confirm('고품질 신규 상품만 골라 추가합니다.\n(유튜브·인스타·틱톡 등 플랫폼당 최대 5개 · 기존 상품 유지)\n\n계속할까요?'))return;
   var res=ge('manualSyncRes');if(res)res.innerHTML='<span class="spin spin2"></span>상품 스캔 중...';
   var d=await api('/api/super/import-hot-services','POST',{maxPerPlatform:5});
@@ -4345,17 +4345,83 @@ async function saveSiteEdit(siteId){
 
 async function loadAdmUsers(){
   var d=await api('/api/admin/users');
-  var tb=ge('aUTb');
   if(!Array.isArray(d))return;
+  window._allAdmUsers=d;
+  var isSuper=CUR&&CUR.role==='superadmin';
+  var filters=ge('aUserFilters');
+  var siteTh=ge('aUserSiteTh');
+  if(filters)filters.style.display=isSuper?'flex':'none';
+  if(siteTh)siteTh.style.display=isSuper?'':'none';
+  if(isSuper){
+    var sel=ge('aUserSiteFilter');
+    if(sel){
+      var sites={},opts='<option value="">전체 사이트</option>';
+      d.forEach(function(u){
+        if(!u.site_id)return;
+        if(!sites[u.site_id])sites[u.site_id]={name:u.site_name||u.site_id,domain:u.site_domain||''};
+      });
+      Object.keys(sites).sort(function(a,b){return (sites[a].name||'').localeCompare(sites[b].name||'');}).forEach(function(id){
+        var s=sites[id];
+        opts+='<option value="'+id+'">'+(s.name||id)+(s.domain?' ('+s.domain+')':'')+'</option>';
+      });
+      sel.innerHTML=opts;
+    }
+  }
+  renderAdmUsersFilter();
+}
+function _userRoleLabel(role){
+  if(role==='admin')return '관리자';
+  if(role==='partner')return '파트너';
+  return '';
+}
+function renderAdmUsersFilter(){
+  var d=window._allAdmUsers||[];
+  var isSuper=CUR&&CUR.role==='superadmin';
+  var tb=ge('aUTb');
+  if(!tb)return;
+  var siteF=(ge('aUserSiteFilter')&&ge('aUserSiteFilter').value)||'';
+  var roleF=(ge('aUserRoleFilter')&&ge('aUserRoleFilter').value)||'';
+  var q=((ge('aUserSearch')&&ge('aUserSearch').value)||'').trim().toLowerCase();
+  var sort=(ge('aUserSort')&&ge('aUserSort').value)||'site';
+  var list=d.filter(function(u){
+    if(siteF&&u.site_id!==siteF)return false;
+    if(roleF&&u.role!==roleF)return false;
+    if(q&&(u.name||'').toLowerCase().indexOf(q)<0&&(u.email||'').toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+  var roleOrder={admin:0,partner:1,user:2};
+  list.sort(function(a,b){
+    if(sort==='joined')return (b.joined||'').localeCompare(a.joined||'');
+    if(sort==='name')return (a.name||'').localeCompare(b.name||'');
+    var sa=(a.site_name||a.site_id||'').localeCompare(b.site_name||b.site_id||'');
+    if(sa!==0)return sa;
+    var ra=(roleOrder[a.role]??9)-(roleOrder[b.role]??9);
+    if(ra!==0)return ra;
+    return (b.joined||'').localeCompare(a.joined||'');
+  });
+  var cnt=ge('aUserCount');
+  if(cnt)cnt.textContent=list.length+'명 / 전체 '+d.length+'명';
   tb.innerHTML='';
-  d.forEach(function(u){
+  if(!list.length){
+    var cols=isSuper?7:6;
+    tb.innerHTML='<tr><td colspan="'+cols+'" style="text-align:center;padding:22px;color:#9A8AB0">조건에 맞는 회원이 없습니다</td></tr>';
+    return;
+  }
+  list.forEach(function(u){
     var isBanned=u.status==='banned';
-    var isAdmin=['admin','partner','superadmin'].includes(u.role);
+    var isAdmin=['admin','partner'].includes(u.role);
     var tr=document.createElement('tr');
     if(isBanned)tr.style.opacity='0.5';
-    var roleBadge=isAdmin?(' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+u.role+'</span>'):'';
+    var roleLbl=_userRoleLabel(u.role);
+    var roleBadge=roleLbl?(' <span class="bdg" style="background:'+(u.role==='partner'?'rgba(37,99,235,.12);color:#2563EB':'rgba(114,9,183,.1);color:#B5179E')+';font-size:10px">'+roleLbl+'</span>'):'';
     var statusBadge='<span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span>';
-    tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+'</td>'
+    var siteCell='';
+    if(isSuper){
+      siteCell='<td style="font-size:12px;white-space:nowrap"><div style="font-weight:700;color:#1A1030">'+(u.site_name||u.site_id||'-')+'</div>'
+        +(u.site_domain?'<div style="font-size:10px;color:#9A8AB0">'+u.site_domain+'</div>':'')+'</td>';
+    }
+    tr.innerHTML=siteCell
+      +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+'</td>'
       +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
       +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
       +'<td>'+statusBadge+'</td>'
@@ -4675,7 +4741,7 @@ async function calcPriceTable(){
       thead.innerHTML = '<tr style="background:#f5f0ff">'
         + '<th style="padding:8px;text-align:left;border-bottom:2px solid var(--bd2);font-weight:700">서비스명</th>'
         + '<th style="padding:8px;text-align:center;border-bottom:2px solid var(--bd2);font-weight:700">카테고리</th>'
-        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:var(--tl)">피커 원가($/1K)</th>'
+        + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:var(--tl)">원가($/1K)</th>'
         + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:var(--p2)">공급가(₩/1K)</th>'
         + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:#10B981">내 순수익(₩/1K)</th>'
         + '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--bd2);font-weight:700;color:#F59E0B">고객가(₩/1K)</th>'
