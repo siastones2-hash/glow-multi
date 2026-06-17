@@ -713,6 +713,30 @@ async function getCreditBalanceKrw(siteId, creditUsd, siteEx) {
   return Math.round((parseFloat(creditUsd) || 0) * siteEx);
 }
 
+/** 휴대전화 정규화 (숫자만 · 010 형식) */
+function normalizePhone(phone) {
+  let d = String(phone || '').replace(/\D/g, '');
+  if (d.startsWith('82') && d.length >= 11) d = '0' + d.slice(2);
+  if (d.length === 10 && d.startsWith('10')) d = '0' + d;
+  if (!/^01\d{8,9}$/.test(d)) return null;
+  return d;
+}
+
+/** 추천 보너스 — 사이트당 전화번호 1회만 */
+async function assertPhoneAvailableForReferral(siteId, phone, excludeUserId) {
+  const norm = normalizePhone(phone);
+  if (!norm) return { ok: false, error: '올바른 휴대전화 번호를 입력하세요 (예: 010-1234-5678)' };
+  const r = await query(`
+    SELECT id FROM users
+    WHERE site_id=$1 AND referred_by IS NOT NULL
+      AND regexp_replace(COALESCE(phone,''), '[^0-9]', '', 'g') = $2
+      AND id <> $3
+    LIMIT 1
+  `, [siteId, norm, excludeUserId || '']);
+  if (r.rows.length) return { ok: false, error: '이 전화번호는 이미 추천 보너스를 받았습니다.' };
+  return { ok: true, norm };
+}
+
 /** 사이트별 마진·환율 (주문/환불 공통) */
 async function getSiteMargins(site) {
   const globalExrateStr = await getGlobalSetting('global_exrate');
@@ -2357,17 +2381,32 @@ app.post('/api/register', async (req, res) => {
     const { referral_code } = req.body;
     let referredBy = null;
     let signupBonus = 0;
-    if (referral_code) {
-      const refUser = await query(`SELECT id FROM users WHERE site_id=$1 AND referral_code=$2`, [req.siteId, referral_code]);
-      if (refUser.rows.length > 0) {
-        referredBy = refUser.rows[0].id;
-        signupBonus = 500; // 추천인 가입 시 ₩500 포인트 지급
-        // 추천인에게도 포인트 지급
-        await query(`UPDATE users SET points=COALESCE(points,0)+500, referral_bonus=COALESCE(referral_bonus,0)+500 WHERE id=$1`, [referredBy]);
+    const refNorm = String(referral_code || '').trim().toUpperCase();
+    let phoneNorm = phone ? normalizePhone(phone) : null;
+    if (refNorm) {
+      const refUser = await query(
+        `SELECT id FROM users WHERE site_id=$1 AND UPPER(referral_code)=$2`,
+        [req.siteId, refNorm]
+      );
+      if (!refUser.rows.length) {
+        const siteLabel = req.site?.name || '이 사이트';
+        return res.json({ error: `유효하지 않은 추천 코드입니다. ${siteLabel} 회원 코드인지 확인하세요.` });
       }
+      if (!phoneNorm) {
+        return res.json({ error: '추천코드 보너스(500P)를 받으려면 전화번호를 입력하세요.' });
+      }
+      const phoneChk = await assertPhoneAvailableForReferral(req.siteId, phoneNorm, id);
+      if (!phoneChk.ok) return res.json({ error: phoneChk.error });
+      phoneNorm = phoneChk.norm;
+      referredBy = refUser.rows[0].id;
+      signupBonus = 500;
+      await query(
+        `UPDATE users SET points=COALESCE(points,0)+500, referral_bonus=COALESCE(referral_bonus,0)+500 WHERE id=$1`,
+        [referredBy]
+      );
     }
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance,referral_code,referred_by,points,phone) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus, phone]);
+      [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus, phoneNorm || phone]);
     const token = createToken({ userId: id, role: 'user', siteId: req.siteId });
     // 본사(default) 사이트 가입만 슈퍼관리자 텔레그램 알림 (파트너·지인 사이트 제외)
     if (req.siteId === 'default') {
@@ -2375,7 +2414,7 @@ app.post('/api/register', async (req, res) => {
       const siteLabel = esc(req.site?.name || 'GLOW');
       let tgMsg = `👤 <b>신규 가입</b> [${siteLabel}]\n닉네임: ${esc(name)}\n이메일: ${esc(email)}`;
       if (phone) tgMsg += `\n📱 ${esc(phone)}`;
-      if (referral_code) tgMsg += `\n🔗 추천코드 입력: ${esc(referral_code)}`;
+      if (referral_code) tgMsg += `\n🔗 추천코드 입력: ${esc(refNorm)}`;
       if (signupBonus) tgMsg += `\n🎁 가입 보너스: ${signupBonus}P`;
       tgMsg += `\n⏰ ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`;
       sendTelegramToSuper(tgMsg).catch(() => {});
@@ -2509,7 +2548,7 @@ app.post('/api/reset-password', async (req, res) => {
 
 app.get('/api/me', requireAuth, async (req, res) => {
   try {
-    const r = await query(`SELECT id,name,email,role,balance,status,COALESCE(points,0) as points,referral_code,COALESCE(phone,'') as phone FROM users WHERE id=$1`, [req.session.userId]);
+    const r = await query(`SELECT id,name,email,role,balance,status,COALESCE(points,0) as points,referral_code,referred_by,COALESCE(phone,'') as phone FROM users WHERE id=$1`, [req.session.userId]);
     const user = r.rows[0];
     if (!user) return res.json({ error: '사용자 없음' });
     // referral_code 없으면 자동 생성
@@ -2551,6 +2590,42 @@ app.post('/api/me/phone', requireAuth, async (req, res) => {
     if (phone.length > 30) return res.json({ error: '전화번호가 너무 깁니다' });
     await query(`UPDATE users SET phone=$1 WHERE id=$2`, [phone, req.session.userId]);
     res.json({ ok: true, phone });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/** 가입 후 추천 코드 등록 (1회) — 신규·기존 회원 모두 */
+app.post('/api/referral/apply', requireAuth, async (req, res) => {
+  try {
+    const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
+    const user = userR.rows[0];
+    if (!user) return res.json({ error: '사용자를 찾을 수 없습니다' });
+    if (user.role !== 'user') return res.json({ error: '일반 회원만 추천 코드를 등록할 수 있습니다' });
+    if (user.referred_by) return res.json({ error: '이미 추천 코드를 등록했습니다' });
+    const refNorm = String(req.body.referral_code || '').trim().toUpperCase();
+    if (!refNorm) return res.json({ error: '추천 코드를 입력하세요' });
+    if (user.referral_code && user.referral_code.toUpperCase() === refNorm) {
+      return res.json({ error: '본인 추천 코드는 사용할 수 없습니다' });
+    }
+    const phoneRaw = (req.body.phone || user.phone || '').trim();
+    if (!phoneRaw) return res.json({ error: '추천 보너스(500P)를 받으려면 전화번호를 입력하세요.' });
+    const phoneChk = await assertPhoneAvailableForReferral(req.siteId, phoneRaw, user.id);
+    if (!phoneChk.ok) return res.json({ error: phoneChk.error });
+    const refUser = await query(
+      `SELECT id, name FROM users WHERE site_id=$1 AND UPPER(referral_code)=$2 AND id<>$3`,
+      [req.siteId, refNorm, user.id]
+    );
+    if (!refUser.rows.length) {
+      const siteLabel = req.site?.name || '이 사이트';
+      return res.json({ error: `유효하지 않은 추천 코드입니다. ${siteLabel} 회원 코드인지 확인하세요.` });
+    }
+    const referrer = refUser.rows[0];
+    await query(`UPDATE users SET referred_by=$1, phone=$2, points=COALESCE(points,0)+500 WHERE id=$3`, [referrer.id, phoneChk.norm, user.id]);
+    await query(
+      `UPDATE users SET points=COALESCE(points,0)+500, referral_bonus=COALESCE(referral_bonus,0)+500 WHERE id=$1`,
+      [referrer.id]
+    );
+    const afterR = await query(`SELECT points FROM users WHERE id=$1`, [user.id]);
+    res.json({ ok: true, points: afterR.rows[0]?.points || 0, message: '500P 지급 완료!' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

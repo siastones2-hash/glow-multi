@@ -1237,8 +1237,8 @@ tr:last-child td{border-bottom:none}
       <div class="fg"><label>닉네임</label><input type="text" id="rName" placeholder="닉네임"/></div>
       <div class="fg"><label>이메일</label><input type="email" id="r이메일" placeholder="이메일" autocomplete="email"/></div>
       <div class="fg"><label>비밀번호 (6자 이상)</label><input type="password" id="rPw" placeholder="비밀번호" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"/></div>
-      <div class="fg"><label>전화번호 (선택)</label><input type="tel" id="rPhone" placeholder="010-0000-0000" autocomplete="tel"/></div>
-      <div class="fg"><label>추천 코드 (선택) <span style="font-size:11px;color:var(--tl)">· 입력 시 500P 지급!</span></label><input type="text" id="rRef" placeholder="추천 코드 입력 (선택사항)" style="text-transform:uppercase"/></div>
+      <div class="fg"><label>전화번호 <span id="rPhoneLabel" style="font-size:11px;color:var(--tl)">(선택)</span></label><input type="tel" id="rPhone" placeholder="010-0000-0000" autocomplete="tel" oninput="syncRefPhoneHint()"/></div>
+      <div class="fg"><label>추천 코드 (선택) <span style="font-size:11px;color:var(--tl)">· 코드+전화번호 입력 시 500P</span></label><input type="text" id="rRef" placeholder="추천 코드 입력 (선택사항)" style="text-transform:uppercase" oninput="syncRefPhoneHint()"/></div>
       <button class="bp bpf" onclick="doRegister()">가입하기 →</button>
     </div>
     <div style="text-align:center;margin-top:16px">
@@ -1358,10 +1358,18 @@ tr:last-child td{border-bottom:none}
         <!-- 추천인 카드 -->
         <div class="card" style="margin-bottom:16px">
           <div style="font-size:14px;font-weight:800;margin-bottom:8px">🔗 친구 추천</div>
-          <div style="font-size:12px;color:var(--tl);margin-bottom:8px">친구가 내 코드로 가입하면 나와 친구 모두 500P 지급!</div>
+          <div style="font-size:12px;color:var(--tl);margin-bottom:8px">친구가 내 코드로 가입하면 나와 친구 모두 500P (전화번호 1개당 1회)</div>
           <div style="display:flex;gap:8px;align-items:center">
             <div style="flex:1;background:#f5f0ff;border:1.5px solid var(--bd2);border-radius:10px;padding:10px;font-size:14px;font-weight:700;color:var(--p2);text-align:center" id="myRefCode">로딩 중...</div>
             <button onclick="copyRefCode()" class="bo bsm">복사</button>
+          </div>
+          <div id="refApplyBox" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)">
+            <div style="font-size:12px;color:var(--tl);margin-bottom:8px">🎁 추천코드 + <strong>전화번호</strong> 입력 시 500P (번호당 1회)</div>
+            <div class="fg" style="margin-bottom:8px"><input type="tel" id="applyRefPhone" placeholder="010-0000-0000" style="width:100%"/></div>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="applyRefCode" placeholder="추천 코드" style="flex:1;text-transform:uppercase" onkeydown="if(event.key==='Enter')applyRefCode()"/>
+              <button onclick="applyRefCode()" class="bp bsm" style="white-space:nowrap">500P 받기</button>
+            </div>
           </div>
         </div>
         <div style="font-size:14px;font-weight:800;margin-bottom:12px">🔥 인기 서비스</div>
@@ -2875,6 +2883,7 @@ async function doRegister(){
   var ref=(ge('rRef')?.value||'').trim().toUpperCase();
   var phone=(ge('rPhone')?.value||'').trim();
   if(!n||!e||!p){toast('모든 항목을 입력하세요','err');return}
+  if(ref&&!phone){toast('추천코드 보너스를 받으려면 전화번호를 입력하세요','err');return}
   var body={name:n,email:e,pw:p};
   if(ref)body.referral_code=ref;
   if(phone)body.phone=phone;
@@ -2950,8 +2959,29 @@ function updBal(){
   if(ge('stPoints')) ge('stPoints').textContent = pts.toLocaleString()+'P';
   // 추천 코드
   if(ge('myRefCode') && CUR.referral_code) ge('myRefCode').textContent = CUR.referral_code;
-  // 포인트 카드 숨기기 (0일때)
-  var pc=ge('pointsCard');if(pc)pc.style.display=pts>0?'block':'none';
+  var refBox=ge('refApplyBox');
+  if(refBox){
+    var canApply=!CUR.referred_by && CUR.role==='user';
+    refBox.style.display=canApply?'block':'none';
+    var ap=ge('applyRefPhone');
+    if(ap&&CUR.phone&&!ap.value)ap.value=CUR.phone;
+  }
+  // 포인트 카드 — 0이어도 추천 등록 가능하면 표시
+  var pc=ge('pointsCard');if(pc)pc.style.display=(pts>0||!CUR.referred_by)?'block':'none';
+}
+async function applyRefCode(){
+  var code=(ge('applyRefCode')?.value||'').trim().toUpperCase();
+  var phone=(ge('applyRefPhone')?.value||CUR.phone||'').trim();
+  if(!code){toast('추천 코드를 입력하세요','err');return}
+  if(!phone){toast('전화번호를 입력하세요','err');return}
+  var d=await api('/api/referral/apply','POST',{referral_code:code,phone:phone});
+  if(d.error){toast(d.error,'err');return}
+  CUR.points=d.points||0;
+  CUR.referred_by='applied';
+  toast(d.message||'500P 지급 완료! ✨','ok');
+  updBal();
+  var refBox=ge('refApplyBox');if(refBox)refBox.style.display='none';
+  var pc=ge('pointsCard');if(pc)pc.style.display='block';
 }
 async function convertPoints(){
   var pts = CUR.points||0;
@@ -2962,6 +2992,11 @@ async function convertPoints(){
   toast('₩'+d.converted.toLocaleString()+' 전환 완료! 🎉','ok');
   CUR.points=0; CUR.balance=(CUR.balance||0)+d.converted;
   updBal();
+}
+function syncRefPhoneHint(){
+  var ref=(ge('rRef')?.value||'').trim();
+  var lbl=ge('rPhoneLabel');
+  if(lbl)lbl.textContent=ref?'(추천코드 입력 시 필수)':'(선택)';
 }
 function copyRefCode(){
   var code=CUR.referral_code||'';
