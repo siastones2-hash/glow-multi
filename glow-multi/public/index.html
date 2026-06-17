@@ -1542,7 +1542,6 @@ tr:last-child td{border-bottom:none}
               <div id="aUserRoleChips" style="display:flex;flex-wrap:wrap;gap:6px">
                 <button type="button" class="aUserChip on" data-role="" onclick="setAdmUserRoleFilter('')">전체</button>
                 <button type="button" class="aUserChip" data-role="admin" onclick="setAdmUserRoleFilter('admin')">관리자</button>
-                <button type="button" class="aUserChip" data-role="partner" onclick="setAdmUserRoleFilter('partner')">파트너</button>
                 <button type="button" class="aUserChip" data-role="user" onclick="setAdmUserRoleFilter('user')">일반 회원</button>
               </div>
               <span id="aUserCount" style="font-size:12px;color:var(--tl);margin-left:auto;white-space:nowrap"></span>
@@ -4358,12 +4357,11 @@ function setAdmUserRoleFilter(role){
   renderAdmUsersFilter();
 }
 function _userRoleLabel(role){
-  if(role==='admin')return '관리자';
-  if(role==='partner')return '파트너';
+  if(role==='admin'||role==='partner')return '관리자';
   return '';
 }
 function _sortAdmUsers(list){
-  var roleOrder={admin:0,partner:1,user:2};
+  var roleOrder={admin:0,partner:0,user:1};
   list.sort(function(a,b){
     var ra=(roleOrder[a.role]??9)-(roleOrder[b.role]??9);
     if(ra!==0)return ra;
@@ -4372,18 +4370,16 @@ function _sortAdmUsers(list){
   return list;
 }
 function _countByRole(users){
-  var c={admin:0,partner:0,user:0,total:users.length};
+  var admins=0,members=0;
   users.forEach(function(u){
-    if(u.role==='admin')c.admin++;
-    else if(u.role==='partner')c.partner++;
-    else c.user++;
+    if(u.role==='admin'||u.role==='partner')admins++;
+    else members++;
   });
-  return c;
+  return {admin:admins,user:members,total:users.length};
 }
 function _roleSummary(c){
   var p=[];
   if(c.admin)p.push('관리자 '+c.admin);
-  if(c.partner)p.push('파트너 '+c.partner);
   if(c.user)p.push('회원 '+c.user);
   return p.join(' · ')||'0명';
 }
@@ -4393,7 +4389,7 @@ function _appendAdmUserRow(tbody,u){
   var tr=document.createElement('tr');
   if(isBanned)tr.style.opacity='0.5';
   var roleLbl=_userRoleLabel(u.role);
-  var roleBadge=roleLbl?(' <span class="bdg" style="background:'+(u.role==='partner'?'rgba(37,99,235,.12);color:#2563EB':'rgba(114,9,183,.1);color:#B5179E')+';font-size:10px">'+roleLbl+'</span>'):'';
+  var roleBadge=roleLbl?(' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+roleLbl+'</span>'):'';
   var statusBadge='<span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span>';
   tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+'</td>'
     +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
@@ -4484,7 +4480,8 @@ function renderAdmUsersFilter(){
   var roleF=window._admUserRoleFilter||'';
   var q=((ge('aUserSearch')&&ge('aUserSearch').value)||'').trim().toLowerCase();
   var list=d.filter(function(u){
-    if(roleF&&u.role!==roleF)return false;
+    if(roleF==='admin'&&u.role!=='admin'&&u.role!=='partner')return false;
+    if(roleF==='user'&&u.role!=='user')return false;
     if(q&&(u.name||'').toLowerCase().indexOf(q)<0&&(u.email||'').toLowerCase().indexOf(q)<0)return false;
     return true;
   });
@@ -4521,7 +4518,7 @@ function renderAdmUsersFilter(){
   }else{
     if(overview){overview.style.display='none';overview.innerHTML='';}
     root.appendChild(_renderAdmUserRoleSections(list,[
-      {label:'관리자 · 파트너',roles:['admin','partner']},
+      {label:'관리자',roles:['admin','partner']},
       {label:'일반 회원',roles:['user']}
     ]));
   }
