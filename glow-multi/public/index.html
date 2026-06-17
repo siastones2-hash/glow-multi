@@ -2883,7 +2883,6 @@ async function doRegister(){
   var ref=(ge('rRef')?.value||'').trim().toUpperCase();
   var phone=(ge('rPhone')?.value||'').trim();
   if(!n||!e||!p){toast('모든 항목을 입력하세요','err');return}
-  if(ref&&!phone){toast('추천코드 보너스를 받으려면 전화번호를 입력하세요','err');return}
   var body={name:n,email:e,pw:p};
   if(ref)body.referral_code=ref;
   if(phone)body.phone=phone;
@@ -2892,6 +2891,8 @@ async function doRegister(){
   if(d.token)localStorage.setItem('glow_token',d.token);
   CUR=d.user;
   if(d.user&&d.user.points>0) toast('가입 완료! '+d.user.points+'P 지급! ✨','ok');
+  else if(ref&&phone) toast('가입 완료! (추천 500P는 전화번호 확인 후 홈에서 받을 수 있어요) ✨','ok');
+  else if(ref) toast('가입 완료! 추천 500P는 홈에서 전화번호+코드 입력 시 받을 수 있어요 ✨','ok');
   else toast('가입 완료! 환영합니다 ✨','ok');
   enterDash();
 }
@@ -2996,7 +2997,7 @@ async function convertPoints(){
 function syncRefPhoneHint(){
   var ref=(ge('rRef')?.value||'').trim();
   var lbl=ge('rPhoneLabel');
-  if(lbl)lbl.textContent=ref?'(추천코드 입력 시 필수)':'(선택)';
+  if(lbl)lbl.textContent=ref?'(선택 · 500P 받을 때 필요)':'(선택)';
 }
 function copyRefCode(){
   var code=CUR.referral_code||'';

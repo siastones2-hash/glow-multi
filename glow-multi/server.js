@@ -2392,18 +2392,18 @@ app.post('/api/register', async (req, res) => {
         const siteLabel = req.site?.name || '이 사이트';
         return res.json({ error: `유효하지 않은 추천 코드입니다. ${siteLabel} 회원 코드인지 확인하세요.` });
       }
-      if (!phoneNorm) {
-        return res.json({ error: '추천코드 보너스(500P)를 받으려면 전화번호를 입력하세요.' });
+      if (phoneNorm) {
+        const phoneChk = await assertPhoneAvailableForReferral(req.siteId, phoneNorm, id);
+        if (!phoneChk.ok) return res.json({ error: phoneChk.error });
+        phoneNorm = phoneChk.norm;
+        referredBy = refUser.rows[0].id;
+        signupBonus = 500;
+        await query(
+          `UPDATE users SET points=COALESCE(points,0)+500, referral_bonus=COALESCE(referral_bonus,0)+500 WHERE id=$1`,
+          [referredBy]
+        );
       }
-      const phoneChk = await assertPhoneAvailableForReferral(req.siteId, phoneNorm, id);
-      if (!phoneChk.ok) return res.json({ error: phoneChk.error });
-      phoneNorm = phoneChk.norm;
-      referredBy = refUser.rows[0].id;
-      signupBonus = 500;
-      await query(
-        `UPDATE users SET points=COALESCE(points,0)+500, referral_bonus=COALESCE(referral_bonus,0)+500 WHERE id=$1`,
-        [referredBy]
-      );
+      // 추천코드만 있고 전화번호 없음 → 가입은 허용, 500P는 나중에 전화번호+코드 등록 시
     }
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance,referral_code,referred_by,points,phone) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus, phoneNorm || phone]);
