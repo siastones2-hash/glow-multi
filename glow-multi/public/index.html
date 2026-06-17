@@ -637,6 +637,14 @@ tr:last-child td{border-bottom:none}
 .tdot{width:6px;height:6px;border-radius:50%;background:var(--p1);animation:pulse 1.8s infinite}
 .hero h1{font-size:clamp(28px,7vw,54px);font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:14px}
 .chip{background:var(--w);border:1px solid var(--bd);padding:6px 14px;border-radius:100px;font-size:12px;color:var(--tm)}
+.aUserChip{cursor:pointer;border:1px solid var(--bd2);background:var(--w);padding:7px 14px;border-radius:100px;font-size:12px;font-weight:700;color:var(--tm);transition:background .15s,border-color .15s,color .15s}
+.aUserChip.on{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(114,9,183,.25)}
+.aUserGroup{margin-bottom:16px;border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:var(--w)}
+.aUserGroupHead{padding:12px 16px;background:linear-gradient(135deg,rgba(114,9,183,.07),rgba(168,85,247,.03));border-bottom:1px solid var(--bd)}
+.aUserSubHead{padding:9px 16px;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--p2);background:#faf5ff;border-bottom:1px solid var(--bd);text-transform:uppercase}
+.aUserOverview{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.aUserOverviewItem{font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;background:var(--w);border:1px solid var(--bd);color:var(--tm)}
+.aUserOverviewItem b{color:var(--p2);font-size:14px;margin-left:4px}
 .sts{display:grid;grid-template-columns:repeat(4,1fr);background:var(--w);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}
 .st{padding:22px 12px;text-align:center;border-right:1px solid var(--bd)}.st:last-child{border-right:none}
 .abox{background:var(--w);border:1px solid var(--bd);border-radius:22px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(114,9,183,.1)}
@@ -1527,28 +1535,20 @@ tr:last-child td{border-bottom:none}
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
         <div class="atab-body" id="ap-users">
-          <div id="aUserFilters" style="display:none;margin-bottom:12px;flex-wrap:wrap;gap:8px;align-items:center">
-            <select id="aUserSiteFilter" onchange="renderAdmUsersFilter()" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);min-width:160px">
-              <option value="">전체 사이트</option>
-            </select>
-            <select id="aUserRoleFilter" onchange="renderAdmUsersFilter()" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd)">
-              <option value="">전체 등급</option>
-              <option value="admin">관리자</option>
-              <option value="partner">파트너</option>
-              <option value="user">일반 회원</option>
-            </select>
-            <input type="search" id="aUserSearch" placeholder="이름·이메일 검색" oninput="renderAdmUsersFilter()" style="flex:1;min-width:140px;font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid var(--bd)"/>
-            <select id="aUserSort" onchange="renderAdmUsersFilter()" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd)">
-              <option value="site">사이트 → 등급</option>
-              <option value="joined">가입일 최신</option>
-              <option value="name">이름순</option>
-            </select>
-            <span id="aUserCount" style="font-size:12px;color:var(--tl);white-space:nowrap"></span>
+          <div id="aUserSiteOverview" class="aUserOverview" style="display:none"></div>
+          <div id="aUserToolbar" style="margin-bottom:12px;display:flex;flex-direction:column;gap:10px">
+            <input type="search" id="aUserSearch" placeholder="🔍 이름·이메일 검색" oninput="renderAdmUsersFilter()" style="width:100%;font-size:14px;padding:10px 14px;border-radius:10px;border:1px solid var(--bd);box-sizing:border-box"/>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+              <div id="aUserRoleChips" style="display:flex;flex-wrap:wrap;gap:6px">
+                <button type="button" class="aUserChip on" data-role="" onclick="setAdmUserRoleFilter('')">전체</button>
+                <button type="button" class="aUserChip" data-role="admin" onclick="setAdmUserRoleFilter('admin')">관리자</button>
+                <button type="button" class="aUserChip" data-role="partner" onclick="setAdmUserRoleFilter('partner')">파트너</button>
+                <button type="button" class="aUserChip" data-role="user" onclick="setAdmUserRoleFilter('user')">일반 회원</button>
+              </div>
+              <span id="aUserCount" style="font-size:12px;color:var(--tl);margin-left:auto;white-space:nowrap"></span>
+            </div>
           </div>
-          <div class="tw"><table><thead><tr>
-            <th id="aUserSiteTh" style="display:none">사이트</th>
-            <th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th>
-          </tr></thead><tbody id="aUTb"></tbody></table></div>
+          <div id="aUserGrouped"></div>
         </div>
         <div class="atab-body" id="ap-charges">
           <div class="ibox" style="margin-bottom:10px" id="aChargeHint">✦ 입금 확인 후 <strong>승인</strong>을 누르면 잔액에 자동 추가됩니다.</div>
@@ -4347,26 +4347,14 @@ async function loadAdmUsers(){
   var d=await api('/api/admin/users');
   if(!Array.isArray(d))return;
   window._allAdmUsers=d;
-  var isSuper=CUR&&CUR.role==='superadmin';
-  var filters=ge('aUserFilters');
-  var siteTh=ge('aUserSiteTh');
-  if(filters)filters.style.display=isSuper?'flex':'none';
-  if(siteTh)siteTh.style.display=isSuper?'':'none';
-  if(isSuper){
-    var sel=ge('aUserSiteFilter');
-    if(sel){
-      var sites={},opts='<option value="">전체 사이트</option>';
-      d.forEach(function(u){
-        if(!u.site_id)return;
-        if(!sites[u.site_id])sites[u.site_id]={name:u.site_name||u.site_id,domain:u.site_domain||''};
-      });
-      Object.keys(sites).sort(function(a,b){return (sites[a].name||'').localeCompare(sites[b].name||'');}).forEach(function(id){
-        var s=sites[id];
-        opts+='<option value="'+id+'">'+(s.name||id)+(s.domain?' ('+s.domain+')':'')+'</option>';
-      });
-      sel.innerHTML=opts;
-    }
-  }
+  if(window._admUserRoleFilter===undefined)window._admUserRoleFilter='';
+  renderAdmUsersFilter();
+}
+function setAdmUserRoleFilter(role){
+  window._admUserRoleFilter=role||'';
+  document.querySelectorAll('#aUserRoleChips .aUserChip').forEach(function(el){
+    el.classList.toggle('on',el.getAttribute('data-role')===(role||''));
+  });
   renderAdmUsersFilter();
 }
 function _userRoleLabel(role){
@@ -4374,87 +4362,169 @@ function _userRoleLabel(role){
   if(role==='partner')return '파트너';
   return '';
 }
-function renderAdmUsersFilter(){
-  var d=window._allAdmUsers||[];
-  var isSuper=CUR&&CUR.role==='superadmin';
-  var tb=ge('aUTb');
-  if(!tb)return;
-  var siteF=(ge('aUserSiteFilter')&&ge('aUserSiteFilter').value)||'';
-  var roleF=(ge('aUserRoleFilter')&&ge('aUserRoleFilter').value)||'';
-  var q=((ge('aUserSearch')&&ge('aUserSearch').value)||'').trim().toLowerCase();
-  var sort=(ge('aUserSort')&&ge('aUserSort').value)||'site';
-  var list=d.filter(function(u){
-    if(siteF&&u.site_id!==siteF)return false;
-    if(roleF&&u.role!==roleF)return false;
-    if(q&&(u.name||'').toLowerCase().indexOf(q)<0&&(u.email||'').toLowerCase().indexOf(q)<0)return false;
-    return true;
-  });
+function _sortAdmUsers(list){
   var roleOrder={admin:0,partner:1,user:2};
   list.sort(function(a,b){
-    if(sort==='joined')return (b.joined||'').localeCompare(a.joined||'');
-    if(sort==='name')return (a.name||'').localeCompare(b.name||'');
-    var sa=(a.site_name||a.site_id||'').localeCompare(b.site_name||b.site_id||'');
-    if(sa!==0)return sa;
     var ra=(roleOrder[a.role]??9)-(roleOrder[b.role]??9);
     if(ra!==0)return ra;
     return (b.joined||'').localeCompare(a.joined||'');
   });
+  return list;
+}
+function _countByRole(users){
+  var c={admin:0,partner:0,user:0,total:users.length};
+  users.forEach(function(u){
+    if(u.role==='admin')c.admin++;
+    else if(u.role==='partner')c.partner++;
+    else c.user++;
+  });
+  return c;
+}
+function _roleSummary(c){
+  var p=[];
+  if(c.admin)p.push('관리자 '+c.admin);
+  if(c.partner)p.push('파트너 '+c.partner);
+  if(c.user)p.push('회원 '+c.user);
+  return p.join(' · ')||'0명';
+}
+function _appendAdmUserRow(tbody,u){
+  var isBanned=u.status==='banned';
+  var isStaff=['admin','partner'].includes(u.role);
+  var tr=document.createElement('tr');
+  if(isBanned)tr.style.opacity='0.5';
+  var roleLbl=_userRoleLabel(u.role);
+  var roleBadge=roleLbl?(' <span class="bdg" style="background:'+(u.role==='partner'?'rgba(37,99,235,.12);color:#2563EB':'rgba(114,9,183,.1);color:#B5179E')+';font-size:10px">'+roleLbl+'</span>'):'';
+  var statusBadge='<span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span>';
+  tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+'</td>'
+    +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
+    +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
+    +'<td>'+statusBadge+'</td>'
+    +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
+    +'<td><div class="ubtn_wrap" style="display:flex;gap:4px;flex-wrap:wrap"></div></td>';
+  var btnDiv=tr.querySelector('.ubtn_wrap');
+  var balBtn=document.createElement('button');
+  balBtn.className='btn binf bxs';
+  balBtn.textContent='잔액';
+  balBtn.setAttribute('data-uid',u.id);
+  balBtn.setAttribute('data-uname',u.name);
+  balBtn.setAttribute('data-bal',u.balance||0);
+  balBtn.onclick=function(){openBalM(this)};
+  btnDiv.appendChild(balBtn);
+  var detBtn=document.createElement('button');
+  detBtn.className='btn binf bxs';
+  detBtn.textContent='상세';
+  detBtn.onclick=(function(uid){return function(){openUserDetail(uid)}})(u.id);
+  btnDiv.appendChild(detBtn);
+  if(!isStaff){
+    var banBtn=document.createElement('button');
+    banBtn.className=isBanned?'btn bok bxs':'btn ber bxs';
+    banBtn.textContent=isBanned?'해제':'정지';
+    banBtn.onclick=(function(uid,uname){return function(){banUser(uid,uname)}})(u.id,u.name);
+    btnDiv.appendChild(banBtn);
+    var delBtn=document.createElement('button');
+    delBtn.className='btn ber bxs';
+    delBtn.textContent='탈퇴';
+    delBtn.onclick=(function(uid,uname){return function(){deleteUser(uid,uname)}})(u.id,u.name);
+    btnDiv.appendChild(delBtn);
+  }
+  tbody.appendChild(tr);
+}
+function _makeAdmUserTable(users){
+  var wrap=document.createElement('div');
+  wrap.className='tw';
+  wrap.style.borderTop='none';
+  wrap.style.borderRadius='0';
+  var table=document.createElement('table');
+  table.innerHTML='<thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead>';
+  var tbody=document.createElement('tbody');
+  _sortAdmUsers(users).forEach(function(u){_appendAdmUserRow(tbody,u)});
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
+}
+function _renderAdmUserSiteBlock(siteId,meta,users){
+  var block=document.createElement('div');
+  block.className='aUserGroup';
+  block.id='aUserSite-'+String(siteId).replace(/[^a-zA-Z0-9_-]/g,'_');
+  var c=_countByRole(users);
+  var head=document.createElement('div');
+  head.className='aUserGroupHead';
+  head.innerHTML='<div style="font-size:15px;font-weight:800;color:#1A1030">'+(meta.name||siteId)+'</div>'
+    +(meta.domain?'<div style="font-size:11px;color:#9A8AB0;margin-top:2px">'+meta.domain+'</div>':'')
+    +'<div style="font-size:12px;color:var(--p2);margin-top:6px;font-weight:600">'+_roleSummary(c)+'</div>';
+  block.appendChild(head);
+  block.appendChild(_makeAdmUserTable(users));
+  return block;
+}
+function _renderAdmUserRoleSections(users,sections){
+  var block=document.createElement('div');
+  block.className='aUserGroup';
+  var c=_countByRole(users);
+  var head=document.createElement('div');
+  head.className='aUserGroupHead';
+  head.innerHTML='<div style="font-size:15px;font-weight:800;color:#1A1030">'+(users[0]&&users[0].site_name||'내 사이트')+' 회원</div>'
+    +'<div style="font-size:12px;color:var(--p2);margin-top:6px;font-weight:600">'+_roleSummary(c)+'</div>';
+  block.appendChild(head);
+  sections.forEach(function(sec){
+    var subset=users.filter(function(u){return sec.roles.indexOf(u.role)>=0});
+    if(!subset.length)return;
+    var sub=document.createElement('div');
+    sub.className='aUserSubHead';
+    sub.textContent=sec.label+' ('+subset.length+')';
+    block.appendChild(sub);
+    block.appendChild(_makeAdmUserTable(subset));
+  });
+  return block;
+}
+function renderAdmUsersFilter(){
+  var d=window._allAdmUsers||[];
+  var isSuper=CUR&&CUR.role==='superadmin';
+  var root=ge('aUserGrouped');
+  if(!root)return;
+  var roleF=window._admUserRoleFilter||'';
+  var q=((ge('aUserSearch')&&ge('aUserSearch').value)||'').trim().toLowerCase();
+  var list=d.filter(function(u){
+    if(roleF&&u.role!==roleF)return false;
+    if(q&&(u.name||'').toLowerCase().indexOf(q)<0&&(u.email||'').toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
   var cnt=ge('aUserCount');
-  if(cnt)cnt.textContent=list.length+'명 / 전체 '+d.length+'명';
-  tb.innerHTML='';
+  if(cnt)cnt.textContent='표시 '+list.length+'명 · 전체 '+d.length+'명';
+  var overview=ge('aUserSiteOverview');
+  root.innerHTML='';
   if(!list.length){
-    var cols=isSuper?7:6;
-    tb.innerHTML='<tr><td colspan="'+cols+'" style="text-align:center;padding:22px;color:#9A8AB0">조건에 맞는 회원이 없습니다</td></tr>';
+    root.innerHTML='<div style="text-align:center;padding:32px 16px;color:#9A8AB0;font-size:14px">조건에 맞는 회원이 없습니다</div>';
+    if(overview){overview.style.display='none';overview.innerHTML='';}
     return;
   }
-  list.forEach(function(u){
-    var isBanned=u.status==='banned';
-    var isAdmin=['admin','partner'].includes(u.role);
-    var tr=document.createElement('tr');
-    if(isBanned)tr.style.opacity='0.5';
-    var roleLbl=_userRoleLabel(u.role);
-    var roleBadge=roleLbl?(' <span class="bdg" style="background:'+(u.role==='partner'?'rgba(37,99,235,.12);color:#2563EB':'rgba(114,9,183,.1);color:#B5179E')+';font-size:10px">'+roleLbl+'</span>'):'';
-    var statusBadge='<span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span>';
-    var siteCell='';
-    if(isSuper){
-      siteCell='<td style="font-size:12px;white-space:nowrap"><div style="font-weight:700;color:#1A1030">'+(u.site_name||u.site_id||'-')+'</div>'
-        +(u.site_domain?'<div style="font-size:10px;color:#9A8AB0">'+u.site_domain+'</div>':'')+'</td>';
+  if(isSuper){
+    var sites={};
+    list.forEach(function(u){
+      var sid=u.site_id||'unknown';
+      if(!sites[sid])sites[sid]={name:u.site_name||sid,domain:u.site_domain||'',users:[]};
+      sites[sid].users.push(u);
+    });
+    var siteIds=Object.keys(sites).sort(function(a,b){
+      return (sites[a].name||'').localeCompare(sites[b].name||'');
+    });
+    if(overview){
+      overview.style.display='flex';
+      overview.innerHTML=siteIds.map(function(id){
+        var s=sites[id];
+        return '<div class="aUserOverviewItem">'+(s.name||id)+' <b>'+s.users.length+'</b></div>';
+      }).join('');
     }
-    tr.innerHTML=siteCell
-      +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+'</td>'
-      +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
-      +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
-      +'<td>'+statusBadge+'</td>'
-      +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
-      +'<td><div class="ubtn_wrap"></div></td>';
-    var btnDiv=tr.querySelector('.ubtn_wrap');
-    var balBtn=document.createElement('button');
-    balBtn.className='btn binf bxs';
-    balBtn.textContent='잔액';
-    balBtn.setAttribute('data-uid',u.id);
-    balBtn.setAttribute('data-uname',u.name);
-    balBtn.setAttribute('data-bal',u.balance||0);
-    balBtn.onclick=function(){openBalM(this)};
-    btnDiv.appendChild(balBtn);
-    var detBtn=document.createElement('button');
-    detBtn.className='btn binf bxs';
-    detBtn.textContent='상세';
-    detBtn.onclick=(function(uid){return function(){openUserDetail(uid)}})(u.id);
-    btnDiv.appendChild(detBtn);
-    if(!isAdmin){
-      var banBtn=document.createElement('button');
-      banBtn.className=isBanned?'btn bok bxs':'btn ber bxs';
-      banBtn.textContent=isBanned?'해제':'정지';
-      banBtn.onclick=(function(uid,uname){return function(){banUser(uid,uname)}})(u.id,u.name);
-      btnDiv.appendChild(banBtn);
-      var delBtn=document.createElement('button');
-      delBtn.className='btn ber bxs';
-      delBtn.textContent='탈퇴';
-      delBtn.onclick=(function(uid,uname){return function(){deleteUser(uid,uname)}})(u.id,u.name);
-      btnDiv.appendChild(delBtn);
-    }
-    tb.appendChild(tr);
-  });
+    siteIds.forEach(function(id){
+      var s=sites[id];
+      root.appendChild(_renderAdmUserSiteBlock(id,{name:s.name,domain:s.domain},s.users));
+    });
+  }else{
+    if(overview){overview.style.display='none';overview.innerHTML='';}
+    root.appendChild(_renderAdmUserRoleSections(list,[
+      {label:'관리자 · 파트너',roles:['admin','partner']},
+      {label:'일반 회원',roles:['user']}
+    ]));
+  }
 }
 function closeM(id){ge(id).classList.remove('on')}
 

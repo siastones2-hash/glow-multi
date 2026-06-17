@@ -3180,7 +3180,13 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     const r = siteId
-      ? await query(`SELECT * FROM users WHERE site_id=$1 AND role!='superadmin' ORDER BY joined DESC`, [siteId])
+      ? await query(`
+          SELECT u.*, s.name AS site_name, s.domain AS site_domain
+          FROM users u
+          LEFT JOIN sites s ON u.site_id = s.id
+          WHERE u.site_id=$1 AND u.role!='superadmin'
+          ORDER BY u.role, u.joined DESC
+        `, [siteId])
       : await query(`
           SELECT u.*, s.name AS site_name, s.domain AS site_domain
           FROM users u
