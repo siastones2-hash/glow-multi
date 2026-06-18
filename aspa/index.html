@@ -739,76 +739,123 @@
   .cty .en{font-family:var(--mono);font-size:.6rem;color:var(--txt-faint);letter-spacing:.04em;margin-top:2px;}
 
   /* ORG */
-  .org-chart{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:10px;align-items:stretch;}
-  .org-tier{display:grid;grid-template-columns:minmax(150px,1fr) minmax(210px,280px) minmax(150px,1fr);gap:12px;width:100%;align-items:stretch;}
-  .org-tier-1{grid-template-columns:1fr;justify-items:center;}
-  .org-tier-4{grid-template-columns:repeat(4,minmax(0,1fr));max-width:980px;margin-left:auto;margin-right:auto;}
-  .org-tier.org-footer{margin-top:6px;}
-  .org-tier.org-footer .org-node{text-align:left;padding:18px 16px;}
-  .org-tier.org-footer .org-node .role{text-align:left;}
-  .org-tier.org-footer .org-node .mem{text-align:left;font-size:.78rem;line-height:1.65;}
-  .org-slot{visibility:hidden;min-height:0;}
-  .org-tier-3 .side-left{justify-self:stretch;}
-  .org-tier-3 .side{justify-self:stretch;}
-  .org-tier-3 > .org-node:nth-child(2){justify-self:center;width:100%;max-width:280px;}
-  .org-top{display:flex;justify-content:center;align-items:center;margin-bottom:16px;}
-  .org-pres{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
-    align-items:center;
-    gap:12px;
-    max-width:980px;width:100%;
-    margin-left:auto;margin-right:auto;
-    min-height:0;
+  .org-chart{
+    --org-center:236px;
+    --org-gap:14px;
+    --org-role:.875rem;
+    --org-mem:.8125rem;
+    max-width:920px;margin:0 auto;padding:12px 0 28px;
+    display:flex;flex-direction:column;gap:var(--org-gap);align-items:stretch;
   }
-  .org-pres .org-node.head{grid-column:2;justify-self:center;margin:0;}
-  .org-pres .escort{
-    grid-column:3;justify-self:stretch;
-    position:static;transform:none;
-    width:auto;max-width:none;padding:14px 16px;opacity:.95;
+  .org-tier{display:grid;gap:var(--org-gap);width:100%;align-items:stretch;}
+  .org-tier-3,.org-pres{grid-template-columns:1fr var(--org-center) 1fr;}
+  .org-tier-1{grid-template-columns:1fr;justify-items:center;margin:4px 0;}
+  .org-tier-4{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:8px;}
+  .org-tier.org-footer{margin-top:12px;padding-top:18px;border-top:1px dashed rgba(0,229,255,.22);}
+  .org-slot{visibility:hidden;min-height:1px;padding:0;border:0;background:transparent;pointer-events:none;}
+  .org-tier-3 > .org-node:nth-child(2),
+  .org-pres .org-node.head{
+    justify-self:center;width:100%;max-width:var(--org-center);
   }
-  .org-pres .escort .role{font-size:.78rem;}
-  .org-pres .escort .mem{font-size:.76rem;line-height:1.5;}
+  .org-tier-3 .org-side-left{justify-self:end;width:100%;max-width:268px;}
+  .org-tier-3 .org-side{justify-self:start;width:100%;max-width:228px;}
+  .org-pres .escort{justify-self:start;width:100%;max-width:228px;}
+
+  .org-node{
+    position:relative;
+    background:var(--glass);border:1px solid var(--glass-bd);border-radius:14px;
+    padding:16px 14px;text-align:center;backdrop-filter:blur(12px);
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    min-height:84px;box-sizing:border-box;
+    transition:border-color .25s,box-shadow .25s;
+  }
+  .org-node:hover{border-color:rgba(0,229,255,.28);box-shadow:0 10px 28px -18px rgba(0,229,255,.35);}
+  .org-node .role{
+    font-family:var(--kr);font-weight:700;font-size:var(--org-role);color:var(--cyan);
+    line-height:1.35;text-align:center;letter-spacing:-.01em;
+  }
+  .org-node .mem{
+    font-family:var(--kr);font-size:var(--org-mem);font-weight:400;color:var(--txt-2);
+    margin-top:7px;line-height:1.55;text-align:center;word-break:keep-all;
+  }
+  .org-node .nm{
+    font-family:var(--kr);font-weight:600;font-size:.9375rem;color:var(--txt);
+    margin-top:7px;line-height:1.4;
+  }
+
+  /* 중앙 축 — 강조 */
+  .org-node.head,.org-node.planner,.org-node.spine{
+    border-color:rgba(0,229,255,.32);
+    background:linear-gradient(180deg,rgba(0,229,255,.08),rgba(255,255,255,.03));
+    box-shadow:0 0 28px -12px var(--cyan-glow);
+    min-height:92px;padding:18px 16px;
+  }
+  .org-node.head{min-height:96px;}
+  .org-node.head .role,.org-node.planner .role{font-size:1.0625rem;}
+  .org-node.head .nm{font-size:1rem;font-weight:700;}
+  .org-node.planner .nm{font-size:.9375rem;}
+  .org-node.spine .role{font-size:.9375rem;}
+  .org-node.spine .mem{font-size:.875rem;font-weight:500;color:var(--txt);}
+
+  /* 좌·우 · 경호 — 보조 */
+  .org-node.org-side-left,.org-node.org-side,.org-node.escort{
+    min-height:84px;padding:14px 12px;
+    background:rgba(255,255,255,.028);border-color:rgba(255,255,255,.1);
+  }
+  .org-node.org-side-left .role,.org-node.org-side .role,.org-node.escort .role{font-size:.8125rem;color:var(--cyan-2);}
+  .org-node.org-side-left .mem,.org-node.org-side .mem,.org-node.escort .mem{font-size:.78rem;color:var(--txt-dim);margin-top:6px;}
+
+  /* 중앙 축 연결선 */
+  .org-node.head.spine::after,.org-node.spine:not(.planner)::after{
+    content:"";position:absolute;left:50%;bottom:calc(-1 * var(--org-gap) + 1px);
+    transform:translateX(-50%);width:2px;height:var(--org-gap);
+    background:linear-gradient(180deg,rgba(0,229,255,.55),rgba(0,229,255,.12));
+    border-radius:2px;pointer-events:none;
+  }
+  .org-tier-1 .org-node.spine::after{display:none;}
+
+  /* 부회장 */
+  .org-vchair .org-name{display:block;font-size:.875rem;font-weight:500;color:var(--txt-2);}
+  .org-vchair .org-name-lg{display:block;margin-top:5px;font-size:1rem;font-weight:700;color:var(--txt);letter-spacing:-.01em;}
+  .org-empty{min-height:1em;color:var(--txt-faint);font-size:.875rem;}
+
+  /* 하단 4열 */
+  .org-tier-4 .org-node{
+    min-height:96px;padding:15px 12px;align-items:center;
+    background:rgba(255,255,255,.03);
+  }
+  .org-tier-4 .org-node .role{font-size:.8125rem;line-height:1.4;}
+  .org-tier-4 .org-node .mem{font-size:.78rem;margin-top:6px;}
+
+  /* 푸터 4열 */
+  .org-tier.org-footer .org-node{
+    min-height:118px;padding:16px 14px;align-items:flex-start;text-align:left;
+    background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.08);
+  }
+  .org-tier.org-footer .org-node .role{
+    font-size:.8125rem;text-align:left;width:100%;
+    padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .org-tier.org-footer .org-node .mem{text-align:left;font-size:.76rem;line-height:1.62;color:var(--txt-dim);}
+  .org-kpga{color:var(--cyan);font-weight:700;font-size:.72rem;letter-spacing:.04em;}
+
+  #pgOrg .content-sec{overflow-x:visible;padding-bottom:90px;}
+  @media(max-width:900px){
+    .org-chart{--org-center:220px;}
+    .org-tier-3 .org-side-left{max-width:100%;}
+    .org-tier-3 .org-side,.org-pres .escort{max-width:100%;}
+  }
   @media(max-width:720px){
-    .org-pres{grid-template-columns:1fr;justify-items:center;}
-    .org-pres .org-node.head{grid-column:auto;width:100%;max-width:320px;}
-    .org-pres .escort{grid-column:auto;width:100%;max-width:360px;}
-    .org-tier{grid-template-columns:1fr;}
-    .org-tier-3 > .org-node:nth-child(2){max-width:none;}
+    .org-chart{--org-center:100%;--org-gap:10px;padding:8px 0 16px;}
+    .org-tier-3,.org-pres{grid-template-columns:1fr;}
+    .org-tier-3 > .org-node:nth-child(2),.org-pres .org-node.head{max-width:none;}
+    .org-tier-3 .org-side-left,.org-tier-3 .org-side,.org-pres .escort{justify-self:stretch;max-width:none;}
     .org-tier-4{grid-template-columns:1fr 1fr;}
-    .org-tier.org-footer .org-node{grid-column:auto;}
     .org-slot{display:none;}
+    .org-node.head.spine::after,.org-node.spine:not(.planner)::after{display:none;}
+    .org-tier.org-footer .org-node{min-height:0;}
   }
   @media(max-width:480px){.org-tier-4{grid-template-columns:1fr;}}
-  .org-node{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:20px 22px;text-align:center;backdrop-filter:blur(12px);overflow:visible;}
-  .org-node.head,.org-node.planner{padding:26px 36px;min-width:220px;max-width:320px;width:100%;}
-  .org-node.head{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);box-shadow:0 0 34px -8px var(--cyan-glow);}
-  .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);margin:0 auto;max-width:280px;}
-  .org-node.head .role,.org-node.planner .role{font-size:1.05rem;letter-spacing:0;text-transform:none;color:var(--cyan);}
-  .org-node.head .nm,.org-node.planner .nm{font-size:1rem;font-weight:600;color:var(--txt-2);margin-top:8px;}
-  .org-node.sm{padding:18px 16px;min-width:0;width:100%;}
-  .org-node.lv2{padding:18px 16px;border-color:rgba(0,229,255,.22);background:rgba(0,229,255,.035);}
-  .org-node.lv2 .role{font-size:.98rem;}
-  .org-node.lv3{padding:17px 16px;border-color:rgba(255,255,255,.13);}
-  .org-node.lv3 .role{font-size:.95rem;}
-  .org-node.lv4{padding:15px 16px;background:rgba(255,255,255,.025);border-color:var(--glass-bd);}
-  .org-node.lv4 .role{font-size:.86rem;color:var(--cyan-2);font-weight:600;}
-  .org-node.lv4 .mem{font-size:.8rem;color:var(--txt-dim);}
-  .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;color:var(--cyan);line-height:1.45;text-align:center;}
-  .org-vchair .org-name{display:inline-block;padding:0 4px;white-space:nowrap;letter-spacing:.04em;font-variant-ligatures:none;}
-  .org-vchair .org-name-lg{display:block;margin-top:6px;font-size:1.12rem;font-weight:700;color:var(--txt);}
-  .org-node .role-tight,.org-node .mem-tight{display:block;white-space:nowrap;word-break:keep-all;overflow:visible;}
-  .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;}
-  .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;}
-  .org-empty{min-height:1.2em;opacity:.35;}
-  .org-kpga{color:var(--cyan-2);font-weight:600;font-size:.78rem;}
-  #pgOrg .content-sec{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px;}
-  @media(max-width:560px){
-    #pgOrg .content-sec{overflow-x:visible;padding-bottom:64px;}
-    .org-node.head,.org-node.planner{min-width:0;max-width:none;width:100%;padding:22px 18px;}
-    .org-node.sm,.org-node.lv2,.org-node.lv3,.org-node.lv4{padding:16px 14px;}
-    .org-vchair .org-name,.org-vchair .org-name-lg{white-space:normal;letter-spacing:0;}
-  }
   /* SPONSOR */
   .sp-grid{display:flex;flex-wrap:wrap;gap:14px;}
   .sp-card{flex:1;min-width:150px;background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:26px;text-align:center;}
@@ -1344,53 +1391,53 @@
   <div class="content-sec">
     <div class="org-chart">
 
-    <div class="org-pres">
+    <div class="org-pres org-tier org-tier-3">
       <div class="org-slot" aria-hidden="true"></div>
-      <div class="org-node head"><div class="role">총재</div><div class="nm">조정영</div></div>
-      <div class="org-node sm escort"><div class="role">경호의전실</div><div class="mem">간태경 · 박종철 · 정다운</div></div>
+      <div class="org-node head spine"><div class="role">총재</div><div class="nm">조정영</div></div>
+      <div class="org-node escort org-side"><div class="role">경호의전실</div><div class="mem">간태경 · 박종철 · 정다운</div></div>
     </div>
 
     <div class="org-tier org-tier-3">
       <div class="org-slot" aria-hidden="true"></div>
-      <div class="org-node sm lv2"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
-      <div class="org-node sm side"><div class="role role-tight">집행위원장</div><div class="mem mem-tight">정철헌</div></div>
+      <div class="org-node spine"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
+      <div class="org-node org-side"><div class="role">집행위원장</div><div class="mem">정철헌</div></div>
     </div>
 
     <div class="org-tier org-tier-3">
-      <div class="org-node sm side-left"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
-      <div class="org-node sm lv2"><div class="role">회장</div><div class="mem org-empty">—</div></div>
+      <div class="org-node org-side-left"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
+      <div class="org-node spine"><div class="role">회장</div><div class="mem org-empty">—</div></div>
       <div class="org-slot" aria-hidden="true"></div>
     </div>
 
     <div class="org-tier org-tier-3">
-      <div class="org-node sm side-left"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
-      <div class="org-node sm lv2 org-vchair"><div class="role">부회장</div><div class="mem"><span class="org-name">이주덕</span><span class="org-name-lg">곽상기</span></div></div>
-      <div class="org-node sm side"><div class="role role-tight">감사</div><div class="mem">공정룡 · 허영길</div></div>
+      <div class="org-node org-side-left"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
+      <div class="org-node spine org-vchair"><div class="role">부회장</div><div class="mem"><span class="org-name">이주덕</span><span class="org-name-lg">곽상기</span></div></div>
+      <div class="org-node org-side"><div class="role">감사</div><div class="mem">공정룡 · 허영길</div></div>
     </div>
 
     <div class="org-tier org-tier-3">
-      <div class="org-node sm side-left"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div>
-      <div class="org-node sm lv2"><div class="role role-tight">사무총장</div><div class="mem mem-tight">김용태</div></div>
-      <div class="org-node sm side"><div class="role role-tight">사무국장</div><div class="mem mem-tight">이은주</div></div>
+      <div class="org-node org-side-left"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div>
+      <div class="org-node spine"><div class="role">사무총장</div><div class="mem">김용태</div></div>
+      <div class="org-node org-side"><div class="role">사무국장</div><div class="mem">이은주</div></div>
     </div>
 
     <div class="org-tier org-tier-1">
-      <div class="org-node planner"><div class="role">기획위원장</div><div class="nm">이현석</div></div>
+      <div class="org-node planner spine"><div class="role">기획위원장</div><div class="nm">이현석</div></div>
     </div>
 
     <div class="org-tier org-tier-4">
-      <div class="org-node sm"><div class="role">전략상생위원장</div><div class="mem">황대웅</div></div>
-      <div class="org-node sm"><div class="role role-tight">대회협력단장</div><div class="mem mem-tight">김상철</div></div>
-      <div class="org-node sm"><div class="role">조직위원장</div><div class="mem">유승석<br>황승현(부) · 강태환(부)</div></div>
-      <div class="org-node sm"><div class="role">디지털 혁신단장</div><div class="mem">공경식</div></div>
+      <div class="org-node"><div class="role">전략상생위원장</div><div class="mem">황대웅</div></div>
+      <div class="org-node"><div class="role">대회협력단장</div><div class="mem">김상철</div></div>
+      <div class="org-node"><div class="role">조직위원장</div><div class="mem">유승석<br>황승현(부) · 강태환(부)</div></div>
+      <div class="org-node"><div class="role">디지털 혁신단장</div><div class="mem">공경식</div></div>
     </div>
 
     <div class="org-tier org-tier-4 org-footer">
-      <div class="org-node sm"><div class="role">국제위원장</div><div class="mem">조인관</div></div>
-      <div class="org-node sm"><div class="role">경기·교육총괄위원장 · 남승현</div>
+      <div class="org-node"><div class="role">국제위원장</div><div class="mem">조인관</div></div>
+      <div class="org-node"><div class="role">경기·교육총괄위원장 · 남승현</div>
         <div class="mem"><span class="org-kpga">KPGA</span> 박찬우 · 정우재 · 심동준 · 서현석 · 이도형 · 박서준<br><span class="org-kpga">KLPGA</span> 김미순 · 김수민 · 심우리 · 정슬아 · 강진희 · 황현서</div></div>
-      <div class="org-node sm"><div class="role">홍보위원</div><div class="mem">이동준 · 최재원 · 윤서현 (탤런트)<br>이진관 · 김양 · 정수연 · 홍성재 (가수)</div></div>
-      <div class="org-node sm"><div class="role">이사진</div><div class="mem">박민정 · 정원형 · 하경화 · 김상수</div></div>
+      <div class="org-node"><div class="role">홍보위원</div><div class="mem">이동준 · 최재원 · 윤서현 (탤런트)<br>이진관 · 김양 · 정수연 · 홍성재 (가수)</div></div>
+      <div class="org-node"><div class="role">이사진</div><div class="mem">박민정 · 정원형 · 하경화 · 김상수</div></div>
     </div>
 
     </div>
