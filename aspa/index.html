@@ -739,36 +739,54 @@
   .cty .en{font-family:var(--mono);font-size:.6rem;color:var(--txt-faint);letter-spacing:.04em;margin-top:2px;}
 
   /* ORG */
+  .org-chart{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:10px;align-items:stretch;}
+  .org-tier{display:grid;grid-template-columns:minmax(150px,1fr) minmax(210px,280px) minmax(150px,1fr);gap:12px;width:100%;align-items:stretch;}
+  .org-tier-1{grid-template-columns:1fr;justify-items:center;}
+  .org-tier-4{grid-template-columns:repeat(4,minmax(0,1fr));max-width:980px;margin-left:auto;margin-right:auto;}
+  .org-tier.org-footer{margin-top:6px;}
+  .org-tier.org-footer .org-node{text-align:left;padding:18px 16px;}
+  .org-tier.org-footer .org-node .role{text-align:left;}
+  .org-tier.org-footer .org-node .mem{text-align:left;font-size:.78rem;line-height:1.65;}
+  .org-slot{visibility:hidden;min-height:0;}
+  .org-tier-3 .side-left{justify-self:stretch;}
+  .org-tier-3 .side{justify-self:stretch;}
+  .org-tier-3 > .org-node:nth-child(2){justify-self:center;width:100%;max-width:280px;}
   .org-top{display:flex;justify-content:center;align-items:center;margin-bottom:16px;}
   .org-pres{
     display:grid;
     grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
     align-items:center;
     gap:12px;
-    max-width:920px;width:100%;
+    max-width:980px;width:100%;
     margin-left:auto;margin-right:auto;
-    min-height:120px;
+    min-height:0;
   }
   .org-pres .org-node.head{grid-column:2;justify-self:center;margin:0;}
   .org-pres .escort{
-    grid-column:3;justify-self:end;
+    grid-column:3;justify-self:stretch;
     position:static;transform:none;
-    width:auto;max-width:200px;padding:12px 16px;opacity:.92;
+    width:auto;max-width:none;padding:14px 16px;opacity:.95;
   }
   .org-pres .escort .role{font-size:.78rem;}
   .org-pres .escort .mem{font-size:.76rem;line-height:1.5;}
   @media(max-width:720px){
-    .org-pres{display:flex;flex-direction:column;align-items:center;gap:12px;min-height:0;}
-    .org-pres .org-node.head{grid-column:auto;}
-    .org-pres .escort{grid-column:auto;justify-self:center;max-width:360px;width:100%;}
+    .org-pres{grid-template-columns:1fr;justify-items:center;}
+    .org-pres .org-node.head{grid-column:auto;width:100%;max-width:320px;}
+    .org-pres .escort{grid-column:auto;width:100%;max-width:360px;}
+    .org-tier{grid-template-columns:1fr;}
+    .org-tier-3 > .org-node:nth-child(2){max-width:none;}
+    .org-tier-4{grid-template-columns:1fr 1fr;}
+    .org-tier.org-footer .org-node{grid-column:auto;}
+    .org-slot{display:none;}
   }
+  @media(max-width:480px){.org-tier-4{grid-template-columns:1fr;}}
   .org-node{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:20px 22px;text-align:center;backdrop-filter:blur(12px);overflow:visible;}
-  .org-node.head,.org-node.planner{padding:26px 36px;min-width:220px;max-width:320px;width:auto;}
+  .org-node.head,.org-node.planner{padding:26px 36px;min-width:220px;max-width:320px;width:100%;}
   .org-node.head{border-color:var(--glass-bd-hi);background:rgba(0,229,255,.05);box-shadow:0 0 34px -8px var(--cyan-glow);}
-  .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);margin:0 auto;}
+  .org-node.planner{border-color:var(--glass-bd);background:rgba(255,255,255,.03);margin:0 auto;max-width:280px;}
   .org-node.head .role,.org-node.planner .role{font-size:1.05rem;letter-spacing:0;text-transform:none;color:var(--cyan);}
   .org-node.head .nm,.org-node.planner .nm{font-size:1rem;font-weight:600;color:var(--txt-2);margin-top:8px;}
-  .org-node.sm{padding:18px 16px;min-width:max-content;}
+  .org-node.sm{padding:18px 16px;min-width:0;width:100%;}
   .org-node.lv2{padding:18px 16px;border-color:rgba(0,229,255,.22);background:rgba(0,229,255,.035);}
   .org-node.lv2 .role{font-size:.98rem;}
   .org-node.lv3{padding:17px 16px;border-color:rgba(255,255,255,.13);}
@@ -777,34 +795,19 @@
   .org-node.lv4 .role{font-size:.86rem;color:var(--cyan-2);font-weight:600;}
   .org-node.lv4 .mem{font-size:.8rem;color:var(--txt-dim);}
   .org-node .role{font-family:var(--kr);font-weight:700;font-size:.92rem;color:var(--cyan);line-height:1.45;text-align:center;}
-  .org-vchair{min-width:9rem!important;flex-shrink:0;}
-  .org-vchair .org-name{display:inline-block;padding:0 10px;white-space:nowrap;letter-spacing:.06em;font-variant-ligatures:none;}
+  .org-vchair .org-name{display:inline-block;padding:0 4px;white-space:nowrap;letter-spacing:.04em;font-variant-ligatures:none;}
+  .org-vchair .org-name-lg{display:block;margin-top:6px;font-size:1.12rem;font-weight:700;color:var(--txt);}
   .org-node .role-tight,.org-node .mem-tight{display:block;white-space:nowrap;word-break:keep-all;overflow:visible;}
   .org-node .nm{font-family:var(--kr);font-weight:600;font-size:.92rem;color:var(--txt-2);margin-top:6px;}
   .org-node .mem{font-family:var(--kr);font-size:.84rem;color:var(--txt-2);margin-top:8px;line-height:1.6;}
-  .org-row{display:grid;gap:12px;margin-bottom:12px;align-items:stretch;}
-  .org-row .org-node{display:flex;flex-direction:column;justify-content:flex-start;min-width:max-content;overflow:visible;}
-  .org-row.lv2-row{max-width:920px;margin-left:auto;margin-right:auto;}
-  .org-row.lv3-row{max-width:680px;margin-left:auto;margin-right:auto;}
-  .org-row5{grid-template-columns:repeat(5,minmax(max-content,1fr));}
-  .org-row6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
-  .org-row3{grid-template-columns:repeat(3,minmax(260px,1fr));}
-  .org-row2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
-  .org-row4{grid-template-columns:repeat(4,minmax(max-content,1fr));}
+  .org-empty{min-height:1.2em;opacity:.35;}
+  .org-kpga{color:var(--cyan-2);font-weight:600;font-size:.78rem;}
   #pgOrg .content-sec{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px;}
-  @media(max-width:1100px){
-    .org-row5{grid-template-columns:repeat(2,minmax(max-content,1fr));}
-    .org-row4{grid-template-columns:repeat(2,minmax(max-content,1fr));}
-    .org-row3{grid-template-columns:1fr;}
-  }
   @media(max-width:560px){
     #pgOrg .content-sec{overflow-x:visible;padding-bottom:64px;}
-    .org-row6,.org-row5,.org-row4,.org-row3,.org-row2{grid-template-columns:1fr;}
-    .org-row .org-node{min-width:0;width:100%;max-width:none;}
-    .org-row .org-node.org-vchair{min-width:0!important;width:100%;}
     .org-node.head,.org-node.planner{min-width:0;max-width:none;width:100%;padding:22px 18px;}
     .org-node.sm,.org-node.lv2,.org-node.lv3,.org-node.lv4{padding:16px 14px;}
-    .org-vchair .org-name{white-space:normal;letter-spacing:0;}
+    .org-vchair .org-name,.org-vchair .org-name-lg{white-space:normal;letter-spacing:0;}
   }
   /* SPONSOR */
   .sp-grid{display:flex;flex-wrap:wrap;gap:14px;}
@@ -1339,40 +1342,57 @@
 <div class="page" id="pgOrg"><div class="wrap">
   <div class="page-head"><span class="label">Organization Chart</span><h1>조직<span class="cy">도</span></h1><p>아시아생활체육골프연맹의 운영 조직입니다.</p></div>
   <div class="content-sec">
-    <div class="org-top org-pres">
+    <div class="org-chart">
+
+    <div class="org-pres">
+      <div class="org-slot" aria-hidden="true"></div>
       <div class="org-node head"><div class="role">총재</div><div class="nm">조정영</div></div>
-      <div class="org-node sm escort"><div class="role">경호의전실</div><div class="mem">간태경 · 박종철 · 정다윤</div></div>
+      <div class="org-node sm escort"><div class="role">경호의전실</div><div class="mem">간태경 · 박종철 · 정다운</div></div>
     </div>
 
-    <div class="org-row org-row5">
-      <div class="org-node sm"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
-      <div class="org-node sm org-vchair"><div class="role">부회장</div><div class="mem"><span class="org-name">이주덕</span></div></div>
-      <div class="org-node sm"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
-      <div class="org-node sm"><div class="role role-tight">감사</div><div class="mem">공창릉 · 허영길</div></div>
-      <div class="org-node sm"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
+    <div class="org-tier org-tier-3">
+      <div class="org-slot" aria-hidden="true"></div>
+      <div class="org-node sm lv2"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div>
+      <div class="org-node sm side"><div class="role role-tight">집행위원장</div><div class="mem mem-tight">정철헌</div></div>
     </div>
 
-    <div class="org-top" style="margin-top:8px"><div class="org-node planner"><div class="role">기획위원장</div><div class="nm">이현석</div></div></div>
+    <div class="org-tier org-tier-3">
+      <div class="org-node sm side-left"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div>
+      <div class="org-node sm lv2"><div class="role">회장</div><div class="mem org-empty">—</div></div>
+      <div class="org-slot" aria-hidden="true"></div>
+    </div>
 
-    <div class="org-row org-row4">
-      <div class="org-node sm"><div class="role role-tight">집행위원장</div><div class="mem mem-tight">정철현</div></div>
-      <div class="org-node sm"><div class="role role-tight">사무총장</div><div class="mem mem-tight">김용태</div></div>
-      <div class="org-node sm"><div class="role role-tight">사무국장</div><div class="mem mem-tight">이은주</div></div>
+    <div class="org-tier org-tier-3">
+      <div class="org-node sm side-left"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
+      <div class="org-node sm lv2 org-vchair"><div class="role">부회장</div><div class="mem"><span class="org-name">이주덕</span><span class="org-name-lg">곽상기</span></div></div>
+      <div class="org-node sm side"><div class="role role-tight">감사</div><div class="mem">공정룡 · 허영길</div></div>
+    </div>
+
+    <div class="org-tier org-tier-3">
+      <div class="org-node sm side-left"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div>
+      <div class="org-node sm lv2"><div class="role role-tight">사무총장</div><div class="mem mem-tight">김용태</div></div>
+      <div class="org-node sm side"><div class="role role-tight">사무국장</div><div class="mem mem-tight">이은주</div></div>
+    </div>
+
+    <div class="org-tier org-tier-1">
+      <div class="org-node planner"><div class="role">기획위원장</div><div class="nm">이현석</div></div>
+    </div>
+
+    <div class="org-tier org-tier-4">
+      <div class="org-node sm"><div class="role">전략상생위원장</div><div class="mem">황대웅</div></div>
       <div class="org-node sm"><div class="role role-tight">대회협력단장</div><div class="mem mem-tight">김상철</div></div>
-    </div>
-
-    <div class="org-row org-row4">
-      <div class="org-node sm"><div class="role">디지털 혁신단장</div><div class="mem">공경식</div></div>
-      <div class="org-node sm"><div class="role">국제위원장</div><div class="mem">조인관</div></div>
       <div class="org-node sm"><div class="role">조직위원장</div><div class="mem">유승석<br>황승현(부) · 강태환(부)</div></div>
-      <div class="org-node sm"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div>
+      <div class="org-node sm"><div class="role">디지털 혁신단장</div><div class="mem">공경식</div></div>
     </div>
 
-    <div class="org-row org-row3">
-      <div class="org-node sm"><div class="role">홍보위원장</div><div class="mem">이동준 · 최재원 · 윤서현 (탤런트)<br>이진관 · 김양 · 정수연 · 홍성재 (가수)</div></div>
+    <div class="org-tier org-tier-4 org-footer">
+      <div class="org-node sm"><div class="role">국제위원장</div><div class="mem">조인관</div></div>
       <div class="org-node sm"><div class="role">경기·교육총괄위원장 · 남승현</div>
-        <div class="mem"><b style="color:var(--cyan-2)">KPGA</b> 박찬우 · 정우재 · 심동준 · 서현석 · 이도형 · 박서준<br><b style="color:var(--cyan-2)">KLPGA</b> 김미순 · 김수민 · 심우리 · 정슬아 · 강진희 · 황현서</div></div>
-      <div class="org-node sm"><div class="role">이사진</div><div class="mem">박민정 · 정원형 · 임창옥 · 하경화 · 김상수</div></div>
+        <div class="mem"><span class="org-kpga">KPGA</span> 박찬우 · 정우재 · 심동준 · 서현석 · 이도형 · 박서준<br><span class="org-kpga">KLPGA</span> 김미순 · 김수민 · 심우리 · 정슬아 · 강진희 · 황현서</div></div>
+      <div class="org-node sm"><div class="role">홍보위원</div><div class="mem">이동준 · 최재원 · 윤서현 (탤런트)<br>이진관 · 김양 · 정수연 · 홍성재 (가수)</div></div>
+      <div class="org-node sm"><div class="role">이사진</div><div class="mem">박민정 · 정원형 · 하경화 · 김상수</div></div>
+    </div>
+
     </div>
   </div>
 </div></div>
