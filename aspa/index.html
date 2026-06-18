@@ -738,12 +738,12 @@
   .cty .kr{font-family:var(--kr);font-weight:500;font-size:.86rem;color:var(--txt);margin-top:6px;}
   .cty .en{font-family:var(--mono);font-size:.6rem;color:var(--txt-faint);letter-spacing:.04em;margin-top:2px;}
 
-  /* ORG — 박스 사이 연결줄 (세로축 + 좌·우 가로줄) */
+  /* ORG — 박스 사이 세로줄 + T자 가로줄 */
   .org-chart{
     --org-l:220px;
     --org-br:52px;
     --org-c:248px;
-    --org-gap:14px;
+    --org-gap:16px;
     --org-ln:2px;
     --org-role:.875rem;
     --org-name:.875rem;
@@ -755,53 +755,65 @@
   .org-tree-core{
     position:relative;display:flex;flex-direction:column;gap:var(--org-gap);
   }
-  /* 중앙 세로줄 — 박스 사이 공간을 관통 */
-  .org-vline{
-    position:absolute;
-    left:calc(var(--org-l) + var(--org-br) + var(--org-c) / 2);
-    transform:translateX(-50%);
-    top:calc(var(--org-h) / 2);
-    bottom:calc(var(--org-h) / 2);
-    width:var(--org-ln);
-    background:rgba(0,229,255,.55);
-    border-radius:2px;pointer-events:none;z-index:0;
-  }
   .org-tier{
     display:grid;
     grid-template-columns:var(--org-l) var(--org-br) var(--org-c) var(--org-br) var(--org-l);
-    align-items:center;position:relative;z-index:1;
+    align-items:stretch;position:relative;z-index:1;
   }
   .org-l,.org-r{display:flex;align-items:center;min-height:var(--org-h);}
-  .org-l{justify-content:flex-end;padding-right:0;}
-  .org-r{justify-content:flex-start;padding-left:0;}
-  .org-c{display:flex;justify-content:center;position:relative;z-index:2;}
-  .org-br-l,.org-br-r{
-    position:relative;align-self:stretch;min-height:var(--org-h);
+  .org-l{justify-content:flex-end;}
+  .org-r{justify-content:flex-start;}
+  .org-c{display:flex;justify-content:center;align-items:center;position:relative;z-index:2;}
+
+  /* ── 중앙 세로줄: 박스 아래 절반 → 줄 사이 → 다음 박스 위 절반 ── */
+  .org-c::before,.org-c::after{
+    content:"";position:absolute;left:50%;transform:translateX(-50%);
+    width:var(--org-ln);background:rgba(0,229,255,.55);border-radius:2px;pointer-events:none;z-index:0;
   }
-  /* 가로 연결줄 — 박스와 중앙 세로줄 사이 */
-  .org-br-l::after,.org-br-r::after{
-    content:"";position:absolute;top:50%;height:var(--org-ln);
-    background:rgba(0,229,255,.5);border-radius:2px;
+  .org-tier:first-child .org-c::before{display:none;}
+  .org-tier:last-child .org-c::after{display:none;}
+  .org-c::before{top:calc(-1 * var(--org-gap));height:calc(var(--org-gap) + 50%);}
+  .org-c::after{top:50%;height:calc(50% + var(--org-gap));}
+
+  /* ── 좌·우 연결칸: 세로(T) + 가로 ── */
+  .org-br-l,.org-br-r{position:relative;align-self:stretch;min-height:var(--org-h);}
+  .org-br-l.empty,.org-br-r.empty{pointer-events:none;}
+
+  /* 가로줄 — 박스 ↔ 중앙 세로줄 사이 */
+  .org-br-l:not(.empty)::after,.org-br-r:not(.empty)::after{
+    content:"";position:absolute;top:50%;left:0;right:0;height:var(--org-ln);
+    background:rgba(0,229,255,.5);transform:translateY(-50%);border-radius:2px;
   }
-  .org-br-l::after{left:0;right:0;transform:translateY(-50%);}
-  .org-br-r::after{left:0;right:0;transform:translateY(-50%);}
-  .org-br-l.empty::after,.org-br-r.empty::after{display:none;}
+  /* 좌측: 줄 사이 세로 + T자 */
+  .org-br-l:not(.empty)::before{
+    content:"";position:absolute;right:0;top:calc(-1 * var(--org-gap));
+    width:var(--org-ln);height:calc(var(--org-gap) + 50%);
+    background:rgba(0,229,255,.55);border-radius:2px;
+  }
+  .org-tier:first-child .org-br-l:not(.empty)::before{top:50%;height:50%;}
+  /* 우측: 줄 사이 세로 + T자 */
+  .org-br-r:not(.empty)::before{
+    content:"";position:absolute;left:0;top:calc(-1 * var(--org-gap));
+    width:var(--org-ln);height:calc(var(--org-gap) + 50%);
+    background:rgba(0,229,255,.55);border-radius:2px;
+  }
+  .org-tier:first-child .org-br-r:not(.empty)::before{top:50%;height:50%;}
 
   .org-tier-4{
     display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--org-gap);
-    margin-top:calc(var(--org-gap) + var(--org-br));
-    position:relative;z-index:1;
+    margin-top:var(--org-gap);position:relative;z-index:1;
   }
   .org-tier-4::before{
-    content:"";position:absolute;left:calc(var(--org-l) + var(--org-br) + var(--org-c) / 2);
-    top:calc(-1 * var(--org-gap) - var(--org-br));transform:translateX(-50%);
-    width:var(--org-ln);height:calc(var(--org-gap) + var(--org-br));
-    background:rgba(0,229,255,.45);
+    content:"";position:absolute;
+    left:calc(var(--org-l) + var(--org-br) + var(--org-c) / 2);
+    top:calc(-1 * var(--org-gap));transform:translateX(-50%);
+    width:var(--org-ln);height:var(--org-gap);
+    background:rgba(0,229,255,.55);
   }
   .org-tier.org-footer{margin-top:var(--org-gap);padding-top:18px;border-top:1px dashed rgba(0,229,255,.18);}
 
   .org-node{
-    width:100%;min-height:var(--org-h);
+    position:relative;z-index:1;width:100%;min-height:var(--org-h);
     background:linear-gradient(180deg,rgba(0,229,255,.06),rgba(255,255,255,.03));
     border:1px solid rgba(0,229,255,.32);
     border-radius:14px;box-shadow:0 0 20px -12px var(--cyan-glow);
@@ -826,7 +838,7 @@
   }
   @media(max-width:820px){
     .org-chart{--org-l:100%;--org-c:100%;--org-br:0;max-width:100%;}
-    .org-vline,.org-br-l::after,.org-br-r::after,.org-tier-4::before{display:none;}
+    .org-c::before,.org-c::after,.org-br-l::before,.org-br-l::after,.org-br-r::before,.org-br-r::after,.org-tier-4::before{display:none;}
     .org-tier{grid-template-columns:1fr;gap:10px;}
     .org-l,.org-r{justify-content:center;}
     .org-br-l,.org-br-r{display:none;}
@@ -1370,7 +1382,6 @@
     <div class="org-chart">
 
     <div class="org-tree-core">
-    <div class="org-vline" aria-hidden="true"></div>
 
     <div class="org-tier">
       <div class="org-l empty"></div>
