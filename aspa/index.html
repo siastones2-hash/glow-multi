@@ -740,8 +740,9 @@
 
   /* ORG — SVG 연결선 + 그리드 박스 */
   .org-chart{
-    --org-l:210px;--org-br:78px;--org-c:240px;--org-jh:54px;--org-gap:8px;
-    --org-role:.875rem;--org-name:.8125rem;--org-pad:14px 12px;--org-h:102px;
+    --org-l:258px;--org-br:112px;--org-c:278px;--org-jh:44px;--org-jh-wide:78px;--org-gap:6px;
+    --org-role:.875rem;--org-name:.8125rem;--org-pad:14px 16px;--org-h:98px;
+    width:100%;
     max-width:calc(var(--org-l)*2 + var(--org-br)*2 + var(--org-c));
     margin:0 auto;padding:8px 0 24px;
   }
@@ -778,17 +779,20 @@
   .org-j-r{grid-column:5;display:flex;justify-content:flex-start;align-items:center;}
   .org-junc.no-l .org-j-l{display:none;}
   .org-junc.no-r .org-j-r{display:none;}
+  .org-junc.org-junc-wide{min-height:var(--org-jh-wide);}
   .org-row-lc,.org-row-rc{
     grid-column:1/-1;display:grid;grid-template-columns:var(--org-l) var(--org-br) var(--org-c) var(--org-br) var(--org-l);
     align-items:center;padding:var(--org-gap) 0;
   }
+  .org-row-lc.org-left-tight{margin-top:-4px;padding-top:0;padding-bottom:0;}
+  .org-row-lc.org-left-spread{margin-top:2px;padding-top:0;}
   .org-row-lc .org-left{grid-column:1;display:flex;justify-content:flex-end;}
   .org-row-lc .org-sn{grid-column:3;padding:0;}
   .org-row-rc .org-sn{grid-column:3;padding:0;}
   .org-row-rc .org-j-r{grid-column:5;display:flex;justify-content:flex-start;}
 
   .org-solo{max-width:var(--org-c);margin:16px auto 0;position:relative;z-index:2;}
-  .org-tier-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:20px;position:relative;z-index:2;}
+  .org-tier-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:22px;position:relative;z-index:2;}
   .org-tier.org-footer{margin-top:14px;padding-top:18px;border-top:1px dashed rgba(0,229,255,.18);}
   .org-kpga{color:var(--cyan);font-weight:700;}
 
@@ -1354,16 +1358,16 @@
       <div class="org-j-r"><div class="org-node"><div class="role">집행위원장</div><div class="mem">정철헌</div></div></div>
     </div>
 
-    <div class="org-row-lc">
+    <div class="org-row-lc org-left-tight">
       <div class="org-left"><div class="org-node" data-left="gomun"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div></div>
       <div class="org-sn" data-spine><div class="org-node"><div class="role">회장</div><div class="mem org-empty">—</div></div></div>
     </div>
 
-    <div class="org-junc no-l" data-junc>
+    <div class="org-junc no-l org-junc-wide" data-junc>
       <div class="org-j-r"><div class="org-node"><div class="role">감사</div><div class="mem">공정룡 · 허영길</div></div></div>
     </div>
 
-    <div class="org-row-lc">
+    <div class="org-row-lc org-left-spread">
       <div class="org-left"><div class="org-node" data-left="jamun"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div></div>
       <div class="org-sn" data-spine><div class="org-node"><div class="role">부회장</div><div class="mem">이주덕 · 곽상기</div></div></div>
     </div>
