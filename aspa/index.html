@@ -738,20 +738,26 @@
   .cty .kr{font-family:var(--kr);font-weight:500;font-size:.86rem;color:var(--txt);margin-top:6px;}
   .cty .en{font-family:var(--mono);font-size:.6rem;color:var(--txt-faint);letter-spacing:.04em;margin-top:2px;}
 
-  /* ORG — 중앙 세로축, 박스 사이 junction에서 좌·우 분기 */
+  /* ORG — SVG 연결선 + 그리드 박스 */
   .org-chart{
-    --org-l:220px;--org-br:48px;--org-c:248px;--org-jh:44px;--org-ln:2px;
+    --org-l:220px;--org-br:56px;--org-c:248px;--org-jh:40px;
     --org-role:.875rem;--org-name:.875rem;--org-pad:15px 14px;--org-h:108px;
     max-width:calc(var(--org-l)*2 + var(--org-br)*2 + var(--org-c));
     margin:0 auto;padding:12px 0 28px;
   }
+  .org-stage{position:relative;width:100%;}
+  .org-wires{
+    position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible;
+  }
+  .org-wires line,.org-wires path{stroke:rgba(0,229,255,.62);stroke-width:2.5;stroke-linecap:square;fill:none;}
   .org-grid{
+    position:relative;z-index:2;
     display:grid;
     grid-template-columns:var(--org-l) var(--org-br) var(--org-c) var(--org-br) var(--org-l);
     align-items:center;
   }
   .org-node{
-    width:100%;min-height:var(--org-h);position:relative;z-index:2;
+    width:100%;min-height:var(--org-h);
     background:linear-gradient(180deg,rgba(0,229,255,.06),rgba(255,255,255,.03));
     border:1px solid rgba(0,229,255,.32);border-radius:14px;
     box-shadow:0 0 20px -12px var(--cyan-glow);
@@ -762,80 +768,34 @@
   .org-node .mem{font-family:var(--kr);font-size:var(--org-name);font-weight:500;color:var(--txt-2);margin-top:8px;line-height:1.55;word-break:keep-all;}
   .org-empty{color:var(--txt-faint);}
 
-  /* 중앙 박스만 있는 행 */
-  .org-sn{grid-column:3;padding:6px 0;position:relative;}
-  .org-sn::before,.org-sn::after{
-    content:"";position:absolute;left:50%;transform:translateX(-50%);
-    width:var(--org-ln);background:rgba(0,229,255,.55);z-index:1;
-  }
-  .org-sn::before{top:0;height:6px;}
-  .org-sn::after{bottom:0;height:6px;}
-  .org-grid>.org-sn:first-child::before{display:none;}
-  .org-grid>.org-sn:last-of-type::after{display:none;}
-
-  /* junction — 두 중앙 박스 사이, 여기서만 가로 분기 */
+  .org-sn{grid-column:3;padding:5px 0;}
   .org-junc{
-    grid-column:1/-1;display:grid;grid-template-columns:subgrid;
-    height:var(--org-jh);position:relative;z-index:1;
+    grid-column:1/-1;display:grid;grid-template-columns:var(--org-l) var(--org-br) var(--org-c) var(--org-br) var(--org-l);
+    min-height:var(--org-jh);align-items:center;
   }
-  .org-j-sp{grid-column:3;position:relative;}
-  .org-j-sp::before{
-    content:"";position:absolute;left:50%;top:0;bottom:0;
-    transform:translateX(-50%);width:var(--org-ln);background:rgba(0,229,255,.55);
+  .org-j-l{grid-column:1;display:flex;justify-content:flex-end;align-items:center;}
+  .org-j-r{grid-column:5;display:flex;justify-content:flex-start;align-items:center;}
+  .org-junc.no-l .org-j-l{display:none;}
+  .org-junc.no-r .org-j-r{display:none;}
+  .org-left{grid-column:1;display:flex;justify-content:flex-end;padding:5px 0;}
+  .org-row-lc{
+    grid-column:1/-1;display:grid;grid-template-columns:var(--org-l) var(--org-br) var(--org-c) var(--org-br) var(--org-l);
+    align-items:center;padding:5px 0;
   }
-  .org-j-hl{grid-column:2;align-self:center;height:var(--org-ln);background:rgba(0,229,255,.48);}
-  .org-j-hr{grid-column:4;align-self:center;height:var(--org-ln);background:rgba(0,229,255,.48);}
-  .org-j-l{grid-column:1;display:flex;align-items:center;justify-content:flex-end;}
-  .org-j-r{grid-column:5;display:flex;align-items:center;justify-content:flex-start;}
-  .org-junc.no-l .org-j-hl,.org-junc.no-l .org-j-l{display:none;}
-  .org-junc.no-r .org-j-hr,.org-junc.no-r .org-j-r{display:none;}
+  .org-row-lc .org-left{grid-column:1;}
+  .org-row-lc .org-sn{grid-column:3;padding:0;}
 
-  /* 좌측 세로 묶음 (상임↓고문↓자문) */
-  .org-lrail-wrap{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:stretch;}
-  .org-lrail{
-    grid-column:1;display:flex;flex-direction:column;align-items:stretch;gap:14px;
-    position:relative;padding-top:8px;
-  }
-  .org-lrail::before{
-    content:"";position:absolute;left:50%;top:0;bottom:0;width:var(--org-ln);
-    transform:translateX(-50%);background:rgba(0,229,255,.42);z-index:0;
-  }
-  .org-lrail .org-node{position:relative;z-index:1;}
-  .org-lrail-vcont{grid-column:3;position:relative;}
-  .org-lrail-vcont::before{
-    content:"";position:absolute;left:50%;top:0;bottom:0;
-    transform:translateX(-50%);width:var(--org-ln);background:rgba(0,229,255,.55);
-  }
-
-  /* 좌+중앙 같은 행 (자문 + 사무총장) */
-  .org-lc{
-    grid-column:1/-1;display:grid;grid-template-columns:subgrid;
-    align-items:center;padding:6px 0;
-  }
-  .org-lc .org-j-l{grid-column:1;}
-  .org-lc .org-j-hl{grid-column:2;align-self:center;height:var(--org-ln);background:rgba(0,229,255,.48);}
-  .org-lc .org-sn{grid-column:3;padding:0;}
-
-  .org-tier-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:18px;}
-  .org-spine-drop{
-    grid-column:1/-1;height:18px;position:relative;margin-bottom:2px;
-  }
-  .org-spine-drop::before{
-    content:"";position:absolute;left:calc(var(--org-l) + var(--org-br) + var(--org-c)/2);
-    top:0;transform:translateX(-50%);width:var(--org-ln);height:100%;
-    background:rgba(0,229,255,.5);
-  }
+  .org-tier-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:22px;position:relative;z-index:2;}
   .org-tier.org-footer{margin-top:14px;padding-top:18px;border-top:1px dashed rgba(0,229,255,.18);}
   .org-kpga{color:var(--cyan);font-weight:700;}
 
   #pgOrg .content-sec{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px;}
   @media(max-width:820px){
     .org-chart{--org-l:100%;--org-c:100%;--org-br:0;max-width:100%;}
-    .org-grid{display:flex;flex-direction:column;gap:10px;}
-    .org-sn,.org-junc,.org-lrail-wrap{grid-column:auto!important;display:block!important;}
-    .org-junc{display:none!important;}
-    .org-sn::before,.org-sn::after,.org-lrail::before,.org-lrail-vcont,.org-spine-drop{display:none!important;}
-    .org-lrail{gap:10px;padding:0;}
+    .org-wires{display:none;}
+    .org-grid,.org-junc,.org-row-lc{display:flex;flex-direction:column;gap:10px;}
+    .org-sn,.org-j-l,.org-j-r,.org-left{grid-column:auto!important;justify-content:center;}
+    .org-junc{min-height:0;}
     .org-tier-4{grid-template-columns:1fr 1fr;}
   }
   @media(max-width:480px){.org-tier-4{grid-template-columns:1fr;}}
@@ -1374,52 +1334,46 @@
   <div class="content-sec">
     <div class="org-chart">
 
-    <div class="org-grid">
+    <div class="org-stage" id="orgStage">
+    <svg class="org-wires" id="orgWires" aria-hidden="true"></svg>
+    <div class="org-grid" id="orgGrid">
 
-    <div class="org-sn"><div class="org-node"><div class="role">총재</div><div class="mem">조정영</div></div></div>
+    <div class="org-sn" data-spine><div class="org-node"><div class="role">총재</div><div class="mem">조정영</div></div></div>
 
-    <div class="org-junc no-l">
-      <div class="org-j-sp"></div><div class="org-j-hr"></div>
+    <div class="org-junc no-l" data-junc>
       <div class="org-j-r"><div class="org-node"><div class="role">경호의전실</div><div class="mem">간태경 · 박종철 · 정다운</div></div></div>
     </div>
 
-    <div class="org-sn"><div class="org-node"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div></div>
+    <div class="org-sn" data-spine><div class="org-node"><div class="role">부총재</div><div class="mem">김일두 · 박정웅</div></div></div>
 
-    <div class="org-junc">
-      <div class="org-j-l"><div class="org-node"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div></div>
-      <div class="org-j-hl"></div><div class="org-j-sp"></div><div class="org-j-hr"></div>
+    <div class="org-junc" data-junc>
+      <div class="org-j-l"><div class="org-node" data-left="sangim"><div class="role">상임고문</div><div class="mem">김장실 · 홍완식 · 한동만<br>박익순 · 이상률</div></div></div>
       <div class="org-j-r"><div class="org-node"><div class="role">집행위원장</div><div class="mem">정철헌</div></div></div>
     </div>
 
-    <div class="org-sn"><div class="org-node"><div class="role">회장</div><div class="mem org-empty">—</div></div></div>
+    <div class="org-sn" data-spine><div class="org-node"><div class="role">회장</div><div class="mem org-empty">—</div></div></div>
 
-    <div class="org-junc no-l">
-      <div class="org-j-sp"></div><div class="org-j-hr"></div>
+    <div class="org-junc no-l" data-junc>
       <div class="org-j-r"><div class="org-node"><div class="role">감사</div><div class="mem">공정룡 · 허영길</div></div></div>
     </div>
 
-    <div class="org-sn"><div class="org-node"><div class="role">부회장</div><div class="mem">이주덕 · 곽상기</div></div></div>
+    <div class="org-sn" data-spine><div class="org-node"><div class="role">부회장</div><div class="mem">이주덕 · 곽상기</div></div></div>
 
-    <div class="org-lrail-wrap">
-      <div class="org-lrail">
-        <div class="org-node"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div>
-        <div class="org-node"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div>
-      </div>
-      <div class="org-lrail-vcont" aria-hidden="true"></div>
-    </div>
+    <div class="org-left" data-left="gomun"><div class="org-node"><div class="role">고문</div><div class="mem">김창휘 · 원점조<br>김두열 · 허근행</div></div></div>
 
-    <div class="org-junc no-l">
-      <div class="org-j-sp"></div><div class="org-j-hr"></div>
+    <div class="org-junc no-l" data-junc>
       <div class="org-j-r"><div class="org-node"><div class="role">사무국장</div><div class="mem">이은주</div></div></div>
     </div>
 
-    <div class="org-sn"><div class="org-node"><div class="role">사무총장</div><div class="mem">김용태</div></div></div>
-
-    <div class="org-sn"><div class="org-node"><div class="role">기획위원장</div><div class="mem">이현석</div></div></div>
-
+    <div class="org-row-lc">
+      <div class="org-left" data-left="jamun"><div class="org-node"><div class="role">자문위원</div><div class="mem">이영준(위원장) · 차동래<br>배기영 · 신덕균 · 임옥금</div></div></div>
+      <div class="org-sn" data-spine><div class="org-node"><div class="role">사무총장</div><div class="mem">김용태</div></div></div>
     </div>
 
-    <div class="org-spine-drop" aria-hidden="true"></div>
+    <div class="org-sn" data-spine><div class="org-node"><div class="role">기획위원장</div><div class="mem">이현석</div></div></div>
+
+    </div>
+    </div>
 
     <div class="org-tier org-tier-4">
       <div class="org-node"><div class="role">전략상생위원장</div><div class="mem">황대웅</div></div>
@@ -1769,7 +1723,7 @@ function toast(msg){const t=$('toast');$('toastMsg').textContent=msg;t.classList
 function go(v){
   if(v==='admin'&&state.session.role!=='admin'){toast('관리자 전용 페이지입니다');v='login';}
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$('pg'+v[0].toUpperCase()+v.slice(1)).classList.add('active');window.scrollTo(0,0);
-  if(v==='member')renderMember();if(v==='admin')renderAdmin();if(v==='book')renderTours();if(v==='benefits')renderBenefits();if(v==='course')renderCourses();if(v==='about')renderCountries();if(v==='academy')renderAcademy();if(v==='exec')renderExec();}
+  if(v==='member')renderMember();if(v==='admin')renderAdmin();if(v==='book')renderTours();if(v==='benefits')renderBenefits();if(v==='course')renderCourses();if(v==='about')renderCountries();if(v==='academy')renderAcademy();if(v==='exec')renderExec();if(v==='org')setTimeout(layoutOrgWires,60);}
 function statusTag(s){const m={open:'<span class="tag t-active">모집중</span>',pre:'<span class="tag t-pending">사전등록</span>',full:'<span class="tag t-cancel">마감</span>',active:'<span class="tag t-active">예약확정</span>',pending:'<span class="tag t-pending">대기</span>',cancel:'<span class="tag t-cancel">취소</span>',done:'<span class="tag t-done">완료</span>',review:'<span class="tag t-pending">서류심사</span>',audit:'<span class="tag t-info">현장실사</span>',issued:'<span class="tag t-done">발급완료</span>'};return m[s]||s;}
 function tierTag(t){const m={norm:'<span class="tag t-norm">일반 회원</span>',reg:'<span class="tag t-reg">정회원</span>',pro:'<span class="tag t-pro">프로 정회원</span>',vip:'<span class="tag t-reg">정회원</span>'};return m[t]||m.norm;}
 function renderNav(){const s=state.session,el=$('navUser');
@@ -2338,6 +2292,45 @@ function initBanner(){
   setTimeout(()=>b.classList.add('show'),1600);
 }
 initPromo();initBanner();
+function orgPt(el,side,stage){
+  const r=el.getBoundingClientRect(),s=stage.getBoundingClientRect();
+  const x=side==='l'?r.right-s.left:side==='r'?r.left-s.left:r.left-s.left+r.width/2;
+  const y=r.top-s.top+r.height/2;
+  return{x,y};
+}
+function orgLine(svg,x1,y1,x2,y2){const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);svg.appendChild(l);}
+function layoutOrgWires(){
+  const stage=$('orgStage'),svg=$('orgWires'),grid=$('orgGrid');
+  if(!stage||!svg||!grid||window.innerWidth<=820){if(svg)svg.innerHTML='';return;}
+  const sr=stage.getBoundingClientRect();
+  svg.setAttribute('width',sr.width);svg.setAttribute('height',sr.height);
+  svg.innerHTML='';
+  const spine=[...grid.querySelectorAll('.org-sn[data-spine] .org-node')];
+  if(spine.length<2)return;
+  const sx=orgPt(spine[0],'c',stage).x;
+  const y0=orgPt(spine[0],'c',stage).y;
+  const yN=orgPt(spine[spine.length-1],'c',stage).y;
+  orgLine(svg,sx,y0,sx,yN);
+  grid.querySelectorAll('[data-junc]').forEach(j=>{
+    const jr=j.getBoundingClientRect(),jy=jr.top-sr.top+jr.height/2;
+    const lb=j.querySelector('.org-j-l .org-node'),rb=j.querySelector('.org-j-r .org-node');
+    if(lb){const p=orgPt(lb,'l',stage);orgLine(svg,p.x,jy,sx,jy);}
+    if(rb){const p=orgPt(rb,'r',stage);orgLine(svg,sx,jy,p.x,jy);}
+  });
+  const sangim=grid.querySelector('[data-left="sangim"]');
+  const gomun=grid.querySelector('[data-left="gomun"]');
+  const jamun=grid.querySelector('[data-left="jamun"]');
+  if(sangim&&gomun){
+    const a=orgPt(sangim,'c',stage),g=orgPt(gomun,'c',stage);
+    orgLine(svg,a.x,a.y,g.x,g.y);
+  }
+  if(gomun&&jamun){
+    const g=orgPt(gomun,'c',stage),j=orgPt(jamun,'c',stage);
+    orgLine(svg,g.x,g.y,j.x,j.y);
+  }
+}
+layoutOrgWires();
+window.addEventListener('resize',layoutOrgWires);
 </script>
 </body>
 </html>
