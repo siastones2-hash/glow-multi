@@ -1573,7 +1573,6 @@
 <a class="side-banner" id="sideBanner" target="_blank" rel="noopener">
   <button class="side-x" onclick="closeBanner(event)">×</button>
   <span class="sb-glow"></span>
-  <span class="sb-label" id="sbLabel">AD</span>
   <span class="sb-title" id="sbTitle"></span>
   <span class="sb-sub" id="sbSub"></span>
   <span class="sb-cta" id="sbCta">자세히 →</span>
@@ -1637,11 +1636,10 @@ const PROMO={
 };
 const BANNER={
   enabled:true,
-  label:'AD',
   title:'GLOW · 채널 성장 플랫폼',
   sub:'유튜브 · 인스타 · 틱톡 성장 마케팅',
-  cta:'무료로 시작하기 →',
-  link:'https://glow-0wdh.onrender.com'
+  cta:'홈페이지 →',
+  link:'https://www.glowsiax.com/'
 };
 let sb=null,MODE='local';
 try{if(SUPA.url&&SUPA.key&&window.supabase){sb=window.supabase.createClient(SUPA.url,SUPA.key);MODE='cloud';}}catch(e){MODE='local';}
@@ -2273,7 +2271,7 @@ function initBanner(){
   if(!BANNER.enabled)return;
   try{if(sessionStorage.getItem('asfa_banner_hide')==='1'||sessionStorage.getItem('aspa_banner_hide')==='1')return;}catch(e){}
   const b=$('sideBanner');b.href=BANNER.link;
-  $('sbLabel').textContent=BANNER.label;$('sbTitle').textContent=BANNER.title;$('sbSub').textContent=BANNER.sub;$('sbCta').textContent=BANNER.cta;
+  $('sbTitle').textContent=BANNER.title;$('sbSub').textContent=BANNER.sub;$('sbCta').textContent=BANNER.cta;
   setTimeout(()=>b.classList.add('show'),1600);
 }
 initPromo();initBanner();
