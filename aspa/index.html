@@ -752,6 +752,7 @@
   .org-tier{display:grid;gap:var(--org-gap);width:100%;align-items:stretch;}
   .org-tier-3,.org-pres{grid-template-columns:1fr var(--org-w) 1fr;}
   .org-tier-1{grid-template-columns:1fr;justify-items:center;margin:2px 0;}
+  .org-tier-1 .org-node{width:100%;max-width:var(--org-w);}
   .org-tier-4{grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--org-gap);margin-top:6px;}
   .org-tier.org-footer{margin-top:10px;padding-top:16px;border-top:1px dashed rgba(0,229,255,.18);}
   .org-slot{visibility:hidden;min-height:1px;padding:0;border:0;background:transparent;pointer-events:none;}
@@ -1375,8 +1376,10 @@
       <div class="org-node org-side"><div class="role">사무국장</div><div class="mem">이은주</div></div>
     </div>
 
-    <div class="org-tier org-tier-1">
-      <div class="org-node planner spine"><div class="role">기획위원장</div><div class="nm">이현석</div></div>
+    <div class="org-tier org-tier-3">
+      <div class="org-slot" aria-hidden="true"></div>
+      <div class="org-node spine"><div class="role">기획위원장</div><div class="mem">이현석</div></div>
+      <div class="org-slot" aria-hidden="true"></div>
     </div>
 
     <div class="org-tier org-tier-4">
