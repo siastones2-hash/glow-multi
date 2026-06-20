@@ -1061,6 +1061,41 @@ function isPeakerrQuantityError(msg) {
   return /quantity|amount|min|max|minimum|maximum|less than|more than|수량/i.test(msg);
 }
 
+function peakerrNetworkErrorKo(err) {
+  const m = String(err?.message || err || '');
+  if (/abort|timeout|timed out/i.test(m)) return '공급사 응답이 지연되고 있습니다. 1~2분 후 다시 시도해주세요.';
+  if (/fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|socket|network|TLS/i.test(m)) {
+    return '공급사 서버 연결이 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.';
+  }
+  return '공급사 연결 오류입니다. 잠시 후 다시 시도해주세요.';
+}
+
+/** Peakerr API — 타임아웃·1회 재시도 (Render↔Peakerr 간헐 끊김 대응) */
+async function peakerrFetch(params, opts = {}) {
+  const timeoutMs = opts.timeoutMs ?? 22000;
+  const retries = opts.retries ?? 1;
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const resp = await fetch('https://peakerr.com/api/v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(params),
+        signal: ctrl.signal
+      });
+      clearTimeout(tid);
+      return resp;
+    } catch (e) {
+      clearTimeout(tid);
+      lastErr = e;
+      if (attempt < retries) await new Promise(r => setTimeout(r, 600));
+    }
+  }
+  throw lastErr;
+}
+
 function serviceBucketKey(svc) {
   return `${svc.pl}:${serviceOrderBucket(svc)}`;
 }
@@ -1069,8 +1104,12 @@ function isCuratedServiceId(id) {
   return /^[a-z]{2,3}\d/i.test(String(id || ''));
 }
 
-async function ensurePeakerrCatalogLoaded() {
+async function ensurePeakerrCatalogLoaded(opts = {}) {
   if (peakerrCatalogCache.size > 0) return;
+  if (opts.background) {
+    syncPeakerrServices().catch(e => console.log('Peakerr 카탈로그 백그라운드 로드:', e.message));
+    return;
+  }
   const r = await syncPeakerrServices();
   if (r?.skipped || peakerrCatalogCache.size === 0) {
     console.log('Peakerr 카탈로그 로드 실패 — API 키 또는 연결 확인');
@@ -1119,10 +1158,8 @@ async function resolveOrderService(sid) {
 }
 
 async function submitPeakerrOrder(apiKey, apiId, link, qty) {
-  const resp = await fetch('https://peakerr.com/api/v2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ key: apiKey, action: 'add', service: String(apiId), link, quantity: String(qty) })
+  const resp = await peakerrFetch({
+    key: apiKey, action: 'add', service: String(apiId), link, quantity: String(qty)
   });
   const data = await resp.json();
   if (data.order) return { ok: true, apiOrderId: String(data.order) };
@@ -1185,7 +1222,7 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
       }
       continue;
     } catch (e) {
-      lastError = '서버 연결 실패: ' + e.message;
+      lastError = peakerrNetworkErrorKo(e);
       continue;
     }
   }
@@ -1361,11 +1398,7 @@ function attachPartnerAdminJsonMask(req, res) {
 // Peakerr 주문 상태 조회
 async function fetchPeakerrOrderStatus(apiKey, apiOrderId) {
   try {
-    const resp = await fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key: apiKey, action: 'status', order: apiOrderId })
-    });
+    const resp = await peakerrFetch({ key: apiKey, action: 'status', order: apiOrderId });
     return await resp.json();
     // { charge, start_count, status: 'Completed'/'In progress'/'Partial'/'Canceled', remains, currency }
   } catch(e) { console.log('Peakerr 상태 조회 실패:', e.message); return null; }
@@ -1386,11 +1419,7 @@ function parsePeakerrCancelResult(data, apiOrderId) {
 }
 
 async function submitPeakerrCancel(apiKey, apiOrderId) {
-  const resp = await fetch('https://peakerr.com/api/v2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ key: apiKey, action: 'cancel', orders: String(apiOrderId) })
-  });
+  const resp = await peakerrFetch({ key: apiKey, action: 'cancel', orders: String(apiOrderId) });
   const data = await resp.json();
   return parsePeakerrCancelResult(data, apiOrderId);
 }
@@ -3426,7 +3455,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (!apiKey || !svc.api_id) {
       return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
     }
-    await ensurePeakerrCatalogLoaded();
+    ensurePeakerrCatalogLoaded({ background: true });
 
     let maxApiCost = apiCost;
     const altCandidates = await findAlternateServices(svc, req.siteId, qtyNum, new Set(), 8);
@@ -3443,7 +3472,9 @@ app.post('/api/orders', requireAuth, async (req, res) => {
         ? linkHintForService(svc)
         : /balance|insufficient|not enough|잔액|부족/i.test(placement.error || '')
           ? '공급사 잔액 부족으로 주문이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
-          : `주문 접수에 실패했습니다. (${placement.error || '공급사 거절'})`;
+          : /공급사.*연결|응답이 지연|일시적/i.test(placement.error || '')
+            ? (placement.error || '공급사 연결이 불안정합니다. 1~2분 후 다시 시도해주세요.')
+            : `주문 접수에 실패했습니다. (${placement.error || '공급사 거절'})`;
       try {
         await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed']);

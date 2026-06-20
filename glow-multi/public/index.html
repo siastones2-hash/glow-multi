@@ -2161,16 +2161,20 @@ var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 var _globalExrate=1500; // 크레딧 원화 환산용 글로벌 환율
 
 async function api(url,method,body){
-  var opts={method:method||'GET',headers:{'Content-Type':'application/json'}};
-  var token=localStorage.getItem('glow_token');
-  if(token)opts.headers['Authorization']='Bearer '+token;
-  if(body)opts.body=JSON.stringify(body);
-  var res=await fetch(url,opts);
-  if(res.status===401){localStorage.removeItem('glow_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
-  var data=await res.json();
-  if(data&&data.error&&!_isSuperUser())data.error=_partnerMsg(data.error);
-  if(data&&data.message&&!_isSuperUser())data.message=_partnerMsg(data.message);
-  return data;
+  try{
+    var opts={method:method||'GET',headers:{'Content-Type':'application/json'}};
+    var token=localStorage.getItem('glow_token');
+    if(token)opts.headers['Authorization']='Bearer '+token;
+    if(body)opts.body=JSON.stringify(body);
+    var res=await fetch(url,opts);
+    if(res.status===401){localStorage.removeItem('glow_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
+    var data=await res.json();
+    if(data&&data.error&&!_isSuperUser())data.error=_partnerMsg(data.error);
+    if(data&&data.message&&!_isSuperUser())data.message=_partnerMsg(data.message);
+    return data;
+  }catch(e){
+    return {error:'서버에 연결할 수 없습니다. Wi‑Fi 확인 후 새로고침(F5)하고 다시 시도해주세요.'};
+  }
 }
 function _isSuperUser(){return !!(CUR&&CUR.role==='superadmin');}
 /** 지인 사이트 여부 — 나인스토리·히즈마케팅 등 default 제외 전체 */
@@ -3236,8 +3240,9 @@ async function placeOrder(){
   var link=ge('o링크').value.trim(),qty=parseInt(ge('o수량').value);
   if(!link){toast('링크를 입력하세요','err');return}
   var btn=ge('orderBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>처리 중...';
-  var d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});
-  btn.disabled=false;btn.innerHTML='✨ 주문하기';
+  var d;
+  try{d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});}
+  finally{btn.disabled=false;btn.innerHTML='✨ 주문하기';}
   if(d.error){toast(d.error,'err');return}
   if(d.adminCreditOnly&&d.creditDeductedKrw!=null){
     toast('✨ 주문완료! 크레딧 ₩'+Math.round(d.creditDeductedKrw).toLocaleString()+' 차감 · 잔액 ₩'+Math.round(d.creditKrw||0).toLocaleString(),'ok');
