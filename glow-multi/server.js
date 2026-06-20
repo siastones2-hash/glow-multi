@@ -1078,6 +1078,10 @@ async function restoreRefundFinancials(order, refundPercent, opts = {}) {
       await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditRefund, order.site_id]);
   }
   const newCost = Math.max(0, (order.cost || 0) - costRefund);
+  if (refundAmount > 0 && order.points_earned > 0) {
+    await query(`UPDATE users SET points=GREATEST(0,COALESCE(points,0)-$1) WHERE id=$2`, [order.points_earned, order.uid]);
+    await query(`UPDATE orders SET points_earned=0 WHERE id=$1`, [order.id]);
+  }
   return { ok: true, refundAmount, creditRefund, costRefund, newCost, pct };
 }
 
@@ -1150,8 +1154,32 @@ let peakerrCatalogCache = new Map();
 const orderPlacementLocks = new Map();
 const cancelOrderLocks = new Map();
 
-function orderLockKey(siteId, link) {
-  return `${siteId}:${String(link || '').toLowerCase().replace(/\/+$/, '').split('?')[0]}`;
+function orderLockKey(siteId, svc, link) {
+  const bucket = svc ? serviceBucketKey(svc) : 'any';
+  return `${siteId}:${bucket}:${String(link || '').toLowerCase().replace(/\/+$/, '').split('?')[0]}`;
+}
+
+/** 진행 중인 동일 상품(플랫폼+유형) 또는 동일 sid 주문 충돌 검사 */
+async function findActiveOrderConflict(siteId, linkNorm, svc) {
+  const bucketKey = serviceBucketKey(svc);
+  const r = await query(`
+    SELECT o.id, o.sid, o.sname FROM orders o
+    WHERE o.site_id=$1 AND o.link=$2
+    AND o.status IN ('pending','processing')
+    ORDER BY o.created DESC
+    LIMIT 20
+  `, [siteId, linkNorm]);
+  for (const o of r.rows) {
+    if (o.sid === svc.id) {
+      return { orderId: o.id, name: o.sname, bucket: serviceOrderBucket(svc), exact: true };
+    }
+    const sR = await query(`SELECT pl, name, description FROM services WHERE id=$1`, [o.sid]);
+    const existing = sR.rows[0];
+    if (existing && `${existing.pl}:${serviceOrderBucket(existing)}` === bucketKey) {
+      return { orderId: o.id, name: o.sname, bucket: serviceOrderBucket(svc), exact: false };
+    }
+  }
+  return null;
 }
 
 function normalizeOrderLink(url, platform) {
@@ -1404,6 +1432,37 @@ async function reconcileOrphanPeakerrOrders() {
   } catch (e) { console.log('Peakerr ID 복구:', e.message); return 0; }
 }
 
+/** api_order_id 없이 오래 멈춘 주문 — Peakerr 미전송으로 간주 후 환불 (손실 방지) */
+async function refundStuckOrdersWithoutApiId() {
+  try {
+    const r = await query(`
+      SELECT * FROM orders
+      WHERE (api_order_id IS NULL OR api_order_id='')
+      AND status IN ('processing', 'pending')
+      AND created < NOW() - INTERVAL '2 hours'
+      AND created > NOW() - INTERVAL '7 days'
+      ORDER BY created ASC
+      LIMIT 15
+    `);
+    let refunded = 0;
+    for (const o of r.rows) {
+      const recovered = await reconcileOrderMissingApiId(o);
+      if (recovered) continue;
+      const fin = await restoreRefundFinancials(o, 100, {
+        reason: `미전송 주문 자동 환불 - ${o.id}`,
+        adminId: 'system'
+      });
+      if (fin.alreadyRefunded) continue;
+      await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, o.id]);
+      await logActivity(o.site_id, 'system', '자동환불', '미전송 주문 환불', 'order', o.id,
+        `Peakerr 미연동 · ₩${(fin.refundAmount || 0).toLocaleString()} 환불`);
+      refunded++;
+    }
+    if (refunded > 0) console.log(`💸 미전송 주문 ${refunded}건 자동 환불`);
+    return refunded;
+  } catch (e) { console.log('미전송 주문 환불:', e.message); return 0; }
+}
+
 async function submitPeakerrOrder(apiKey, apiId, link, qty) {
   try {
     // add는 재시도 금지 — 응답 유실 시 재전송하면 Peakerr에 중복 주문 생성됨
@@ -1447,7 +1506,11 @@ async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(
 async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
   const baselineId = await getMaxPeakerrOrderIdInDb();
   const tried = new Set();
-  const candidates = [primary, ...(await findAlternateServices(primary, siteId, qty, tried, 8))];
+  // 검증 상품(ig1, yt2 등)은 선택한 SKU만 — 대체 전송 시 중복·혼선 방지
+  const alternates = isCuratedServiceId(primary.id)
+    ? []
+    : await findAlternateServices(primary, siteId, qty, tried, 8);
+  const candidates = [primary, ...alternates];
   let lastError = null;
   let lastLinkError = null;
   let hadNetworkError = false;
@@ -1971,6 +2034,7 @@ async function syncActiveOrdersForSite(siteId) {
 async function syncAllOrderStatuses() {
   try {
     await reconcileOrphanPeakerrOrders();
+    await refundStuckOrdersWithoutApiId();
     const apiKey = await getPeakerrApiKey();
     if (!apiKey) return;
     
@@ -3778,21 +3842,20 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       return res.json({ error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다` });
     
     const dupCheck = await query(
-      `SELECT id FROM orders WHERE uid=$1 AND sid=$2 AND link=$3 AND created > NOW() - INTERVAL '30 minutes' LIMIT 1`,
+      `SELECT id FROM orders WHERE uid=$1 AND sid=$2 AND link=$3
+       AND (status IN ('pending','processing') OR created > NOW() - INTERVAL '30 minutes')
+       LIMIT 1`,
       [req.session.userId, sid, linkNorm]
     );
     if (dupCheck.rows.length > 0) {
-      return res.json({ error: '동일 주문이 30분 내 이미 있습니다. 중복 주문을 방지합니다.' });
+      return res.json({ error: '동일 상품·링크 주문이 이미 있습니다. 진행 중이거나 30분 내 중복 주문은 불가합니다.' });
     }
-    const activeLinkDup = await query(`
-      SELECT id FROM orders
-      WHERE site_id=$1 AND link=$2
-      AND status IN ('pending','processing')
-      AND created > NOW() - INTERVAL '30 minutes'
-      LIMIT 1
-    `, [req.siteId, linkNorm]);
-    if (activeLinkDup.rows.length > 0) {
-      return res.json({ error: '이 링크로 진행 중인 주문이 있습니다. 주문 내역에서 🔄 상태 확인 후 다시 시도해주세요.' });
+    const productConflict = await findActiveOrderConflict(req.siteId, linkNorm, svc);
+    if (productConflict) {
+      const label = productConflict.bucket || svc.name;
+      return res.json({
+        error: `이 링크로 ${label} 작업이 진행 중입니다 (#${productConflict.orderId}). 완료·취소 후 다시 주문해주세요.`
+      });
     }
 
     const site = req.site;
@@ -3813,7 +3876,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
     }
 
-    const lockKey = orderLockKey(req.siteId, linkNorm);
+    const lockKey = orderLockKey(req.siteId, svc, linkNorm);
     if (orderPlacementLocks.has(lockKey)) {
       return res.json({ error: '같은 링크 주문이 처리 중입니다. 10초 후 다시 시도해주세요.' });
     }
@@ -3845,6 +3908,12 @@ async function placeOrderHandler(req, res, ctx) {
     if (site && site.credit < maxApiCost && site.id !== 'default')
       return res.json({ error: '사이트 API 크레딧이 부족합니다. 관리자 → 크레딧 요청으로 충전하세요.' });
 
+    const conflict = await findActiveOrderConflict(req.siteId, linkNorm, svc);
+    if (conflict) {
+      const label = conflict.bucket || svc.name;
+      return res.json({ error: `이 링크로 ${label} 작업이 진행 중입니다. 중복 Peakerr 전송을 차단했습니다.` });
+    }
+
     const placement = await placeOrderWithFallback(apiKey, svc, linkNorm, qtyNum, req.siteId);
     if (!placement.ok) {
       const failId = 'O' + Date.now();
@@ -3868,16 +3937,30 @@ async function placeOrderHandler(req, res, ctx) {
       usedOrderCostKrw = altAmounts.orderCostKrw;
     }
 
-    if (!adminCreditOnly)
+    let userDeducted = 0;
+    let creditDeducted = 0;
+    if (!adminCreditOnly) {
       await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, user.id]);
-    if (site && site.id !== 'default')
+      userDeducted = charge;
+    }
+    if (site && site.id !== 'default') {
       await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [usedApiCost, site.id]);
+      creditDeducted = usedApiCost;
+    }
 
     let apiOrderId = placement.apiOrderId || null;
     const orderId = 'O' + Date.now();
     const orderCost = usedOrderCostKrw;
-    await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, usedApiCost]);
+    try {
+      await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+        [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, usedApiCost]);
+    } catch (insertErr) {
+      if (userDeducted > 0)
+        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [userDeducted, user.id]).catch(() => null);
+      if (creditDeducted > 0 && site?.id)
+        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditDeducted, site.id]).catch(() => null);
+      throw insertErr;
+    }
 
     let snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
     if (!apiOrderId) {
@@ -4181,7 +4264,12 @@ app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
       });
     }
 
-    // 그 외 상태 변경은 단순 변경
+    // Peakerr 연동 주문 — 수동 상태 변경 금지 (동기화·취소 API만 허용)
+    if (order.api_order_id && status !== order.status) {
+      return res.json({ error: 'Peakerr 연동 주문은 수동 상태 변경이 불가합니다. 🔄 새로고침으로 동기화하거나 ✕ 취소를 사용하세요.' });
+    }
+
+    // 그 외 상태 변경은 단순 변경 (API 미연동 주문만)
     await query(`UPDATE orders SET status=$1 WHERE id=$2`, [status, id]);
     await logActivity(req.siteId, req.session.userId, '', '주문 상태 변경', 'order', id, `상태: ${status}`);
     res.json({ ok: true });
