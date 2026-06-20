@@ -571,7 +571,7 @@ async function initDB() {
 }
 
 /** 지인 사이트 site_services 깨짐 복구 (고아 레코드·전체 OFF·극소 활성) */
-async function repairSiteServices(siteId, force = false) {
+async function repairSiteServices(siteId, force = false, opts = {}) {
   const totalR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
   const totalActive = totalR.rows[0]?.c || 0;
   if (totalActive === 0) return { repaired: false, reason: 'no_active_services' };
@@ -591,13 +591,30 @@ async function repairSiteServices(siteId, force = false) {
   const shouldRepair = force || enabled === 0 || enabled < minHealthy;
   if (!shouldRepair) return { repaired: false, enabled, totalActive };
 
-  const allSvcs = await query(`SELECT id FROM services WHERE active=1`);
+  const curatedOnly = !!opts.curatedOnly;
+  const allSvcs = await query(
+    curatedOnly
+      ? `SELECT id FROM services WHERE active=1 AND id ~ '^[a-z]{2,3}[0-9]+'`
+      : `SELECT id FROM services WHERE active=1`
+  );
   for (const s of allSvcs.rows) {
     await query(`
       INSERT INTO site_services(site_id, service_id, active)
       VALUES($1, $2, 1)
       ON CONFLICT(site_id, service_id) DO UPDATE SET active=1
     `, [siteId, s.id]);
+  }
+  if (curatedOnly) {
+    await query(`
+      UPDATE site_services SET active=0
+      WHERE site_id=$1 AND service_id ~ '^(pk_|api_|svc_)'
+        AND EXISTS (
+          SELECT 1 FROM services c
+          WHERE c.active=1 AND c.id ~ '^[a-z]{2,3}[0-9]+' AND c.pl = (
+            SELECT pl FROM services WHERE id = site_services.service_id
+          )
+        )
+    `, [siteId]);
   }
   return { repaired: true, before: enabled, after: allSvcs.rows.length, totalActive };
 }
@@ -607,7 +624,7 @@ async function repairAllPartnerSiteServices() {
   const results = [];
   for (const site of sites.rows) {
     try {
-      const r = await repairSiteServices(site.id, true);
+      const r = await repairSiteServices(site.id, true, { curatedOnly: true });
       results.push({ siteId: site.id, name: site.name, domain: site.domain, ...r });
       console.log(`✅ site_services 동기화: ${site.name} (${site.domain}) → ${r.after ?? r.enabled}/${r.totalActive} 활성`);
     } catch (e) {
@@ -1008,7 +1025,25 @@ function isPeakerrServiceDeadError(msg) {
 
 function isPeakerrLinkError(msg) {
   if (!msg) return false;
-  return /link|url|incorrect|wrong|format|profile|private|video/i.test(msg);
+  return /invalid\s*(link|url)|incorrect\s*(link|url)|wrong\s*(link|url)|link\s*(is\s*)?(invalid|required|not)|must be a valid (link|url)|profile\s*(link|url)|username\s*required/i.test(msg);
+}
+
+function isPeakerrQuantityError(msg) {
+  if (!msg) return false;
+  return /quantity|amount|min|max|minimum|maximum|less than|more than|수량/i.test(msg);
+}
+
+function serviceBucketKey(svc) {
+  return `${svc.pl}:${serviceOrderBucket(svc)}`;
+}
+
+function isCuratedServiceId(id) {
+  return serviceIdPriority(id) === 0;
+}
+
+async function ensurePeakerrCatalogLoaded() {
+  if (peakerrCatalogCache.size > 0) return;
+  await syncPeakerrServices().catch(e => console.log('Peakerr 카탈로그 로드:', e.message));
 }
 
 async function submitPeakerrOrder(apiKey, apiId, link, qty) {
@@ -1022,34 +1057,32 @@ async function submitPeakerrOrder(apiKey, apiId, link, qty) {
   return { ok: false, error: data.error || '주문 접수 실패' };
 }
 
-async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(), limit = 2) {
+async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(), limit = 8) {
   const bucket = serviceOrderBucket(primary);
   if (!bucket || bucket === '서비스') return [];
-  const params = [primary.pl, primary.id];
-  let siteFilter = '';
-  if (siteId && siteId !== 'default') {
-    siteFilter = ` AND EXISTS (SELECT 1 FROM site_services ss WHERE ss.service_id=s.id AND ss.site_id=$3 AND ss.active=1)`;
-    params.push(siteId);
-  }
   const r = await query(`
     SELECT s.* FROM services s
     WHERE s.active=1 AND s.pl=$1 AND s.id<>$2
       AND s.api_id IS NOT NULL AND TRIM(s.api_id) <> ''
-      ${siteFilter}
-  `, params);
+  `, [primary.pl, primary.id]);
   return r.rows
     .filter(s => !excludeIds.has(s.id))
     .filter(s => serviceOrderBucket(s) === bucket)
     .filter(s => qty >= (s.min || 1) && qty <= (s.max || 999999999))
     .filter(s => peakerrCatalogCache.size === 0 || peakerrCatalogCache.has(String(s.api_id)))
-    .sort((a, b) => scoreServiceRow(b) - scoreServiceRow(a) || parseFloat(a.rate) - parseFloat(b.rate))
+    .sort((a, b) => {
+      const pa = serviceIdPriority(a.id) - serviceIdPriority(b.id);
+      if (pa !== 0) return pa;
+      return scoreServiceRow(b) - scoreServiceRow(a) || parseFloat(a.rate) - parseFloat(b.rate);
+    })
     .slice(0, limit);
 }
 
 async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
   const tried = new Set();
-  const candidates = [primary, ...(await findAlternateServices(primary, siteId, qty, tried, 2))];
+  const candidates = [primary, ...(await findAlternateServices(primary, siteId, qty, tried, 8))];
   let lastError = null;
+  let lastLinkError = null;
   for (const svc of candidates) {
     if (!svc.api_id || tried.has(svc.id)) continue;
     tried.add(svc.id);
@@ -1063,22 +1096,25 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
       const result = await submitPeakerrOrder(apiKey, svc.api_id, link, qty);
       if (result.ok) return { ok: true, apiOrderId: result.apiOrderId, usedSvc: svc };
       lastError = result.error;
-      if (isPeakerrLinkError(result.error)) break;
-      if (isPeakerrServiceDeadError(result.error)) {
+      if (isPeakerrLinkError(result.error)) {
+        lastLinkError = result.error;
+        continue;
+      }
+      if (isPeakerrServiceDeadError(result.error) || isPeakerrQuantityError(result.error)) {
         await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(() => null);
         continue;
       }
-      break;
+      continue;
     } catch (e) {
       lastError = '서버 연결 실패: ' + e.message;
-      break;
+      continue;
     }
   }
-  return { ok: false, error: lastError || '주문 접수 실패' };
+  return { ok: false, error: lastLinkError || lastError || '주문 접수 실패', linkError: !!lastLinkError };
 }
 
-// 🔗 URL 검증 (플랫폼별)
-function validateUrl(url, platform) {
+// 🔗 URL 검증 (플랫폼·상품 유형별)
+function validateUrl(url, platform, svc = null) {
   if (!url || typeof url !== 'string') return { ok: false, error: 'URL을 입력해주세요' };
   try {
     const u = new URL(url);
@@ -1097,23 +1133,62 @@ function validateUrl(url, platform) {
     };
     
     const expectedDomains = validDomains[platform];
-    if (!expectedDomains) return { ok: true }; // 기타/traffic은 검증 안 함
+    if (!expectedDomains) return { ok: true };
     
     const isValid = expectedDomains.some(d => domain === d || domain.endsWith('.' + d));
     if (!isValid) {
       return { ok: false, error: `잘못된 URL입니다. ${platform} 서비스는 ${expectedDomains[0]} 링크를 입력해주세요.` };
     }
-    if (platform === 'tiktok') {
-      const path = u.pathname + u.hostname;
-      const isVideo = /\/video\/|\/t\/|vm\.tiktok|vt\.tiktok/.test(path + u.hostname);
+    if (platform === 'tiktok' && svc) {
+      const bucket = serviceOrderBucket(svc);
+      const pathHost = u.pathname + u.hostname;
+      if (bucket === '팔로워') {
+        if (!/@/.test(u.pathname)) {
+          return { ok: false, error: '틱톡 팔로워는 프로필 링크(@username)를 입력해주세요.' };
+        }
+        return { ok: true };
+      }
+      if (bucket === '스토리 조회수' || bucket === '스토리') {
+        return { ok: true };
+      }
+      const isVideo = /\/video\/|\/photo\/|\/t\/|vm\.tiktok|vt\.tiktok/.test(pathHost);
       if (!isVideo) {
-        return { ok: false, error: '틱톡 영상 링크를 입력해주세요. (공유 → 링크 복사 / vm·vt 단축 링크 가능)' };
+        return { ok: false, error: '틱톡 영상·좋아요·조회수는 영상 공유 링크를 입력해주세요. (vm·vt 단축 URL 가능)' };
+      }
+    }
+    if (platform === 'instagram' && svc && serviceOrderBucket(svc) === '팔로워') {
+      if (/\/p\/|\/reel\/|\/tv\//.test(u.pathname)) {
+        return { ok: false, error: '인스타 팔로워는 프로필 링크를 입력해주세요. (게시물 링크 불가)' };
       }
     }
     return { ok: true };
   } catch(e) {
     return { ok: false, error: '올바른 URL 형식이 아닙니다 (예: https://...)' };
   }
+}
+
+/** 지인 사이트: 검증된 시드 상품 우선, 자동등록(pk_)은 동일 종류 시드가 있으면 숨김 */
+function filterPartnerServiceRows(rows) {
+  const curatedBuckets = new Set(
+    rows.filter(s => isCuratedServiceId(s.id)).map(serviceBucketKey)
+  );
+  return rows.filter(s => {
+    if (isCuratedServiceId(s.id)) return true;
+    if (/^pk_|^api_|^svc_/.test(s.id)) return !curatedBuckets.has(serviceBucketKey(s));
+    return true;
+  });
+}
+
+function linkHintForService(svc) {
+  const bucket = serviceOrderBucket(svc);
+  if (svc.pl === 'tiktok') {
+    if (bucket === '팔로워') return '틱톡 팔로워는 프로필(@username) 링크를 입력해주세요.';
+    if (bucket === '스토리 조회수' || bucket === '스토리') return '틱톡 스토리 링크를 입력해주세요.';
+    return '틱톡 영상·좋아요·조회수는 영상 공유 링크를 입력해주세요. (vm·vt 단축 URL 가능)';
+  }
+  if (svc.pl === 'instagram' && bucket === '팔로워') return '인스타 팔로워는 프로필 링크를 입력해주세요.';
+  if (svc.pl === 'youtube' && bucket === '구독자') return '유튜브 구독자는 채널 링크를 입력해주세요.';
+  return '링크 형식을 확인해주세요. 공유 → 링크 복사로 다시 시도해주세요.';
 }
 
 // 🤖 텔레그램 알림 발송 (통합 함수)
@@ -1457,9 +1532,7 @@ async function reconcileServiceCatalog(opts = {}) {
     noApi = noApiR.rowCount || 0;
 
     const sync = await syncPeakerrServices();
-    if (sync?.skipped) {
-      await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
-    }
+    await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
 
     const failOnlyR = await query(`
       SELECT sid FROM orders
@@ -2311,6 +2384,22 @@ async function pruneServiceCatalog(opts = {}) {
     }
   }
 
+  // 자동등록(pk_/api_/svc_) — 동일 플랫폼·종류에 검증 시드(ptt/pyt/pig)가 있으면 숨김
+  const liveForAuto = allR.rows.filter(r => !toDeactivate.has(r.id));
+  const curatedBuckets = new Map();
+  for (const row of liveForAuto) {
+    if (!isCuratedServiceId(row.id)) continue;
+    const key = serviceBucketKey(row);
+    if (!curatedBuckets.has(key)) curatedBuckets.set(key, []);
+    curatedBuckets.get(key).push(row);
+  }
+  for (const row of liveForAuto) {
+    if (!/^pk_|^api_|^svc_/.test(row.id)) continue;
+    if (curatedBuckets.has(serviceBucketKey(row))) {
+      mark(row.id, 'autimport', row.name);
+    }
+  }
+
   const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'pinterest', 'traffic', 'appstore', 'other'];
   for (const pl of platforms) {
     const activeR = await query(`
@@ -2352,7 +2441,7 @@ async function pruneServiceCatalog(opts = {}) {
     }
   }
 
-  const stats = { bad: 0, duplicate: 0, namedup: 0, overflow: 0, typeoverflow: 0 };
+  const stats = { bad: 0, duplicate: 0, namedup: 0, overflow: 0, typeoverflow: 0, autimport: 0 };
   const items = [];
   for (const [id, info] of toDeactivate) {
     stats[info.reason] = (stats[info.reason] || 0) + 1;
@@ -2985,6 +3074,7 @@ app.get('/api/services', async (req, res) => {
         ORDER BY s.id
       `, [site.id]);
       serviceRows = ssR.rows;
+      serviceRows = filterPartnerServiceRows(serviceRows);
       const totalActiveR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
       const totalActive = totalActiveR.rows[0]?.c || 0;
       const minHealthy = Math.max(5, Math.floor(totalActive * 0.1));
@@ -2994,7 +3084,7 @@ app.get('/api/services', async (req, res) => {
           repairSiteServices(site.id).catch(e => console.log('site_services 자동복구:', e.message));
         }
         const allR = await query(`SELECT * FROM services WHERE active=1 ORDER BY id`);
-        serviceRows = allR.rows;
+        serviceRows = filterPartnerServiceRows(allR.rows);
       }
     } else {
       const allR = await query(`SELECT * FROM services WHERE active=1 ORDER BY id`);
@@ -3079,7 +3169,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (!svc) return res.json({ error: '서비스를 찾을 수 없습니다' });
     
     const linkNorm = normalizeOrderLink(link, svc.pl);
-    const urlCheck = validateUrl(linkNorm, svc.pl);
+    const urlCheck = validateUrl(linkNorm, svc.pl, svc);
     if (!urlCheck.ok) return res.json({ error: urlCheck.error });
     
     const qtyNum = parseInt(qty);
@@ -3111,9 +3201,10 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (!apiKey || !svc.api_id) {
       return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
     }
+    await ensurePeakerrCatalogLoaded();
 
     let maxApiCost = apiCost;
-    const altCandidates = await findAlternateServices(svc, req.siteId, qtyNum, new Set(), 2);
+    const altCandidates = await findAlternateServices(svc, req.siteId, qtyNum, new Set(), 8);
     for (const alt of altCandidates) {
       maxApiCost = Math.max(maxApiCost, computeOrderAmounts(alt, qtyNum, site, margins).apiCost);
     }
@@ -3123,9 +3214,9 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const placement = await placeOrderWithFallback(apiKey, svc, linkNorm, qtyNum, req.siteId);
     if (!placement.ok) {
       const failId = 'O' + Date.now();
-      const errMsg = isPeakerrLinkError(placement.error)
-        ? '링크 형식을 확인해주세요. 틱톡은 영상 공유 링크(vm·vt 단축 URL 포함)를 사용하세요.'
-        : `주문 접수에 실패했습니다. (${placement.error})`;
+      const errMsg = placement.linkError || isPeakerrLinkError(placement.error)
+        ? linkHintForService(svc)
+        : `주문 접수에 실패했습니다. 잠시 후 다시 시도하거나 다른 상품을 선택해주세요.`;
       try {
         await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed']);
