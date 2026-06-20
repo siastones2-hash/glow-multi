@@ -301,7 +301,6 @@ async function initDB() {
   await fixLegacyPartnerAdminOrders();
   const mislabel = await repairMislabeledServiceNames().catch(() => ({ count: 0 }));
   if (mislabel.count > 0) console.log(`✓ 잘못 분류된 상품명 ${mislabel.count}건 수정`);
-  await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
 
   // 파트너 관리자에게 잘못 승인된 잔액 충전 자동 회수
   try {
@@ -568,6 +567,7 @@ async function initDB() {
   await repairAllPartnerSiteServices();
   const nameFix = await localizeAllSitesServiceNames().catch(() => ({ count: 0 }));
   if (nameFix.count > 0) console.log(`🇰🇷 영문 상품명 ${nameFix.count}건 한글화 (GLOW·지인 사이트 전체)`);
+  await reconcileServiceCatalog({ notify: false }).catch(e => console.log('카탈로그 정리:', e.message));
   console.log('✅ DB 초기화 완료');
 }
 
@@ -1133,7 +1133,7 @@ async function syncAllOrderStatuses() {
 async function syncPeakerrServices() {
   try {
     const apiKey = await getGlobalSetting('peakerr_api_key');
-    if (!apiKey) return;
+    if (!apiKey) return { skipped: true };
     
     // Peakerr 전체 서비스 목록 가져오기
     const resp = await fetch('https://peakerr.com/api/v2', {
@@ -1235,9 +1235,69 @@ async function syncPeakerrServices() {
       await sendTelegramToSuper(msg);
     }
 
+    await query(`
+      UPDATE site_services ss SET active=0
+      FROM services s WHERE ss.service_id = s.id AND s.active=0 AND ss.active=1
+    `);
     await repairAllPartnerSiteServices();
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(e => console.log('상품 정리:', e.message));
-  } catch(e) { console.log('서비스 동기화 실패:', e.message); }
+    return { disabled, priceChanged, stuckRefunded, checked };
+  } catch(e) { console.log('서비스 동기화 실패:', e.message); return { error: e.message }; }
+}
+
+/** 공급사 기준 작동 상품만 남기고 중복·미연동·반복실패 상품 숨김 */
+async function reconcileServiceCatalog(opts = {}) {
+  const notify = opts.notify !== false;
+  let noApi = 0, failHide = 0;
+  try {
+    const noApiR = await query(`
+      UPDATE services SET active=0
+      WHERE active=1 AND (api_id IS NULL OR TRIM(api_id) = '')
+      RETURNING id
+    `);
+    noApi = noApiR.rowCount || 0;
+
+    const sync = await syncPeakerrServices();
+    if (sync?.skipped) {
+      await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
+    }
+
+    const failOnlyR = await query(`
+      SELECT sid FROM orders
+      WHERE created >= NOW() - INTERVAL '30 days'
+      GROUP BY sid
+      HAVING COUNT(*) FILTER (WHERE status = 'failed') >= 1
+         AND COUNT(*) FILTER (WHERE status NOT IN ('failed','cancelled','canceled','refunded','partial_refunded')) = 0
+    `);
+    for (const row of failOnlyR.rows) {
+      const u = await query(`UPDATE services SET active=0 WHERE id=$1 AND active=1 RETURNING id`, [row.sid]);
+      if (u.rowCount) failHide++;
+    }
+
+    await query(`
+      UPDATE site_services ss SET active=0
+      FROM services s WHERE ss.service_id = s.id AND s.active=0 AND ss.active=1
+    `);
+    await repairAllPartnerSiteServices();
+
+    const activeR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
+    const activeCount = activeR.rows[0]?.c || 0;
+    console.log(`✅ 카탈로그 정리: 활성 ${activeCount}개 (미연동 ${noApi}, 반복실패 ${failHide})`);
+
+    if (notify && (noApi || failHide || sync?.disabled > 0)) {
+      let msg = `🧹 <b>상품 카탈로그 정리</b>\n\n`;
+      if (sync?.disabled) msg += `⚠️ 공급사 삭제됨: ${sync.disabled}개 숨김\n`;
+      if (noApi) msg += `🔗 API 미연동: ${noApi}개 숨김\n`;
+      if (failHide) msg += `❌ 주문 실패만 있음: ${failHide}개 숨김\n`;
+      msg += `\n✅ 활성 상품 ${activeCount}개 (작동 가능만 노출)`;
+      await sendTelegramToSuper(msg);
+    }
+
+    return { ok: true, noApi, failHide, sync, activeCount };
+  } catch (e) {
+    console.log('카탈로그 정리 실패:', e.message);
+    return { error: e.message };
+  }
 }
 
 /** Peakerr 상품 품질 점수 (높을수록 HQ·Real·한국·리필 등) */
@@ -2030,6 +2090,28 @@ async function pruneServiceCatalog(opts = {}) {
     }
   }
 
+  // 동일 한글 상품명 중복 (서로 다른 api_id → 가격·주문 혼란 방지)
+  const liveForName = allR.rows.filter(r => !toDeactivate.has(r.id));
+  const byDisplayName = new Map();
+  for (const row of liveForName) {
+    const key = `${row.pl}\0${(row.name || '').trim()}`;
+    if (!byDisplayName.has(key)) byDisplayName.set(key, []);
+    byDisplayName.get(key).push(row);
+  }
+  for (const rows of byDisplayName.values()) {
+    if (rows.length <= 1) continue;
+    const sorted = rows.sort((a, b) => {
+      if (protectedIds.has(a.id) && !protectedIds.has(b.id)) return -1;
+      if (!protectedIds.has(a.id) && protectedIds.has(b.id)) return 1;
+      const sc = scoreServiceRow(b) - scoreServiceRow(a);
+      if (sc !== 0) return sc;
+      return parseFloat(a.rate) - parseFloat(b.rate);
+    });
+    for (let i = 1; i < sorted.length; i++) {
+      mark(sorted[i].id, 'namedup', sorted[i].name);
+    }
+  }
+
   const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'pinterest', 'traffic', 'appstore', 'other'];
   for (const pl of platforms) {
     const activeR = await query(`
@@ -2047,7 +2129,7 @@ async function pruneServiceCatalog(opts = {}) {
     scored.slice(maxPerPlatform).forEach(r => mark(r.id, 'overflow', r.name));
   }
 
-  const stats = { bad: 0, duplicate: 0, overflow: 0 };
+  const stats = { bad: 0, duplicate: 0, namedup: 0, overflow: 0 };
   const items = [];
   for (const [id, info] of toDeactivate) {
     stats[info.reason] = (stats[info.reason] || 0) + 1;
@@ -2069,6 +2151,7 @@ async function pruneServiceCatalog(opts = {}) {
     let msg = `🧹 <b>상품 정리</b>\n\n`;
     if (stats.bad) msg += `❌ 저품질·무효: ${stats.bad}개\n`;
     if (stats.duplicate) msg += `📋 중복 api_id: ${stats.duplicate}개\n`;
+    if (stats.namedup) msg += `📋 동일 상품명: ${stats.namedup}개\n`;
     if (stats.overflow) msg += `📦 플랫폼별 상한 초과: ${stats.overflow}개\n`;
     msg += `\n총 ${total}개 숨김 (주문 기록 유지)`;
     items.slice(0, 5).forEach(s => { msg += `\n• ${(s.name || '').substring(0, 40)}`; });
@@ -3944,11 +4027,11 @@ app.post('/api/super/sync-orders', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🔄 슈퍼관리자: 수동 서비스 동기화
+// 🔄 슈퍼관리자: 수동 서비스 동기화 (작동 상품만 + 중복 제거)
 app.post('/api/super/sync-services', requireSuperAdmin, async (req, res) => {
   try {
-    syncPeakerrServices().catch(e => console.log(e));
-    res.json({ ok: true, message: '서비스 동기화를 시작했습니다. 결과는 텔레그램으로 알려드립니다.' });
+    reconcileServiceCatalog({ notify: true }).catch(e => console.log(e));
+    res.json({ ok: true, message: '상품 정리·동기화를 시작했습니다. 미작동·중복 상품은 숨기고 작동 상품만 남깁니다.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -4879,11 +4962,11 @@ app.listen(PORT, async () => {
     await syncAllOrderStatuses().catch(e => console.log('주문 동기화 스케줄러 오류:', e.message));
   }, 30 * 60 * 1000);
   
-  // 🔄 서비스 동기화 (6시간마다 + 시작 시 1회, 삭제/가격변경 체크)
+  // 🔄 상품 카탈로그 정리 (6시간마다 + 시작 시 1회 — 미작동·중복 제거)
   //    Render 무료 인스턴스는 잠들었다 깨면 타이머가 리셋되므로 시작 시 실행 필수
-  syncPeakerrServices().catch(e => console.log('서비스 동기화 초기 실행 오류:', e.message));
+  reconcileServiceCatalog({ notify: false }).catch(e => console.log('카탈로그 정리 초기 실행 오류:', e.message));
   setInterval(async () => {
-    await syncPeakerrServices().catch(e => console.log('서비스 동기화 스케줄러 오류:', e.message));
+    await reconcileServiceCatalog({ notify: false }).catch(e => console.log('카탈로그 정리 스케줄러 오류:', e.message));
   }, 6 * 60 * 60 * 1000);
   
   // 🆕 신규 서비스 스캔 (일요일마다)

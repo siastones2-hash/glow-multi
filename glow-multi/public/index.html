@@ -3762,16 +3762,22 @@ async function saveSiteSettings(){
     if(sn&&sn.value){var r=await api('/api/admin/settings/save','POST',{key:'name',value:sn.value});if(r.error){toast(r.error,'err');return;}}
     if(sk){var r=await api('/api/admin/settings/save','POST',{key:'kakao',value:sk.value});if(r.error){toast(r.error,'err');return;}}
     if(sb){var r=await api('/api/admin/settings/save','POST',{key:'bank',value:sb.value});if(r.error){toast(r.error,'err');return;}}
-    if(sm&&sm.value){var r=await api('/api/admin/settings/save','POST',{key:'margin',value:sm.value});if(r.error){toast(r.error,'err');return;}}
-    if(se&&se.value){var r=await api('/api/admin/settings/save','POST',{key:'exrate',value:se.value});if(r.error){toast(r.error,'err');return;}}
+    if(sm&&String(sm.value).trim()!==''){var r=await api('/api/admin/settings/save','POST',{key:'margin',value:sm.value});if(r.error){toast(r.error,'err');return;}}
+    if(_isSuperUser()&&se&&se.value){var r=await api('/api/admin/settings/save','POST',{key:'exrate',value:se.value});if(r.error){toast(r.error,'err');return;}}
     await loadSiteConfig();await loadSvcs();
     toast('설정 저장 완료 ✨','ok');
   } catch(e) { toast('저장 실패: '+e.message,'err'); }
 }
 async function saveTgSettings(){
   var tt=ge('stTgToken'),tc=ge('stTgChat');
-  if(tt&&tt.value&&!tt.value.includes('설정됨'))await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
-  if(tc)await api('/api/admin/settings/save','POST',{key:'tg_chat',value:tc.value});
+  if(tt&&tt.value&&!tt.value.includes('설정됨')){
+    var r=await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
+    if(r.error){toast(r.error,'err');return;}
+  }
+  if(tc){
+    var r2=await api('/api/admin/settings/save','POST',{key:'tg_chat',value:tc.value});
+    if(r2.error){toast(r2.error,'err');return;}
+  }
   if(tt)tt.value='••••(설정됨)';
   toast('텔레그램 저장 완료 ✨','ok');
 }
