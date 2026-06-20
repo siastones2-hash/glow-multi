@@ -2274,8 +2274,10 @@ function toggleFaq(btn){
 function formatApiBalance(d){
   if(d&&d.apiBalance!=null&&d.apiBalance!=='')return '$'+parseFloat(d.apiBalance).toFixed(2);
   if(d&&d.apiBalanceError){
-    if(d.apiBalanceError.indexOf('키')>=0||d.apiBalanceError.indexOf('설정')>=0)return '⚠️ API 키 미설정';
-    return '⚠️ 조회 실패';
+    if(d.apiBalanceError.indexOf('미설정')>=0)return '⚠️ API 키 미설정';
+    if(d.apiBalanceError.indexOf('형식')>=0||d.apiBalanceError.indexOf('올바르')>=0)return '⚠️ 키 다시 저장';
+    if(d.apiBalanceError.indexOf('연결')>=0)return '⚠️ 연결 실패';
+    return '⚠️ '+d.apiBalanceError.substring(0,24);
   }
   return '-';
 }
@@ -4069,12 +4071,16 @@ async function testApi(){
   var res=_apiTestResultEl();
   if(res)res.innerHTML='<span class="spin spin2"></span>확인 중...';
   var keyInput=ge('spApiKey')||ge('stApiKey');
-  var body=null;
+  var url='/api/admin/api-test';
   if(keyInput&&keyInput.value&&!keyInput.value.includes('설정됨')){
-    body={key:keyInput.value.trim()};
+    url+='?key='+encodeURIComponent(keyInput.value.trim());
   }
-  var d=await api('/api/admin/api-test','POST',body);
-  var msg=d.ok?'<span style="color:#10B981">✅ 연결 성공! 잔액: $'+parseFloat(d.balance).toFixed(2)+'</span>':'<span style="color:#EF4444">❌ 실패: '+(d.error||'알 수 없음')+'</span>';
+  var d=await api(url,'GET');
+  if(d&&d.error&&!d.ok){
+    var d2=await api('/api/admin/api-test','POST',keyInput&&keyInput.value&&!keyInput.value.includes('설정됨')?{key:keyInput.value.trim()}:null);
+    if(d2&&!d2.error)d=d2;
+  }
+  var msg=d.ok?'<span style="color:#10B981">✅ 연결 성공! 잔액: $'+parseFloat(d.balance).toFixed(2)+'</span>':'<span style="color:#EF4444">❌ '+(_isSuperUser()?(d.error||'조회 실패'):'연결 확인 실패')+'</span>';
   if(res)res.innerHTML=msg;
   if(d.ok){
     if(ge('sApiBalance'))ge('sApiBalance').textContent='$'+parseFloat(d.balance).toFixed(2);

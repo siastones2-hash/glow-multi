@@ -721,6 +721,28 @@ async function setGlobalSetting(key, value) {
   await query(`INSERT INTO global_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=$2`, [key, value]);
 }
 
+function isValidPeakerrApiKey(key) {
+  const k = String(key || '').trim();
+  if (!k || k.includes('설정') || k.includes('••')) return false;
+  return k.length >= 16 && k.length <= 128 && /^[a-zA-Z0-9_-]+$/.test(k);
+}
+
+async function getPeakerrApiKey() {
+  const r = await query(`SELECT value FROM global_settings WHERE key=$1`, ['peakerr_api_key']);
+  const key = String(r.rows[0]?.value || process.env.PEAKERR_API_KEY || '').trim();
+  return isValidPeakerrApiKey(key) ? key : '';
+}
+
+function peakerrBalanceErrorKo(msg) {
+  const s = String(msg || '');
+  if (/invalid.*key|api key/i.test(s)) return 'API 키가 올바르지 않습니다. Peakerr에서 복사한 키를 다시 저장하세요.';
+  if (/키|설정/.test(s)) return s;
+  if (/timeout|abort|network|fetch|ECONN|ETIMED|ENOTFOUND/i.test(s)) {
+    return '공급사 서버 연결 실패. 잠시 후 다시 시도하세요.';
+  }
+  return s || '조회 실패';
+}
+
 async function getGlobalExrateNum() {
   return parseFloat((await getGlobalSetting('global_exrate')) || '1500');
 }
@@ -1195,7 +1217,7 @@ async function recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expected
 
 async function reconcileOrderMissingApiId(order) {
   if (!order || order.api_order_id) return null;
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return null;
   const beforeR = await query(`
     SELECT MAX(CAST(api_order_id AS BIGINT)) AS m FROM orders
@@ -1441,24 +1463,49 @@ async function sendTelegramToSuper(message) {
 
 /** Peakerr USD 잔액 조회 */
 async function fetchPeakerrBalance(apiKey) {
-  if (!apiKey) return { ok: false, error: 'API 키 미설정' };
-  try {
-    const resp = await peakerrFetch({ key: apiKey, action: 'balance' }, { timeoutMs: 18000, retries: 1 });
-    const data = await resp.json();
-    if (data?.error) return { ok: false, error: String(data.error) };
-    if (data?.balance !== undefined && data?.balance !== null && !isNaN(parseFloat(data.balance))) {
-      return { ok: true, balance: parseFloat(data.balance) };
+  const key = String(apiKey || '').trim();
+  if (!key) return { ok: false, error: 'API 키 미설정' };
+  if (!isValidPeakerrApiKey(key)) return { ok: false, error: 'API 키 형식 오류 — Peakerr 키를 다시 붙여넣고 저장하세요.' };
+
+  const params = { key, action: 'balance' };
+  const attempts = [
+    () => peakerrFetch(params, { timeoutMs: 25000, retries: 2 }),
+    () => fetch('https://peakerr.com/api/v2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params)
+    })
+  ];
+
+  let lastErr = '조회 실패';
+  for (const run of attempts) {
+    try {
+      const resp = await run();
+      const text = await resp.text();
+      let data;
+      try { data = JSON.parse(text); } catch {
+        lastErr = '공급사 응답 오류';
+        continue;
+      }
+      if (data?.error) {
+        lastErr = peakerrBalanceErrorKo(data.error);
+        continue;
+      }
+      if (data?.balance !== undefined && data?.balance !== null && !isNaN(parseFloat(data.balance))) {
+        return { ok: true, balance: parseFloat(data.balance) };
+      }
+      lastErr = '잔액 응답 없음';
+    } catch (e) {
+      lastErr = peakerrBalanceErrorKo(e.message || peakerrNetworkErrorKo(e));
     }
-    return { ok: false, error: '잔액 응답 없음' };
-  } catch (e) {
-    return { ok: false, error: peakerrNetworkErrorKo(e) };
   }
+  return { ok: false, error: lastErr };
 }
 
 // 💵 Peakerr 잔액 체크 (주문 시마다)
 async function checkPeakerrBalance() {
   try {
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     const result = await fetchPeakerrBalance(apiKey);
     if (!result.ok) return null;
     const balance = result.balance;
@@ -1611,7 +1658,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     };
   }
 
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { ok: false, error: 'API 키 미설정' };
 
   const cancelResult = await submitPeakerrCancel(apiKey, order.api_order_id);
@@ -1749,7 +1796,7 @@ async function syncOrdersWithPeakerr(orders, apiKey, opts = {}) {
 }
 
 async function syncActiveOrdersForUser(userId) {
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return null;
   const r = await query(`
     SELECT * FROM orders WHERE uid=$1
@@ -1761,7 +1808,7 @@ async function syncActiveOrdersForUser(userId) {
 }
 
 async function syncActiveOrdersForSite(siteId) {
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return null;
   const r = siteId
     ? await query(`SELECT * FROM orders WHERE site_id=$1 AND status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 40`, [siteId])
@@ -1773,7 +1820,7 @@ async function syncActiveOrdersForSite(siteId) {
 async function syncAllOrderStatuses() {
   try {
     await reconcileOrphanPeakerrOrders();
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     if (!apiKey) return;
     
     const r = await query(`
@@ -1801,7 +1848,7 @@ async function syncAllOrderStatuses() {
 // 🔄 Peakerr 서비스 자동 동기화 (삭제된/변경된 서비스 체크)
 async function syncPeakerrServices() {
   try {
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     if (!apiKey) return { skipped: true };
     
     // Peakerr 전체 서비스 목록 가져오기
@@ -2180,7 +2227,7 @@ async function importHotPeakerrServices(opts = {}) {
   const minScore = opts.minScore ?? 120;
   const dryRun = !!opts.dryRun;
 
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0 };
 
   const resp = await fetch('https://peakerr.com/api/v2', {
@@ -2339,7 +2386,7 @@ async function importNichePeakerrServices(opts = {}) {
   const dryRun = !!opts.dryRun;
   const notify = opts.notify !== false;
 
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, scanned: 0 };
 
   const resp = await fetch('https://peakerr.com/api/v2', {
@@ -2505,7 +2552,7 @@ async function importKoreanAndPinterestServices(opts = {}) {
   const dryRun = !!opts.dryRun;
   const notify = opts.notify !== false;
 
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, korean: 0, pinterest: 0 };
 
   const resp = await fetch('https://peakerr.com/api/v2', {
@@ -2628,7 +2675,7 @@ async function importVietnamInstagramTiktokServices(opts = {}) {
   const dryRun = !!opts.dryRun;
   const notify = opts.notify !== false;
 
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, instagram: 0, tiktok: 0 };
 
   const resp = await fetch('https://peakerr.com/api/v2', {
@@ -2905,7 +2952,7 @@ async function runCatalogHealthCheck(autoRepair = true) {
   const totalActive = totalR.rows[0]?.c || 0;
   if (totalActive < 10) issues.push(`활성 상품 극소 (${totalActive}개)`);
 
-  const apiKey = await getGlobalSetting('peakerr_api_key');
+  const apiKey = await getPeakerrApiKey();
   if (!apiKey) issues.push('공급 API 키 미설정');
 
   const sitesR = await query(`SELECT id, name, domain FROM sites WHERE id != 'default' AND active=1`);
@@ -3630,7 +3677,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (!adminCreditOnly && (user.balance || 0) < charge)
       return res.json({ error: `잔액 부족. 현재 ₩${Math.round(user.balance || 0).toLocaleString()}` });
 
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     if (!apiKey || !svc.api_id) {
       return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
     }
@@ -3768,7 +3815,7 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
       }
     }
     
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     if (!apiKey) return res.json({ error: 'API 키 미설정' });
     
     const result = await pullPeakerrOrderSnapshot(order, apiKey);
@@ -3919,7 +3966,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
     }
     let apiBalance = null, apiBalanceError = null;
     if (isSuper) {
-      const balR = await fetchPeakerrBalance(await getGlobalSetting('peakerr_api_key'));
+      const balR = await fetchPeakerrBalance(await getPeakerrApiKey());
       if (balR.ok) apiBalance = balR.balance.toFixed(2);
       else apiBalanceError = balR.error;
     }
@@ -4418,7 +4465,8 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
   try {
     const site = req.site;
     const isSuperAdmin = req.session.role === 'superadmin';
-    const apikey = await getGlobalSetting('peakerr_api_key');
+    const apikeyRaw = await query(`SELECT value FROM global_settings WHERE key=$1`, ['peakerr_api_key']);
+    const apikey = apikeyRaw.rows[0]?.value || '';
     const global_tg_token = await getGlobalSetting('tg_token');
     const global_tg_chat = await getGlobalSetting('tg_chat');
     const super_margin = await getGlobalSetting('super_margin');
@@ -4447,7 +4495,7 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       name: site?.name || '', kakao: site?.kakao || '',
       bank: site?.bank || '', margin: site?.margin ?? 0,
       exrate: site?.exrate || 1380, credit: site?.credit || 0,
-      apikey: isSuperAdmin ? (apikey ? '••••(설정됨)' : '') : '',
+      apikey: isSuperAdmin ? (isValidPeakerrApiKey(apikey) ? '••••(설정됨)' : '') : '',
       tg_token: isSuperAdmin ? (global_tg_token ? '••••(설정됨)' : '') : (site?.tg_token ? '••••(설정됨)' : ''),
       tg_chat: isSuperAdmin ? global_tg_chat : (site?.tg_chat || ''),
       site_tg_token: site?.tg_token || '',
@@ -4471,7 +4519,11 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
     const superOnly = ['peakerr_api_key', 'tg_token', 'tg_chat'];
     if (superOnly.includes(key)) {
       if (isSuperAdmin) {
-        await setGlobalSetting(key, String(value || '').trim());
+        const v = String(value || '').trim();
+        if (key === 'peakerr_api_key' && !isValidPeakerrApiKey(v)) {
+          return res.json({ error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' });
+        }
+        await setGlobalSetting(key, v);
         console.log(`✓ 글로벌 설정 저장: ${key}${key === 'peakerr_api_key' ? ' (Peakerr 키 갱신)' : ''}`);
         return res.json({ ok: true });
       }
@@ -4537,32 +4589,28 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/api-test', requireSuperAdmin, async (req, res) => {
   try {
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    let apiKey = String(req.query.key || '').trim();
+    if (!isValidPeakerrApiKey(apiKey)) apiKey = await getPeakerrApiKey();
     const result = await fetchPeakerrBalance(apiKey);
     if (result.ok) res.json({ ok: true, balance: result.balance });
     else res.json({ error: result.error || '조회 실패' });
   } catch(e) { res.json({ error: e.message }); }
 });
 
-/** 연결 테스트 — 입력란 키로 즉시 테스트 가능 (저장 전·후) */
+/** 연결 테스트 — POST (구버전 호환) */
 app.post('/api/admin/api-test', requireSuperAdmin, async (req, res) => {
   try {
     let apiKey = String(req.body?.key || '').trim();
-    if (!apiKey || apiKey.includes('설정됨')) {
-      apiKey = await getGlobalSetting('peakerr_api_key');
-    }
+    if (!isValidPeakerrApiKey(apiKey)) apiKey = await getPeakerrApiKey();
     const result = await fetchPeakerrBalance(apiKey);
-    if (result.ok) {
-      res.json({ ok: true, balance: result.balance, saved: apiKey === (await getGlobalSetting('peakerr_api_key')) });
-    } else {
-      res.json({ error: result.error || '조회 실패' });
-    }
+    if (result.ok) res.json({ ok: true, balance: result.balance });
+    else res.json({ error: result.error || '조회 실패' });
   } catch(e) { res.json({ error: e.message }); }
 });
 
 app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
   try {
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     if (!apiKey) return res.json({ error: 'API 키가 설정되지 않았습니다' });
     const resp = await fetch('https://peakerr.com/api/v2', {
       method: 'POST',
@@ -4889,7 +4937,7 @@ app.post('/api/super/import-niche-services', requireSuperAdmin, async (req, res)
 // 🇻🇳 슈퍼관리자: Peakerr 베트남 IG·TT 후보 미리보기
 app.get('/api/super/peakerr-vietnam-preview', requireSuperAdmin, async (req, res) => {
   try {
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     if (!apiKey) return res.json({ error: 'API 키가 설정되지 않았습니다' });
     const resp = await fetch('https://peakerr.com/api/v2', {
       method: 'POST',
@@ -5440,7 +5488,11 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
     const { key, value } = req.body;
     const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
-    await setGlobalSetting(key, String(value || '').trim());
+    const v = String(value || '').trim();
+    if (key === 'peakerr_api_key' && !isValidPeakerrApiKey(v)) {
+      return res.json({ error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' });
+    }
+    await setGlobalSetting(key, v);
     if (key === 'peakerr_api_key') console.log('✓ Peakerr API 키 갱신 (super/settings/save)');
     if (key === 'global_exrate') {
       const ex = parseFloat(value);
@@ -5465,7 +5517,7 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
     // 순수익 계산: API 원가 합계 (취소·환불 주문 제외)
     const totalApiCost = await query(`SELECT SUM(o.qty * s.rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id WHERE o.${EXCLUDE}`);
     let apiBalance = null, apiBalanceError = null;
-    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const apiKey = await getPeakerrApiKey();
     const balR = await fetchPeakerrBalance(apiKey);
     if (balR.ok) apiBalance = balR.balance.toFixed(2);
     else apiBalanceError = balR.error;
