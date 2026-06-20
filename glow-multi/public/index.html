@@ -1500,8 +1500,12 @@ tr:last-child td{border-bottom:none}
           🛠 <strong style="color:#475569">내가 직접 주문한 작업분</strong> — 크레딧 사용 <strong id="aAdmCost">₩0</strong>
           <span style="color:#94a3b8">(고객 매출·잔액과 별도 · API 크레딧에서 차감)</span>
         </div>
-        <!-- API 크레딧 표시 -->
-        <div class="ibox" style="margin-bottom:14px" id="creditInfo" style="display:none">
+        <div id="aApiBalanceBox" style="display:none;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#047857">
+          🔑 Peakerr API 잔액: <strong id="aApiBalance" style="font-size:16px">-</strong>
+          <span style="font-size:11px;color:#64748b;margin-left:6px">(공급사 실잔액 · 슈퍼관리자 전용)</span>
+        </div>
+        <!-- API 크레딧 표시 (파트너 사이트) -->
+        <div class="ibox" style="margin-bottom:14px;display:none" id="creditInfo">
           💰 API 크레딧 잔액: <strong id="creditBal">₩0</strong> | 부족 시 <strong>크레딧 요청</strong> 탭에서 충전 요청하세요
         </div>
         <div class="admtabs">
@@ -2266,6 +2270,22 @@ function toggleFaq(btn){
   var item=btn&&btn.closest('.faq-item');
   if(!item)return;
   item.classList.toggle('on');
+}
+function formatApiBalance(d){
+  if(d&&d.apiBalance!=null&&d.apiBalance!=='')return '$'+parseFloat(d.apiBalance).toFixed(2);
+  if(d&&d.apiBalanceError){
+    if(d.apiBalanceError.indexOf('키')>=0||d.apiBalanceError.indexOf('설정')>=0)return '⚠️ API 키 미설정';
+    return '⚠️ 조회 실패';
+  }
+  return '-';
+}
+function applyApiBalanceDisplay(d,prefix){
+  var el=ge(prefix||'sApiBalance');
+  if(!el)return;
+  el.textContent=formatApiBalance(d);
+  el.title=(d&&d.apiBalanceError)?d.apiBalanceError:'';
+  if(d&&d.apiBalanceError)el.style.color='#EF4444';
+  else el.style.color='#10B981';
 }
 function badge(s){
   var m={pending:'background:#FEF3C7;color:#F59E0B',processing:'background:rgba(114,9,183,.1);color:#B5179E',completed:'background:#D1FAE5;color:#10B981',cancelled:'background:#FEE2E2;color:#EF4444',canceled:'background:#FEE2E2;color:#EF4444',refunded:'background:#DBEAFE;color:#3B82F6',partial_refunded:'background:#FEF3C7;color:#F59E0B',failed:'background:#FEE2E2;color:#EF4444',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444',reversed:'background:#FEE2E2;color:#EF4444'};
@@ -3388,6 +3408,14 @@ async function loadAdmDash(){
     if(ge('aSSuperProfit'))ge('aSSuperProfit').textContent=gf(d.superProfitKrw||0);
     if(ge('aSPartnerRetail'))ge('aSPartnerRetail').textContent=gf(d.partnerRetailRev||0);
     if(ge('aSPartnerAdmWork'))ge('aSPartnerAdmWork').textContent=gf(d.adminCost||0);
+    var abBox=ge('aApiBalanceBox'),abVal=ge('aApiBalance');
+    if(abBox&&abVal){
+      abBox.style.display='block';
+      abVal.textContent=formatApiBalance(d);
+      abVal.title=d.apiBalanceError||'';
+      if(d.apiBalanceError)abVal.style.color='#EF4444';
+      else abVal.style.color='#047857';
+    }
     var ci=ge('creditInfo');if(ci)ci.style.display='none';
     var cHint=ge('aChargeHint');
     if(cHint)cHint.innerHTML='✦ <strong>전체 사이트</strong> 고객 잔액 충전 · 파트너 관리자 충전은 차단 · <strong>회수</strong>=승인 취소';
@@ -3396,6 +3424,7 @@ async function loadAdmDash(){
     if(pFin)pFin.style.display='grid';
     if(sFin)sFin.style.display='none';
     if(sInfo)sInfo.style.display='none';
+    var abBox=ge('aApiBalanceBox');if(abBox)abBox.style.display='none';
     if(ge('aSR'))ge('aSR').textContent=gf(d.revenue||0);
     if(ge('aSCost'))ge('aSCost').textContent=gf(d.cost||0);
     if(ge('aSProfit'))ge('aSProfit').textContent=gf(d.profit||0);
@@ -4150,7 +4179,7 @@ async function loadSuperDash(){
   if(ge('sTotalCreditBal'))ge('sTotalCreditBal').textContent=gf(d.totalCreditBalanceKrw||0);
   if(ge('sTotalChargeAp'))ge('sTotalChargeAp').textContent=gf(d.totalChargeApprovedKrw||0);
   if(ge('sTotalCreditRecv'))ge('sTotalCreditRecv').textContent=gf(d.totalCreditReceivedKrw||0);
-  if(ge('sApiBalance'))ge('sApiBalance').textContent=d.apiBalance?'$'+d.apiBalance:'-';
+  if(ge('sApiBalance'))applyApiBalanceDisplay(d,'sApiBalance');
   if(ge('sMyProfit'))ge('sMyProfit').textContent=gf(d.myProfit||0);
   if(d.globalExrate){
     _globalExrate=d.globalExrate;

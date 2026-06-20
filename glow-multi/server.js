@@ -1439,18 +1439,29 @@ async function sendTelegramToSuper(message) {
   } catch(e) { console.log('텔레그램 발송 실패:', e.message); return false; }
 }
 
+/** Peakerr USD 잔액 조회 */
+async function fetchPeakerrBalance(apiKey) {
+  if (!apiKey) return { ok: false, error: 'API 키 미설정' };
+  try {
+    const resp = await peakerrFetch({ key: apiKey, action: 'balance' }, { timeoutMs: 18000, retries: 1 });
+    const data = await resp.json();
+    if (data?.error) return { ok: false, error: String(data.error) };
+    if (data?.balance !== undefined && data?.balance !== null && !isNaN(parseFloat(data.balance))) {
+      return { ok: true, balance: parseFloat(data.balance) };
+    }
+    return { ok: false, error: '잔액 응답 없음' };
+  } catch (e) {
+    return { ok: false, error: peakerrNetworkErrorKo(e) };
+  }
+}
+
 // 💵 Peakerr 잔액 체크 (주문 시마다)
 async function checkPeakerrBalance() {
   try {
     const apiKey = await getGlobalSetting('peakerr_api_key');
-    if (!apiKey) return null;
-    const resp = await fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key: apiKey, action: 'balance' })
-    });
-    const data = await resp.json();
-    const balance = parseFloat(data.balance || 0);
+    const result = await fetchPeakerrBalance(apiKey);
+    if (!result.ok) return null;
+    const balance = result.balance;
     
     // 잔액 $50 이하면 알림 (하루 최대 1번만)
     if (balance < 50) {
@@ -3906,6 +3917,12 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       }
       totalCreditBalanceKrw = balSum;
     }
+    let apiBalance = null, apiBalanceError = null;
+    if (isSuper) {
+      const balR = await fetchPeakerrBalance(await getGlobalSetting('peakerr_api_key'));
+      if (balR.ok) apiBalance = balR.balance.toFixed(2);
+      else apiBalanceError = balR.error;
+    }
     res.json({
       users: parseInt(users.rows[0].c),
       orders: parseInt(orders.rows[0].c),
@@ -3924,6 +3941,8 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       superProfitKrw,
       peakerrCostKrw,
       partnerRetailRev: custRev,
+      apiBalance,
+      apiBalanceError,
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -4518,15 +4537,9 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
 app.get('/api/admin/api-test', requireSuperAdmin, async (req, res) => {
   try {
     const apiKey = await getGlobalSetting('peakerr_api_key');
-    if (!apiKey) return res.json({ error: 'API 키가 설정되지 않았습니다' });
-    const resp = await fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key: apiKey, action: 'balance' })
-    });
-    const data = await resp.json();
-    if (data.balance !== undefined) res.json({ ok: true, balance: data.balance });
-    else res.json({ error: JSON.stringify(data) });
+    const result = await fetchPeakerrBalance(apiKey);
+    if (result.ok) res.json({ ok: true, balance: result.balance });
+    else res.json({ error: result.error || '조회 실패' });
   } catch(e) { res.json({ error: e.message }); }
 });
 
@@ -5433,18 +5446,11 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
     const pendingCharges = await query(`SELECT COUNT(*) as c FROM charges WHERE status='pending'`);
     // 순수익 계산: API 원가 합계 (취소·환불 주문 제외)
     const totalApiCost = await query(`SELECT SUM(o.qty * s.rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id WHERE o.${EXCLUDE}`);
-    let apiBalance = null;
-    try {
-      const apiKey = await getGlobalSetting('peakerr_api_key');
-      if (apiKey) {
-        const balResp = await fetch('https://peakerr.com/api/v2', {
-          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ key: apiKey, action: 'balance' })
-        });
-        const balData = await balResp.json();
-        if (balData.balance) apiBalance = parseFloat(balData.balance).toFixed(2);
-      }
-    } catch(e) {}
+    let apiBalance = null, apiBalanceError = null;
+    const apiKey = await getGlobalSetting('peakerr_api_key');
+    const balR = await fetchPeakerrBalance(apiKey);
+    if (balR.ok) apiBalance = balR.balance.toFixed(2);
+    else apiBalanceError = balR.error;
     const siteStats = await Promise.all(sites.rows.map(async s => {
       const uc = await query(`SELECT COUNT(*) as c FROM users WHERE site_id=$1 AND role='user'`, [s.id]);
       const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
@@ -5491,6 +5497,7 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       totalChargeApprovedKrw,
       totalCreditReceivedKrw,
       apiBalance,
+      apiBalanceError,
       myProfit: Math.round(myProfitKrw),
       globalExrate: parseFloat((await getGlobalSetting('global_exrate')) || '1500')
     });
