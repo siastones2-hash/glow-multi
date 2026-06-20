@@ -605,18 +605,36 @@ async function repairSiteServices(siteId, force = false, opts = {}) {
     `, [siteId, s.id]);
   }
   if (curatedOnly) {
+    await query(`DELETE FROM site_services WHERE site_id=$1 AND service_id ~ '^(pk_|api_|svc_)'`, [siteId]);
     await query(`
-      UPDATE site_services SET active=0
-      WHERE site_id=$1 AND service_id ~ '^(pk_|api_|svc_)'
-        AND EXISTS (
-          SELECT 1 FROM services c
-          WHERE c.active=1 AND c.id ~ '^[a-z]{2,3}[0-9]+' AND c.pl = (
-            SELECT pl FROM services WHERE id = site_services.service_id
-          )
-        )
+      DELETE FROM site_services ss
+      USING services s
+      WHERE ss.site_id=$1 AND ss.service_id=s.id AND s.active=0
     `, [siteId]);
   }
   return { repaired: true, before: enabled, after: allSvcs.rows.length, totalActive };
+}
+
+/** 미작동·자동등록(pk_) 상품 제거 — 주문 기록은 services 비활성으로 보존 */
+async function purgeUnsellableServices() {
+  const autoR = await query(`
+    UPDATE services SET active=0
+    WHERE active=1 AND id ~ '^(pk_|api_|svc_)'
+    RETURNING id
+  `);
+  const ssR = await query(`
+    DELETE FROM site_services ss
+    USING services s
+    WHERE ss.service_id = s.id AND (s.active = 0 OR s.id ~ '^(pk_|api_|svc_)')
+    RETURNING ss.service_id
+  `);
+  const orphanR = await query(`
+    DELETE FROM site_services WHERE service_id NOT IN (SELECT id FROM services)
+  `);
+  await repairAllPartnerSiteServices();
+  const n = (autoR.rowCount || 0) + (ssR.rowCount || 0) + (orphanR.rowCount || 0);
+  if (n > 0) console.log(`🗑️ 미판매·미작동 정리: 자동등록 ${autoR.rowCount || 0}개, site_services ${(ssR.rowCount || 0) + (orphanR.rowCount || 0)}건`);
+  return { autoImport: autoR.rowCount || 0, siteLinks: (ssR.rowCount || 0) + (orphanR.rowCount || 0) };
 }
 
 async function repairAllPartnerSiteServices() {
@@ -1577,6 +1595,7 @@ async function reconcileServiceCatalog(opts = {}) {
     const sync = await syncPeakerrServices();
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
     await reactivateCuratedSeedServices();
+    const purged = await purgeUnsellableServices();
 
     const failOnlyR = await query(`
       SELECT sid FROM orders
@@ -1610,7 +1629,7 @@ async function reconcileServiceCatalog(opts = {}) {
       await sendTelegramToSuper(msg);
     }
 
-    return { ok: true, noApi, failHide, sync, activeCount };
+    return { ok: true, noApi, failHide, sync, activeCount, purged };
   } catch (e) {
     console.log('카탈로그 정리 실패:', e.message);
     return { error: e.message };
@@ -3861,12 +3880,12 @@ app.get('/api/admin/site-services', requireAdmin, async (req, res) => {
     const globalSiteMg = parseFloat(globalSiteMgStr || '50');
     const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
     
-    // 전체 서비스 + 이 사이트의 활성화 여부
+    // 판매중(사이트 ON) 상품만 — 미판매·미작동은 목록에서 제외
     const r = await query(`
       SELECT s.id, s.name, s.pl, s.rate, s.min, s.max, s.active as global_active,
-        COALESCE(ss.active, 1) as site_active
+        ss.active as site_active
       FROM services s
-      LEFT JOIN site_services ss ON s.id = ss.service_id AND ss.site_id = $1
+      INNER JOIN site_services ss ON s.id = ss.service_id AND ss.site_id = $1 AND ss.active = 1
       WHERE s.active = 1
       ORDER BY s.pl, s.rate ASC
     `, [siteId]);
@@ -3915,10 +3934,12 @@ app.post('/api/admin/site-services/toggle-all', requireAdmin, async (req, res) =
     //    (과거 services 전체 삭제 버그로 생긴 끊긴 레코드 제거)
     await query(`
       DELETE FROM site_services
-      WHERE site_id=$1 AND service_id NOT IN (SELECT id FROM services)
+      WHERE site_id=$1 AND service_id NOT IN (SELECT id FROM services WHERE active=1)
     `, [siteId]);
-    // 전체 서비스에 대해 site_services 레코드 생성/업데이트
-    const allSvcs = await query(`SELECT id FROM services WHERE active=1`);
+    const allSvcs = await query(`
+      SELECT id FROM services
+      WHERE active=1 AND id ~ '^[a-z]{2,3}[0-9]+'
+    `);
     const val = active ? 1 : 0;
     for (const s of allSvcs.rows) {
       await query(`
@@ -3927,8 +3948,24 @@ app.post('/api/admin/site-services/toggle-all', requireAdmin, async (req, res) =
         ON CONFLICT(site_id, service_id) DO UPDATE SET active=$3
       `, [siteId, s.id, val]);
     }
+    if (active) await purgeUnsellableServices();
     res.json({ ok: true, count: allSvcs.rows.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 관리자 — 미작동·자동등록 상품 일괄 제거
+app.post('/api/admin/site-services/purge', requireAdmin, async (req, res) => {
+  try {
+    const siteId = req.siteId;
+    if (siteId === 'default') return res.json({ error: '슈퍼관리자 전용' });
+    await reconcileServiceCatalog({ notify: false });
+    const purged = await purgeUnsellableServices();
+    res.json({
+      ok: true,
+      message: `미작동 상품 ${purged.autoImport}개 제거 · 판매 연결 ${purged.siteLinks}건 정리`,
+      ...purged
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 슈퍼관리자 - 불필요·저품질 상품 정리 (비활성화만, 삭제 없음)

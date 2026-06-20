@@ -1579,9 +1579,10 @@ tr:last-child td{border-bottom:none}
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button class="bp bsm" onclick="toggleAllSiteServices(1)">전체 활성화</button>
               <button class="bo bsm" onclick="toggleAllSiteServices(0)">전체 비활성화</button>
+              <button class="bo bsm" onclick="purgeDeadSiteServices()" style="color:#DC143C;border-color:rgba(220,20,60,.3)">🗑 미작동 제거</button>
             </div>
           </div>
-          <div style="font-size:12px;color:var(--tl);margin-bottom:12px">활성화한 서비스만 내 사이트 고객에게 보입니다.</div>
+          <div style="font-size:12px;color:var(--tl);margin-bottom:12px">판매중인 검증 상품만 표시됩니다. 예전 「미판매」였던 자동등록·죽은 SKU는 「미작동 제거」로 정리하세요.</div>
           <!-- 플랫폼 필터 -->
           <div id="svcMgmtFilter" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none"></div>
           <div id="svcMgmtList" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -3743,6 +3744,15 @@ async function toggleAllSiteServices(active){
   var d=await api('/api/admin/site-services/toggle-all','POST',{active:active});
   if(d.error){toast(d.error,'err');return;}
   toast((active?'전체 활성화':'전체 비활성화')+' 완료 ✨','ok');
+  loadSvcMgmt();
+}
+
+async function purgeDeadSiteServices(){
+  if(!confirm('미작동·자동등록 상품을 제거합니다.\n(주문 기록은 유지 · 판매중 검증 상품만 남김)\n\n계속할까요?'))return;
+  toast('정리 중...','ok');
+  var d=await api('/api/admin/site-services/purge','POST',{});
+  if(d.error){toast(d.error,'err');return;}
+  toast(d.message||'미작동 상품 제거 완료 ✨','ok');
   loadSvcMgmt();
 }
 
