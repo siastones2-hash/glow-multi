@@ -1810,19 +1810,47 @@ async function scrapePlatformStartCount(order) {
   return null;
 }
 
+async function fetchTikTokPlayCountFromTikwm(pageUrl) {
+  try {
+    const data = await new Promise((resolve, reject) => {
+      const path = `/api/?url=${encodeURIComponent(pageUrl)}`;
+      const req = https.request({
+        hostname: 'www.tikwm.com',
+        port: 443,
+        path,
+        method: 'GET',
+        agent: peakerrHttpsAgent,
+        family: 4,
+        headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' },
+        timeout: 25000
+      }, (res) => {
+        let raw = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => { raw += c; });
+        res.on('end', () => {
+          try { resolve(JSON.parse(raw || '{}')); } catch (e) { reject(e); }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(new Error('ETIMEDOUT')); });
+      req.end();
+    });
+    const n = parseInt(data?.data?.play_count ?? data?.data?.view_count ?? 0, 10);
+    if (Number.isFinite(n) && n >= 0) return n;
+  } catch (e) { console.log('TikTok tikwm:', e.message); }
+  return null;
+}
+
 async function fetchTikTokPlayCount(url) {
   const normalized = normalizeOrderLink(url, 'tiktok');
-  try {
-    const apiResp = await fetch(
-      `https://www.tikwm.com/api/?url=${encodeURIComponent(normalized)}`,
-      { timeout: 22000, headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' } }
-    );
-    if (apiResp.ok) {
-      const data = await apiResp.json();
-      const n = parseInt(data?.data?.play_count ?? data?.data?.view_count ?? 0, 10);
-      if (Number.isFinite(n) && n >= 0) return n;
-    }
-  } catch (e) { console.log('TikTok tikwm:', e.message); }
+  const candidates = [normalized];
+  if (!normalized.includes('www.tiktok.com')) {
+    candidates.push(normalized.replace('://tiktok.com', '://www.tiktok.com'));
+  }
+  for (const tryUrl of candidates) {
+    const n = await fetchTikTokPlayCountFromTikwm(tryUrl);
+    if (n != null && n >= 0) return n;
+  }
   try {
     const resp = await fetch(normalized, {
       timeout: 18000,
@@ -1853,6 +1881,23 @@ async function fetchTikTokPlayCount(url) {
   return null;
 }
 
+const START_COUNT_ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+async function shouldAlertMissingStartCount(orderId) {
+  const last = await getGlobalSetting(`start_alert_${orderId}`);
+  if (!last) return true;
+  const t = parseInt(last, 10);
+  return !Number.isFinite(t) || Date.now() - t >= START_COUNT_ALERT_COOLDOWN_MS;
+}
+
+async function markStartCountAlerted(orderId) {
+  await setGlobalSetting(`start_alert_${orderId}`, String(Date.now()));
+}
+
+async function clearStartCountAlert(orderId) {
+  await query(`DELETE FROM global_settings WHERE key=$1`, [`start_alert_${orderId}`]).catch(() => null);
+}
+
 /** Peakerr/TikTok에서 시작 숫자 미수집 시 DB 직접 보정 */
 async function backfillOrderStartCount(order) {
   if (!order?.id) return 0;
@@ -1864,6 +1909,7 @@ async function backfillOrderStartCount(order) {
     `UPDATE orders SET starts_count=$1 WHERE id=$2 AND COALESCE(starts_count,0)=0`,
     [scraped, order.id]
   );
+  await clearStartCountAlert(order.id);
   console.log(`✓ 시작 숫자 보정: ${order.id} → ${scraped}`);
   return scraped;
 }
@@ -1937,6 +1983,7 @@ async function backfillAllMissingStartCounts() {
 }
 
 async function alertMissingStartCounts() {
+  await backfillAllMissingStartCounts();
   const r = await query(`
     SELECT id, sname, link, qty, uname, site_id, created
     FROM orders
@@ -1948,14 +1995,20 @@ async function alertMissingStartCounts() {
     ORDER BY created DESC LIMIT 8
   `);
   if (!r.rows.length) return 0;
-  let msg = `⚠️ <b>시작 숫자 미확인 주문 ${r.rows.length}건</b>\n\n`;
+  const toAlert = [];
   for (const o of r.rows) {
+    if (await shouldAlertMissingStartCount(o.id)) toAlert.push(o);
+  }
+  if (!toAlert.length) return 0;
+  let msg = `⚠️ <b>시작 숫자 미확인 주문 ${toAlert.length}건</b>\n\n`;
+  for (const o of toAlert) {
     msg += `• <code>${o.id}</code> ${(o.sname || '').slice(0, 22)} ×${o.qty}\n`;
     if (o.link) msg += `  ${String(o.link).slice(0, 55)}\n`;
   }
-  msg += `\n자동 backfill 시도 중 · 🔄 새로고침 안내`;
+  msg += `\n🔄 주문 내역 새로고침 · 24시간 내 재알림 없음`;
   await sendTelegramToSuper(msg).catch(() => null);
-  return r.rows.length;
+  for (const o of toAlert) await markStartCountAlerted(o.id);
+  return toAlert.length;
 }
 
 async function cleanupUnpaidPendingOrders() {
@@ -1994,13 +2047,12 @@ async function runPreflightHealthCheck(opts = {}) {
     const confirmed = await confirmAllPendingPayments();
     const backfilled = await backfillAllMissingStartCounts();
     await cleanupUnpaidPendingOrders();
-    const missingStart = await alertMissingStartCounts();
     await refundStuckOrdersWithoutApiId();
-    console.log(`🛡️ 사전점검: orphan=${orphan} 결제확정=${confirmed} 시작숫자=${backfilled} 미확인알림=${missingStart}`);
+    console.log(`🛡️ 사전점검: orphan=${orphan} 결제확정=${confirmed} 시작숫자=${backfilled}`);
     if (issues.length && opts.notify !== false) {
       await sendTelegramToSuper(`🛡️ <b>GLOW 사전점검</b>\n\n${issues.join('\n')}`).catch(() => null);
     }
-    return { issues, orphan, confirmed, backfilled, missingStart };
+    return { issues, orphan, confirmed, backfilled };
   } catch (e) {
     console.log('사전점검 오류:', e.message);
     return { issues: [e.message] };
@@ -2215,6 +2267,7 @@ async function autoRefundOrder(order, peakerrData) {
     // 진행률 저장 (starts_count, remains)
     await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3 WHERE id=$4`,
       [newStatus, startsCount, remains, order.id]);
+    if (startsCount > 0) await clearStartCountAlert(order.id);
     
     // 🎁 완료 시 포인트 적립
     if (newStatus === 'completed' && order.status !== 'completed') {
@@ -2330,15 +2383,11 @@ async function syncAllOrderStatuses() {
       LIMIT 100
     `);
     
-    if (r.rows.length === 0) {
-      await alertMissingStartCounts();
-      return;
-    }
+    if (r.rows.length === 0) return;
     console.log(`🔄 주문 상태 동기화 시작: ${r.rows.length}건`);
     
     const { synced, cancelled, completed, errors } = await syncOrdersWithPeakerr(r.rows, apiKey, { delayMs: 100 });
     await backfillAllMissingStartCounts();
-    await alertMissingStartCounts();
     console.log(`✅ 동기화 완료: 완료 ${completed}건, 취소·환불 ${cancelled}건, 오류 ${errors}건`);
     
     if (cancelled > 0) {
