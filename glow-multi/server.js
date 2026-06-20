@@ -306,6 +306,7 @@ async function initDB() {
   await fixLegacyPartnerAdminOrders();
   await backfillPartnerOrderCosts();
   reconcileOrphanPeakerrOrders().catch(e => console.log('Peakerr ID 복구:', e.message));
+  reconcilePeakerrApiKey({ silent: true }).catch(e => console.log('Peakerr 키 점검:', e.message));
   const mislabel = await repairMislabeledServiceNames().catch(() => ({ count: 0 }));
   if (mislabel.count > 0) console.log(`✓ 잘못 분류된 상품명 ${mislabel.count}건 수정`);
 
@@ -733,10 +734,98 @@ function isValidPeakerrApiKey(key) {
   return k.length >= 16 && k.length <= 128 && /^[a-zA-Z0-9_-]+$/.test(k);
 }
 
+const PEAKERR_KEY_BACKUP = 'peakerr_api_key_backup';
+const PEAKERR_KEY_VERIFIED = 'peakerr_api_key_verified_at';
+/** 메모리 캐시 — DB 조회·연결 실패 시에도 작업 키 유지 */
+let _peakerrWorkingKey = '';
+
+async function readPeakerrKeyRaw(settingKey) {
+  const r = await query(`SELECT value FROM global_settings WHERE key=$1`, [settingKey]);
+  return String(r.rows[0]?.value || '').trim();
+}
+
 async function getPeakerrApiKey() {
-  const r = await query(`SELECT value FROM global_settings WHERE key=$1`, ['peakerr_api_key']);
-  const key = String(r.rows[0]?.value || process.env.PEAKERR_API_KEY || '').trim();
-  return isValidPeakerrApiKey(key) ? key : '';
+  if (isValidPeakerrApiKey(_peakerrWorkingKey)) return _peakerrWorkingKey;
+  const candidates = [
+    await readPeakerrKeyRaw('peakerr_api_key'),
+    await readPeakerrKeyRaw(PEAKERR_KEY_BACKUP),
+    String(process.env.PEAKERR_API_KEY || '').trim()
+  ];
+  for (const c of candidates) {
+    if (isValidPeakerrApiKey(c)) {
+      _peakerrWorkingKey = c;
+      return c;
+    }
+  }
+  return '';
+}
+
+/** 🔒 Peakerr 키 — 연결 테스트 성공 후에만 저장 (실패 시 기존 키 유지) */
+async function savePeakerrApiKeySafely(newKey) {
+  const v = String(newKey || '').trim();
+  if (!isValidPeakerrApiKey(v)) {
+    return { ok: false, error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' };
+  }
+
+  const current = await getPeakerrApiKey();
+  const test = await fetchPeakerrBalance(v);
+  if (!test.ok) {
+    return {
+      ok: false,
+      error: (test.error || 'Peakerr 연결 실패') + ' — 키가 저장되지 않았습니다. 기존 연동은 유지됩니다.'
+    };
+  }
+
+  if (current && current !== v && isValidPeakerrApiKey(current)) {
+    await setGlobalSetting(PEAKERR_KEY_BACKUP, current);
+  }
+  await setGlobalSetting('peakerr_api_key', v);
+  await setGlobalSetting(PEAKERR_KEY_BACKUP, v);
+  await setGlobalSetting(PEAKERR_KEY_VERIFIED, new Date().toISOString());
+  _peakerrWorkingKey = v;
+  console.log(`🔒 Peakerr API 키 잠금 저장 (…${v.slice(-4)}) · $${test.balance.toFixed(2)}`);
+  return { ok: true, balance: test.balance, unchanged: current === v };
+}
+
+/** 서버 시작·주기 점검 — 키 깨지면 백업/ENV에서 자동 복구 */
+async function reconcilePeakerrApiKey(opts = {}) {
+  const silent = !!opts.silent;
+  const primary = await readPeakerrKeyRaw('peakerr_api_key');
+  if (isValidPeakerrApiKey(primary)) {
+    const test = await fetchPeakerrBalance(primary);
+    if (test.ok) {
+      _peakerrWorkingKey = primary;
+      await setGlobalSetting(PEAKERR_KEY_BACKUP, primary);
+      if (!silent) console.log(`✓ Peakerr API 정상 · $${test.balance.toFixed(2)}`);
+      return { ok: true, balance: test.balance, source: 'primary' };
+    }
+  }
+
+  const backup = await readPeakerrKeyRaw(PEAKERR_KEY_BACKUP);
+  if (isValidPeakerrApiKey(backup) && backup !== primary) {
+    const test = await fetchPeakerrBalance(backup);
+    if (test.ok) {
+      await setGlobalSetting('peakerr_api_key', backup);
+      _peakerrWorkingKey = backup;
+      console.log(`🔒 Peakerr API 키 백업에서 자동 복구 (…${backup.slice(-4)}) · $${test.balance.toFixed(2)}`);
+      return { ok: true, balance: test.balance, source: 'backup', restored: true };
+    }
+  }
+
+  const envKey = String(process.env.PEAKERR_API_KEY || '').trim();
+  if (isValidPeakerrApiKey(envKey)) {
+    const test = await fetchPeakerrBalance(envKey);
+    if (test.ok) {
+      await setGlobalSetting('peakerr_api_key', envKey);
+      await setGlobalSetting(PEAKERR_KEY_BACKUP, envKey);
+      _peakerrWorkingKey = envKey;
+      console.log(`🔒 Peakerr API 키 ENV에서 자동 복구 · $${test.balance.toFixed(2)}`);
+      return { ok: true, balance: test.balance, source: 'env', restored: true };
+    }
+  }
+
+  if (!silent) console.log('⚠️ Peakerr API 키 없거나 연결 실패');
+  return { ok: false, error: 'API 키 미설정 또는 연결 실패' };
 }
 
 function peakerrBalanceErrorKo(msg) {
@@ -1878,11 +1967,7 @@ async function syncPeakerrServices() {
     if (!apiKey) return { skipped: true };
     
     // Peakerr 전체 서비스 목록 가져오기
-    const resp = await fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key: apiKey, action: 'services' })
-    });
+    const resp = await peakerrFetch({ key: apiKey, action: 'services' });
     const services = await resp.json();
     if (!Array.isArray(services)) return;
     
@@ -2256,11 +2341,7 @@ async function importHotPeakerrServices(opts = {}) {
   const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0 };
 
-  const resp = await fetch('https://peakerr.com/api/v2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ key: apiKey, action: 'services' })
-  });
+  const resp = await peakerrFetch({ key: apiKey, action: 'services' });
   const services = await resp.json();
   if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0 };
 
@@ -2415,11 +2496,7 @@ async function importNichePeakerrServices(opts = {}) {
   const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, scanned: 0 };
 
-  const resp = await fetch('https://peakerr.com/api/v2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ key: apiKey, action: 'services' })
-  });
+  const resp = await peakerrFetch({ key: apiKey, action: 'services' });
   const services = await resp.json();
   if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0, scanned: 0 };
 
@@ -2581,11 +2658,7 @@ async function importKoreanAndPinterestServices(opts = {}) {
   const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, korean: 0, pinterest: 0 };
 
-  const resp = await fetch('https://peakerr.com/api/v2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ key: apiKey, action: 'services' })
-  });
+  const resp = await peakerrFetch({ key: apiKey, action: 'services' });
   const services = await resp.json();
   if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0, korean: 0, pinterest: 0 };
 
@@ -2704,11 +2777,7 @@ async function importVietnamInstagramTiktokServices(opts = {}) {
   const apiKey = await getPeakerrApiKey();
   if (!apiKey) return { error: 'API 키가 설정되지 않았습니다', added: [], count: 0, instagram: 0, tiktok: 0 };
 
-  const resp = await fetch('https://peakerr.com/api/v2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ key: apiKey, action: 'services' })
-  });
+  const resp = await peakerrFetch({ key: apiKey, action: 'services' });
   const services = await resp.json();
   if (!Array.isArray(services)) return { error: '공급 API 응답 오류', added: [], count: 0, instagram: 0, tiktok: 0 };
 
@@ -4546,18 +4615,16 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
     if (superOnly.includes(key)) {
       if (isSuperAdmin) {
         const v = String(value || '').trim();
-        if (key === 'peakerr_api_key' && !isValidPeakerrApiKey(v)) {
-          return res.json({ error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' });
-        }
-        await setGlobalSetting(key, v);
-        console.log(`✓ 글로벌 설정 저장: ${key}${key === 'peakerr_api_key' ? ' (…' + v.slice(-4) + ')' : ''}`);
         if (key === 'peakerr_api_key') {
-          const test = await fetchPeakerrBalance(v);
+          const saved = await savePeakerrApiKeySafely(v);
+          if (!saved.ok) return res.json({ error: saved.error });
           return res.json({
             ok: true,
-            peakerrTest: test.ok ? { balance: test.balance } : { error: test.error }
+            peakerrTest: { balance: saved.balance },
+            locked: true
           });
         }
+        await setGlobalSetting(key, v);
         return res.json({ ok: true });
       }
       // 일반 어드민은 사이트별 tg 저장
@@ -4645,11 +4712,7 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
   try {
     const apiKey = await getPeakerrApiKey();
     if (!apiKey) return res.json({ error: 'API 키가 설정되지 않았습니다' });
-    const resp = await fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key: apiKey, action: 'services' })
-    });
+    const resp = await peakerrFetch({ key: apiKey, action: 'services' });
     const data = await resp.json();
     if (!Array.isArray(data)) return res.json({ error: 'API 응답 오류' });
     let added = 0, updated = 0;
@@ -4972,11 +5035,7 @@ app.get('/api/super/peakerr-vietnam-preview', requireSuperAdmin, async (req, res
   try {
     const apiKey = await getPeakerrApiKey();
     if (!apiKey) return res.json({ error: 'API 키가 설정되지 않았습니다' });
-    const resp = await fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key: apiKey, action: 'services' })
-    });
+    const resp = await peakerrFetch({ key: apiKey, action: 'services' });
     const services = await resp.json();
     if (!Array.isArray(services)) return res.json({ error: '공급 API 응답 오류' });
     const existingR = await query(`SELECT api_id FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
@@ -5522,18 +5581,16 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
     const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
     const v = String(value || '').trim();
-    if (key === 'peakerr_api_key' && !isValidPeakerrApiKey(v)) {
-      return res.json({ error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' });
-    }
-    await setGlobalSetting(key, v);
     if (key === 'peakerr_api_key') {
-      console.log('✓ Peakerr API 키 갱신 (…' + v.slice(-4) + ')');
-      const test = await fetchPeakerrBalance(v);
+      const saved = await savePeakerrApiKeySafely(v);
+      if (!saved.ok) return res.json({ error: saved.error });
       return res.json({
         ok: true,
-        peakerrTest: test.ok ? { balance: test.balance } : { error: test.error }
+        peakerrTest: { balance: saved.balance },
+        locked: true
       });
     }
+    await setGlobalSetting(key, v);
     if (key === 'global_exrate') {
       const ex = parseFloat(value);
       if (!isNaN(ex) && ex >= 100 && ex <= 5000) {
@@ -5557,10 +5614,19 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
     // 순수익 계산: API 원가 합계 (취소·환불 주문 제외)
     const totalApiCost = await query(`SELECT SUM(o.qty * s.rate / 1000.0) as s FROM orders o JOIN services s ON o.sid = s.id WHERE o.${EXCLUDE}`);
     let apiBalance = null, apiBalanceError = null;
-    const apiKey = await getPeakerrApiKey();
-    const balR = await fetchPeakerrBalance(apiKey);
+    let apiKey = await getPeakerrApiKey();
+    let balR = await fetchPeakerrBalance(apiKey);
+    if (!balR.ok) {
+      const rec = await reconcilePeakerrApiKey({ silent: true });
+      if (rec.ok) {
+        apiKey = await getPeakerrApiKey();
+        balR = await fetchPeakerrBalance(apiKey);
+      }
+    }
     if (balR.ok) apiBalance = balR.balance.toFixed(2);
     else apiBalanceError = balR.error;
+    const peakerrLocked = !!(apiKey && balR.ok);
+    const peakerrVerifiedAt = await getGlobalSetting(PEAKERR_KEY_VERIFIED);
     const siteStats = await Promise.all(sites.rows.map(async s => {
       const uc = await query(`SELECT COUNT(*) as c FROM users WHERE site_id=$1 AND role='user'`, [s.id]);
       const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
@@ -5608,6 +5674,8 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       totalCreditReceivedKrw,
       apiBalance,
       apiBalanceError,
+      peakerrLocked,
+      peakerrVerifiedAt: peakerrVerifiedAt || null,
       myProfit: Math.round(myProfitKrw),
       globalExrate: parseFloat((await getGlobalSetting('global_exrate')) || '1500')
     });
@@ -5867,10 +5935,13 @@ app.listen(PORT, async () => {
   cleanup(); // 시작 시 1회
   setInterval(cleanup, 24 * 60 * 60 * 1000); // 24시간마다
   
-  // 💵 Peakerr 잔액 주기 체크 (6시간마다)
+  // 💵 Peakerr 잔액·키 잠금 점검 (6시간마다)
   setInterval(async () => {
+    await reconcilePeakerrApiKey({ silent: true }).catch(() => {});
     await checkPeakerrBalance().catch(() => {});
   }, 6 * 60 * 60 * 1000);
+  
+  reconcilePeakerrApiKey({ silent: false }).catch(e => console.log('Peakerr 키 시작 점검:', e.message));
   
   // 🔄 주문 상태 자동 동기화 (5분마다 — Peakerr 취소·완료 즉시 반영)
   setInterval(async () => {
