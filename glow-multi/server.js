@@ -2000,10 +2000,12 @@ async function alertMissingStartCounts() {
     if (await shouldAlertMissingStartCount(o.id)) toAlert.push(o);
   }
   if (!toAlert.length) return 0;
-  let msg = `⚠️ <b>시작 숫자 미확인 주문 ${toAlert.length}건</b>\n\n`;
+  let msg = `⚠️ <b>시작 숫자 미확인 ${toAlert.length}건</b>\n\n`;
   for (const o of toAlert) {
-    msg += `• <code>${o.id}</code> ${(o.sname || '').slice(0, 22)} ×${o.qty}\n`;
-    if (o.link) msg += `  ${String(o.link).slice(0, 55)}\n`;
+    const siteName = (await fetchSiteForTg(o.site_id)).name;
+    msg += `🏷 <b>${siteName}</b> · 👤 ${o.uname || '—'}\n`;
+    msg += `📋 <code>${o.id}</code> ${(o.sname || '').slice(0, 20)} ×${o.qty}\n`;
+    if (o.link) msg += `🔗 ${String(o.link).slice(0, 50)}\n\n`;
   }
   msg += `\n🔄 주문 내역 새로고침 · 24시간 내 재알림 없음`;
   await sendTelegramToSuper(msg).catch(() => null);
@@ -2158,6 +2160,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     if (!order.api_order_id) {
       if (!parseInt(order.paid || 0, 10)) {
         await query(`UPDATE orders SET status='cancelled' WHERE id=$1`, [order.id]);
+        await tgOrderNotify('🚫 <b>주문 취소</b>', order, { actorId: adminId, extra: '💰 차감 없음 (확인 중 취소)' });
         return { ok: true, message: '확인 중이던 주문이 취소됐습니다. (차감 없음)', refundPercent: 0, status: 'cancelled' };
       }
       const fin = await restoreRefundFinancials(order, 100, {
@@ -2168,6 +2171,10 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
         return { ok: true, message: '이미 취소·환불된 주문입니다.', status: order.status };
       }
       await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
+      await tgOrderNotify('🚫 <b>주문 취소·환불</b>', order, {
+        actorId: adminId,
+        extra: `💰 환불 ₩${Math.round(fin.refundAmount || 0).toLocaleString()}`
+      });
       return {
         ok: true, message: '주문이 취소되고 전액 환불되었습니다',
         refundPercent: 100, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund, status: 'refunded'
@@ -2203,12 +2210,23 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
       return { ok: false, error: '이미 Peakerr에서 완료된 주문은 취소·환불할 수 없습니다.' };
     }
 
-    const result = await autoRefundOrder(order, statusData);
+    const result = await autoRefundOrder(order, statusData, { notifyTg: false });
     const freshR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
     const fresh = freshR.rows[0] || order;
 
+    const tgExtra = (pct, fin) => {
+      let e = '';
+      if (fin?.refundAmount) e += `💰 환불 ₩${Math.round(fin.refundAmount).toLocaleString()} (${pct}%)`;
+      if (fin?.creditRefund) e += `\n💳 크레딧 $${fin.creditRefund.toFixed(4)} 복구`;
+      return e;
+    };
+
     if (result?.refundPercent > 0) {
       const pct = result.refundPercent;
+      await tgOrderNotify('🚫 <b>주문 취소</b>', fresh, {
+        actorId: adminId,
+        extra: tgExtra(pct, result)
+      });
       return {
         ok: true,
         message: pct >= 100 ? '취소 완료. 전액 환불되었습니다.' : `취소 완료. ${pct}% 환불되었습니다.`,
@@ -2221,6 +2239,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     }
 
     if (['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(fresh.status)) {
+      await tgOrderNotify('🚫 <b>주문 취소</b>', fresh, { actorId: adminId });
       return { ok: true, message: '취소·환불이 완료되었습니다.', status: fresh.status };
     }
 
@@ -2235,7 +2254,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
 }
 
 // 💸 주문 자동 환불 처리 (Peakerr 기반)
-async function autoRefundOrder(order, peakerrData) {
+async function autoRefundOrder(order, peakerrData, opts = {}) {
   try {
     // Peakerr 상태 확인
     const status = (peakerrData.status || '').toLowerCase();
@@ -2289,7 +2308,17 @@ async function autoRefundOrder(order, peakerrData) {
           `공급 ${status} → ₩${(fin.refundAmount || 0).toLocaleString()} 환불` +
             (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : '')
         );
+        if (opts.notifyTg !== false) {
+          let extra = `💰 환불 ₩${(fin.refundAmount || 0).toLocaleString()} (${refundPercent}%)`;
+          if (fin.creditRefund) extra += `\n💳 크레딧 $${fin.creditRefund.toFixed(4)} 복구`;
+          extra += `\n📡 Peakerr: ${peakerrData.status || status}`;
+          await tgOrderNotify('💸 <b>자동 환불</b>', order, { actorId: 'system', extra });
+        }
       }
+    }
+
+    if (newStatus === 'completed' && order.status !== 'completed' && opts.notifyTg !== false) {
+      await tgOrderNotify('✅ <b>작업 완료</b>', { ...order, starts_count: startsCount, status: 'completed' }, { actorId: 'system' });
     }
     
     return {
@@ -3610,6 +3639,53 @@ async function tgAlert(msg, site) {
   }));
 }
 
+function tgKstNow() {
+  return new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+}
+
+function tgRoleLabel(role) {
+  return { admin: '관리자', partner: '파트너', superadmin: '슈퍼관리자', user: '고객' }[role] || '고객';
+}
+
+async function fetchSiteForTg(siteId) {
+  if (!siteId || siteId === 'default') return { id: 'default', name: 'GLOW' };
+  const r = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+  return r.rows[0] || { id: siteId, name: siteId };
+}
+
+/** 주문·취소·환불·완료 — 누가 / 어떤 작업 / 어느 사이트 텔레그램 */
+async function tgOrderNotify(title, order, opts = {}) {
+  try {
+    if (!order?.id) return;
+    const site = opts.site || await fetchSiteForTg(order.site_id);
+    const customerR = await query(`SELECT name, email, role FROM users WHERE id=$1`, [order.uid]);
+    const customer = customerR.rows[0] || { name: order.uname || '—', email: '', role: 'user' };
+    const actorId = opts.actorId || order.uid;
+    let actorBlock;
+    if (actorId === 'system') {
+      actorBlock = '🤖 <b>처리:</b> Peakerr 자동 동기화';
+    } else if (actorId === order.uid) {
+      actorBlock = `👤 <b>주문자:</b> ${customer.name} (${tgRoleLabel(customer.role)})`;
+    } else {
+      const actorR = await query(`SELECT name, email, role FROM users WHERE id=$1`, [actorId]);
+      const actor = actorR.rows[0] || { name: '관리자', role: 'admin' };
+      actorBlock = `👮 <b>처리:</b> ${actor.name} (${tgRoleLabel(actor.role)})\n👤 <b>주문자:</b> ${customer.name} (${tgRoleLabel(customer.role)})`;
+    }
+    if (customer.email) actorBlock += `\n📧 ${customer.email}`;
+
+    let msg = `${title}\n\n🏷 <b>${site.name || 'GLOW'}</b>\n${actorBlock}\n\n`;
+    msg += `📋 <code>${order.id}</code>`;
+    if (order.api_order_id) msg += ` · Peakerr #${order.api_order_id}`;
+    msg += `\n✦ ${order.sname || '—'} ×${(order.qty || 0).toLocaleString()}`;
+    if (order.link) msg += `\n🔗 ${String(order.link).slice(0, 68)}`;
+    const sc = parseInt(order.starts_count || 0, 10);
+    if (sc > 0) msg += `\n📊 시작 ${sc.toLocaleString()} → 목표 ${(sc + (order.qty || 0)).toLocaleString()}`;
+    if (opts.extra) msg += `\n${opts.extra}`;
+    msg += `\n⏰ ${tgKstNow()}`;
+    await tgAlert(msg, site);
+  } catch (e) { console.log('주문 TG 알림:', e.message); }
+}
+
 async function tgChargeAlert(chargeId, userName, amount, note, site, requesterRole, currentBalance) {
   const siteName = typeof site === 'object' ? site.name : site;
   const siteObj = typeof site === 'object' ? site : null;
@@ -4307,9 +4383,14 @@ async function placeOrderHandler(req, res, ctx) {
     }
 
     if (!apiOrderId) {
-      await sendTelegramToSuper(
-        `⚠️ <b>Peakerr ID 미확인</b>\n\n주문 <code>${orderId}</code>\n${usedSvc.name}\n🔗 ${linkNorm.slice(0, 60)}\n\n차감 없음 · 자동 복구 시도 중`
-      ).catch(() => null);
+      await tgOrderNotify('⚠️ <b>Peakerr ID 미확인</b>', {
+        id: orderId, site_id: req.siteId, uid: user.id, uname: user.name,
+        sid: usedSvc.id, sname: usedSvc.name, link: linkNorm, qty: qtyNum, api_order_id: null
+      }, {
+        actorId: user.id,
+        site,
+        extra: '💰 차감 없음 · 자동 복구 시도 중'
+      });
       return res.json({
         ok: true, orderId, apiOrderId: null, balance: user.balance,
         message: '공급사 주문번호 확인 중입니다. 확인되면 자동 차감·처리됩니다. (잠시 후 🔄 새로고침)',
@@ -4340,11 +4421,17 @@ async function placeOrderHandler(req, res, ctx) {
 
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
-    const creditLine = adminCreditOnly
-      ? `\n💰 크레딧 차감: $${usedApiCost.toFixed(4)}`
-      : `\n💰 ₩${Math.round(charge).toLocaleString()}\n💳 주문 후 잔액: ₩${custBal.toLocaleString()}`;
-    const altNote = usedSvc.id !== svc.id ? `\n↪️ 대체 연동: ${usedSvc.name}` : '';
-    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}${adminCreditOnly ? ' (관리자)' : ''}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개${creditLine}${altNote}\n🔗 ${linkNorm}`, site);
+    const altNote = usedSvc.id !== svc.id ? `\n↪️ 대체 SKU: ${usedSvc.name}` : '';
+    const payLine = adminCreditOnly
+      ? `💰 크레딧 $${usedApiCost.toFixed(4)}`
+      : `💰 ₩${Math.round(charge).toLocaleString()} · 잔액 ₩${custBal.toLocaleString()}`;
+    let extra = payLine + altNote;
+    if (startCount > 0) extra += `\n📊 시작 ${startCount.toLocaleString()} → 목표 ${goalCount.toLocaleString()}`;
+    await tgOrderNotify('📦 <b>새 주문</b>', finalOrder, {
+      actorId: user.id,
+      site,
+      extra
+    });
     
     // 💵 Peakerr 잔액 체크 (비동기, 주문 처리와 별도로)
     checkPeakerrBalance().catch(e => console.log('잔액 체크 실패:', e.message));
