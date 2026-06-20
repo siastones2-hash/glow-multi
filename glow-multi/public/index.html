@@ -3957,7 +3957,17 @@ async function saveGlobalSetting(key,inputId){
   var url=(_isSuperUser()&&superKeys.indexOf(key)>=0)?'/api/super/settings/save':'/api/admin/settings/save';
   var d=await api(url,'POST',{key:key,value:v});
   if(d.error){toast(d.error,'err');return}
-  ge(inputId).value='••••(설정됨)';toast('저장 완료 ✨','ok');
+  ge(inputId).value='••••(설정됨)';
+  if(key==='peakerr_api_key'&&d.peakerrTest){
+    if(d.peakerrTest.balance!=null){
+      toast('저장 완료 · Peakerr $'+parseFloat(d.peakerrTest.balance).toFixed(2)+' ✨','ok');
+      if(ge('sApiBalance'))ge('sApiBalance').textContent='$'+parseFloat(d.peakerrTest.balance).toFixed(2);
+    }else{
+      toast('저장됐지만 Peakerr 연결 실패: '+(d.peakerrTest.error||''),'err');
+    }
+  }else{
+    toast('저장 완료 ✨','ok');
+  }
   if(key==='peakerr_api_key'){
     loadSuperDash();
     setTimeout(testApi,300);

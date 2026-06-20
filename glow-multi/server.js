@@ -2,10 +2,16 @@ const express = require('express');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const https = require('https');
+const dns = require('dns');
 const fetch = require('node-fetch');
 const path = require('path');
 const fs = require('fs');
 const { startDailyReportScheduler } = require('./lib/daily-site-report');
+
+if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
+
+const peakerrHttpsAgent = new https.Agent({ keepAlive: true, family: 4, maxSockets: 8 });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1099,27 +1105,55 @@ function peakerrNetworkErrorKo(err) {
   return '공급사 연결 오류입니다. 잠시 후 다시 시도해주세요.';
 }
 
-/** Peakerr API — 타임아웃·1회 재시도 (Render↔Peakerr 간헐 끊김 대응) */
+/** Peakerr API — node-fetch 대신 https 직접 호출 (Render에서 안정적) */
+function peakerrHttpsPost(params, timeoutMs = 30000) {
+  const body = new URLSearchParams(params).toString();
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'peakerr.com',
+      port: 443,
+      path: '/api/v2',
+      method: 'POST',
+      agent: peakerrHttpsAgent,
+      family: 4,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(body),
+        'User-Agent': 'GLOW-SMM/1.0',
+        'Accept': 'application/json'
+      },
+      timeout: timeoutMs
+    }, (res) => {
+      let raw = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => { raw += chunk; });
+      res.on('end', () => {
+        resolve({
+          ok: res.statusCode >= 200 && res.statusCode < 300,
+          status: res.statusCode,
+          text: async () => raw,
+          json: async () => JSON.parse(raw || '{}')
+        });
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(new Error('ETIMEDOUT')); });
+    req.write(body);
+    req.end();
+  });
+}
+
+/** Peakerr API — 타임아웃·재시도 */
 async function peakerrFetch(params, opts = {}) {
-  const timeoutMs = opts.timeoutMs ?? 22000;
-  const retries = opts.retries ?? 1;
+  const timeoutMs = opts.timeoutMs ?? 30000;
+  const retries = opts.retries ?? 2;
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const resp = await fetch('https://peakerr.com/api/v2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(params),
-        signal: ctrl.signal
-      });
-      clearTimeout(tid);
-      return resp;
+      return await peakerrHttpsPost(params, timeoutMs);
     } catch (e) {
-      clearTimeout(tid);
       lastErr = e;
-      if (attempt < retries) await new Promise(r => setTimeout(r, 600));
+      if (attempt < retries) await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
     }
   }
   throw lastErr;
@@ -1468,19 +1502,10 @@ async function fetchPeakerrBalance(apiKey) {
   if (!isValidPeakerrApiKey(key)) return { ok: false, error: 'API 키 형식 오류 — Peakerr 키를 다시 붙여넣고 저장하세요.' };
 
   const params = { key, action: 'balance' };
-  const attempts = [
-    () => peakerrFetch(params, { timeoutMs: 25000, retries: 2 }),
-    () => fetch('https://peakerr.com/api/v2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(params)
-    })
-  ];
-
   let lastErr = '조회 실패';
-  for (const run of attempts) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const resp = await run();
+      const resp = await peakerrHttpsPost(params, 35000);
       const text = await resp.text();
       let data;
       try { data = JSON.parse(text); } catch {
@@ -1489,7 +1514,7 @@ async function fetchPeakerrBalance(apiKey) {
       }
       if (data?.error) {
         lastErr = peakerrBalanceErrorKo(data.error);
-        continue;
+        break;
       }
       if (data?.balance !== undefined && data?.balance !== null && !isNaN(parseFloat(data.balance))) {
         return { ok: true, balance: parseFloat(data.balance) };
@@ -1497,6 +1522,7 @@ async function fetchPeakerrBalance(apiKey) {
       lastErr = '잔액 응답 없음';
     } catch (e) {
       lastErr = peakerrBalanceErrorKo(e.message || peakerrNetworkErrorKo(e));
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
     }
   }
   return { ok: false, error: lastErr };
@@ -4524,7 +4550,14 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
           return res.json({ error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' });
         }
         await setGlobalSetting(key, v);
-        console.log(`✓ 글로벌 설정 저장: ${key}${key === 'peakerr_api_key' ? ' (Peakerr 키 갱신)' : ''}`);
+        console.log(`✓ 글로벌 설정 저장: ${key}${key === 'peakerr_api_key' ? ' (…' + v.slice(-4) + ')' : ''}`);
+        if (key === 'peakerr_api_key') {
+          const test = await fetchPeakerrBalance(v);
+          return res.json({
+            ok: true,
+            peakerrTest: test.ok ? { balance: test.balance } : { error: test.error }
+          });
+        }
         return res.json({ ok: true });
       }
       // 일반 어드민은 사이트별 tg 저장
@@ -5493,7 +5526,14 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
       return res.json({ error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' });
     }
     await setGlobalSetting(key, v);
-    if (key === 'peakerr_api_key') console.log('✓ Peakerr API 키 갱신 (super/settings/save)');
+    if (key === 'peakerr_api_key') {
+      console.log('✓ Peakerr API 키 갱신 (…' + v.slice(-4) + ')');
+      const test = await fetchPeakerrBalance(v);
+      return res.json({
+        ok: true,
+        peakerrTest: test.ok ? { balance: test.balance } : { error: test.error }
+      });
+    }
     if (key === 'global_exrate') {
       const ex = parseFloat(value);
       if (!isNaN(ex) && ex >= 100 && ex <= 5000) {
