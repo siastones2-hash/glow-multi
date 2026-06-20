@@ -795,6 +795,22 @@ async function assertPhoneAvailableForReferral(siteId, phone, excludeUserId) {
   return { ok: true, norm };
 }
 
+/** 지인 사이트 관리자 API — 슈퍼·본사 등 상위 계층 표현 제거 */
+function neutralAdminMsg(msg, isSuperAdmin) {
+  if (isSuperAdmin || msg == null || msg === '') return msg;
+  let t = String(msg);
+  t = t.replace(/\(본사 전용\)/gi, '');
+  t = t.replace(/슈퍼관리자/gi, '');
+  t = t.replace(/GLOW 본사(\([^)]*\))?/gi, '');
+  t = t.replace(/본사 HQ[^.]*\.?\s*/gi, '');
+  t = t.replace(/본사형[^.]*\.?\s*/gi, '');
+  t = t.replace(/본사에서만[^.]*\.?/gi, '이 설정은 변경할 수 없습니다.');
+  t = t.replace(/본사/gi, '');
+  t = t.replace(/슈퍼/gi, '');
+  t = t.replace(/\s{2,}/g, ' ').trim();
+  return t || '처리할 수 없습니다';
+}
+
 /** 사이트별 마진·환율 (주문/환불 공통) */
 async function getSiteMargins(site) {
   const globalExrateStr = await getGlobalSetting('global_exrate');
@@ -3706,7 +3722,7 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       name: site?.name || '', kakao: site?.kakao || '',
       bank: site?.bank || '', margin: site?.margin ?? 0,
       exrate: site?.exrate || 1380, credit: site?.credit || 0,
-      apikey: isSuperAdmin ? (apikey ? '••••(설정됨)' : '') : '(본사 전용)',
+      apikey: isSuperAdmin ? (apikey ? '••••(설정됨)' : '') : '',
       tg_token: isSuperAdmin ? (global_tg_token ? '••••(설정됨)' : '') : (site?.tg_token ? '••••(설정됨)' : ''),
       tg_chat: isSuperAdmin ? global_tg_chat : (site?.tg_chat || ''),
       site_tg_token: site?.tg_token || '',
@@ -3726,6 +3742,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
     const isSuperAdmin = req.session.role === 'superadmin';
+    const adminErr = (msg) => res.json({ error: neutralAdminMsg(msg, isSuperAdmin) });
     const superOnly = ['peakerr_api_key', 'tg_token', 'tg_chat'];
     if (superOnly.includes(key)) {
       if (isSuperAdmin) {
@@ -3741,7 +3758,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
         await query(`UPDATE sites SET tg_chat=$1 WHERE id=$2`, [value, req.siteId]);
         return res.json({ ok: true });
       }
-      return res.json({ error: '본사에서만 변경할 수 있는 설정입니다' });
+      return adminErr('본사에서만 변경할 수 있는 설정입니다');
     }
     const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','hero_prefix','ui_layout','theme','banner_text','banner_image','banner_link','charge_bonus_tiers'];
     if (siteFields.includes(key)) {
@@ -3749,7 +3766,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
         const allowed = ['classic', 'card', 'split', 'minimal', 'glow-hq'];
         if (!allowed.includes(value)) return res.json({ error: '레이아웃 값이 올바르지 않습니다' });
         if (value === 'glow-hq' && req.siteId !== 'default') {
-          return res.json({ error: '본사 HQ 레이아웃은 GLOW 본사(glowsiax.com) 전용입니다' });
+          return adminErr('본사 HQ 레이아웃은 GLOW 본사(glowsiax.com) 전용입니다');
         }
       }
       if (key === 'theme') {
@@ -3758,7 +3775,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
           const allowedThemes = ['glow', 'dark', 'minimal', 'neon', 'gold', 'ocean', 'sunset', 'forest', 'candy', 'glow-blue', 'anonymous'];
           if (!allowedThemes.includes(t)) return res.json({ error: '테마 값이 올바르지 않습니다' });
           if ((t === 'glow-blue' || t === 'anonymous') && req.siteId !== 'default') {
-            return res.json({ error: '해당 테마는 GLOW 본사 전용입니다' });
+            return adminErr('해당 테마는 GLOW 본사 전용입니다');
           }
         }
       }

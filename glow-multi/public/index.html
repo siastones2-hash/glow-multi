@@ -1471,6 +1471,10 @@ tr:last-child td{border-bottom:none}
       </div>
       <!-- 일반 관리자 -->
       <div class="tab" id="tab-admin">
+        <div id="admPanelHead" style="display:none;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(114,9,183,.08),rgba(247,37,133,.06));border:1px solid var(--bd2);border-radius:14px">
+          <div style="font-size:18px;font-weight:800">👑 사이트 관리</div>
+          <div style="font-size:12px;color:var(--tm);margin-top:4px">회원 · 주문 · 수익 · 설정을 관리합니다</div>
+        </div>
         <div class="sg" style="margin-bottom:14px">
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">총 회원</div><div class="gt" style="font-size:22px;font-weight:800" id="aSU">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">총 주문</div><div class="gt" style="font-size:22px;font-weight:800" id="aSO">0</div></div>
@@ -1646,7 +1650,7 @@ tr:last-child td{border-bottom:none}
 
               <div style="height:1px;background:var(--bd);margin:8px 0 16px"></div>
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🎨 화면 스타일 (UI/UX)</div>
-              <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">사이트마다 메인 화면 분위기를 다르게 보이게 합니다. <strong>본사 HQ·본사형 테마</strong>는 glowsiax.com 본사만 사용할 수 있습니다. 저장 후 메인 페이지를 새로고침하세요.</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6" id="stUiStyleHint">사이트마다 메인 화면 분위기를 다르게 보이게 합니다. 저장 후 메인 페이지를 새로고침하세요.</div>
               <div class="fg"><label>메인 레이아웃</label>
                 <select id="stUiLayout">
                   <option value="classic">클래식 — GLOW 기본형</option>
@@ -2164,12 +2168,23 @@ async function api(url,method,body){
   if(res.status===401){localStorage.removeItem('glow_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
   var data=await res.json();
   if(data&&data.error&&!_isSuperUser())data.error=_partnerMsg(data.error);
+  if(data&&data.message&&!_isSuperUser())data.message=_partnerMsg(data.message);
   return data;
 }
 function _isSuperUser(){return !!(CUR&&CUR.role==='superadmin');}
 function _partnerMsg(s){
   if(_isSuperUser()||s==null)return s;
-  return String(s).replace(/슈퍼관리자/g,'본사');
+  var t=String(s);
+  t=t.replace(/\(본사 전용\)/gi,'');
+  t=t.replace(/슈퍼관리자/gi,'');
+  t=t.replace(/GLOW 본사(\([^)]*\))?/gi,'');
+  t=t.replace(/본사 HQ[^.]*\.?\s*/gi,'');
+  t=t.replace(/본사형[^.]*\.?\s*/gi,'');
+  t=t.replace(/본사에서만[^.]*\.?/gi,'이 설정은 변경할 수 없습니다.');
+  t=t.replace(/본사/gi,'');
+  t=t.replace(/슈퍼/gi,'');
+  t=t.replace(/\s{2,}/g,' ').trim();
+  return t||'처리할 수 없습니다';
 }
 function gf(v){return'₩'+Math.round(v||0).toLocaleString()}
 function fd(s){
@@ -2935,17 +2950,23 @@ async function enterDash(){
   ge('sbName').textContent=CUR.name;
   ge('welName').textContent=CUR.name;
 
-  var roleMap={superadmin:'슈퍼관리자 👑',admin:'관리자',partner:'관리자',user:'일반 회원'};
-  ge('sbRole').textContent=roleMap[CUR.role]||'관리자';
+  var roleMap={superadmin:'슈퍼관리자 👑',admin:'관리자 👑',partner:'관리자 👑',user:'일반 회원'};
+  ge('sbRole').textContent=roleMap[CUR.role]||'관리자 👑';
 
   // 메뉴 권한
   var isAdmin=['admin','partner','superadmin'].includes(CUR.role);
   var isSuper=CUR.role==='superadmin';
   var isPartner=CUR.role==='partner';
+  var isSiteOwner=isAdmin&&!isSuper&&SITE_CONFIG&&!SITE_CONFIG.isDefault;
   ge('si-admin').style.display=isAdmin?'flex':'none';
   ge('bni-admin').style.display=isAdmin?'flex':'none';
   ge('si-super').style.display=isSuper?'flex':'none';
   ge('bni-super').style.display=isSuper?'flex':'none';
+  if(isSiteOwner){
+    var siAd=ge('si-admin');if(siAd)siAd.textContent='👑 관리자';
+    var bnAd=ge('bni-admin');if(bnAd)bnAd.innerHTML='<div class="bni-ico">👑</div>관리자';
+  }
+  var admHead=ge('admPanelHead');if(admHead)admHead.style.display=isSiteOwner?'block':'none';
 
   // 파트너·지인 사이트 관리자 → 크레딧만 사용 (잔액 충전 메뉴 숨김)
   window._adminCreditOnly = SITE_CONFIG && !SITE_CONFIG.isDefault && (CUR.role==='admin'||CUR.role==='partner');
@@ -3561,6 +3582,12 @@ function syncAdminUiStyleOptions(isDefault){
   if(hqOpt)hqOpt.hidden=!isDefault;
   var anonOpt=ge('stThemeAnonymous');
   if(anonOpt)anonOpt.hidden=!isDefault;
+  var hint=ge('stUiStyleHint');
+  if(hint){
+    hint.textContent=isDefault
+      ? '사이트마다 메인 화면 분위기를 다르게 보이게 합니다. 저장 후 메인 페이지를 새로고침하세요.'
+      : '사이트마다 메인 화면 분위기를 다르게 보이게 합니다. 저장 후 메인 페이지를 새로고침하세요.';
+  }
   var layoutSel=ge('stUiLayout');
   if(layoutSel&&!isDefault&&layoutSel.value==='glow-hq')layoutSel.value='classic';
   var themeSel=ge('stTheme');
