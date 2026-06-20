@@ -291,10 +291,9 @@ async function initDB() {
     await query(`UPDATE sites SET theme='glow' WHERE id <> 'default' AND theme IN ('glow-blue','anonymous')`);
   } catch (e) { /* ignore */ }
 
-  // 모든 사이트 환율 = 글로벌 기본 환율과 항상 동기화
+  // 모든 사이트 환율 = USD/KRW 시장 환율 자동 반영
   try {
-    const globalEx = await getGlobalExrateNum();
-    if (globalEx >= 100) await syncAllSitesExrate(globalEx);
+    await autoSyncGlobalExrate({ notify: false });
   } catch (e) { /* ignore */ }
 
   await normalizeAbnormalCredits();
@@ -694,6 +693,62 @@ async function syncAllSitesExrate(ex) {
   if (isNaN(rate) || rate < 100 || rate > 5000) return { ok: false, count: 0 };
   const r = await query(`UPDATE sites SET exrate=$1`, [rate]);
   return { ok: true, count: r.rowCount || 0 };
+}
+
+/** USD/KRW 시장 환율 조회 (ECB·open.er-api 순 폴백) */
+async function fetchKrwUsdRate() {
+  const pick = (n) => {
+    const rate = Math.round(parseFloat(n));
+    return rate >= 1000 && rate <= 2000 ? rate : null;
+  };
+  const sources = [
+    { name: 'frankfurter', url: 'https://api.frankfurter.app/latest?from=USD&to=KRW', parse: d => pick(d?.rates?.KRW) },
+    { name: 'open.er-api', url: 'https://open.er-api.com/v6/latest/USD', parse: d => pick(d?.rates?.KRW) },
+  ];
+  for (const src of sources) {
+    try {
+      const resp = await fetch(src.url, { headers: { Accept: 'application/json' } });
+      const data = await resp.json();
+      const rate = src.parse(data);
+      if (rate) return { rate, source: src.name };
+    } catch (e) {
+      console.log(`환율 API(${src.name}) 실패:`, e.message);
+    }
+  }
+  return null;
+}
+
+/** 글로벌 환율 자동 갱신 → 전 사이트 동기화 */
+async function autoSyncGlobalExrate(opts = {}) {
+  const notify = opts.notify === true;
+  const force = opts.force === true;
+  const prev = await getGlobalExrateNum();
+  const fetched = await fetchKrwUsdRate();
+
+  if (!fetched) {
+    if (prev >= 100) await syncAllSitesExrate(prev);
+    return { ok: false, rate: prev, skipped: true };
+  }
+
+  const changed = force || Math.abs(fetched.rate - prev) >= 1;
+  if (!changed) {
+    await syncAllSitesExrate(prev);
+    return { ok: true, rate: prev, unchanged: true, source: fetched.source };
+  }
+
+  await setGlobalSetting('global_exrate', String(fetched.rate));
+  await setGlobalSetting('exrate_sync_at', new Date().toISOString());
+  await setGlobalSetting('exrate_sync_source', fetched.source);
+  const sync = await syncAllSitesExrate(fetched.rate);
+  console.log(`💱 환율 자동 갱신: ₩${prev} → ₩${fetched.rate}/USD (${fetched.source})`);
+
+  if (notify && prev >= 100 && Math.abs(fetched.rate - prev) / prev >= 0.01) {
+    await sendTelegramToSuper(
+      `💱 <b>환율 자동 갱신</b>\n\n₩${prev.toLocaleString()} → <b>₩${fetched.rate.toLocaleString()}</b>/USD\n출처: ${fetched.source}\n전체 ${sync.count || 0}개 사이트 동기화`
+    ).catch(() => {});
+  }
+
+  return { ok: true, rate: fetched.rate, previous: prev, source: fetched.source, sitesSynced: sync.count };
 }
 
 /** credit_requests.amount = 원화(₩) → sites.credit = 달러($) */
@@ -3659,6 +3714,8 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       super_margin: isSuperAdmin ? (super_margin || '50') : undefined,
       global_site_margin: isSuperAdmin ? ((await getGlobalSetting('global_site_margin')) || '50') : undefined,
       global_exrate: isSuperAdmin ? (global_exrate || '1500') : undefined,
+      exrate_sync_at: isSuperAdmin ? (await getGlobalSetting('exrate_sync_at')) : undefined,
+      exrate_sync_source: isSuperAdmin ? (await getGlobalSetting('exrate_sync_source')) : undefined,
       isSuperAdmin,
       supplyExamples  // 관리자용 공급가 샘플
     });
@@ -3718,7 +3775,9 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
         if (sm < -1 || sm > 500) return res.json({ error: '슈퍼마진은 -1(글로벌) 또는 0~500 범위여야 합니다' });
       }
       if (key === 'exrate') {
-        return res.json({ error: '환율은 본사에서 일괄 관리됩니다' });
+        const ex = await getGlobalExrateNum();
+        await query(`UPDATE sites SET exrate=$1 WHERE id=$2`, [ex, req.siteId]);
+        return res.json({ ok: true });
       }
       // 문자 필드 길이 제한
       if (typeof value === 'string' && value.length > 10000) {
@@ -4607,6 +4666,22 @@ app.post('/api/super/sites/delete', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/super/exrate-sync', requireSuperAdmin, async (req, res) => {
+  try {
+    const r = await autoSyncGlobalExrate({ force: true, notify: false });
+    if (!r.ok && r.skipped) return res.json({ error: '환율 API 연결 실패. 잠시 후 다시 시도하세요.' });
+    res.json({
+      ok: true,
+      rate: r.rate,
+      previous: r.previous,
+      unchanged: !!r.unchanged,
+      source: r.source || (await getGlobalSetting('exrate_sync_source')) || '',
+      syncedAt: await getGlobalSetting('exrate_sync_at'),
+      sitesSynced: r.sitesSynced
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
@@ -4962,6 +5037,12 @@ app.listen(PORT, async () => {
     await syncAllOrderStatuses().catch(e => console.log('주문 동기화 스케줄러 오류:', e.message));
   }, 30 * 60 * 1000);
   
+  // 💱 USD/KRW 환율 자동 갱신 (6시간마다 + 시작 시 1회)
+  autoSyncGlobalExrate({ notify: false }).catch(e => console.log('환율 자동 갱신 오류:', e.message));
+  setInterval(async () => {
+    await autoSyncGlobalExrate({ notify: true }).catch(e => console.log('환율 자동 갱신 스케줄 오류:', e.message));
+  }, 6 * 60 * 60 * 1000);
+
   // 🔄 상품 카탈로그 정리 (6시간마다 + 시작 시 1회 — 미작동·중복 제거)
   //    Render 무료 인스턴스는 잠들었다 깨면 타이머가 리셋되므로 시작 시 실행 필수
   reconcileServiceCatalog({ notify: false }).catch(e => console.log('카탈로그 정리 초기 실행 오류:', e.message));
