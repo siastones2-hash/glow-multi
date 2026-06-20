@@ -1061,7 +1061,10 @@ function isCuratedServiceId(id) {
 
 async function ensurePeakerrCatalogLoaded() {
   if (peakerrCatalogCache.size > 0) return;
-  await syncPeakerrServices().catch(e => console.log('Peakerr 카탈로그 로드:', e.message));
+  const r = await syncPeakerrServices();
+  if (r?.skipped || peakerrCatalogCache.size === 0) {
+    console.log('Peakerr 카탈로그 로드 실패 — API 키 또는 연결 확인');
+  }
 }
 
 async function reactivateCuratedSeedServices() {
@@ -1118,20 +1121,25 @@ async function submitPeakerrOrder(apiKey, apiId, link, qty) {
 
 async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(), limit = 8) {
   const bucket = serviceOrderBucket(primary);
-  if (!bucket || bucket === '서비스') return [];
   const r = await query(`
     SELECT s.* FROM services s
     WHERE s.active=1 AND s.pl=$1 AND s.id<>$2
       AND s.api_id IS NOT NULL AND TRIM(s.api_id) <> ''
   `, [primary.pl, primary.id]);
+  const sameBucket = (s) => !bucket || bucket === '서비스' || serviceOrderBucket(s) === bucket;
   return r.rows
     .filter(s => !excludeIds.has(s.id))
-    .filter(s => serviceOrderBucket(s) === bucket)
+    .filter(sameBucket)
     .filter(s => qty >= (s.min || 1) && qty <= (s.max || 999999999))
     .filter(s => peakerrCatalogCache.size === 0 || peakerrCatalogCache.has(String(s.api_id)))
     .sort((a, b) => {
       const pa = serviceIdPriority(a.id) - serviceIdPriority(b.id);
       if (pa !== 0) return pa;
+      if (bucket && bucket !== '서비스') {
+        const ba = serviceOrderBucket(a) === bucket ? 0 : 1;
+        const bb = serviceOrderBucket(b) === bucket ? 0 : 1;
+        if (ba !== bb) return ba - bb;
+      }
       return scoreServiceRow(b) - scoreServiceRow(a) || parseFloat(a.rate) - parseFloat(b.rate);
     })
     .slice(0, limit);
@@ -1680,7 +1688,29 @@ const PL_DISPLAY_KO = {
 };
 
 function detectServiceTypeKo(full) {
-  const n = (full || '').toLowerCase();
+  const raw = full || '';
+  const n = raw.toLowerCase();
+  // 한글 상품명 (GLOW 시드·한글화 catalog)
+  if (/조회수/.test(raw)) {
+    if (/쇼츠|shorts/i.test(raw)) return '쇼츠 조회수';
+    if (/스토리|story/i.test(raw)) return '스토리 조회수';
+    if (/릴스|reel/i.test(raw)) return '릴스 조회수';
+    return '조회수';
+  }
+  if (/좋아요/.test(raw)) {
+    if (/쇼츠|shorts/i.test(raw)) return '쇼츠 좋아요';
+    if (/라이브|live/i.test(raw)) return '라이브 좋아요';
+    if (/릴스|reel/i.test(raw)) return '릴스 좋아요';
+    return '좋아요';
+  }
+  if (/팔로워/.test(raw)) return '팔로워';
+  if (/구독자/.test(raw)) return '구독자';
+  if (/댓글/.test(raw)) return '댓글';
+  if (/공유/.test(raw)) return '공유';
+  if (/저장/.test(raw)) return '저장';
+  if (/시청시간/.test(raw)) return '시청시간';
+  if (/스토리/.test(raw)) return '스토리';
+  if (/노출|임프레션/.test(raw)) return '노출';
   if (/watch\s*time|watchtime|watch hour|4000 hour/.test(n)) return '시청시간';
   if (/shorts/.test(n)) return /like/.test(n) ? '쇼츠 좋아요' : '쇼츠 조회수';
   if (/\blive\b/.test(n) && /like/.test(n)) return '라이브 좋아요';
@@ -3280,7 +3310,9 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       const failId = 'O' + Date.now();
       const errMsg = placement.linkError || isPeakerrLinkError(placement.error)
         ? linkHintForService(svc)
-        : `주문 접수에 실패했습니다. 잠시 후 다시 시도하거나 다른 상품을 선택해주세요.`;
+        : /balance|insufficient|not enough|잔액|부족/i.test(placement.error || '')
+          ? '공급사 잔액 부족으로 주문이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
+          : `주문 접수에 실패했습니다. (${placement.error || '공급사 거절'})`;
       try {
         await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed']);
