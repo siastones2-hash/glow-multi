@@ -2172,6 +2172,26 @@ async function api(url,method,body){
   return data;
 }
 function _isSuperUser(){return !!(CUR&&CUR.role==='superadmin');}
+/** 지인 사이트 여부 — 나인스토리·히즈마케팅 등 default 제외 전체 */
+function isPartnerSite(){
+  if(_isSuperUser())return false;
+  if(!SITE_CONFIG)return false;
+  if(SITE_CONFIG.isDefault===false)return true;
+  if(SITE_CONFIG.siteId&&SITE_CONFIG.siteId!=='default')return true;
+  return false;
+}
+function isPartnerSiteAdmin(){
+  return !!(CUR&&['admin','partner'].includes(CUR.role)&&isPartnerSite());
+}
+function applyPartnerAdminChrome(){
+  if(!isPartnerSiteAdmin())return;
+  var roleMap={admin:'관리자 👑',partner:'관리자 👑'};
+  if(ge('sbRole'))ge('sbRole').textContent=roleMap[CUR.role]||'관리자 👑';
+  var siAd=ge('si-admin');if(siAd)siAd.textContent='👑 관리자';
+  var bnAd=ge('bni-admin');if(bnAd)bnAd.innerHTML='<div class="bni-ico">👑</div>관리자';
+  var admHead=ge('admPanelHead');if(admHead)admHead.style.display='block';
+  syncAdminUiStyleOptions(false);
+}
 function _partnerMsg(s){
   if(_isSuperUser()||s==null)return s;
   var t=String(s);
@@ -2666,6 +2686,7 @@ async function loadSiteConfig(){
   SITE_CONFIG=d;
 
   document.documentElement.setAttribute('data-layout', d.uiLayout||'classic');
+  applyPartnerAdminChrome();
 
   // CSS 변수 동적 업데이트
   // 테마 적용 - JSON 조합 테마 or 기본 glow
@@ -2957,16 +2978,12 @@ async function enterDash(){
   var isAdmin=['admin','partner','superadmin'].includes(CUR.role);
   var isSuper=CUR.role==='superadmin';
   var isPartner=CUR.role==='partner';
-  var isSiteOwner=isAdmin&&!isSuper&&SITE_CONFIG&&!SITE_CONFIG.isDefault;
   ge('si-admin').style.display=isAdmin?'flex':'none';
   ge('bni-admin').style.display=isAdmin?'flex':'none';
   ge('si-super').style.display=isSuper?'flex':'none';
   ge('bni-super').style.display=isSuper?'flex':'none';
-  if(isSiteOwner){
-    var siAd=ge('si-admin');if(siAd)siAd.textContent='👑 관리자';
-    var bnAd=ge('bni-admin');if(bnAd)bnAd.innerHTML='<div class="bni-ico">👑</div>관리자';
-  }
-  var admHead=ge('admPanelHead');if(admHead)admHead.style.display=isSiteOwner?'block':'none';
+  applyPartnerAdminChrome();
+  var admHead=ge('admPanelHead');if(admHead&&!isPartnerSiteAdmin())admHead.style.display='none';
 
   // 파트너·지인 사이트 관리자 → 크레딧만 사용 (잔액 충전 메뉴 숨김)
   window._adminCreditOnly = SITE_CONFIG && !SITE_CONFIG.isDefault && (CUR.role==='admin'||CUR.role==='partner');
@@ -3110,7 +3127,7 @@ function goTab(tab){
   if(tab==='orders')loadOrders();
   if(tab==='charge'){refreshMe();loadChargeHis()}
   if(tab==='profile')loadProfile();
-  if(tab==='admin')loadAdmDash();
+  if(tab==='admin'){applyPartnerAdminChrome();loadAdmDash();}
   if(tab==='super')loadSuperDash();
   window.scrollTo(0,0);
 }
@@ -3322,6 +3339,7 @@ function pickCharge(a,el){
 }
 // ── 일반 관리자 ──
 async function loadAdmDash(){
+  applyPartnerAdminChrome();
   var d=await api('/api/admin/stats');
   if(!d||d.error){return;}
   if(ge('aSU'))ge('aSU').textContent=d.users||0;

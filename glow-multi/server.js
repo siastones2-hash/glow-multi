@@ -1055,6 +1055,7 @@ function requireAuth(req, res, next) {
   const payload = token ? verifyToken(token) : null;
   if (!payload) return res.status(401).json({ error: '로그인 필요' });
   req.session = payload;
+  attachPartnerAdminJsonMask(req, res);
   next();
 }
 function requireAdmin(req, res, next) {
@@ -1063,15 +1064,33 @@ function requireAdmin(req, res, next) {
   if (!payload) return res.status(401).json({ error: '로그인 필요' });
   if (!['admin','partner','superadmin'].includes(payload.role)) return res.status(403).json({ error: '관리자 권한 필요' });
   req.session = payload;
+  attachPartnerAdminJsonMask(req, res);
   next();
 }
 function requireSuperAdmin(req, res, next) {
   const token = getToken(req);
   const payload = token ? verifyToken(token) : null;
   if (!payload) return res.status(401).json({ error: '로그인 필요' });
-  if (payload.role !== 'superadmin') return res.status(403).json({ error: '슈퍼관리자 권한 필요' });
+  if (payload.role !== 'superadmin') return res.status(403).json({ error: '접근 권한이 없습니다' });
   req.session = payload;
   next();
+}
+
+/** 지인 사이트(default 제외) 관리자 API — 슈퍼·본사 표현 일괄 제거 */
+function attachPartnerAdminJsonMask(req, res) {
+  const role = req.session?.role;
+  if (role === 'superadmin' || req.siteId === 'default') return;
+  if (!['admin', 'partner'].includes(role)) return;
+  if (res._partnerJsonWrapped) return;
+  res._partnerJsonWrapped = true;
+  const orig = res.json.bind(res);
+  res.json = (body) => {
+    if (body && typeof body === 'object') {
+      if (body.error) body.error = neutralAdminMsg(body.error, false);
+      if (body.message) body.message = neutralAdminMsg(body.message, false);
+    }
+    return orig(body);
+  };
 }
 
 // ═══════════════════════════════════════
