@@ -1762,6 +1762,94 @@ async function fetchPeakerrOrderStatus(apiKey, apiOrderId) {
   } catch(e) { console.log('Peakerr 상태 조회 실패:', e.message); return null; }
 }
 
+function parsePeakerrStartCount(data) {
+  if (!data || data.error) return 0;
+  const raw = data.start_count ?? data.startCount ?? data.start ?? data.starts ?? 0;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+/** Peakerr start_count + TikTok 등 실제 플랫폼 숫자 보조 (0으로 덮어쓰기 방지) */
+async function scrapePlatformStartCount(order) {
+  try {
+    let pl = order.pl;
+    let label = order.sname || '';
+    if (order.sid) {
+      const r = await query(`SELECT pl, name, description FROM services WHERE id=$1`, [order.sid]);
+      if (r.rows[0]) {
+        pl = pl || r.rows[0].pl;
+        label = `${r.rows[0].name || ''} ${r.rows[0].description || ''}`;
+      }
+    }
+    const bucket = detectServiceTypeKo(label);
+    if (pl === 'tiktok' && bucket === '조회수' && order.link) {
+      return await fetchTikTokPlayCount(order.link);
+    }
+  } catch (e) { console.log('플랫폼 시작 숫자 조회:', e.message); }
+  return null;
+}
+
+async function fetchTikTokPlayCount(url) {
+  try {
+    const normalized = normalizeOrderLink(url, 'tiktok');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    const apiResp = await fetch(
+      `https://www.tikwm.com/api/?url=${encodeURIComponent(normalized)}`,
+      { signal: controller.signal, headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' } }
+    );
+    clearTimeout(timer);
+    if (apiResp.ok) {
+      const data = await apiResp.json();
+      const n = parseInt(data?.data?.play_count ?? data?.data?.view_count ?? 0, 10);
+      if (Number.isFinite(n) && n >= 0) return n;
+    }
+  } catch (e) { console.log('TikTok tikwm:', e.message); }
+  try {
+    const normalized = normalizeOrderLink(url, 'tiktok');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 14000);
+    const resp = await fetch(normalized, {
+      signal: controller.signal,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml'
+      }
+    });
+    clearTimeout(timer);
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    const patterns = [
+      /"playCount"\s*:\s*(\d+)/,
+      /"viewCount"\s*:\s*(\d+)/,
+      /"play_count"\s*:\s*(\d+)/,
+      /playCount\\":(\d+)/,
+      /"stats"\s*:\s*\{[^}]*"playCount"\s*:\s*(\d+)/
+    ];
+    for (const re of patterns) {
+      const m = html.match(re);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (Number.isFinite(n) && n >= 0) return n;
+      }
+    }
+  } catch (e) { console.log('TikTok HTML fetch:', e.message); }
+  return null;
+}
+
+async function enrichPeakerrStartCount(order, peakerrData) {
+  const peak = parsePeakerrStartCount(peakerrData);
+  const prev = parseInt(order.starts_count || 0, 10);
+  let start = peak > 0 ? peak : prev;
+  if (start <= 0) {
+    const scraped = await scrapePlatformStartCount(order);
+    if (scraped != null && scraped >= 0) start = scraped;
+  }
+  return { ...peakerrData, start_count: start };
+}
+
 function parsePeakerrCancelResult(data, apiOrderId) {
   const id = String(apiOrderId);
   if (Array.isArray(data)) {
@@ -1804,9 +1892,21 @@ function peakerrCancelErrorKo(msg) {
 async function pullPeakerrOrderSnapshot(order, apiKey, opts = {}) {
   if (!order?.api_order_id || !apiKey) return null;
   if (opts.delayMs) await new Promise(r => setTimeout(r, opts.delayMs));
-  const peakerrData = await fetchPeakerrOrderStatus(apiKey, order.api_order_id);
-  if (!peakerrData || peakerrData.error) return null;
-  return autoRefundOrder(order, peakerrData);
+  const pollTries = opts.startPollTries ?? 1;
+  let peakerrData = null;
+  let currentOrder = order;
+  for (let i = 0; i < pollTries; i++) {
+    peakerrData = await fetchPeakerrOrderStatus(apiKey, currentOrder.api_order_id);
+    if (!peakerrData || peakerrData.error) return null;
+    const sc = parsePeakerrStartCount(peakerrData);
+    const prev = parseInt(currentOrder.starts_count || 0, 10);
+    if (sc > 0 || prev > 0 || i >= pollTries - 1) break;
+    await new Promise(r => setTimeout(r, 2000));
+    const freshR = await query(`SELECT * FROM orders WHERE id=$1`, [currentOrder.id]);
+    currentOrder = freshR.rows[0] || currentOrder;
+  }
+  peakerrData = await enrichPeakerrStartCount(currentOrder, peakerrData);
+  return autoRefundOrder(currentOrder, peakerrData);
 }
 
 async function findOrderForCancel(orderId, req) {
@@ -1915,8 +2015,10 @@ async function autoRefundOrder(order, peakerrData) {
   try {
     // Peakerr 상태 확인
     const status = (peakerrData.status || '').toLowerCase();
-    const remains = parseInt(peakerrData.remains || 0);
-    const startsCount = parseInt(peakerrData.start_count || 0);
+    const remains = parseInt(peakerrData.remains ?? peakerrData.remains_count ?? 0, 10);
+    const peakStart = parsePeakerrStartCount(peakerrData);
+    const prevStart = parseInt(order.starts_count || 0, 10);
+    const startsCount = peakStart > 0 ? peakStart : prevStart;
     
     let refundPercent = 0;
     let newStatus = order.status;
@@ -3971,10 +4073,10 @@ async function placeOrderHandler(req, res, ctx) {
       }
     }
     if (snapOrder?.api_order_id) {
-      await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 1200 });
+      await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 1200, startPollTries: 5 });
       snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       if (!(snapOrder?.starts_count > 0)) {
-        await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 2500 });
+        await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 2500, startPollTries: 3 });
         snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       }
     }
@@ -4044,7 +4146,7 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
     const apiKey = await getPeakerrApiKey();
     if (!apiKey) return res.json({ error: 'API 키 미설정' });
     
-    const result = await pullPeakerrOrderSnapshot(order, apiKey);
+    const result = await pullPeakerrOrderSnapshot(order, apiKey, { startPollTries: 5 });
     if (!result) return res.json({ error: '상태 조회 실패' });
     
     const updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);

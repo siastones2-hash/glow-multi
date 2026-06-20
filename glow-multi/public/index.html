@@ -3502,6 +3502,8 @@ function _orderProgressCell(o){
   var start=o.starts_count!=null?parseInt(o.starts_count,10):null;
   if(!o.api_order_id&&['pending','processing'].includes(o.status))
     return '<span style="font-size:10px;color:#9A8AB0">시작 숫자 확인 중...</span>';
+  if((start==null||start===0)&&['pending','processing'].includes(o.status)&&o.api_order_id)
+    return '<span style="font-size:10px;color:#9A8AB0">시작 숫자 확인 중... 🔄 새로고침</span>';
   if((start==null||isNaN(start))&&o.remains==null&&o.status!=='completed')
     return '<span style="font-size:10px;color:#9A8AB0">—</span>';
   var s=start||0;
