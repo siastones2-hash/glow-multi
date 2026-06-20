@@ -1050,10 +1050,14 @@ async function computeCreditRefundUsd(order, refundPercent) {
   return apiCost * pct;
 }
 
-/** 주문 환불 — 잔액·크레딧·orders.cost 동시 복구 */
+/** 주문 환불 — 잔액·크레딧·orders.cost 동시 복구 (이중 환불 방지) */
 async function restoreRefundFinancials(order, refundPercent, opts = {}) {
   const pct = Math.min(Math.max(parseFloat(refundPercent) || 0, 0), 100);
-  if (pct <= 0) return { ok: true, refundAmount: 0, creditRefund: 0 };
+  if (pct <= 0) return { ok: true, refundAmount: 0, creditRefund: 0, newCost: order.cost || 0, pct: 0 };
+  const settled = ['refunded', 'cancelled', 'canceled', 'partial_refunded'];
+  if (settled.includes(order.status) && !opts.allowRetry) {
+    return { ok: true, refundAmount: 0, creditRefund: 0, costRefund: 0, newCost: order.cost || 0, pct: 0, alreadyRefunded: true };
+  }
   const refundAmount = Math.round((order.charge || 0) * pct / 100);
   const costRefund = Math.round((order.cost || 0) * pct / 100);
   if (refundAmount > 0) {
@@ -1144,6 +1148,7 @@ async function checkRateLimit(key, maxPerMinute = 60) {
 let peakerrCatalogCache = new Map();
 /** 동시 주문 방지 — site+link 단위 (Peakerr 중복 전송 차단) */
 const orderPlacementLocks = new Map();
+const cancelOrderLocks = new Map();
 
 function orderLockKey(siteId, link) {
   return `${siteId}:${String(link || '').toLowerCase().replace(/\/+$/, '').split('?')[0]}`;
@@ -1753,69 +1758,93 @@ async function findOrderForCancel(orderId, req) {
   return null;
 }
 
-/** Peakerr 취소 + GLOW 환불 (고객·관리자 공통) */
+/** Peakerr 취소 + GLOW 환불 (고객·관리자 공통) — Peakerr 취소 확인 전 환불 금지 */
 async function cancelOrderWithPeakerr(order, opts = {}) {
   const adminId = opts.adminId || 'system';
-  const done = ['completed', 'refunded', 'partial_refunded', 'cancelled', 'canceled'];
-  if (done.includes(order.status)) {
-    return { ok: false, error: '이미 완료·취소·환불된 주문입니다' };
+  const lockKey = `cancel:${order.id}`;
+  if (cancelOrderLocks.has(lockKey)) {
+    return { ok: false, error: '취소 처리 중입니다. 잠시 후 다시 시도해주세요.' };
   }
+  cancelOrderLocks.set(lockKey, Date.now());
+  try {
+    const done = ['completed', 'refunded', 'partial_refunded', 'cancelled', 'canceled'];
+    if (done.includes(order.status)) {
+      return { ok: false, error: '이미 완료·취소·환불된 주문입니다' };
+    }
 
-  if (!order.api_order_id) {
-    const fin = await restoreRefundFinancials(order, 100, {
-      reason: `주문 취소 (API 미전송) - ${order.id}`,
-      adminId
-    });
-    await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
-    return {
-      ok: true, message: '주문이 취소되고 전액 환불되었습니다',
-      refundPercent: 100, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund
-    };
-  }
+    if (!order.api_order_id) {
+      const fin = await restoreRefundFinancials(order, 100, {
+        reason: `주문 취소 (API 미전송) - ${order.id}`,
+        adminId
+      });
+      if (fin.alreadyRefunded) {
+        return { ok: true, message: '이미 취소·환불된 주문입니다.', status: order.status };
+      }
+      await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
+      return {
+        ok: true, message: '주문이 취소되고 전액 환불되었습니다',
+        refundPercent: 100, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund, status: 'refunded'
+      };
+    }
 
-  const apiKey = await getPeakerrApiKey();
-  if (!apiKey) return { ok: false, error: 'API 키 미설정' };
+    const apiKey = await getPeakerrApiKey();
+    if (!apiKey) return { ok: false, error: 'API 키 미설정' };
 
-  const cancelResult = await submitPeakerrCancel(apiKey, order.api_order_id);
-  if (!cancelResult.ok) {
-    return { ok: false, error: peakerrCancelErrorKo(cancelResult.error) };
-  }
+    const cancelResult = await submitPeakerrCancel(apiKey, order.api_order_id);
+    if (!cancelResult.ok) {
+      return { ok: false, error: peakerrCancelErrorKo(cancelResult.error) };
+    }
 
-  const statusData = await pollPeakerrStatus(apiKey, order.api_order_id);
-  if (statusData && !statusData.error) {
+    const statusData = await pollPeakerrStatus(apiKey, order.api_order_id, 10, 2000);
+    if (!statusData || statusData.error) {
+      return {
+        ok: false,
+        error: 'Peakerr 취소 확인 실패. 1~2분 후 🔄 새로고침하면 자동 반영됩니다.',
+        pendingCancel: true
+      };
+    }
+
+    const apiStatus = (statusData.status || '').toLowerCase();
+    if (['in progress', 'processing', 'pending'].includes(apiStatus)) {
+      return {
+        ok: false,
+        error: 'Peakerr에서 아직 작업 중입니다. 취소 반영 후 자동 환불됩니다. 잠시 후 🔄 새로고침해주세요.',
+        pendingCancel: true
+      };
+    }
+    if (apiStatus === 'completed') {
+      return { ok: false, error: '이미 Peakerr에서 완료된 주문은 취소·환불할 수 없습니다.' };
+    }
+
     const result = await autoRefundOrder(order, statusData);
     const freshR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
     const fresh = freshR.rows[0] || order;
-    if (result?.refundPercent > 0 || ['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(fresh.status)) {
-      const pct = result?.refundPercent || 100;
+
+    if (result?.refundPercent > 0) {
+      const pct = result.refundPercent;
       return {
         ok: true,
         message: pct >= 100 ? '취소 완료. 전액 환불되었습니다.' : `취소 완료. ${pct}% 환불되었습니다.`,
         refundPercent: pct,
+        refundAmount: result.refundAmount,
+        creditRefund: result.creditRefund,
         status: fresh.status,
         apiStatus: statusData.status
       };
     }
-  }
 
-  // Peakerr 취소 접수됨 — 상태 반영 전이어도 환불 (이중 환불 방지)
-  const freshR2 = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
-  const fresh2 = freshR2.rows[0] || order;
-  if (['refunded', 'partial_refunded'].includes(fresh2.status)) {
-    return { ok: true, message: '취소·환불이 완료되었습니다.', status: fresh2.status };
+    if (['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(fresh.status)) {
+      return { ok: true, message: '취소·환불이 완료되었습니다.', status: fresh.status };
+    }
+
+    return {
+      ok: false,
+      error: 'Peakerr 취소는 접수됐지만 환불 조건을 확인하지 못했습니다. 🔄 새로고침 후 다시 확인해주세요.',
+      pendingCancel: true
+    };
+  } finally {
+    cancelOrderLocks.delete(lockKey);
   }
-  const fin = await restoreRefundFinancials(fresh2, 100, {
-    reason: `주문 취소 (Peakerr 접수) - ${order.id}`,
-    adminId
-  });
-  await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
-  await logActivity(order.site_id, adminId, '', '주문 취소', 'order', order.id,
-    `Peakerr #${order.api_order_id} 취소 · ₩${Math.round(fin.refundAmount || 0).toLocaleString()} 환불` +
-      (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : ''));
-  return {
-    ok: true, message: '취소 접수 완료. 전액 환불되었습니다.',
-    refundPercent: 100, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund, status: 'refunded'
-  };
 }
 
 // 💸 주문 자동 환불 처리 (Peakerr 기반)
@@ -1856,21 +1885,28 @@ async function autoRefundOrder(order, peakerrData) {
     }
     
     // 환불 처리 (이미 환불된 주문 중복 방지)
+    let fin = null;
     if (refundPercent > 0 && !['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status)) {
-      const fin = await restoreRefundFinancials(order, refundPercent, {
+      fin = await restoreRefundFinancials(order, refundPercent, {
         reason: `자동 환불 (공급 ${status}) - 주문 ${order.id}`,
         adminId: 'system'
       });
-      await query(`UPDATE orders SET cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
-      await logActivity(
-        order.site_id, 'system', '자동환불',
-        `자동 환불 (${refundPercent}%)`, 'order', order.id,
-        `공급 ${status} → ₩${(fin.refundAmount || 0).toLocaleString()} 환불` +
-          (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : '')
-      );
+      if (!fin.alreadyRefunded) {
+        await query(`UPDATE orders SET cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
+        await logActivity(
+          order.site_id, 'system', '자동환불',
+          `자동 환불 (${refundPercent}%)`, 'order', order.id,
+          `공급 ${status} → ₩${(fin.refundAmount || 0).toLocaleString()} 환불` +
+            (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : '')
+        );
+      }
     }
     
-    return { status: newStatus, refundPercent };
+    return {
+      status: newStatus, refundPercent,
+      refundAmount: fin?.refundAmount || 0,
+      creditRefund: fin?.creditRefund || 0
+    };
   } catch(e) { console.log('자동 환불 실패:', e.message); return null; }
 }
 
@@ -4161,13 +4197,26 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
     const orderR = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
     const order = orderR.rows[0];
     if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
-    if (['refunded', 'partial_refunded'].includes(order.status)) {
-      return res.json({ error: '이미 환불된 주문입니다' });
+    if (['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status)) {
+      return res.json({ error: '이미 환불·취소된 주문입니다' });
     }
     
     // 사이트 권한 체크
     if (req.session.role !== 'superadmin' && order.site_id !== req.siteId) {
       return res.json({ error: '다른 사이트 주문은 환불할 수 없습니다' });
+    }
+
+    // Peakerr 연동 주문 — Peakerr 취소 확인 후에만 환불 (손실 방지)
+    if (order.api_order_id) {
+      if (pct >= 100) {
+        const result = await cancelOrderWithPeakerr(order, { adminId: req.session.userId });
+        if (!result.ok) return res.json({ error: result.error });
+        return res.json({
+          ok: true, refundAmount: result.refundAmount, creditRefund: result.creditRefund,
+          message: result.message
+        });
+      }
+      return res.json({ error: 'Peakerr 연동 주문은 부분 환불을 수동으로 할 수 없습니다. 🔄 새로고침으로 Peakerr 상태를 동기화해주세요.' });
     }
     
     const fin = await restoreRefundFinancials(order, pct, {
@@ -4175,6 +4224,7 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
       adminId: req.session.userId
     });
     if (fin.error) return res.json({ error: fin.error });
+    if (fin.alreadyRefunded) return res.json({ error: '이미 환불된 주문입니다' });
     
     const newStatus = pct >= 100 ? 'refunded' : 'partial_refunded';
     await query(`UPDATE orders SET status=$1, cost=$2 WHERE id=$3`, [newStatus, fin.newCost, id]);
