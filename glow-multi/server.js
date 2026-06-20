@@ -173,6 +173,8 @@ async function initDB() {
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS api_cost REAL DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid INTEGER DEFAULT 0`).catch(()=>{});
+  await query(`UPDATE orders SET paid=1 WHERE status IN ('processing','completed','cancelled','canceled','refunded','partial_refunded') AND COALESCE(paid,0)=0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by TEXT DEFAULT NULL`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus INTEGER DEFAULT 0`).catch(()=>{});
@@ -1384,8 +1386,15 @@ async function reconcileOrderMissingApiId(order) {
   const expected = parseFloat(svcR.rows[0]?.rate || 0) / 1000 * (order.qty || 1);
   const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baseline, expected, 45);
   if (!rec?.apiOrderId) return null;
-  await query(`UPDATE orders SET api_order_id=$1, status='processing' WHERE id=$2 AND (api_order_id IS NULL OR api_order_id='')`,
+  await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2 AND (api_order_id IS NULL OR api_order_id='')`,
     [rec.apiOrderId, order.id]);
+  const freshR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
+  const fresh = freshR.rows[0];
+  if (fresh && fresh.status === 'pending' && !parseInt(fresh.paid || 0, 10)) {
+    await confirmPendingOrderPayment(fresh);
+  } else if (fresh && fresh.status !== 'processing' && parseInt(fresh.paid || 0, 10)) {
+    await query(`UPDATE orders SET status='processing' WHERE id=$1`, [order.id]);
+  }
   return rec.apiOrderId;
 }
 
@@ -1403,6 +1412,14 @@ async function reconcileOrphanPeakerrOrders() {
     for (const o of r.rows) {
       const id = await reconcileOrderMissingApiId(o);
       if (!id) continue;
+      const freshR = await query(`SELECT * FROM orders WHERE id=$1`, [o.id]);
+      const fresh = freshR.rows[0];
+      if (fresh?.status === 'pending' && !parseInt(fresh.paid || 0, 10)) {
+        await confirmPendingOrderPayment(fresh);
+        fixed++;
+        console.log(`✓ Peakerr ID 복구+결제: ${o.id} → #${id}`);
+        continue;
+      }
       if (o.status === 'failed') {
         const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [o.site_id]);
         const svcR = await query(`SELECT * FROM services WHERE id=$1`, [o.sid]);
@@ -1439,6 +1456,7 @@ async function refundStuckOrdersWithoutApiId() {
       SELECT * FROM orders
       WHERE (api_order_id IS NULL OR api_order_id='')
       AND status IN ('processing', 'pending')
+      AND COALESCE(paid,0)=1
       AND created < NOW() - INTERVAL '2 hours'
       AND created > NOW() - INTERVAL '7 days'
       ORDER BY created ASC
@@ -1446,6 +1464,7 @@ async function refundStuckOrdersWithoutApiId() {
     `);
     let refunded = 0;
     for (const o of r.rows) {
+      if (!parseInt(o.paid || 0, 10)) continue;
       const recovered = await reconcileOrderMissingApiId(o);
       if (recovered) continue;
       const fin = await restoreRefundFinancials(o, 100, {
@@ -1849,6 +1868,145 @@ async function backfillOrderStartCount(order) {
   return scraped;
 }
 
+/** pending + Peakerr ID 확정 → 차감 후 processing (미확인 시 차감 금지) */
+async function confirmPendingOrderPayment(order) {
+  if (!order?.id || !order.api_order_id) return null;
+  if (parseInt(order.paid || 0, 10) === 1) {
+    if (order.status === 'pending') await query(`UPDATE orders SET status='processing' WHERE id=$1`, [order.id]);
+    return order;
+  }
+  const userR = await query(`SELECT * FROM users WHERE id=$1`, [order.uid]);
+  const user = userR.rows[0];
+  if (!user) return null;
+  const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [order.site_id]);
+  const site = siteR.rows[0];
+  const adminCreditOnly = order.site_id && order.site_id !== 'default' &&
+    ['admin', 'partner'].includes(user.role || '');
+  const charge = parseFloat(order.charge || 0);
+  const apiCost = parseFloat(order.api_cost || 0);
+  if (!adminCreditOnly && charge > 0 && (user.balance || 0) < charge) {
+    await sendTelegramToSuper(
+      `⚠️ <b>주문 결제 실패 (잔액부족)</b>\n\n주문 ${order.id}\n${order.sname}\n필요 ₩${Math.round(charge).toLocaleString()}`
+    ).catch(() => null);
+    return null;
+  }
+  if (!adminCreditOnly && charge > 0) {
+    const before = user.balance || 0;
+    await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, order.uid]);
+    const afterR = await query(`SELECT balance FROM users WHERE id=$1`, [order.uid]);
+    await logBalance(order.site_id, order.uid, user.name, -charge, before, afterR.rows[0]?.balance || 0,
+      `주문 확정 차감 - ${order.id}`, 'system');
+  }
+  if (order.site_id && order.site_id !== 'default' && apiCost > 0) {
+    await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, order.site_id]);
+  }
+  await query(`UPDATE orders SET status='processing', paid=1 WHERE id=$1`, [order.id]);
+  const fresh = (await query(`SELECT * FROM orders WHERE id=$1`, [order.id])).rows[0];
+  await backfillOrderStartCount(fresh).catch(() => null);
+  return fresh;
+}
+
+async function confirmAllPendingPayments() {
+  const r = await query(`
+    SELECT * FROM orders WHERE status='pending' AND COALESCE(paid,0)=0
+    AND api_order_id IS NOT NULL AND api_order_id != ''
+    ORDER BY created ASC LIMIT 20
+  `);
+  let n = 0;
+  for (const o of r.rows) {
+    const ok = await confirmPendingOrderPayment(o);
+    if (ok) n++;
+  }
+  return n;
+}
+
+async function backfillAllMissingStartCounts() {
+  const r = await query(`
+    SELECT * FROM orders
+    WHERE status IN ('pending','processing')
+    AND COALESCE(starts_count,0)=0
+    AND api_order_id IS NOT NULL AND api_order_id != ''
+    AND created > NOW() - INTERVAL '30 days'
+    ORDER BY created DESC LIMIT 25
+  `);
+  let fixed = 0;
+  for (const o of r.rows) {
+    if (await backfillOrderStartCount(o) > 0) fixed++;
+  }
+  return fixed;
+}
+
+async function alertMissingStartCounts() {
+  const r = await query(`
+    SELECT id, sname, link, qty, uname, site_id, created
+    FROM orders
+    WHERE status='processing'
+    AND COALESCE(starts_count,0)=0
+    AND api_order_id IS NOT NULL AND api_order_id != ''
+    AND created < NOW() - INTERVAL '12 minutes'
+    AND created > NOW() - INTERVAL '3 days'
+    ORDER BY created DESC LIMIT 8
+  `);
+  if (!r.rows.length) return 0;
+  let msg = `⚠️ <b>시작 숫자 미확인 주문 ${r.rows.length}건</b>\n\n`;
+  for (const o of r.rows) {
+    msg += `• <code>${o.id}</code> ${(o.sname || '').slice(0, 22)} ×${o.qty}\n`;
+    if (o.link) msg += `  ${String(o.link).slice(0, 55)}\n`;
+  }
+  msg += `\n자동 backfill 시도 중 · 🔄 새로고침 안내`;
+  await sendTelegramToSuper(msg).catch(() => null);
+  return r.rows.length;
+}
+
+async function cleanupUnpaidPendingOrders() {
+  const r = await query(`
+    SELECT * FROM orders
+    WHERE status='pending' AND COALESCE(paid,0)=0
+    AND (api_order_id IS NULL OR api_order_id='')
+    AND created < NOW() - INTERVAL '2 hours'
+    AND created > NOW() - INTERVAL '7 days'
+    LIMIT 20
+  `);
+  for (const o of r.rows) {
+    const recovered = await reconcileOrderMissingApiId(o);
+    if (recovered) continue;
+    await query(`UPDATE orders SET status='failed' WHERE id=$1`, [o.id]);
+    console.log(`✓ 미결제 pending 정리: ${o.id}`);
+  }
+}
+
+/** 🛡️ 서버 기동·주기 사전 점검 */
+async function runPreflightHealthCheck(opts = {}) {
+  const issues = [];
+  try {
+    const keyOk = await reconcilePeakerrApiKey({ silent: true }).catch(() => null);
+    const apiKey = await getPeakerrApiKey();
+    if (!apiKey) issues.push('❌ Peakerr API 키 없음');
+    else {
+      const resp = await peakerrFetch({ key: apiKey, action: 'balance' }).catch(() => null);
+      if (resp) {
+        const data = await resp.json().catch(() => ({}));
+        const bal = parseFloat(data.balance ?? data.balance_usd ?? 0);
+        if (Number.isFinite(bal) && bal < 10) issues.push(`⚠️ Peakerr 잔액 $${bal.toFixed(2)}`);
+      }
+    }
+    const orphan = await reconcileOrphanPeakerrOrders();
+    const confirmed = await confirmAllPendingPayments();
+    const backfilled = await backfillAllMissingStartCounts();
+    await cleanupUnpaidPendingOrders();
+    const missingStart = await alertMissingStartCounts();
+    await refundStuckOrdersWithoutApiId();
+    console.log(`🛡️ 사전점검: orphan=${orphan} 결제확정=${confirmed} 시작숫자=${backfilled} 미확인알림=${missingStart}`);
+    if (issues.length && opts.notify !== false) {
+      await sendTelegramToSuper(`🛡️ <b>GLOW 사전점검</b>\n\n${issues.join('\n')}`).catch(() => null);
+    }
+    return { issues, orphan, confirmed, backfilled, missingStart };
+  } catch (e) {
+    console.log('사전점검 오류:', e.message);
+    return { issues: [e.message] };
+  }
+}
+
 async function enrichPeakerrStartCount(order, peakerrData) {
   const peak = parsePeakerrStartCount(peakerrData);
   const prev = parseInt(order.starts_count || 0, 10);
@@ -1946,6 +2104,10 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     }
 
     if (!order.api_order_id) {
+      if (!parseInt(order.paid || 0, 10)) {
+        await query(`UPDATE orders SET status='cancelled' WHERE id=$1`, [order.id]);
+        return { ok: true, message: '확인 중이던 주문이 취소됐습니다. (차감 없음)', refundPercent: 0, status: 'cancelled' };
+      }
       const fin = await restoreRefundFinancials(order, 100, {
         reason: `주문 취소 (API 미전송) - ${order.id}`,
         adminId
@@ -2151,7 +2313,10 @@ async function syncActiveOrdersForSite(siteId) {
 async function syncAllOrderStatuses() {
   try {
     await reconcileOrphanPeakerrOrders();
+    await confirmAllPendingPayments();
     await refundStuckOrdersWithoutApiId();
+    await cleanupUnpaidPendingOrders();
+    await backfillAllMissingStartCounts();
     const apiKey = await getPeakerrApiKey();
     if (!apiKey) return;
     
@@ -2165,10 +2330,15 @@ async function syncAllOrderStatuses() {
       LIMIT 100
     `);
     
-    if (r.rows.length === 0) return;
+    if (r.rows.length === 0) {
+      await alertMissingStartCounts();
+      return;
+    }
     console.log(`🔄 주문 상태 동기화 시작: ${r.rows.length}건`);
     
     const { synced, cancelled, completed, errors } = await syncOrdersWithPeakerr(r.rows, apiKey, { delayMs: 100 });
+    await backfillAllMissingStartCounts();
+    await alertMissingStartCounts();
     console.log(`✅ 동기화 완료: 완료 ${completed}건, 취소·환불 ${cancelled}건, 오류 ${errors}건`);
     
     if (cancelled > 0) {
@@ -2238,7 +2408,8 @@ async function syncPeakerrServices() {
     try {
       const stuckR = await query(`
         SELECT * FROM orders
-        WHERE status='pending' AND (api_order_id IS NULL OR api_order_id='')
+        WHERE status='pending' AND COALESCE(paid,0)=1
+        AND (api_order_id IS NULL OR api_order_id='')
       `);
       for (const o of stuckR.rows) {
         const uR = await query(`SELECT * FROM users WHERE id=$1`, [o.uid]);
@@ -4054,44 +4225,62 @@ async function placeOrderHandler(req, res, ctx) {
       usedOrderCostKrw = altAmounts.orderCostKrw;
     }
 
-    let userDeducted = 0;
-    let creditDeducted = 0;
-    if (!adminCreditOnly) {
-      await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, user.id]);
-      userDeducted = charge;
-    }
-    if (site && site.id !== 'default') {
-      await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [usedApiCost, site.id]);
-      creditDeducted = usedApiCost;
-    }
-
     let apiOrderId = placement.apiOrderId || null;
     const orderId = 'O' + Date.now();
     const orderCost = usedOrderCostKrw;
+
+    // ① Peakerr ID 확정 전 — pending + 차감 보류 (손실·이중차감 방지)
     try {
-      await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-        [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, usedApiCost]);
+      await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost,paid) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+        [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'pending', orderCost, usedApiCost, 0]);
     } catch (insertErr) {
-      if (userDeducted > 0)
-        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [userDeducted, user.id]).catch(() => null);
-      if (creditDeducted > 0 && site?.id)
-        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [creditDeducted, site.id]).catch(() => null);
-      throw insertErr;
+      console.log('주문 INSERT 실패:', insertErr.message);
+      return res.json({ error: '주문 저장 실패. 다시 시도해주세요.' });
     }
 
     let snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
     if (!apiOrderId) {
+      await new Promise(r => setTimeout(r, 1800));
       apiOrderId = await reconcileOrderMissingApiId(snapOrder);
       if (apiOrderId) {
         await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [apiOrderId, orderId]);
         snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       }
     }
+    if (!apiOrderId) {
+      await new Promise(r => setTimeout(r, 2500));
+      snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
+      apiOrderId = await reconcileOrderMissingApiId(snapOrder);
+      if (apiOrderId) {
+        await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [apiOrderId, orderId]);
+        snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
+      }
+    }
+
+    if (!apiOrderId) {
+      await sendTelegramToSuper(
+        `⚠️ <b>Peakerr ID 미확인</b>\n\n주문 <code>${orderId}</code>\n${usedSvc.name}\n🔗 ${linkNorm.slice(0, 60)}\n\n차감 없음 · 자동 복구 시도 중`
+      ).catch(() => null);
+      return res.json({
+        ok: true, orderId, apiOrderId: null, balance: user.balance,
+        message: '공급사 주문번호 확인 중입니다. 확인되면 자동 차감·처리됩니다. (잠시 후 🔄 새로고침)',
+        pendingVerify: true,
+        adminCreditOnly: !!adminCreditOnly
+      });
+    }
+
+    // ② ID 확정 → 차감 + processing
+    const confirmed = await confirmPendingOrderPayment({ ...snapOrder, api_order_id: apiOrderId });
+    if (!confirmed) {
+      return res.json({ error: '잔액 부족으로 주문을 확정할 수 없습니다. 충전 후 🔄 새로고침해주세요.' });
+    }
+    snapOrder = confirmed;
+
     if (snapOrder?.api_order_id) {
       await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 1200, startPollTries: 5 });
       snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       if (!(snapOrder?.starts_count > 0)) {
-        await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 2500, startPollTries: 3 });
+        await backfillOrderStartCount(snapOrder);
         snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       }
     }
@@ -6250,6 +6439,7 @@ app.listen(PORT, async () => {
   // 서버 시작 후 30초 뒤 자동 동기화 (DB 준비 대기)
   setTimeout(async () => {
     console.log('🔄 서버 시작 후 자동 동기화 실행');
+    await runPreflightHealthCheck({ notify: true }).catch(() => {});
     await syncAllOrderStatuses().catch(() => {});
     await runCatalogHealthCheck(true).catch(() => {});
     const niche = await importNichePeakerrServices({ notify: false }).catch(e => ({ error: e.message, count: 0 }));
@@ -6264,5 +6454,11 @@ app.listen(PORT, async () => {
     if (!niche.error && niche.count === 0) console.log('🛒 Peakerr 이커머스·보너스: 추가할 상품 없음');
     else if (niche.error) console.log('🛒 이커머스 스캔:', niche.error);
   }, 30 * 1000);
+
+  // 🛡️ 30분마다 사전점검 (시작숫자·orphan·Peakerr)
+  setInterval(async () => {
+    await runPreflightHealthCheck({ notify: false }).catch(e => console.log('사전점검:', e.message));
+  }, 30 * 60 * 1000);
+
   startDailyReportScheduler(query, getGlobalSetting, setGlobalSetting, sendTelegramToSuper);
 });

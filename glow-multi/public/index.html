@@ -3339,7 +3339,12 @@ async function refreshOrder(orderId){
   toast('상태 확인 중...','ok');
   var d=await api('/api/orders/refresh/'+orderId,'POST');
   if(d.error){toast(d.error,'err');return}
-  toast('상태 업데이트 완료: '+(d.status||d.apiStatus||'확인됨'),'ok');
+  var o=d.order;
+  var msg='상태 업데이트: '+(d.status||'확인됨');
+  if(o&&parseInt(o.starts_count||0,10)>0){
+    msg+=' · 시작 '+Number(o.starts_count).toLocaleString()+' → 목표 '+(Number(o.starts_count)+Number(o.qty||0)).toLocaleString();
+  }
+  toast(msg,'ok');
   loadOrders();
   updBal();
 }
@@ -3500,6 +3505,8 @@ function _orderAmtCell(o){
 function _orderProgressCell(o){
   var qty=o.qty||0;
   var start=o.starts_count!=null?parseInt(o.starts_count,10):null;
+  if(o.status==='pending'&&!parseInt(o.paid||0,10))
+    return '<span style="font-size:10px;color:#9A8AB0">공급사 확인 중 · 차감 전</span>';
   if(!o.api_order_id&&['pending','processing'].includes(o.status))
     return '<span style="font-size:10px;color:#9A8AB0">시작 숫자 확인 중...</span>';
   if((start==null||start===0)&&['pending','processing'].includes(o.status)&&o.api_order_id)
