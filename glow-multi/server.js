@@ -1025,6 +1025,12 @@ async function checkRateLimit(key, maxPerMinute = 60) {
 
 /** Peakerr 카탈로그 캐시 (주문 대체·min/max 검증용) */
 let peakerrCatalogCache = new Map();
+/** 동시 주문 방지 — site+link 단위 (Peakerr 중복 전송 차단) */
+const orderPlacementLocks = new Map();
+
+function orderLockKey(siteId, link) {
+  return `${siteId}:${String(link || '').toLowerCase().replace(/\/+$/, '').split('?')[0]}`;
+}
 
 function normalizeOrderLink(url, platform) {
   let s = String(url || '').trim();
@@ -1552,6 +1558,14 @@ function peakerrCancelErrorKo(msg) {
   if (/progress|processing|started|cannot|can't|unable|not allow|already/i.test(m))
     return '이미 처리가 시작되어 Peakerr에서 취소할 수 없습니다.';
   return m ? `취소 실패: ${m}` : 'Peakerr에서 취소를 거절했습니다.';
+}
+
+async function pullPeakerrOrderSnapshot(order, apiKey, opts = {}) {
+  if (!order?.api_order_id || !apiKey) return null;
+  if (opts.delayMs) await new Promise(r => setTimeout(r, opts.delayMs));
+  const peakerrData = await fetchPeakerrOrderStatus(apiKey, order.api_order_id);
+  if (!peakerrData || peakerrData.error) return null;
+  return autoRefundOrder(order, peakerrData);
 }
 
 async function findOrderForCancel(orderId, req) {
@@ -3549,7 +3563,17 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (dupCheck.rows.length > 0) {
       return res.json({ error: '동일 주문이 30분 내 이미 있습니다. 중복 주문을 방지합니다.' });
     }
-    
+    const activeLinkDup = await query(`
+      SELECT id FROM orders
+      WHERE site_id=$1 AND link=$2
+      AND status IN ('pending','processing')
+      AND created > NOW() - INTERVAL '30 minutes'
+      LIMIT 1
+    `, [req.siteId, linkNorm]);
+    if (activeLinkDup.rows.length > 0) {
+      return res.json({ error: '이 링크로 진행 중인 주문이 있습니다. 주문 내역에서 🔄 상태 확인 후 다시 시도해주세요.' });
+    }
+
     const site = req.site;
     const margins = await getSiteMargins(site);
     const isDefaultSite2 = !site || site.id === 'default';
@@ -3567,9 +3591,32 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (!apiKey || !svc.api_id) {
       return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
     }
+
+    const lockKey = orderLockKey(req.siteId, linkNorm);
+    if (orderPlacementLocks.has(lockKey)) {
+      return res.json({ error: '같은 링크 주문이 처리 중입니다. 10초 후 다시 시도해주세요.' });
+    }
+    orderPlacementLocks.set(lockKey, Date.now());
+    try {
+      return await placeOrderHandler(req, res, {
+        svc, linkNorm, qtyNum, site, margins, charge, apiCost, orderCostKrw,
+        user, adminCreditOnly, apiKey
+      });
+    } finally {
+      orderPlacementLocks.delete(lockKey);
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+async function placeOrderHandler(req, res, ctx) {
+  try {
+    const { svc, linkNorm, qtyNum, site, margins, charge, apiCost, orderCostKrw, user, adminCreditOnly, apiKey } = ctx;
+    let usedApiCost = apiCost;
+    let usedOrderCostKrw = orderCostKrw;
+
     ensurePeakerrCatalogLoaded({ background: true });
 
-    let maxApiCost = apiCost;
+    let maxApiCost = usedApiCost;
     const altCandidates = await findAlternateServices(svc, req.siteId, qtyNum, new Set(), 8);
     for (const alt of altCandidates) {
       maxApiCost = Math.max(maxApiCost, computeOrderAmounts(alt, qtyNum, site, margins).apiCost);
@@ -3596,30 +3643,37 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const usedSvc = placement.usedSvc || svc;
     if (usedSvc.id !== svc.id) {
       const altAmounts = computeOrderAmounts(usedSvc, qtyNum, site, margins);
-      apiCost = altAmounts.apiCost;
-      orderCostKrw = altAmounts.orderCostKrw;
+      usedApiCost = altAmounts.apiCost;
+      usedOrderCostKrw = altAmounts.orderCostKrw;
     }
 
     if (!adminCreditOnly)
       await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, user.id]);
     if (site && site.id !== 'default')
-      await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, site.id]);
+      await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [usedApiCost, site.id]);
 
-    const apiOrderId = placement.apiOrderId || null;
+    let apiOrderId = placement.apiOrderId || null;
     const orderId = 'O' + Date.now();
-    const orderCost = orderCostKrw;
+    const orderCost = usedOrderCostKrw;
     await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, apiCost]);
+      [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, usedApiCost]);
 
+    let snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
     if (!apiOrderId) {
-      reconcileOrderMissingApiId({ id: orderId, sid: usedSvc.id, qty: qtyNum, created: new Date(), site_id: req.siteId, uid: user.id, charge, cost: orderCost, status: 'processing' })
-        .catch(() => null);
+      apiOrderId = await reconcileOrderMissingApiId(snapOrder);
+      if (apiOrderId) {
+        await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [apiOrderId, orderId]);
+        snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
+      }
+    }
+    if (snapOrder?.api_order_id) {
+      await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 1200 });
     }
 
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
     const creditLine = adminCreditOnly
-      ? `\n💰 크레딧 차감: $${apiCost.toFixed(4)}`
+      ? `\n💰 크레딧 차감: $${usedApiCost.toFixed(4)}`
       : `\n💰 ₩${Math.round(charge).toLocaleString()}\n💳 주문 후 잔액: ₩${custBal.toLocaleString()}`;
     const altNote = usedSvc.id !== svc.id ? `\n↪️ 대체 연동: ${usedSvc.name}` : '';
     tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}${adminCreditOnly ? ' (관리자)' : ''}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개${creditLine}${altNote}\n🔗 ${linkNorm}`, site);
@@ -3640,12 +3694,12 @@ app.post('/api/orders', requireAuth, async (req, res) => {
         ? '작업 신청이 접수되었습니다.'
         : '작업 신청이 접수되었습니다. 공급사 주문번호 확인 중입니다.',
       adminCreditOnly: !!adminCreditOnly,
-      creditDeductedKrw: adminCreditOnly ? Math.round(orderCostKrw) : null,
+      creditDeductedKrw: adminCreditOnly ? Math.round(usedOrderCostKrw) : null,
       creditKrw: creditKrwAfter,
       pendingVerify: !apiOrderId
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
-});
+}
 
 app.get('/api/orders/my', requireAuth, async (req, res) => {
   try {
@@ -3657,12 +3711,12 @@ app.get('/api/orders/my', requireAuth, async (req, res) => {
 // 🔄 고객이 주문 상태 실시간 새로고침 (Peakerr에서 직접 조회)
 app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
   try {
-    const orderR = await query(`SELECT * FROM orders WHERE id=$1 AND uid=$2`, [req.params.orderId, req.session.userId]);
-    let order = orderR.rows[0];
+    let order = await findOrderForCancel(req.params.orderId, req);
     if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
     if (!order.api_order_id) {
       const recovered = await reconcileOrderMissingApiId(order);
       if (recovered) {
+        await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [recovered, order.id]);
         const updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
         order = updR.rows[0];
       } else {
@@ -3673,12 +3727,11 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
     const apiKey = await getGlobalSetting('peakerr_api_key');
     if (!apiKey) return res.json({ error: 'API 키 미설정' });
     
-    const peakerrData = await fetchPeakerrOrderStatus(apiKey, order.api_order_id);
-    if (!peakerrData || peakerrData.error) return res.json({ error: '상태 조회 실패' });
+    const result = await pullPeakerrOrderSnapshot(order, apiKey);
+    if (!result) return res.json({ error: '상태 조회 실패' });
     
-    const result = await autoRefundOrder(order, peakerrData);
     const updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
-    res.json({ ok: true, order: updR.rows[0], apiStatus: peakerrData.status, status: updR.rows[0]?.status });
+    res.json({ ok: true, order: updR.rows[0], status: updR.rows[0]?.status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -3849,6 +3902,35 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
       ? await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id WHERE o.site_id=$1 ORDER BY o.created DESC`, [siteId])
       : await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id ORDER BY o.created DESC`);
     res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/** 진행 중 주문 Peakerr 동기화 — 시작 카운트·진행률 갱신 */
+app.post('/api/admin/orders/sync-active', requireAdmin, async (req, res) => {
+  try {
+    const apiKey = await getGlobalSetting('peakerr_api_key');
+    if (!apiKey) return res.json({ error: 'API 키 미설정' });
+    const isSuper = req.session.role === 'superadmin';
+    const r = isSuper
+      ? await query(`SELECT * FROM orders WHERE status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 50`)
+      : await query(`SELECT * FROM orders WHERE site_id=$1 AND status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 50`, [req.siteId]);
+    let synced = 0;
+    for (const order of r.rows) {
+      let o = order;
+      if (!o.api_order_id) {
+        const recovered = await reconcileOrderMissingApiId(o);
+        if (recovered) {
+          await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [recovered, o.id]);
+          o = (await query(`SELECT * FROM orders WHERE id=$1`, [o.id])).rows[0];
+        }
+      }
+      if (o.api_order_id) {
+        const ok = await pullPeakerrOrderSnapshot(o, apiKey);
+        if (ok) synced++;
+      }
+      await new Promise(r => setTimeout(r, 80));
+    }
+    res.json({ ok: true, synced, total: r.rows.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

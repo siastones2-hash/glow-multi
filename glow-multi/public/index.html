@@ -1536,7 +1536,10 @@ tr:last-child td{border-bottom:none}
           <div class="tw"><table><thead><tr><th>날짜</th><th>회원</th><th>서비스</th><th>금액</th><th>상태</th></tr></thead><tbody id="revTb"></tbody></table></div>
         </div>
         <div class="atab-body on" id="ap-orders">
-          <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+            <button class="bo bsm" onclick="syncAdmOrders()">🔄 진행중 주문 동기화</button>
+          </div>
+          <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>시작→현재</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
         </div>
         <div class="atab-body" id="ap-users">
           <div id="aUserSiteOverview" class="aUserOverview" style="display:none"></div>
@@ -3277,19 +3280,31 @@ async function loadOrders(){
     if(canCancel) {
       actionBtns += '<button onclick="cancelOrder(\''+o.id+'\')" style="background:rgba(220,20,60,.1);color:#DC143C;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer" title="주문 취소">✕</button>';
     }
-    // 진행률 계산
+    // 진행률 · 시작 카운트
     var progressHtml = '';
-    if(o.status === 'processing' || o.status === 'partial_refunded'){
+    if(o.status === 'processing' || o.status === 'partial_refunded' || o.status === 'completed'){
       var qty = o.qty || 1;
       var starts = o.starts_count || 0;
-      var remains = o.remains || 0;
+      var remains = o.remains != null ? o.remains : qty;
       var done = Math.max(0, qty - remains);
-      var pct = Math.min(100, Math.round((done / qty) * 100));
-      progressHtml = '<div style="margin-top:3px"><div style="background:#f0e8ff;border-radius:100px;height:4px;width:100%">'
-        +'<div style="background:var(--p2);height:4px;border-radius:100px;width:'+pct+'%"></div></div>'
-        +'<span style="font-size:10px;color:var(--tl)">'+pct+'% ('+done.toLocaleString()+'/'+qty.toLocaleString()+')</span></div>';
-    } else if(o.status === 'completed'){
-      progressHtml = '<div style="font-size:10px;color:#10B981;margin-top:2px">✅ 100% 완료</div>';
+      var cur = starts + done;
+      if(o.status === 'completed') cur = starts + qty;
+      if(starts > 0 || o.remains != null){
+        progressHtml = '<div style="margin-top:3px;font-size:10px;color:var(--tl)">'
+          +'<span style="font-weight:700;color:#1A1030">시작 '+starts.toLocaleString()+'</span>'
+          +' → <span style="font-weight:700;color:var(--p2)">'+cur.toLocaleString()+'</span>';
+        if(o.status === 'processing')
+          progressHtml += ' · +' + done.toLocaleString() + '/' + qty.toLocaleString();
+        progressHtml += '</div>';
+      }
+      if(o.status === 'processing' || o.status === 'partial_refunded'){
+        var pct = Math.min(100, Math.round((done / qty) * 100));
+        progressHtml += '<div style="margin-top:3px"><div style="background:#f0e8ff;border-radius:100px;height:4px;width:100%">'
+          +'<div style="background:var(--p2);height:4px;border-radius:100px;width:'+pct+'%"></div></div>'
+          +'<span style="font-size:10px;color:var(--tl)">'+pct+'%</span></div>';
+      } else if(o.status === 'completed'){
+        progressHtml += '<div style="font-size:10px;color:#10B981;margin-top:2px">✅ 100% 완료</div>';
+      }
     }
     h+='<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#1A1030">'+PLI[o.pl]+' '+o.sname+'</td>'
       +'<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="'+o.link+'" target="_blank" style="color:#B5179E;text-decoration:none;font-size:12px">'+o.link+'</a></td>'
@@ -3459,9 +3474,29 @@ function _orderAmtCell(o){
   }
   return gf(o.charge||0);
 }
-async function loadAdmOrders(){
+function _orderCountCell(o){
+  var start=o.starts_count||0;
+  if(!o.api_order_id && ['pending','processing'].includes(o.status))
+    return '<span style="font-size:10px;color:#9A8AB0">확인 중...</span>';
+  if(start<=0 && (o.remains==null||o.remains===undefined))
+    return '<span style="font-size:10px;color:#9A8AB0">—</span>';
+  var qty=o.qty||0, rem=o.remains!=null?o.remains:qty;
+  var delivered=Math.max(0,qty-rem);
+  var cur=start+delivered;
+  if(o.status==='completed') cur=start+qty;
+  var h='<span style="font-size:11px;font-weight:700;color:#1A1030">'+start.toLocaleString()+'</span>';
+  h+=' <span style="color:#9A8AB0">→</span> ';
+  h+='<span style="font-size:11px;font-weight:700;color:var(--p2)">'+cur.toLocaleString()+'</span>';
+  if(delivered>0 && o.status==='processing')
+    h+='<div style="font-size:10px;color:var(--tl)">+'+delivered.toLocaleString()+' / '+qty.toLocaleString()+'</div>';
+  return h;
+}
+async function loadAdmOrders(doSync){
+  if(doSync!==false){
+    await api('/api/admin/orders/sync-active','POST').catch(function(){});
+  }
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
     var canCancel=['pending','processing'].includes(o.status);
@@ -3479,6 +3514,7 @@ async function loadAdmOrders(){
       +'<td style="white-space:nowrap">'+linkCell+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="font-weight:700">'+_orderAmtCell(o)+'</td>'
+      +'<td style="white-space:nowrap">'+_orderCountCell(o)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
       +'<td><select onchange="chgOSt(\''+o.id+'\',this.value)" style="font-size:12px;padding:5px 8px;width:80px;background:#f5f0ff;border:1px solid rgba(114,9,183,.2);border-radius:6px">'
@@ -3486,6 +3522,13 @@ async function loadAdmOrders(){
       +'</select>'+(cancelBtn?cancelBtn+'<br>':'')+(delBtn?delBtn:'')+'</td></tr>';
   });
   tb.innerHTML=h;
+}
+async function syncAdmOrders(){
+  toast('진행중 주문 동기화 중...','ok');
+  var d=await api('/api/admin/orders/sync-active','POST');
+  if(d&&d.error){toast(d.error,'err');return}
+  toast((d.synced||0)+'건 동기화 완료','ok');
+  loadAdmOrders(false);
 }
 async function admCancelOrder(id){
   if(!confirm('Peakerr 주문을 취소하고 환불·크레딧을 복구할까요?'))return;
