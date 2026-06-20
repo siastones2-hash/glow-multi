@@ -1166,20 +1166,25 @@ async function getMaxPeakerrOrderIdInDb() {
 }
 
 /** Peakerr 응답 유실(네트워크 끊김) 후 순번 스캔으로 주문 ID 복구 */
-async function recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedChargeUsd, maxScan = 35) {
-  await new Promise(r => setTimeout(r, 1800));
+async function recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedChargeUsd, maxScan = 35, opts = {}) {
+  await new Promise(r => setTimeout(r, opts.waitMs ?? 1800));
   const expected = parseFloat(expectedChargeUsd) || 0;
+  const loose = !!opts.loose;
+  let looseMatch = null;
   for (let id = baselineId + 1; id <= baselineId + maxScan; id++) {
     const st = await fetchPeakerrOrderStatus(apiKey, String(id));
     if (!st || st.error) continue;
     const charge = parseFloat(st.charge || 0);
     if (charge <= 0) continue;
-    if (expected > 0 && Math.abs(charge - expected) / Math.max(expected, 0.0001) > 0.65) continue;
     const s = (st.status || '').toLowerCase();
     if (['canceled', 'cancelled'].includes(s)) continue;
+    if (!loose && expected > 0 && Math.abs(charge - expected) / Math.max(expected, 0.0001) > 0.65) {
+      if (!looseMatch) looseMatch = { ok: true, apiOrderId: String(id) };
+      continue;
+    }
     return { ok: true, apiOrderId: String(id) };
   }
-  return null;
+  return looseMatch;
 }
 
 async function reconcileOrderMissingApiId(order) {
@@ -1245,9 +1250,10 @@ async function reconcileOrphanPeakerrOrders() {
 
 async function submitPeakerrOrder(apiKey, apiId, link, qty) {
   try {
+    // add는 재시도 금지 — 응답 유실 시 재전송하면 Peakerr에 중복 주문 생성됨
     const resp = await peakerrFetch({
       key: apiKey, action: 'add', service: String(apiId), link, quantity: String(qty)
-    }, { timeoutMs: 40000, retries: 2 });
+    }, { timeoutMs: 45000, retries: 0 });
     const data = await resp.json();
     if (data.order) return { ok: true, apiOrderId: String(data.order) };
     return { ok: false, error: data.error || '주문 접수 실패' };
@@ -1306,9 +1312,11 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
       hadNetworkError = true;
       lastError = result.error;
       const expectedUsd = parseFloat(svc.rate) / 1000 * qty;
-      const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd);
+      const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd, 50)
+        || await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd, 50, { loose: true, waitMs: 0 });
       if (rec?.apiOrderId) return { ok: true, apiOrderId: rec.apiOrderId, usedSvc: svc, recovered: true };
-      continue;
+      // ⚠️ 네트워크 오류 시 다른 SKU로 재전송하면 Peakerr 중복 주문 — 여기서 중단
+      break;
     }
     lastError = result.error;
     if (isPeakerrLinkError(result.error)) {

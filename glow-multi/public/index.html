@@ -3237,12 +3237,14 @@ function renderQCards(){
 // ── 주문 ──
 async function placeOrder(){
   if(!SEL){toast('서비스를 선택하세요','err');return}
+  if(window._orderInFlight){return}
   var link=ge('o링크').value.trim(),qty=parseInt(ge('o수량').value);
   if(!link){toast('링크를 입력하세요','err');return}
+  window._orderInFlight=true;
   var btn=ge('orderBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>처리 중...';
   var d;
   try{d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});}
-  finally{btn.disabled=false;btn.innerHTML='✨ 주문하기';}
+  finally{window._orderInFlight=false;btn.disabled=false;btn.innerHTML='✨ 주문하기';}
   if(d.error){toast(d.error,'err');return}
   var okMsg=d.message||(d.apiOrderId?'✨ 작업 신청 완료! #'+d.apiOrderId:'✨ 작업 신청이 접수되었습니다!');
   if(d.adminCreditOnly&&d.creditDeductedKrw!=null){
