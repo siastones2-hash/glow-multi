@@ -3853,7 +3853,16 @@ async function placeOrderHandler(req, res, ctx) {
     }
     if (snapOrder?.api_order_id) {
       await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 1200 });
+      snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
+      if (!(snapOrder?.starts_count > 0)) {
+        await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 2500 });
+        snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
+      }
     }
+
+    const finalOrder = snapOrder || (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
+    const startCount = parseInt(finalOrder?.starts_count || 0, 10);
+    const goalCount = startCount + qtyNum;
 
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
@@ -3881,7 +3890,10 @@ async function placeOrderHandler(req, res, ctx) {
       adminCreditOnly: !!adminCreditOnly,
       creditDeductedKrw: adminCreditOnly ? Math.round(usedOrderCostKrw) : null,
       creditKrw: creditKrwAfter,
-      pendingVerify: !apiOrderId
+      pendingVerify: !apiOrderId,
+      startCount: startCount > 0 ? startCount : null,
+      goalCount: startCount > 0 ? goalCount : null,
+      remains: finalOrder?.remains != null ? finalOrder.remains : null
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 }

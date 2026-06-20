@@ -1418,7 +1418,8 @@ tr:last-child td{border-bottom:none}
           <div style="font-size:16px;font-weight:800">주문 내역</div>
           <button class="bo bsm" onclick="loadOrders()">↻ 새로고침</button>
         </div>
-        <div class="tw"><table><thead><tr><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>상태</th><th>날짜</th><th>관리</th></tr></thead><tbody id="ordersTb"></tbody></table></div>
+        <div class="tw"><table><thead><tr><th>서비스</th><th>링크</th><th>수량</th><th>시작→현재</th><th>금액</th><th>상태</th><th>날짜</th><th>관리</th></tr></thead><tbody id="ordersTb"></tbody></table></div>
+        <div style="font-size:11px;color:var(--tl);margin-top:6px">📊 <strong>시작</strong> = 작업 전 숫자 · <strong>현재</strong> = 지금 · <strong>목표</strong> = 시작+주문수량 (예: 135 + 100 → 235)</div>
       </div>
       <!-- 충전 -->
       <div class="tab" id="tab-charge">
@@ -1544,6 +1545,7 @@ tr:last-child td{border-bottom:none}
             <button class="bo bsm" onclick="syncAdmOrders()">🔄 진행중 주문 동기화</button>
           </div>
           <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>시작→현재</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
+          <div style="font-size:11px;color:var(--tl);margin-top:6px">📊 시작=작업 전 · 현재=지금 · 목표=시작+수량 (135+100→235)</div>
         </div>
         <div class="atab-body" id="ap-users">
           <div id="aUserSiteOverview" class="aUserOverview" style="display:none"></div>
@@ -3272,7 +3274,10 @@ async function placeOrder(){
   try{d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});}
   finally{window._orderInFlight=false;btn.disabled=false;btn.innerHTML='✨ 주문하기';}
   if(d.error){toast(d.error,'err');return}
-  var okMsg=d.message||(d.apiOrderId?'✨ 작업 신청 완료! #'+d.apiOrderId:'✨ 작업 신청이 접수되었습니다!');
+  var okMsg=d.message||(d.apiOrderId?'✨ 작업 신청 완료! #'+d.apiOrderId:'✨ 작업 신청이 접수되었습니다.');
+  if(d.startCount>0){
+    okMsg+=' · 시작 '+Number(d.startCount).toLocaleString()+' → 목표 '+Number(d.goalCount).toLocaleString();
+  }
   if(d.adminCreditOnly&&d.creditDeductedKrw!=null){
     toast(okMsg+' · 크레딧 ₩'+Math.round(d.creditDeductedKrw).toLocaleString()+' 차감 · 잔액 ₩'+Math.round(d.creditKrw||0).toLocaleString(),'ok');
   }else{
@@ -3290,48 +3295,34 @@ async function placeOrder(){
     CUR.balance=d.balance;updBal();
   }
   loadOrderStats();
+  goTab('orders');
+  loadOrders();
 }
 async function loadOrders(){
   var d=await api('/api/orders/my');var tb=ge('ordersTb'),h='';
   var aco=window._adminCreditOnly;
-  var amtTh=document.querySelector('#pg-orders thead th:nth-child(4)');
+  var amtTh=document.querySelector('#pg-orders thead th:nth-child(5)');
   if(amtTh)amtTh.textContent=aco?'크레딧':'금액';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:26px;color:#9A8AB0">주문 내역이 없습니다</td></tr>';return}
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:26px;color:#9A8AB0">주문 내역이 없습니다</td></tr>';return}
   d.forEach(function(o){
     var canCancel = ['pending','processing'].includes(o.status);
     var actionBtns = '<button onclick="refreshOrder(\''+o.id+'\')" style="background:rgba(114,9,183,.1);color:var(--p2);border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;margin-right:4px" title="실시간 상태 확인">🔄</button>';
     if(canCancel) {
       actionBtns += '<button onclick="cancelOrder(\''+o.id+'\')" style="background:rgba(220,20,60,.1);color:#DC143C;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer" title="주문 취소">✕</button>';
     }
-    // 진행률 · 시작 카운트
     var progressHtml = '';
-    if(o.status === 'processing' || o.status === 'partial_refunded' || o.status === 'completed'){
+    if(o.status === 'processing' || o.status === 'partial_refunded'){
       var qty = o.qty || 1;
-      var starts = o.starts_count || 0;
-      var remains = o.remains != null ? o.remains : qty;
-      var done = Math.max(0, qty - remains);
-      var cur = starts + done;
-      if(o.status === 'completed') cur = starts + qty;
-      if(starts > 0 || o.remains != null){
-        progressHtml = '<div style="margin-top:3px;font-size:10px;color:var(--tl)">'
-          +'<span style="font-weight:700;color:#1A1030">시작 '+starts.toLocaleString()+'</span>'
-          +' → <span style="font-weight:700;color:var(--p2)">'+cur.toLocaleString()+'</span>';
-        if(o.status === 'processing')
-          progressHtml += ' · +' + done.toLocaleString() + '/' + qty.toLocaleString();
-        progressHtml += '</div>';
-      }
-      if(o.status === 'processing' || o.status === 'partial_refunded'){
-        var pct = Math.min(100, Math.round((done / qty) * 100));
-        progressHtml += '<div style="margin-top:3px"><div style="background:#f0e8ff;border-radius:100px;height:4px;width:100%">'
-          +'<div style="background:var(--p2);height:4px;border-radius:100px;width:'+pct+'%"></div></div>'
-          +'<span style="font-size:10px;color:var(--tl)">'+pct+'%</span></div>';
-      } else if(o.status === 'completed'){
-        progressHtml += '<div style="font-size:10px;color:#10B981;margin-top:2px">✅ 100% 완료</div>';
-      }
+      var rem = o.remains != null ? o.remains : qty;
+      var done = Math.max(0, qty - rem);
+      var pct = Math.min(100, Math.round((done / qty) * 100));
+      progressHtml = '<div style="margin-top:4px"><div style="background:#f0e8ff;border-radius:100px;height:4px;width:100%">'
+        +'<div style="background:var(--p2);height:4px;border-radius:100px;width:'+pct+'%"></div></div></div>';
     }
     h+='<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#1A1030">'+PLI[o.pl]+' '+o.sname+'</td>'
       +'<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="'+o.link+'" target="_blank" style="color:#B5179E;text-decoration:none;font-size:12px">'+o.link+'</a></td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
+      +'<td style="min-width:110px">'+_orderProgressCell(o)+'</td>'
       +'<td style="font-weight:700">'+(aco?(o.cost>0?gf(o.cost):(o.status==='failed'?'—':'₩0')):gf(o.charge))+'</td>'
       +'<td>'+badge(o.status)+progressHtml+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
@@ -3506,23 +3497,32 @@ function _orderAmtCell(o){
   }
   return gf(o.charge||0);
 }
-function _orderCountCell(o){
-  var start=o.starts_count||0;
-  if(!o.api_order_id && ['pending','processing'].includes(o.status))
-    return '<span style="font-size:10px;color:#9A8AB0">확인 중...</span>';
-  if(start<=0 && (o.remains==null||o.remains===undefined))
+function _orderProgressCell(o){
+  var qty=o.qty||0;
+  var start=o.starts_count!=null?parseInt(o.starts_count,10):null;
+  if(!o.api_order_id&&['pending','processing'].includes(o.status))
+    return '<span style="font-size:10px;color:#9A8AB0">시작 숫자 확인 중...</span>';
+  if((start==null||isNaN(start))&&o.remains==null&&o.status!=='completed')
     return '<span style="font-size:10px;color:#9A8AB0">—</span>';
-  var qty=o.qty||0, rem=o.remains!=null?o.remains:qty;
+  var s=start||0;
+  var rem=o.remains!=null?parseInt(o.remains,10):qty;
   var delivered=Math.max(0,qty-rem);
-  var cur=start+delivered;
-  if(o.status==='completed') cur=start+qty;
-  var h='<span style="font-size:11px;font-weight:700;color:#1A1030">'+start.toLocaleString()+'</span>';
+  var cur=s+delivered;
+  var goal=s+qty;
+  if(o.status==='completed'){cur=goal;delivered=qty;rem=0}
+  var h='<div style="line-height:1.4;font-size:11px">';
+  h+='<div><span style="color:#9A8AB0;font-size:10px">시작</span> <strong style="color:#1A1030">'+s.toLocaleString()+'</strong>';
   h+=' <span style="color:#9A8AB0">→</span> ';
-  h+='<span style="font-size:11px;font-weight:700;color:var(--p2)">'+cur.toLocaleString()+'</span>';
-  if(delivered>0 && o.status==='processing')
-    h+='<div style="font-size:10px;color:var(--tl)">+'+delivered.toLocaleString()+' / '+qty.toLocaleString()+'</div>';
+  h+='<span style="color:#9A8AB0;font-size:10px">현재</span> <strong style="color:var(--p2)">'+cur.toLocaleString()+'</strong></div>';
+  h+='<div style="font-size:10px;color:var(--tl);margin-top:2px">목표 <strong style="color:#047857">'+goal.toLocaleString()+'</strong>';
+  if(o.status==='processing'||o.status==='partial_refunded')
+    h+=' · <span style="color:var(--p2)">+'+delivered.toLocaleString()+'/'+qty.toLocaleString()+'</span>';
+  else if(o.status==='completed')
+    h+=' · <span style="color:#10B981">✓ +'+(qty).toLocaleString()+'</span>';
+  h+='</div></div>';
   return h;
 }
+function _orderCountCell(o){return _orderProgressCell(o)}
 async function loadAdmOrders(){
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
