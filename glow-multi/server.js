@@ -4471,7 +4471,8 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
     const superOnly = ['peakerr_api_key', 'tg_token', 'tg_chat'];
     if (superOnly.includes(key)) {
       if (isSuperAdmin) {
-        await setGlobalSetting(key, value);
+        await setGlobalSetting(key, String(value || '').trim());
+        console.log(`✓ 글로벌 설정 저장: ${key}${key === 'peakerr_api_key' ? ' (Peakerr 키 갱신)' : ''}`);
         return res.json({ ok: true });
       }
       // 일반 어드민은 사이트별 tg 저장
@@ -4540,6 +4541,22 @@ app.get('/api/admin/api-test', requireSuperAdmin, async (req, res) => {
     const result = await fetchPeakerrBalance(apiKey);
     if (result.ok) res.json({ ok: true, balance: result.balance });
     else res.json({ error: result.error || '조회 실패' });
+  } catch(e) { res.json({ error: e.message }); }
+});
+
+/** 연결 테스트 — 입력란 키로 즉시 테스트 가능 (저장 전·후) */
+app.post('/api/admin/api-test', requireSuperAdmin, async (req, res) => {
+  try {
+    let apiKey = String(req.body?.key || '').trim();
+    if (!apiKey || apiKey.includes('설정됨')) {
+      apiKey = await getGlobalSetting('peakerr_api_key');
+    }
+    const result = await fetchPeakerrBalance(apiKey);
+    if (result.ok) {
+      res.json({ ok: true, balance: result.balance, saved: apiKey === (await getGlobalSetting('peakerr_api_key')) });
+    } else {
+      res.json({ error: result.error || '조회 실패' });
+    }
   } catch(e) { res.json({ error: e.message }); }
 });
 
@@ -5423,7 +5440,8 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
     const { key, value } = req.body;
     const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
-    await setGlobalSetting(key, value);
+    await setGlobalSetting(key, String(value || '').trim());
+    if (key === 'peakerr_api_key') console.log('✓ Peakerr API 키 갱신 (super/settings/save)');
     if (key === 'global_exrate') {
       const ex = parseFloat(value);
       if (!isNaN(ex) && ex >= 100 && ex <= 5000) {

@@ -3951,9 +3951,15 @@ async function saveApiKey(){
 async function saveGlobalSetting(key,inputId){
   var v=ge(inputId).value.trim();
   if(!v||v.includes('설정됨')){toast('값을 입력하세요','err');return}
-  var d=await api('/api/admin/settings/save','POST',{key:key,value:v});
+  var superKeys=['peakerr_api_key','tg_token','tg_chat','super_margin','global_site_margin','global_exrate'];
+  var url=(_isSuperUser()&&superKeys.indexOf(key)>=0)?'/api/super/settings/save':'/api/admin/settings/save';
+  var d=await api(url,'POST',{key:key,value:v});
   if(d.error){toast(d.error,'err');return}
   ge(inputId).value='••••(설정됨)';toast('저장 완료 ✨','ok');
+  if(key==='peakerr_api_key'){
+    loadSuperDash();
+    setTimeout(testApi,300);
+  }
 }
 async function saveSuperMargin(){
   var val=ge('spSuperMargin').value;
@@ -4054,11 +4060,27 @@ async function saveGlobalTg(){
   if(tt)tt.value='••••(설정됨)';
   toast('텔레그램 저장 완료 ✨','ok');
 }
+function _apiTestResultEl(){
+  var sp=ge('sp-globalapi');
+  if(sp&&sp.classList.contains('on'))return ge('spApiRes')||ge('apiRes');
+  return ge('apiRes')||ge('spApiRes');
+}
 async function testApi(){
-  var res=ge('apiRes')||ge('spApiRes');if(res)res.innerHTML='<span class="spin spin2"></span>확인 중...';
-  var d=await api('/api/admin/api-test');
-  var msg=d.ok?'<span style="color:#10B981">✅ 연결 성공! 잔액: $'+parseFloat(d.balance).toFixed(4)+'</span>':'<span style="color:#EF4444">❌ 실패: '+d.error+'</span>';
+  var res=_apiTestResultEl();
+  if(res)res.innerHTML='<span class="spin spin2"></span>확인 중...';
+  var keyInput=ge('spApiKey')||ge('stApiKey');
+  var body=null;
+  if(keyInput&&keyInput.value&&!keyInput.value.includes('설정됨')){
+    body={key:keyInput.value.trim()};
+  }
+  var d=await api('/api/admin/api-test','POST',body);
+  var msg=d.ok?'<span style="color:#10B981">✅ 연결 성공! 잔액: $'+parseFloat(d.balance).toFixed(2)+'</span>':'<span style="color:#EF4444">❌ 실패: '+(d.error||'알 수 없음')+'</span>';
   if(res)res.innerHTML=msg;
+  if(d.ok){
+    if(ge('sApiBalance'))ge('sApiBalance').textContent='$'+parseFloat(d.balance).toFixed(2);
+    if(ge('aApiBalance'))ge('aApiBalance').textContent='$'+parseFloat(d.balance).toFixed(2);
+    loadSuperDash();
+  }
 }
 async function syncSvcs(){
   if(!confirm('연동 API 전체 목록을 가져와 기존 상품은 유지·신규만 추가합니다.\n(기존 큐레이션 상품은 삭제되지 않습니다)\n\n계속하시겠습니까?'))return;
