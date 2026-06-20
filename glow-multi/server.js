@@ -469,7 +469,7 @@ async function initDB() {
     ];
 
     for (const s of svcs) {
-      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id`,
+      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id, active=1`,
         [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description||'', s.api_id||null, 1]);
     }
   }
@@ -1038,12 +1038,53 @@ function serviceBucketKey(svc) {
 }
 
 function isCuratedServiceId(id) {
-  return serviceIdPriority(id) === 0;
+  return /^[a-z]{2,3}\d/i.test(String(id || ''));
 }
 
 async function ensurePeakerrCatalogLoaded() {
   if (peakerrCatalogCache.size > 0) return;
   await syncPeakerrServices().catch(e => console.log('Peakerr 카탈로그 로드:', e.message));
+}
+
+async function reactivateCuratedSeedServices() {
+  await ensurePeakerrCatalogLoaded();
+  if (peakerrCatalogCache.size === 0) return 0;
+  const r = await query(`
+    SELECT id, api_id FROM services
+    WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+  `);
+  let n = 0;
+  for (const row of r.rows) {
+    if (!peakerrCatalogCache.has(String(row.api_id))) continue;
+    const u = await query(`UPDATE services SET active=1 WHERE id=$1 AND active=0 RETURNING id`, [row.id]);
+    if (u.rowCount) n++;
+  }
+  if (n > 0) console.log(`✅ 검증 시드 상품 ${n}개 재활성화`);
+  return n;
+}
+
+async function resolveOrderService(sid) {
+  const activeR = await query(`SELECT * FROM services WHERE id=$1 AND active=1`, [sid]);
+  if (activeR.rows[0]) return activeR.rows[0];
+  const inactR = await query(`SELECT * FROM services WHERE id=$1`, [sid]);
+  const row = inactR.rows[0];
+  if (!row) return null;
+  if (isCuratedServiceId(row.id) && row.api_id) {
+    await ensurePeakerrCatalogLoaded();
+    if (peakerrCatalogCache.has(String(row.api_id))) {
+      await query(`UPDATE services SET active=1 WHERE id=$1`, [row.id]);
+      return { ...row, active: 1 };
+    }
+  }
+  const bucket = serviceOrderBucket(row);
+  const altR = await query(`
+    SELECT * FROM services WHERE active=1 AND pl=$1 AND id <> $2
+      AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+  `, [row.pl, row.id]);
+  const curated = altR.rows
+    .filter(s => isCuratedServiceId(s.id) && serviceOrderBucket(s) === bucket)
+    .sort((a, b) => scoreServiceRow(b) - scoreServiceRow(a));
+  return curated[0] || null;
 }
 
 async function submitPeakerrOrder(apiKey, apiId, link, qty) {
@@ -1101,7 +1142,9 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
         continue;
       }
       if (isPeakerrServiceDeadError(result.error) || isPeakerrQuantityError(result.error)) {
-        await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(() => null);
+        if (!isCuratedServiceId(svc.id)) {
+          await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(() => null);
+        }
         continue;
       }
       continue;
@@ -1533,6 +1576,7 @@ async function reconcileServiceCatalog(opts = {}) {
 
     const sync = await syncPeakerrServices();
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
+    await reactivateCuratedSeedServices();
 
     const failOnlyR = await query(`
       SELECT sid FROM orders
@@ -1542,6 +1586,7 @@ async function reconcileServiceCatalog(opts = {}) {
          AND COUNT(*) FILTER (WHERE status NOT IN ('failed','cancelled','canceled','refunded','partial_refunded')) = 0
     `);
     for (const row of failOnlyR.rows) {
+      if (isCuratedServiceId(row.sid)) continue;
       const u = await query(`UPDATE services SET active=0 WHERE id=$1 AND active=1 RETURNING id`, [row.sid]);
       if (u.rowCount) failHide++;
     }
@@ -2323,6 +2368,7 @@ async function pruneServiceCatalog(opts = {}) {
   const toDeactivate = new Map();
   const mark = (id, reason, name) => {
     if (protectedIds.has(id) || toDeactivate.has(id)) return;
+    if (isCuratedServiceId(id) && ['typeoverflow', 'overflow', 'autimport', 'namedup'].includes(reason)) return;
     toDeactivate.set(id, { reason, name });
   };
 
@@ -3164,9 +3210,8 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     }
     
     const { sid, link, qty } = req.body;
-    const svcR = await query(`SELECT * FROM services WHERE id=$1 AND active=1`, [sid]);
-    const svc = svcR.rows[0];
-    if (!svc) return res.json({ error: '서비스를 찾을 수 없습니다' });
+    const svc = await resolveOrderService(sid);
+    if (!svc) return res.json({ error: '선택한 상품을 찾을 수 없습니다. 페이지를 새로고침(F5) 후 다시 선택해주세요.' });
     
     const linkNorm = normalizeOrderLink(link, svc.pl);
     const urlCheck = validateUrl(linkNorm, svc.pl, svc);
