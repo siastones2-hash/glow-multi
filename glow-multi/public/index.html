@@ -1498,7 +1498,7 @@ tr:last-child td{border-bottom:none}
         </div>
         <!-- API 크레딧 표시 -->
         <div class="ibox" style="margin-bottom:14px" id="creditInfo" style="display:none">
-          💰 API 크레딧 잔액: <strong id="creditBal">₩0</strong> | 부족 시 슈퍼관리자에게 충전 요청하세요
+          💰 API 크레딧 잔액: <strong id="creditBal">₩0</strong> | 부족 시 <strong>크레딧 요청</strong> 탭에서 충전 요청하세요
         </div>
         <div class="admtabs">
           <button class="admtab on" onclick="goAdm('orders',this)">📦 주문</button>
@@ -1555,10 +1555,10 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="atab-body" id="ap-creditreq">
           <div class="card" style="margin-bottom:12px">
-            <div style="font-size:15px;font-weight:800;margin-bottom:8px">💰 슈퍼관리자에게 크레딧 요청</div>
-            <div style="font-size:12px;color:var(--tm);margin-bottom:12px">크레딧이 부족하면 슈퍼관리자에게 충전 요청하세요. 입금 후 요청하시면 됩니다.</div>
+            <div style="font-size:15px;font-weight:800;margin-bottom:8px" id="crTitle">💰 크레딧 충전 요청</div>
+            <div style="font-size:12px;color:var(--tm);margin-bottom:12px" id="crDesc">크레딧이 부족하면 아래에서 충전 요청하세요. 입금 후 요청해 주시면 확인 후 충전됩니다.</div>
             <div id="superBankInfo" style="background:linear-gradient(135deg,#f8f0ff,#fff0f8);border:1.5px solid var(--bd2);border-radius:12px;padding:14px;margin-bottom:14px">
-              <div style="font-size:12px;color:var(--tm);margin-bottom:6px">💳 입금 계좌 (슈퍼관리자)</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:6px" id="crBankLabel">💳 입금 계좌</div>
               <div id="superBankText" style="font-size:15px;font-weight:800;color:var(--p2)">로딩 중...</div>
               <div style="font-size:11px;color:var(--tl);margin-top:4px">입금 후 아래 양식을 작성해 요청해주세요.</div>
             </div>
@@ -2158,7 +2158,14 @@ async function api(url,method,body){
   if(body)opts.body=JSON.stringify(body);
   var res=await fetch(url,opts);
   if(res.status===401){localStorage.removeItem('glow_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
-  return res.json();
+  var data=await res.json();
+  if(data&&data.error&&!_isSuperUser())data.error=_partnerMsg(data.error);
+  return data;
+}
+function _isSuperUser(){return !!(CUR&&CUR.role==='superadmin');}
+function _partnerMsg(s){
+  if(_isSuperUser()||s==null)return s;
+  return String(s).replace(/슈퍼관리자/g,'본사');
 }
 function gf(v){return'₩'+Math.round(v||0).toLocaleString()}
 function fd(s){
@@ -2924,8 +2931,8 @@ async function enterDash(){
   ge('sbName').textContent=CUR.name;
   ge('welName').textContent=CUR.name;
 
-  var roleMap={superadmin:'슈퍼관리자 👑',관리자:'관리자',일반회원:'일반 회원'};
-  ge('sbRole').textContent=roleMap[CUR.role]||'-';
+  var roleMap={superadmin:'슈퍼관리자 👑',admin:'관리자',partner:'관리자',user:'일반 회원'};
+  ge('sbRole').textContent=roleMap[CUR.role]||'관리자';
 
   // 메뉴 권한
   var isAdmin=['admin','partner','superadmin'].includes(CUR.role);
@@ -3066,7 +3073,7 @@ async function changePassword(){
 function goTab(tab){
   if(tab==='charge'&&window._adminCreditOnly){toast('관리자는 크레딧으로 주문합니다. 관리자 → 크레딧 요청을 이용하세요','err');return}
   if(tab==='admin'&&(!CUR||!['admin','partner','superadmin'].includes(CUR.role))){toast('접근 권한이 없습니다','err');return}
-  if(tab==='super'&&(!CUR||CUR.role!=='superadmin')){toast('슈퍼관리자 전용입니다','err');return}
+  if(tab==='super'&&(!CUR||CUR.role!=='superadmin')){toast('접근 권한이 없습니다','err');return}
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
   document.querySelectorAll('.si').forEach(function(s){s.classList.remove('on')});
   document.querySelectorAll('.bni').forEach(function(b){b.classList.remove('on')});
@@ -4539,7 +4546,7 @@ async function requestCredit(){
   if(!amount||parseFloat(amount)<=0){toast('금액을 입력하세요','err');return}
   var d=await api('/api/admin/credit-request','POST',{amount:parseFloat(amount),note});
   if(d.error){toast(d.error,'err');return}
-  toast('크레딧 요청 완료! 슈퍼관리자 승인 후 충전됩니다 ✨','ok');
+  toast('크레딧 요청 완료! 확인 후 충전됩니다 ✨','ok');
   ge('crAmount').value='';ge('crNote').value='';
   loadCreditRequests();
 }
@@ -4586,11 +4593,11 @@ async function loadSuperBankInfo(){
       el.innerHTML = '<strong style="font-size:15px;color:var(--p2)">'+d.superBank+'</strong>';
     } else {
       // superBank 없으면 슈퍼관리자에게 직접 문의 안내
-      el.innerHTML = '<span style="color:var(--tl)">슈퍼관리자에게 입금 계좌를 문의하세요.</span>';
+      el.innerHTML = '<span style="color:var(--tl)">입금 계좌 정보가 없습니다. 카카오톡 또는 문의로 계좌를 확인해 주세요.</span>';
     }
   } catch(e) {
     var el = ge('superBankText');
-    if(el) el.innerHTML = '<span style="color:var(--tl)">슈퍼관리자에게 입금 계좌를 문의하세요.</span>';
+    if(el) el.innerHTML = '<span style="color:var(--tl)">입금 계좌 정보가 없습니다. 카카오톡 또는 문의로 계좌를 확인해 주세요.</span>';
   }
 }
 async function loadCreditRequests(){

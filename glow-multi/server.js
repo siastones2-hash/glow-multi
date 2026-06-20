@@ -3568,7 +3568,7 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       name: site?.name || '', kakao: site?.kakao || '',
       bank: site?.bank || '', margin: site?.margin ?? 0,
       exrate: site?.exrate || 1380, credit: site?.credit || 0,
-      apikey: isSuperAdmin ? (apikey ? '••••(설정됨)' : '') : '(슈퍼관리자 전용)',
+      apikey: isSuperAdmin ? (apikey ? '••••(설정됨)' : '') : '(본사 전용)',
       tg_token: isSuperAdmin ? (global_tg_token ? '••••(설정됨)' : '') : (site?.tg_token ? '••••(설정됨)' : ''),
       tg_chat: isSuperAdmin ? global_tg_chat : (site?.tg_chat || ''),
       site_tg_token: site?.tg_token || '',
@@ -3601,7 +3601,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
         await query(`UPDATE sites SET tg_chat=$1 WHERE id=$2`, [value, req.siteId]);
         return res.json({ ok: true });
       }
-      return res.json({ error: '슈퍼관리자 전용 설정입니다' });
+      return res.json({ error: '본사에서만 변경할 수 있는 설정입니다' });
     }
     const siteFields = ['name','kakao','bank','margin','exrate','super_margin','primary_color','accent_color','logo','slogan','slogan_sub','description','stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','stat4_num','stat4_label','notice','footer_text','login_welcome','login_sub','register_welcome','register_sub','kakao_btn_text','charge_guide','order_guide','hero_badge','hero_prefix','ui_layout','theme','banner_text','banner_image','banner_link','charge_bonus_tiers'];
     if (siteFields.includes(key)) {
@@ -3635,7 +3635,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
         if (sm < -1 || sm > 500) return res.json({ error: '슈퍼마진은 -1(글로벌) 또는 0~500 범위여야 합니다' });
       }
       if (key === 'exrate') {
-        return res.json({ error: '환율은 슈퍼관리자 → 글로벌 기본 환율에서 일괄 관리됩니다' });
+        return res.json({ error: '환율은 본사에서 일괄 관리됩니다' });
       }
       // 문자 필드 길이 제한
       if (typeof value === 'string' && value.length > 10000) {
