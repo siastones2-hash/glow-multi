@@ -299,6 +299,7 @@ async function initDB() {
   await normalizeAbnormalCredits();
   await fixLegacyPartnerAdminOrders();
   await backfillPartnerOrderCosts();
+  reconcileOrphanPeakerrOrders().catch(e => console.log('Peakerr ID 복구:', e.message));
   const mislabel = await repairMislabeledServiceNames().catch(() => ({ count: 0 }));
   if (mislabel.count > 0) console.log(`✓ 잘못 분류된 상품명 ${mislabel.count}건 수정`);
 
@@ -1157,13 +1158,102 @@ async function resolveOrderService(sid) {
   return curated[0] || null;
 }
 
+async function getMaxPeakerrOrderIdInDb() {
+  try {
+    const r = await query(`SELECT MAX(CAST(api_order_id AS BIGINT)) AS m FROM orders WHERE api_order_id ~ '^[0-9]+$'`);
+    return parseInt(r.rows[0]?.m || 0, 10) || 0;
+  } catch (e) { return 0; }
+}
+
+/** Peakerr 응답 유실(네트워크 끊김) 후 순번 스캔으로 주문 ID 복구 */
+async function recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedChargeUsd, maxScan = 35) {
+  await new Promise(r => setTimeout(r, 1800));
+  const expected = parseFloat(expectedChargeUsd) || 0;
+  for (let id = baselineId + 1; id <= baselineId + maxScan; id++) {
+    const st = await fetchPeakerrOrderStatus(apiKey, String(id));
+    if (!st || st.error) continue;
+    const charge = parseFloat(st.charge || 0);
+    if (charge <= 0) continue;
+    if (expected > 0 && Math.abs(charge - expected) / Math.max(expected, 0.0001) > 0.65) continue;
+    const s = (st.status || '').toLowerCase();
+    if (['canceled', 'cancelled'].includes(s)) continue;
+    return { ok: true, apiOrderId: String(id) };
+  }
+  return null;
+}
+
+async function reconcileOrderMissingApiId(order) {
+  if (!order || order.api_order_id) return null;
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return null;
+  const beforeR = await query(`
+    SELECT MAX(CAST(api_order_id AS BIGINT)) AS m FROM orders
+    WHERE api_order_id ~ '^[0-9]+$' AND created < $1 AND id <> $2
+  `, [order.created, order.id]);
+  const baseline = parseInt(beforeR.rows[0]?.m || 0, 10) || 0;
+  const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [order.sid]);
+  const expected = parseFloat(svcR.rows[0]?.rate || 0) / 1000 * (order.qty || 1);
+  const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baseline, expected, 45);
+  if (!rec?.apiOrderId) return null;
+  await query(`UPDATE orders SET api_order_id=$1, status='processing' WHERE id=$2 AND (api_order_id IS NULL OR api_order_id='')`,
+    [rec.apiOrderId, order.id]);
+  return rec.apiOrderId;
+}
+
+async function reconcileOrphanPeakerrOrders() {
+  try {
+    const r = await query(`
+      SELECT * FROM orders
+      WHERE (api_order_id IS NULL OR api_order_id='')
+      AND status IN ('processing', 'pending', 'failed')
+      AND created > NOW() - INTERVAL '7 days'
+      ORDER BY created ASC
+      LIMIT 30
+    `);
+    let fixed = 0;
+    for (const o of r.rows) {
+      const id = await reconcileOrderMissingApiId(o);
+      if (!id) continue;
+      if (o.status === 'failed') {
+        const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [o.site_id]);
+        const svcR = await query(`SELECT * FROM services WHERE id=$1`, [o.sid]);
+        const userR = await query(`SELECT * FROM users WHERE id=$1`, [o.uid]);
+        if (siteR.rows[0] && svcR.rows[0] && userR.rows[0]) {
+          const margins = await getSiteMargins(siteR.rows[0]);
+          const adminCredit = o.site_id !== 'default' && ['admin', 'partner'].includes(userR.rows[0].role);
+          const { charge, apiCost, orderCostKrw } = computeOrderAmounts(svcR.rows[0], o.qty, siteR.rows[0], margins);
+          if (!adminCredit && (o.charge || 0) === 0 && charge > 0) {
+            await query(`UPDATE users SET balance=GREATEST(0,balance-$1) WHERE id=$2`, [charge, o.uid]);
+          }
+          if (o.site_id !== 'default' && (o.cost || 0) === 0) {
+            await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, o.site_id]);
+            await query(`UPDATE orders SET status='processing', cost=$1, api_cost=$2, charge=$3 WHERE id=$4`,
+              [Math.round(orderCostKrw), apiCost, adminCredit ? 0 : charge, o.id]);
+          } else {
+            await query(`UPDATE orders SET status='processing' WHERE id=$1`, [o.id]);
+          }
+        } else {
+          await query(`UPDATE orders SET status='processing' WHERE id=$1`, [o.id]);
+        }
+      }
+      fixed++;
+      console.log(`✓ Peakerr ID 복구: ${o.id} → #${id}`);
+    }
+    return fixed;
+  } catch (e) { console.log('Peakerr ID 복구:', e.message); return 0; }
+}
+
 async function submitPeakerrOrder(apiKey, apiId, link, qty) {
-  const resp = await peakerrFetch({
-    key: apiKey, action: 'add', service: String(apiId), link, quantity: String(qty)
-  });
-  const data = await resp.json();
-  if (data.order) return { ok: true, apiOrderId: String(data.order) };
-  return { ok: false, error: data.error || '주문 접수 실패' };
+  try {
+    const resp = await peakerrFetch({
+      key: apiKey, action: 'add', service: String(apiId), link, quantity: String(qty)
+    }, { timeoutMs: 40000, retries: 2 });
+    const data = await resp.json();
+    if (data.order) return { ok: true, apiOrderId: String(data.order) };
+    return { ok: false, error: data.error || '주문 접수 실패' };
+  } catch (e) {
+    return { ok: false, networkError: true, error: peakerrNetworkErrorKo(e) };
+  }
 }
 
 async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(), limit = 8) {
@@ -1193,10 +1283,14 @@ async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(
 }
 
 async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
+  const baselineId = await getMaxPeakerrOrderIdInDb();
   const tried = new Set();
   const candidates = [primary, ...(await findAlternateServices(primary, siteId, qty, tried, 8))];
   let lastError = null;
   let lastLinkError = null;
+  let hadNetworkError = false;
+  const expectedPrimaryUsd = parseFloat(primary.rate) / 1000 * qty;
+
   for (const svc of candidates) {
     if (!svc.api_id || tried.has(svc.id)) continue;
     tried.add(svc.id);
@@ -1206,25 +1300,34 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
       const cMax = parseInt(cached.max, 10) || svc.max || 999999999;
       if (qty < cMin || qty > cMax) continue;
     }
-    try {
-      const result = await submitPeakerrOrder(apiKey, svc.api_id, link, qty);
-      if (result.ok) return { ok: true, apiOrderId: result.apiOrderId, usedSvc: svc };
+    const result = await submitPeakerrOrder(apiKey, svc.api_id, link, qty);
+    if (result.ok) return { ok: true, apiOrderId: result.apiOrderId, usedSvc: svc };
+    if (result.networkError) {
+      hadNetworkError = true;
       lastError = result.error;
-      if (isPeakerrLinkError(result.error)) {
-        lastLinkError = result.error;
-        continue;
-      }
-      if (isPeakerrServiceDeadError(result.error) || isPeakerrQuantityError(result.error)) {
-        if (!isCuratedServiceId(svc.id)) {
-          await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(() => null);
-        }
-        continue;
-      }
-      continue;
-    } catch (e) {
-      lastError = peakerrNetworkErrorKo(e);
+      const expectedUsd = parseFloat(svc.rate) / 1000 * qty;
+      const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd);
+      if (rec?.apiOrderId) return { ok: true, apiOrderId: rec.apiOrderId, usedSvc: svc, recovered: true };
       continue;
     }
+    lastError = result.error;
+    if (isPeakerrLinkError(result.error)) {
+      lastLinkError = result.error;
+      continue;
+    }
+    if (isPeakerrServiceDeadError(result.error) || isPeakerrQuantityError(result.error)) {
+      if (!isCuratedServiceId(svc.id)) {
+        await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(() => null);
+      }
+      continue;
+    }
+    continue;
+  }
+
+  if (hadNetworkError && !lastLinkError) {
+    const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedPrimaryUsd, 50);
+    if (rec?.apiOrderId) return { ok: true, apiOrderId: rec.apiOrderId, usedSvc: primary, recovered: true };
+    return { ok: true, uncertain: true, usedSvc: primary, apiOrderId: null };
   }
   return { ok: false, error: lastLinkError || lastError || '주문 접수 실패', linkError: !!lastLinkError };
 }
@@ -1590,6 +1693,7 @@ async function earnPoints(order) {
 // 🔄 진행중인 모든 주문 상태 동기화
 async function syncAllOrderStatuses() {
   try {
+    await reconcileOrphanPeakerrOrders();
     const apiKey = await getGlobalSetting('peakerr_api_key');
     if (!apiKey) return;
     
@@ -3472,9 +3576,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
         ? linkHintForService(svc)
         : /balance|insufficient|not enough|잔액|부족/i.test(placement.error || '')
           ? '공급사 잔액 부족으로 주문이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
-          : /공급사.*연결|응답이 지연|일시적/i.test(placement.error || '')
-            ? (placement.error || '공급사 연결이 불안정합니다. 1~2분 후 다시 시도해주세요.')
-            : `주문 접수에 실패했습니다. (${placement.error || '공급사 거절'})`;
+          : `주문 접수에 실패했습니다. (${placement.error || '공급사 거절'})`;
       try {
         await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed']);
@@ -3495,11 +3597,17 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (site && site.id !== 'default')
       await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, site.id]);
 
-    const apiOrderId = placement.apiOrderId;
+    const apiOrderId = placement.apiOrderId || null;
     const orderId = 'O' + Date.now();
     const orderCost = orderCostKrw;
     await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, apiCost]);
+      [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, apiCost]);
+
+    if (!apiOrderId) {
+      reconcileOrderMissingApiId({ id: orderId, sid: usedSvc.id, qty: qtyNum, created: new Date(), site_id: req.siteId, uid: user.id, charge, cost: orderCost, status: 'processing' })
+        .catch(() => null);
+    }
+
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
     const creditLine = adminCreditOnly
@@ -3520,9 +3628,13 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     
     res.json({
       ok: true, orderId, apiOrderId, balance: updR.rows[0].balance,
+      message: apiOrderId
+        ? '작업 신청이 접수되었습니다.'
+        : '작업 신청이 접수되었습니다. 공급사 주문번호 확인 중입니다.',
       adminCreditOnly: !!adminCreditOnly,
       creditDeductedKrw: adminCreditOnly ? Math.round(orderCostKrw) : null,
-      creditKrw: creditKrwAfter
+      creditKrw: creditKrwAfter,
+      pendingVerify: !apiOrderId
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -3538,9 +3650,17 @@ app.get('/api/orders/my', requireAuth, async (req, res) => {
 app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
   try {
     const orderR = await query(`SELECT * FROM orders WHERE id=$1 AND uid=$2`, [req.params.orderId, req.session.userId]);
-    const order = orderR.rows[0];
+    let order = orderR.rows[0];
     if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
-    if (!order.api_order_id) return res.json({ error: 'API 주문 ID가 없습니다' });
+    if (!order.api_order_id) {
+      const recovered = await reconcileOrderMissingApiId(order);
+      if (recovered) {
+        const updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
+        order = updR.rows[0];
+      } else {
+        return res.json({ error: '공급사 주문번호 확인 중입니다. 1~2분 후 🔄 새로고침 해주세요.' });
+      }
+    }
     
     const apiKey = await getGlobalSetting('peakerr_api_key');
     if (!apiKey) return res.json({ error: 'API 키 미설정' });

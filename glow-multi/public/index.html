@@ -3244,10 +3244,11 @@ async function placeOrder(){
   try{d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});}
   finally{btn.disabled=false;btn.innerHTML='✨ 주문하기';}
   if(d.error){toast(d.error,'err');return}
+  var okMsg=d.message||(d.apiOrderId?'✨ 작업 신청 완료! #'+d.apiOrderId:'✨ 작업 신청이 접수되었습니다!');
   if(d.adminCreditOnly&&d.creditDeductedKrw!=null){
-    toast('✨ 주문완료! 크레딧 ₩'+Math.round(d.creditDeductedKrw).toLocaleString()+' 차감 · 잔액 ₩'+Math.round(d.creditKrw||0).toLocaleString(),'ok');
+    toast(okMsg+' · 크레딧 ₩'+Math.round(d.creditDeductedKrw).toLocaleString()+' 차감 · 잔액 ₩'+Math.round(d.creditKrw||0).toLocaleString(),'ok');
   }else{
-    toast(d.apiOrderId?'✨ 주문완료! #'+d.apiOrderId:'✨ 주문접수!','ok');
+    toast(okMsg,'ok');
   }
   ge('o링크').value='';ge('o수량').value='';
   if(window._adminCreditOnly){
