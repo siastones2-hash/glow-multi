@@ -3239,7 +3239,11 @@ async function placeOrder(){
   var d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});
   btn.disabled=false;btn.innerHTML='✨ 주문하기';
   if(d.error){toast(d.error,'err');return}
-  toast(d.apiOrderId?'✨ 주문완료! #'+d.apiOrderId:'✨ 주문접수!','ok');
+  if(d.adminCreditOnly&&d.creditDeductedKrw!=null){
+    toast('✨ 주문완료! 크레딧 ₩'+Math.round(d.creditDeductedKrw).toLocaleString()+' 차감 · 잔액 ₩'+Math.round(d.creditKrw||0).toLocaleString(),'ok');
+  }else{
+    toast(d.apiOrderId?'✨ 주문완료! #'+d.apiOrderId:'✨ 주문접수!','ok');
+  }
   ge('o링크').value='';ge('o수량').value='';
   if(window._adminCreditOnly){
     var dash=await api('/api/admin/stats');
@@ -3255,6 +3259,9 @@ async function placeOrder(){
 }
 async function loadOrders(){
   var d=await api('/api/orders/my');var tb=ge('ordersTb'),h='';
+  var aco=window._adminCreditOnly;
+  var amtTh=document.querySelector('#pg-orders thead th:nth-child(4)');
+  if(amtTh)amtTh.textContent=aco?'크레딧':'금액';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:26px;color:#9A8AB0">주문 내역이 없습니다</td></tr>';return}
   d.forEach(function(o){
     var canCancel = ['pending','processing'].includes(o.status) && o.api_order_id;
@@ -3279,7 +3286,7 @@ async function loadOrders(){
     h+='<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#1A1030">'+PLI[o.pl]+' '+o.sname+'</td>'
       +'<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="'+o.link+'" target="_blank" style="color:#B5179E;text-decoration:none;font-size:12px">'+o.link+'</a></td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
-      +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
+      +'<td style="font-weight:700">'+(aco?(o.cost>0?gf(o.cost):(o.status==='failed'?'—':'₩0')):gf(o.charge))+'</td>'
       +'<td>'+badge(o.status)+progressHtml+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
       +'<td style="white-space:nowrap">'+actionBtns+'</td></tr>';

@@ -298,6 +298,7 @@ async function initDB() {
 
   await normalizeAbnormalCredits();
   await fixLegacyPartnerAdminOrders();
+  await backfillPartnerOrderCosts();
   const mislabel = await repairMislabeledServiceNames().catch(() => ({ count: 0 }));
   if (mislabel.count > 0) console.log(`✓ 잘못 분류된 상품명 ${mislabel.count}건 수정`);
 
@@ -567,6 +568,7 @@ async function initDB() {
   const nameFix = await localizeAllSitesServiceNames().catch(() => ({ count: 0 }));
   if (nameFix.count > 0) console.log(`🇰🇷 영문 상품명 ${nameFix.count}건 한글화 (GLOW·지인 사이트 전체)`);
   await reconcileServiceCatalog({ notify: false }).catch(e => console.log('카탈로그 정리:', e.message));
+  await backfillPartnerOrderCosts();
   console.log('✅ DB 초기화 완료');
 }
 
@@ -879,8 +881,8 @@ function computeOrderAmounts(svc, qtyNum, site, margins) {
   return { charge, apiCost, orderCostKrw, isDefaultSite };
 }
 
-/** 파트너 관리자 레거시 주문 — charge만 있고 cost/api_cost 없음 → 크레딧 사용으로 정규화 */
-async function fixLegacyPartnerAdminOrders() {
+/** 파트너 사이트 — api_order_id 있는데 cost/api_cost 없음 → 크레딧 사용량 보정 (화면 잔액 반영) */
+async function backfillPartnerOrderCosts() {
   try {
     const EXCLUDE = `o.status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
     const r = await query(`
@@ -889,10 +891,11 @@ async function fixLegacyPartnerAdminOrders() {
       JOIN users u ON o.uid = u.id
       JOIN sites s ON o.site_id = s.id
       WHERE s.id <> 'default'
-        AND u.role IN ('admin','partner')
+        AND o.api_order_id IS NOT NULL AND TRIM(o.api_order_id) <> ''
         AND ${EXCLUDE}
         AND (COALESCE(o.cost,0) = 0 OR COALESCE(o.api_cost,0) = 0)
     `);
+    let fixed = 0;
     for (const o of r.rows) {
       const svcR = await query(`SELECT rate FROM services WHERE id=$1`, [o.sid]);
       if (!svcR.rows[0]) continue;
@@ -901,13 +904,20 @@ async function fixLegacyPartnerAdminOrders() {
       const { apiCost, orderCostKrw } = computeOrderAmounts(
         { rate: parseFloat(svcR.rows[0].rate) }, o.qty, siteR.rows[0], margins);
       if (apiCost <= 0 && orderCostKrw <= 0) continue;
+      const isAdmin = ['admin', 'partner'].includes(o.role);
       await query(
-        `UPDATE orders SET charge=0, cost=$1, api_cost=$2 WHERE id=$3`,
-        [Math.round(orderCostKrw), apiCost, o.id]
+        `UPDATE orders SET charge=$1, cost=$2, api_cost=$3 WHERE id=$4`,
+        [isAdmin ? 0 : o.charge, Math.round(orderCostKrw), apiCost, o.id]
       );
-      console.log(`✓ 레거시 관리자주문 보정: ${o.id} (${o.site_id}) cost=₩${Math.round(orderCostKrw)}`);
+      fixed++;
     }
-  } catch (e) { console.log('레거시 관리자주문 보정:', e.message); }
+    if (fixed > 0) console.log(`✓ 파트너 주문 크레딧 기록 보정: ${fixed}건`);
+    return fixed;
+  } catch (e) { console.log('파트너 주문 크레딧 보정:', e.message); return 0; }
+}
+
+async function fixLegacyPartnerAdminOrders() {
+  return backfillPartnerOrderCosts();
 }
 
 /** 환불 시 크레딧 USD 복구량 (저장된 api_cost 우선) */
@@ -1604,6 +1614,7 @@ async function reconcileServiceCatalog(opts = {}) {
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
     await reactivateCuratedSeedServices();
     const purged = await purgeUnsellableServices();
+    await backfillPartnerOrderCosts();
 
     const failOnlyR = await query(`
       SELECT sid FROM orders
@@ -3348,8 +3359,20 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     
     // 💵 Peakerr 잔액 체크 (비동기, 주문 처리와 별도로)
     checkPeakerrBalance().catch(e => console.log('잔액 체크 실패:', e.message));
+
+    let creditKrwAfter = null;
+    if (adminCreditOnly && site && site.id !== 'default') {
+      const siteEx = (site.exrate > 0) ? site.exrate : margins.ex;
+      const siteR2 = await query(`SELECT credit FROM sites WHERE id=$1`, [site.id]);
+      creditKrwAfter = await getCreditBalanceKrw(site.id, siteR2.rows[0]?.credit, siteEx);
+    }
     
-    res.json({ ok: true, orderId, apiOrderId, balance: updR.rows[0].balance });
+    res.json({
+      ok: true, orderId, apiOrderId, balance: updR.rows[0].balance,
+      adminCreditOnly: !!adminCreditOnly,
+      creditDeductedKrw: adminCreditOnly ? Math.round(orderCostKrw) : null,
+      creditKrw: creditKrwAfter
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
