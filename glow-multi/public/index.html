@@ -3264,10 +3264,10 @@ async function loadOrders(){
   if(amtTh)amtTh.textContent=aco?'크레딧':'금액';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:26px;color:#9A8AB0">주문 내역이 없습니다</td></tr>';return}
   d.forEach(function(o){
-    var canCancel = ['pending','processing'].includes(o.status) && o.api_order_id;
+    var canCancel = ['pending','processing'].includes(o.status);
     var actionBtns = '<button onclick="refreshOrder(\''+o.id+'\')" style="background:rgba(114,9,183,.1);color:var(--p2);border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;margin-right:4px" title="실시간 상태 확인">🔄</button>';
     if(canCancel) {
-      actionBtns += '<button onclick="cancelOrder(\''+o.id+'\')" style="background:rgba(220,20,60,.1);color:#DC143C;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer" title="주문 취소 요청">✕</button>';
+      actionBtns += '<button onclick="cancelOrder(\''+o.id+'\')" style="background:rgba(220,20,60,.1);color:#DC143C;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer" title="주문 취소">✕</button>';
     }
     // 진행률 계산
     var progressHtml = '';
@@ -3309,10 +3309,13 @@ async function refreshOrder(orderId){
 
 // 🚫 주문 취소 요청
 async function cancelOrder(orderId){
-  if(!confirm('이 주문을 취소하시겠어요?\n\n아직 처리되지 않았다면 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
+  if(!confirm('이 주문을 취소하시겠어요?\n\n취소되면 Peakerr 주문도 중단되고, 결제·크레딧이 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
   var d=await api('/api/orders/cancel/'+orderId,'POST');
   if(d.error){toast(d.error,'err');return}
-  toast(d.message||'취소 처리되었습니다','ok');
+  var msg=d.message||'취소 처리되었습니다';
+  if(d.refundAmount>0)msg+=' · ₩'+d.refundAmount.toLocaleString()+' 환불';
+  else if(d.creditRefund>0)msg+=' · 크레딧 $'+d.creditRefund.toFixed(4)+' 복구';
+  toast(msg,'ok');
   loadOrders();
   updBal();
 }
@@ -3453,6 +3456,10 @@ async function loadAdmOrders(){
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
+    var canCancel=['pending','processing'].includes(o.status);
+    var cancelBtn=canCancel
+      ?'<button onclick="admCancelOrder(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;margin-top:4px">✕ 취소</button>'
+      :'';
     var delBtn=done.indexOf(o.status)>=0
       ?'<button onclick="delOrder(\''+o.id+'\')" style="background:#fee;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;margin-top:4px">🗑 삭제</button>'
       :'';
@@ -3468,9 +3475,19 @@ async function loadAdmOrders(){
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
       +'<td><select onchange="chgOSt(\''+o.id+'\',this.value)" style="font-size:12px;padding:5px 8px;width:80px;background:#f5f0ff;border:1px solid rgba(114,9,183,.2);border-radius:6px">'
       +['pending','processing','completed','cancelled'].map(function(s){return'<option value="'+s+'"'+(o.status===s?' selected':'')+'>'+{pending:'대기',processing:'처리중',completed:'완료',cancelled:'취소'}[s]+'</option>'}).join('')
-      +'</select>'+(delBtn?'<br>'+delBtn:'')+'</td></tr>';
+      +'</select>'+(cancelBtn?cancelBtn+'<br>':'')+(delBtn?delBtn:'')+'</td></tr>';
   });
   tb.innerHTML=h;
+}
+async function admCancelOrder(id){
+  if(!confirm('Peakerr 주문을 취소하고 환불·크레딧을 복구할까요?'))return;
+  var d=await api('/api/orders/cancel/'+id,'POST');
+  if(d&&d.error){toast(d.error,'err');return}
+  var msg=d.message||'취소 완료';
+  if(d.refundAmount>0)msg+=' · ₩'+d.refundAmount.toLocaleString();
+  if(d.creditRefund>0)msg+=' · 크레딧 $'+d.creditRefund.toFixed(4);
+  toast(msg,'ok');
+  loadAdmOrders();
 }
 async function chgOSt(id,st){
   var d=await api('/api/admin/orders/status','POST',{id:id,status:st});

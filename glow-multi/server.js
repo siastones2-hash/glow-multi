@@ -1371,6 +1371,126 @@ async function fetchPeakerrOrderStatus(apiKey, apiOrderId) {
   } catch(e) { console.log('Peakerr 상태 조회 실패:', e.message); return null; }
 }
 
+function parsePeakerrCancelResult(data, apiOrderId) {
+  const id = String(apiOrderId);
+  if (Array.isArray(data)) {
+    const row = data.find(r => String(r.order) === id) || data[0];
+    if (!row) return { ok: false, error: '취소 응답 없음' };
+    const c = row.cancel;
+    if (c === 1 || c === true) return { ok: true };
+    if (typeof c === 'object' && c?.error) return { ok: false, error: String(c.error) };
+    return { ok: false, error: '취소 불가' };
+  }
+  if (data?.error) return { ok: false, error: String(data.error) };
+  return { ok: false, error: '취소 응답 형식 오류' };
+}
+
+async function submitPeakerrCancel(apiKey, apiOrderId) {
+  const resp = await fetch('https://peakerr.com/api/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ key: apiKey, action: 'cancel', orders: String(apiOrderId) })
+  });
+  const data = await resp.json();
+  return parsePeakerrCancelResult(data, apiOrderId);
+}
+
+async function pollPeakerrStatus(apiKey, apiOrderId, tries = 5, delayMs = 1500) {
+  let last = null;
+  for (let i = 0; i < tries; i++) {
+    last = await fetchPeakerrOrderStatus(apiKey, apiOrderId);
+    if (!last || last.error) break;
+    const s = (last.status || '').toLowerCase();
+    if (['canceled', 'cancelled', 'partial', 'completed', 'error', 'failed'].includes(s)) return last;
+    if (i < tries - 1) await new Promise(r => setTimeout(r, delayMs));
+  }
+  return last;
+}
+
+function peakerrCancelErrorKo(msg) {
+  const m = String(msg || '');
+  if (/progress|processing|started|cannot|can't|unable|not allow|already/i.test(m))
+    return '이미 처리가 시작되어 Peakerr에서 취소할 수 없습니다.';
+  return m ? `취소 실패: ${m}` : 'Peakerr에서 취소를 거절했습니다.';
+}
+
+async function findOrderForCancel(orderId, req) {
+  const r = await query(`SELECT * FROM orders WHERE id=$1`, [orderId]);
+  const order = r.rows[0];
+  if (!order) return null;
+  if (order.uid === req.session.userId) return order;
+  const role = req.session?.role;
+  if (['admin', 'partner', 'superadmin'].includes(role)) {
+    if (role === 'superadmin' || order.site_id === req.siteId) return order;
+  }
+  return null;
+}
+
+/** Peakerr 취소 + GLOW 환불 (고객·관리자 공통) */
+async function cancelOrderWithPeakerr(order, opts = {}) {
+  const adminId = opts.adminId || 'system';
+  const done = ['completed', 'refunded', 'partial_refunded', 'cancelled', 'canceled'];
+  if (done.includes(order.status)) {
+    return { ok: false, error: '이미 완료·취소·환불된 주문입니다' };
+  }
+
+  if (!order.api_order_id) {
+    const fin = await restoreRefundFinancials(order, 100, {
+      reason: `주문 취소 (API 미전송) - ${order.id}`,
+      adminId
+    });
+    await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
+    return {
+      ok: true, message: '주문이 취소되고 전액 환불되었습니다',
+      refundPercent: 100, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund
+    };
+  }
+
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return { ok: false, error: 'API 키 미설정' };
+
+  const cancelResult = await submitPeakerrCancel(apiKey, order.api_order_id);
+  if (!cancelResult.ok) {
+    return { ok: false, error: peakerrCancelErrorKo(cancelResult.error) };
+  }
+
+  const statusData = await pollPeakerrStatus(apiKey, order.api_order_id);
+  if (statusData && !statusData.error) {
+    const result = await autoRefundOrder(order, statusData);
+    const freshR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
+    const fresh = freshR.rows[0] || order;
+    if (result?.refundPercent > 0 || ['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(fresh.status)) {
+      const pct = result?.refundPercent || 100;
+      return {
+        ok: true,
+        message: pct >= 100 ? '취소 완료. 전액 환불되었습니다.' : `취소 완료. ${pct}% 환불되었습니다.`,
+        refundPercent: pct,
+        status: fresh.status,
+        apiStatus: statusData.status
+      };
+    }
+  }
+
+  // Peakerr 취소 접수됨 — 상태 반영 전이어도 환불 (이중 환불 방지)
+  const freshR2 = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
+  const fresh2 = freshR2.rows[0] || order;
+  if (['refunded', 'partial_refunded'].includes(fresh2.status)) {
+    return { ok: true, message: '취소·환불이 완료되었습니다.', status: fresh2.status };
+  }
+  const fin = await restoreRefundFinancials(fresh2, 100, {
+    reason: `주문 취소 (Peakerr 접수) - ${order.id}`,
+    adminId
+  });
+  await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
+  await logActivity(order.site_id, adminId, '', '주문 취소', 'order', order.id,
+    `Peakerr #${order.api_order_id} 취소 · ₩${Math.round(fin.refundAmount || 0).toLocaleString()} 환불` +
+      (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : ''));
+  return {
+    ok: true, message: '취소 접수 완료. 전액 환불되었습니다.',
+    refundPercent: 100, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund, status: 'refunded'
+  };
+}
+
 // 💸 주문 자동 환불 처리 (Peakerr 기반)
 async function autoRefundOrder(order, peakerrData) {
   try {
@@ -3403,48 +3523,17 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🚫 고객 주문 취소 요청 (Peakerr가 아직 처리 시작 안 했으면 취소 가능)
+// 🚫 주문 취소 (고객 본인 · 사이트 관리자)
 app.post('/api/orders/cancel/:orderId', requireAuth, async (req, res) => {
   try {
-    const orderR = await query(`SELECT * FROM orders WHERE id=$1 AND uid=$2`, [req.params.orderId, req.session.userId]);
-    const order = orderR.rows[0];
+    const order = await findOrderForCancel(req.params.orderId, req);
     if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
-    if (['completed', 'refunded', 'partial_refunded'].includes(order.status)) {
-      return res.json({ error: '이미 완료되거나 환불된 주문입니다' });
-    }
-    if (!order.api_order_id) {
-      const fin = await restoreRefundFinancials(order, 100, {
-        reason: `주문 취소 (API 미전송) - ${order.id}`,
-        adminId: 'system'
-      });
-      await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, order.id]);
-      return res.json({ ok: true, message: '주문이 취소되고 전액 환불되었습니다' });
-    }
-    
-    // Peakerr에 취소 요청
-    const apiKey = await getGlobalSetting('peakerr_api_key');
-    if (!apiKey) return res.json({ error: 'API 키 미설정' });
-    
-    try {
-      const resp = await fetch('https://peakerr.com/api/v2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ key: apiKey, action: 'cancel', orders: order.api_order_id })
-      });
-      const data = await resp.json();
-      
-      // Peakerr 상태 즉시 조회해서 환불 처리
-      const statusData = await fetchPeakerrOrderStatus(apiKey, order.api_order_id);
-      if (statusData) {
-        const result = await autoRefundOrder(order, statusData);
-        if (result && result.refundPercent > 0) {
-          return res.json({ ok: true, message: `취소 완료. ${result.refundPercent}% 환불되었습니다.` });
-        }
-      }
-      res.json({ ok: true, message: '취소 요청을 전송했습니다. 잠시 후 상태가 업데이트됩니다.' });
-    } catch(e) {
-      res.json({ error: '취소 요청 실패: ' + e.message });
-    }
+    const result = await cancelOrderWithPeakerr(order, { adminId: req.session.userId || 'system' });
+    if (!result.ok) return res.json({ error: result.error });
+    res.json({
+      ok: true, message: result.message, refunded: (result.refundPercent || 0) > 0,
+      refundAmount: result.refundAmount, creditRefund: result.creditRefund, status: result.status
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -3616,18 +3705,16 @@ app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
       return res.json({ error: '다른 사이트 주문은 변경할 수 없습니다' });
     }
 
-    // ⚠️ '취소'로 변경 시 자동 환불 — 이미 환불/취소된 주문이 아닐 때만
+    // ⚠️ '취소'로 변경 시 Peakerr 취소 + 자동 환불
     const alreadyDone = ['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status);
     if ((status === 'cancelled' || status === 'canceled') && !alreadyDone) {
-      const fin = await restoreRefundFinancials(order, 100, {
-        reason: `주문 취소 자동 환불 - ${order.sname}`,
-        adminId: req.session.userId
+      const result = await cancelOrderWithPeakerr(order, { adminId: req.session.userId });
+      if (!result.ok) return res.json({ error: result.error });
+      return res.json({
+        ok: true, refunded: true,
+        refundAmount: result.refundAmount, creditRefund: result.creditRefund,
+        message: result.message
       });
-      await query(`UPDATE orders SET status='cancelled', cost=$1 WHERE id=$2`, [fin.newCost, id]);
-      await logActivity(req.siteId, req.session.userId, '', '주문 취소+환불', 'order', id,
-        `₩${Math.round(fin.refundAmount || 0).toLocaleString()} 환불` +
-          (fin.creditRefund ? ` · 크레딧 $${fin.creditRefund.toFixed(4)} 복구` : ''));
-      return res.json({ ok: true, refunded: true, refundAmount: fin.refundAmount, creditRefund: fin.creditRefund });
     }
 
     // 그 외 상태 변경은 단순 변경
