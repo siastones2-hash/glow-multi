@@ -977,6 +977,106 @@ async function checkRateLimit(key, maxPerMinute = 60) {
   }
 }
 
+/** Peakerr 카탈로그 캐시 (주문 대체·min/max 검증용) */
+let peakerrCatalogCache = new Map();
+
+function normalizeOrderLink(url, platform) {
+  let s = String(url || '').trim();
+  if (!s) return s;
+  if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+  try {
+    const u = new URL(s);
+    u.hostname = u.hostname.replace(/^www\./, '').toLowerCase();
+    if (platform === 'tiktok') {
+      u.search = '';
+      u.hash = '';
+    }
+    return u.href;
+  } catch {
+    return s;
+  }
+}
+
+function serviceOrderBucket(svc) {
+  return detectServiceTypeKo(`${svc.name || ''} ${svc.description || ''}`);
+}
+
+function isPeakerrServiceDeadError(msg) {
+  if (!msg) return false;
+  return /not\s*found|invalid\s*service|service\s*(id|does|disabled)|no\s*service|unavailable|doesn.t exist|존재|없/i.test(msg);
+}
+
+function isPeakerrLinkError(msg) {
+  if (!msg) return false;
+  return /link|url|incorrect|wrong|format|profile|private|video/i.test(msg);
+}
+
+async function submitPeakerrOrder(apiKey, apiId, link, qty) {
+  const resp = await fetch('https://peakerr.com/api/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ key: apiKey, action: 'add', service: String(apiId), link, quantity: String(qty) })
+  });
+  const data = await resp.json();
+  if (data.order) return { ok: true, apiOrderId: String(data.order) };
+  return { ok: false, error: data.error || '주문 접수 실패' };
+}
+
+async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(), limit = 2) {
+  const bucket = serviceOrderBucket(primary);
+  if (!bucket || bucket === '서비스') return [];
+  const params = [primary.pl, primary.id];
+  let siteFilter = '';
+  if (siteId && siteId !== 'default') {
+    siteFilter = ` AND EXISTS (SELECT 1 FROM site_services ss WHERE ss.service_id=s.id AND ss.site_id=$3 AND ss.active=1)`;
+    params.push(siteId);
+  }
+  const r = await query(`
+    SELECT s.* FROM services s
+    WHERE s.active=1 AND s.pl=$1 AND s.id<>$2
+      AND s.api_id IS NOT NULL AND TRIM(s.api_id) <> ''
+      ${siteFilter}
+  `, params);
+  return r.rows
+    .filter(s => !excludeIds.has(s.id))
+    .filter(s => serviceOrderBucket(s) === bucket)
+    .filter(s => qty >= (s.min || 1) && qty <= (s.max || 999999999))
+    .filter(s => peakerrCatalogCache.size === 0 || peakerrCatalogCache.has(String(s.api_id)))
+    .sort((a, b) => scoreServiceRow(b) - scoreServiceRow(a) || parseFloat(a.rate) - parseFloat(b.rate))
+    .slice(0, limit);
+}
+
+async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
+  const tried = new Set();
+  const candidates = [primary, ...(await findAlternateServices(primary, siteId, qty, tried, 2))];
+  let lastError = null;
+  for (const svc of candidates) {
+    if (!svc.api_id || tried.has(svc.id)) continue;
+    tried.add(svc.id);
+    const cached = peakerrCatalogCache.get(String(svc.api_id));
+    if (cached) {
+      const cMin = parseInt(cached.min, 10) || svc.min || 1;
+      const cMax = parseInt(cached.max, 10) || svc.max || 999999999;
+      if (qty < cMin || qty > cMax) continue;
+    }
+    try {
+      const result = await submitPeakerrOrder(apiKey, svc.api_id, link, qty);
+      if (result.ok) return { ok: true, apiOrderId: result.apiOrderId, usedSvc: svc };
+      lastError = result.error;
+      if (isPeakerrLinkError(result.error)) break;
+      if (isPeakerrServiceDeadError(result.error)) {
+        await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(() => null);
+        continue;
+      }
+      break;
+    } catch (e) {
+      lastError = '서버 연결 실패: ' + e.message;
+      break;
+    }
+  }
+  return { ok: false, error: lastError || '주문 접수 실패' };
+}
+
 // 🔗 URL 검증 (플랫폼별)
 function validateUrl(url, platform) {
   if (!url || typeof url !== 'string') return { ok: false, error: 'URL을 입력해주세요' };
@@ -987,7 +1087,7 @@ function validateUrl(url, platform) {
     const validDomains = {
       youtube: ['youtube.com', 'youtu.be', 'm.youtube.com'],
       instagram: ['instagram.com', 'instagr.am'],
-      tiktok: ['tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com'],
+      tiktok: ['tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com', 'm.tiktok.com'],
       twitter: ['twitter.com', 'x.com'],
       facebook: ['facebook.com', 'fb.com', 'fb.watch', 'm.facebook.com'],
       telegram: ['t.me', 'telegram.me'],
@@ -1002,6 +1102,13 @@ function validateUrl(url, platform) {
     const isValid = expectedDomains.some(d => domain === d || domain.endsWith('.' + d));
     if (!isValid) {
       return { ok: false, error: `잘못된 URL입니다. ${platform} 서비스는 ${expectedDomains[0]} 링크를 입력해주세요.` };
+    }
+    if (platform === 'tiktok') {
+      const path = u.pathname + u.hostname;
+      const isVideo = /\/video\/|\/t\/|vm\.tiktok|vt\.tiktok/.test(path + u.hostname);
+      if (!isVideo) {
+        return { ok: false, error: '틱톡 영상 링크를 입력해주세요. (공유 → 링크 복사 / vm·vt 단축 링크 가능)' };
+      }
     }
     return { ok: true };
   } catch(e) {
@@ -1236,9 +1343,10 @@ async function syncPeakerrServices() {
     
     const peakerrMap = new Map();
     services.forEach(s => peakerrMap.set(String(s.service), s));
+    peakerrCatalogCache = peakerrMap;
     
     // GLOW DB의 모든 서비스 조회
-    const glowR = await query(`SELECT id, name, api_id, rate, active FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+    const glowR = await query(`SELECT id, name, api_id, rate, min, max, active FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
     
     let disabled = 0, priceChanged = 0, checked = 0;
     const priceChangedList = [];
@@ -1255,9 +1363,11 @@ async function syncPeakerrServices() {
           console.log(`  ⚠️ 비활성화: ${glowSvc.name}`);
         }
       } else {
-        // 원가 변동 체크 (20% 이상 차이)
         const newRate = parseFloat(peakerrSvc.rate);
         const oldRate = parseFloat(glowSvc.rate);
+        const pMin = Math.max(1, parseInt(peakerrSvc.min, 10) || glowSvc.min || 1);
+        const pMax = parseInt(peakerrSvc.max, 10) || glowSvc.max || 10000000;
+        await query(`UPDATE services SET min=$1, max=$2 WHERE id=$3`, [pMin, pMax, glowSvc.id]);
         if (oldRate > 0 && Math.abs(newRate - oldRate) / oldRate > 0.2) {
           priceChangedList.push({
             name: glowSvc.name,
@@ -1265,11 +1375,10 @@ async function syncPeakerrServices() {
             new: newRate,
             change: ((newRate - oldRate) / oldRate * 100).toFixed(1)
           });
-          // 자동 업데이트 (안전하게: 5% 이상 변동 시)
-          if (Math.abs(newRate - oldRate) / oldRate > 0.05) {
-            await query(`UPDATE services SET rate=$1 WHERE id=$2`, [newRate, glowSvc.id]);
-            priceChanged++;
-          }
+        }
+        if (oldRate > 0 && Math.abs(newRate - oldRate) / oldRate > 0.05) {
+          await query(`UPDATE services SET rate=$1 WHERE id=$2`, [newRate, glowSvc.id]);
+          priceChanged++;
         }
       }
     }
@@ -2219,7 +2328,31 @@ async function pruneServiceCatalog(opts = {}) {
     scored.slice(maxPerPlatform).forEach(r => mark(r.id, 'overflow', r.name));
   }
 
-  const stats = { bad: 0, duplicate: 0, namedup: 0, overflow: 0 };
+  const typeCaps = {
+    '조회수': 3, '쇼츠 조회수': 2, '스토리 조회수': 2, '릴스 조회수': 2,
+    '좋아요': 4, '쇼츠 좋아요': 2, '팔로워': 3, '구독자': 3, '댓글': 2
+  };
+  for (const pl of ['tiktok', 'youtube', 'instagram']) {
+    const live = allR.rows.filter(r => r.pl === pl && !toDeactivate.has(r.id));
+    const byType = new Map();
+    for (const row of live) {
+      const t = detectServiceTypeKo(`${row.name} ${row.description || ''}`);
+      if (!byType.has(t)) byType.set(t, []);
+      byType.get(t).push(row);
+    }
+    for (const [type, rows] of byType) {
+      const cap = typeCaps[type];
+      if (!cap || rows.length <= cap) continue;
+      const sorted = rows.sort((a, b) => {
+        if (protectedIds.has(a.id) && !protectedIds.has(b.id)) return -1;
+        if (!protectedIds.has(a.id) && protectedIds.has(b.id)) return 1;
+        return scoreServiceRow(b) - scoreServiceRow(a) || parseFloat(a.rate) - parseFloat(b.rate);
+      });
+      for (let i = cap; i < sorted.length; i++) mark(sorted[i].id, 'typeoverflow', sorted[i].name);
+    }
+  }
+
+  const stats = { bad: 0, duplicate: 0, namedup: 0, overflow: 0, typeoverflow: 0 };
   const items = [];
   for (const [id, info] of toDeactivate) {
     stats[info.reason] = (stats[info.reason] || 0) + 1;
@@ -2945,18 +3078,17 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const svc = svcR.rows[0];
     if (!svc) return res.json({ error: '서비스를 찾을 수 없습니다' });
     
-    // 🔗 URL 검증 (플랫폼별 도메인 체크)
-    const urlCheck = validateUrl(link, svc.pl);
+    const linkNorm = normalizeOrderLink(link, svc.pl);
+    const urlCheck = validateUrl(linkNorm, svc.pl);
     if (!urlCheck.ok) return res.json({ error: urlCheck.error });
     
     const qtyNum = parseInt(qty);
     if (isNaN(qtyNum) || qtyNum < svc.min || qtyNum > svc.max)
       return res.json({ error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다` });
     
-    // 🚫 중복 주문 차단: 같은 회원이 같은 URL로 30분 내 중복 주문 방지
     const dupCheck = await query(
       `SELECT id FROM orders WHERE uid=$1 AND sid=$2 AND link=$3 AND created > NOW() - INTERVAL '30 minutes' LIMIT 1`,
-      [req.session.userId, sid, link]
+      [req.session.userId, sid, linkNorm]
     );
     if (dupCheck.rows.length > 0) {
       return res.json({ error: '동일 주문이 30분 내 이미 있습니다. 중복 주문을 방지합니다.' });
@@ -2964,83 +3096,68 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     
     const site = req.site;
     const margins = await getSiteMargins(site);
-    const { ex } = margins;
     const isDefaultSite2 = !site || site.id === 'default';
-    const { charge: calcCharge, apiCost, orderCostKrw } = computeOrderAmounts(svc, qtyNum, site, margins);
+    let { charge: calcCharge, apiCost, orderCostKrw } = computeOrderAmounts(svc, qtyNum, site, margins);
     let charge = calcCharge;
     const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
     const user = userR.rows[0];
-    // 파트너·지인 사이트 관리자 본인 작업 → 크레딧만 차감 (잔액 충전 불필요)
     const adminCreditOnly = !isDefaultSite2 && user && ['admin', 'partner'].includes(user.role);
     if (adminCreditOnly) charge = 0;
 
     if (!adminCreditOnly && (user.balance || 0) < charge)
       return res.json({ error: `잔액 부족. 현재 ₩${Math.round(user.balance || 0).toLocaleString()}` });
-    if (site && site.credit < apiCost && site.id !== 'default')
+
+    const apiKey = await getGlobalSetting('peakerr_api_key');
+    if (!apiKey || !svc.api_id) {
+      return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
+    }
+
+    let maxApiCost = apiCost;
+    const altCandidates = await findAlternateServices(svc, req.siteId, qtyNum, new Set(), 2);
+    for (const alt of altCandidates) {
+      maxApiCost = Math.max(maxApiCost, computeOrderAmounts(alt, qtyNum, site, margins).apiCost);
+    }
+    if (site && site.credit < maxApiCost && site.id !== 'default')
       return res.json({ error: '사이트 API 크레딧이 부족합니다. 관리자 → 크레딧 요청으로 충전하세요.' });
+
+    const placement = await placeOrderWithFallback(apiKey, svc, linkNorm, qtyNum, req.siteId);
+    if (!placement.ok) {
+      const failId = 'O' + Date.now();
+      const errMsg = isPeakerrLinkError(placement.error)
+        ? '링크 형식을 확인해주세요. 틱톡은 영상 공유 링크(vm·vt 단축 URL 포함)를 사용하세요.'
+        : `주문 접수에 실패했습니다. (${placement.error})`;
+      try {
+        await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed']);
+      } catch (e) {}
+      console.log('주문 실패:', svc.id, placement.error);
+      return res.json({ error: errMsg });
+    }
+
+    const usedSvc = placement.usedSvc || svc;
+    if (usedSvc.id !== svc.id) {
+      const altAmounts = computeOrderAmounts(usedSvc, qtyNum, site, margins);
+      apiCost = altAmounts.apiCost;
+      orderCostKrw = altAmounts.orderCostKrw;
+    }
+
     if (!adminCreditOnly)
       await query(`UPDATE users SET balance=balance-$1 WHERE id=$2`, [charge, user.id]);
     if (site && site.id !== 'default')
       await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, site.id]);
-    let apiOrderId = null;
-    let apiError = null;
-    const apiKey = await getGlobalSetting('peakerr_api_key');
-    if (apiKey && svc.api_id) {
-      try {
-        const resp = await fetch('https://peakerr.com/api/v2', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ key: apiKey, action: 'add', service: svc.api_id, link, quantity: String(qty) })
-        });
-        const data = await resp.json();
-        if (data.order) {
-          apiOrderId = String(data.order);
-        } else {
-          // 공급사가 주문을 거부함 (서비스 삭제/최소수량 미달/잔액부족 등)
-          apiError = data.error || '주문 접수 실패';
-        }
-      } catch(e) {
-        apiError = '서버 연결 실패: ' + e.message;
-        console.log('API 오류:', e.message);
-      }
-    } else if (!svc.api_id) {
-      apiError = '연동되지 않은 서비스입니다';
-    }
 
-    // ⚠️ 공급사 전송 실패 → 즉시 자동 환불 + 주문 실패 처리 ("돈 냈는데 작업 안 됨" 방지)
-    if (apiError) {
-      if (!adminCreditOnly)
-        await query(`UPDATE users SET balance=balance+$1 WHERE id=$2`, [charge, user.id]);
-      // 지인 크레딧 복구
-      if (site && site.id !== 'default')
-        await query(`UPDATE sites SET credit=credit+$1 WHERE id=$2`, [apiCost, site.id]);
-      // 실패 주문 기록 (추적용)
-      const failId = 'O' + Date.now();
-      try {
-        await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-          [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, link, qtyNum, charge, 'failed']);
-        if (!adminCreditOnly)
-          await logBalance(req.siteId, user.id, user.name, charge,
-            (user.balance || 0) - charge, user.balance || 0,
-            `주문 실패 자동 환불 - ${svc.name}`, 'system');
-      } catch(e) {}
-      // 서비스가 공급사에 없으면 즉시 비활성화 (다른 고객 추가 피해 방지)
-      if (/not\s*found|invalid\s*service|존재|없/i.test(apiError) || apiError === '주문 접수 실패') {
-        await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(()=>{});
-      }
-      return res.json({ error: `주문에 실패하여 자동 환불되었습니다. (사유: ${apiError})\n다른 서비스를 이용해주세요.` });
-    }
-
+    const apiOrderId = placement.apiOrderId;
     const orderId = 'O' + Date.now();
     const orderCost = orderCostKrw;
     await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, 'processing', orderCost, apiCost]);
+      [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, linkNorm, qtyNum, charge, 'processing', orderCost, apiCost]);
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
     const custBal = Math.round(updR.rows[0]?.balance || 0);
     const creditLine = adminCreditOnly
       ? `\n💰 크레딧 차감: $${apiCost.toFixed(4)}`
       : `\n💰 ₩${Math.round(charge).toLocaleString()}\n💳 주문 후 잔액: ₩${custBal.toLocaleString()}`;
-    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}${adminCreditOnly ? ' (관리자)' : ''}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개${creditLine}\n🔗 ${link}`, site);
+    const altNote = usedSvc.id !== svc.id ? `\n↪️ 대체 연동: ${usedSvc.name}` : '';
+    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}${adminCreditOnly ? ' (관리자)' : ''}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개${creditLine}${altNote}\n🔗 ${linkNorm}`, site);
     
     // 💵 Peakerr 잔액 체크 (비동기, 주문 처리와 별도로)
     checkPeakerrBalance().catch(e => console.log('잔액 체크 실패:', e.message));
