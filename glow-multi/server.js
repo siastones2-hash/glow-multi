@@ -299,6 +299,9 @@ async function initDB() {
 
   await normalizeAbnormalCredits();
   await fixLegacyPartnerAdminOrders();
+  const mislabel = await repairMislabeledServiceNames().catch(() => ({ count: 0 }));
+  if (mislabel.count > 0) console.log(`✓ 잘못 분류된 상품명 ${mislabel.count}건 수정`);
+  await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
 
   // 파트너 관리자에게 잘못 승인된 잔액 충전 자동 회수
   try {
@@ -1291,13 +1294,8 @@ function detectServiceTypeKo(full) {
   if (/subscriber|subscription|\bsubs?\b/.test(n)) return '구독자';
   if (/follower|\bfollow\b/.test(n)) return '팔로워';
   if (/like/.test(n)) return '좋아요';
-  if (/view|views|\bplay\b|watch/.test(n)) return '조회수';
-  if (/share|retweet|repost/.test(n)) return '공유';
-  if (/save|bookmark/.test(n)) return '저장';
-  if (/impression|reach|exposure/.test(n)) return '노출';
-  if (/member|join/.test(n)) return '멤버';
-  if (/traffic|visit|visitor|website|direct/.test(n)) return '방문 트래픽';
-  if (/review|rating|star/.test(n)) return '리뷰';
+  if (/review|rating|\bstars?\b|\[\d+\s*star\]|google map|gmb\b|maps custom/.test(n)) return '리뷰';
+  if (/\bviews?\b|\bplay\b|\bwatch\b/.test(n)) return '조회수';
   if (/seo|search|organic|keyword/.test(n)) return '검색 유입';
   if (/profile visit|profile view/.test(n)) return '프로필 방문';
   if (/stream|listen|play count/.test(n)) return '재생';
@@ -1363,6 +1361,29 @@ function formatPeakerrServiceDescription(name, pl, fallback) {
   if (tags.includes('즉시')) desc += ' 주문 후 즉시 시작됩니다.';
   if (tags.includes('고속')) desc += ' 고속 처리로 빠른 성장이 가능합니다.';
   return desc.substring(0, 500);
+}
+
+/** 잘못 한글화된 상품명 수정 (Reviews→조회수 오인, 트래픽 탭 Google Maps 리뷰 등) */
+async function repairMislabeledServiceNames() {
+  const r = await query(`SELECT id, name, pl, description FROM services WHERE active=1`);
+  let count = 0;
+  for (const row of r.rows) {
+    const full = `${row.name} ${row.description || ''}`;
+    const src = (row.description && /[a-zA-Z]/.test(row.description)) ? row.description : row.name;
+    let newName = null, newPl = null;
+    if (/google map|gmb\b|maps custom|custom review|\[\d+\s*star\]/i.test(full)) {
+      newPl = 'other';
+      newName = formatPeakerrServiceName(src, 'other');
+    } else if (/웹 트래픽 조회수/.test(row.name) && /review|rating|\[\d+\s*star\]/i.test(full)) {
+      newPl = row.pl === 'traffic' ? 'other' : row.pl;
+      newName = formatPeakerrServiceName(src, newPl);
+    }
+    if (newName && (newName !== row.name || (newPl && newPl !== row.pl))) {
+      await query(`UPDATE services SET name=$1, pl=COALESCE($2, pl) WHERE id=$3`, [newName.substring(0, 120), newPl, row.id]);
+      count++;
+    }
+  }
+  return { count };
 }
 
 /** API 자동등록(pk_/api_) 영문 상품명 일괄 한글화 — GLOW·no9story 등 전 사이트 공통 DB */
@@ -1983,6 +2004,10 @@ async function pruneServiceCatalog(opts = {}) {
       mark(row.id, 'bad', row.name);
     }
     if (parseFloat(row.rate) <= 0) mark(row.id, 'bad', row.name);
+    // 트래픽 탭에 섞인 Google Maps 리뷰(건당 고가) — 웹 트래픽과 혼동 방지
+    if (row.pl === 'traffic' && /google map|gmb\b|maps custom|custom review|\[\d+\s*star\]/i.test(full)) {
+      mark(row.id, 'miscat', row.name);
+    }
   }
 
   const dupR = await query(`

@@ -3096,6 +3096,11 @@ function renderSfBar(){
   }).join('');
 }
 function setFlt(f,el){FLT=f;document.querySelectorAll('#sfBar .sf').forEach(function(b){b.classList.remove('on')});el.classList.add('on');renderSvcList()}
+function _svcListPrice(s){
+  var aco=window._adminCreditOnly;
+  var unit=aco?(s.baseCost!=null?s.baseCost:s.sell):s.sell;
+  return {amount:Math.round(unit*1000),label:aco?'크레딧/1K':'/ 1,000개'};
+}
 function renderSvcList(){
   var q=(ge('svcSearch')&&ge('svcSearch').value||'').toLowerCase();
   var svcs=SVCS.filter(function(s){
@@ -3116,8 +3121,8 @@ function renderSvcList(){
       +'<div style="font-size:11px;color:var(--tl)">최소 '+(s.min||0).toLocaleString()+' ~ 최대 '+(s.max||0).toLocaleString()+'개</div>'
       +'</div>'
       +'<div style="flex-shrink:0;text-align:right;padding-left:10px">'
-      +'<div class="gt" style="font-size:14px;font-weight:800;white-space:nowrap">'+gf(Math.round(s.sell*1000))+'</div>'
-      +'<div style="font-size:10px;color:var(--tl)">/ 1,000개</div>'
+      +'<div class="gt" style="font-size:14px;font-weight:800;white-space:nowrap">'+gf(_svcListPrice(s).amount)+'</div>'
+      +'<div style="font-size:10px;color:var(--tl)">'+_svcListPrice(s).label+'</div>'
       +'</div></div>';
   }).join('');
 }
@@ -3166,11 +3171,12 @@ function renderQCards(){
   var el=ge('qCards');if(!el)return;
   var svcs=SVCS.slice(0,4);
   el.innerHTML=svcs.map(function(s){
+    var p=_svcListPrice(s);
     return'<div class="card" style="cursor:pointer" onclick="goTab(\'order\');setTimeout(function(){selSvc(\''+s.id+'\')},50)">'
       +'<div style="font-size:22px;margin-bottom:8px">'+PLI[s.pl]+'</div>'
       +'<div style="font-size:13px;font-weight:700;margin-bottom:3px;color:var(--tx)">'+s.name+'</div>'
       +'<div style="font-size:11px;color:var(--tl);margin-bottom:8px;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+s.description+'</div>'
-      +'<div class="gt" style="font-size:13px;font-weight:800">'+gf(Math.round(s.sell*1000))+'/1K</div></div>';
+      +'<div class="gt" style="font-size:13px;font-weight:800">'+gf(p.amount)+(p.label.indexOf('크레딧')>=0?'/1K 크레딧':'/1K')+'</div></div>';
   }).join('');
 }
 
