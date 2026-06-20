@@ -1660,7 +1660,7 @@ async function autoRefundOrder(order, peakerrData) {
       newStatus = 'completed';
     } else if (status === 'canceled' || status === 'cancelled') {
       refundPercent = 100;
-      newStatus = 'refunded';
+      newStatus = 'cancelled';
     } else if (status === 'partial') {
       if (remains > 0 && order.qty > 0) {
         refundPercent = Math.round((remains / order.qty) * 100);
@@ -1683,7 +1683,7 @@ async function autoRefundOrder(order, peakerrData) {
     }
     
     // 환불 처리 (이미 환불된 주문 중복 방지)
-    if (refundPercent > 0 && !['refunded', 'partial_refunded'].includes(order.status)) {
+    if (refundPercent > 0 && !['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status)) {
       const fin = await restoreRefundFinancials(order, refundPercent, {
         reason: `자동 환불 (공급 ${status}) - 주문 ${order.id}`,
         adminId: 'system'
@@ -1712,6 +1712,52 @@ async function earnPoints(order) {
   } catch(e) { console.log('포인트 적립 실패:', e.message); }
 }
 
+// 🔄 Peakerr ↔ GLOW 주문 상태 동기화 (공통)
+async function syncOrdersWithPeakerr(orders, apiKey, opts = {}) {
+  if (!apiKey || !orders?.length) return { synced: 0, cancelled: 0, completed: 0, errors: 0 };
+  let synced = 0, cancelled = 0, completed = 0, errors = 0;
+  const delay = opts.delayMs ?? 80;
+  for (const order of orders) {
+    let o = order;
+    if (!o.api_order_id) {
+      const recovered = await reconcileOrderMissingApiId(o);
+      if (recovered) {
+        await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [recovered, o.id]);
+        o = (await query(`SELECT * FROM orders WHERE id=$1`, [o.id])).rows[0];
+      } else { errors++; continue; }
+    }
+    const result = await pullPeakerrOrderSnapshot(o, apiKey);
+    if (result) {
+      synced++;
+      if (result.status === 'completed') completed++;
+      if (result.refundPercent > 0 || result.status === 'cancelled' || result.status === 'canceled') cancelled++;
+    } else errors++;
+    if (delay) await new Promise(r => setTimeout(r, delay));
+  }
+  return { synced, cancelled, completed, errors };
+}
+
+async function syncActiveOrdersForUser(userId) {
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return null;
+  const r = await query(`
+    SELECT * FROM orders WHERE uid=$1
+    AND status IN ('pending','processing')
+    AND created > NOW() - INTERVAL '30 days'
+    ORDER BY created DESC LIMIT 15
+  `, [userId]);
+  return syncOrdersWithPeakerr(r.rows, apiKey);
+}
+
+async function syncActiveOrdersForSite(siteId) {
+  const apiKey = await getGlobalSetting('peakerr_api_key');
+  if (!apiKey) return null;
+  const r = siteId
+    ? await query(`SELECT * FROM orders WHERE site_id=$1 AND status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 40`, [siteId])
+    : await query(`SELECT * FROM orders WHERE status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 40`);
+  return syncOrdersWithPeakerr(r.rows, apiKey);
+}
+
 // 🔄 진행중인 모든 주문 상태 동기화
 async function syncAllOrderStatuses() {
   try {
@@ -1719,12 +1765,11 @@ async function syncAllOrderStatuses() {
     const apiKey = await getGlobalSetting('peakerr_api_key');
     if (!apiKey) return;
     
-    // 진행중 또는 pending 상태인 주문 조회 (Peakerr 주문 ID 있는 것만)
     const r = await query(`
       SELECT * FROM orders 
       WHERE api_order_id IS NOT NULL 
       AND api_order_id != ''
-      AND status NOT IN ('completed', 'refunded', 'partial_refunded', 'failed')
+      AND status IN ('pending','processing')
       AND created > NOW() - INTERVAL '30 days'
       ORDER BY created DESC
       LIMIT 100
@@ -1733,24 +1778,11 @@ async function syncAllOrderStatuses() {
     if (r.rows.length === 0) return;
     console.log(`🔄 주문 상태 동기화 시작: ${r.rows.length}건`);
     
-    let completed = 0, refunded = 0, errors = 0;
-    for (const order of r.rows) {
-      const peakerrData = await fetchPeakerrOrderStatus(apiKey, order.api_order_id);
-      if (!peakerrData || peakerrData.error) { errors++; continue; }
-      const result = await autoRefundOrder(order, peakerrData);
-      if (result) {
-        if (result.status === 'completed') completed++;
-        if (result.refundPercent > 0) refunded++;
-      }
-      // Rate limit 회피를 위한 약간의 delay
-      await new Promise(r => setTimeout(r, 100));
-    }
+    const { synced, cancelled, completed, errors } = await syncOrdersWithPeakerr(r.rows, apiKey, { delayMs: 100 });
+    console.log(`✅ 동기화 완료: 완료 ${completed}건, 취소·환불 ${cancelled}건, 오류 ${errors}건`);
     
-    console.log(`✅ 동기화 완료: 완료 ${completed}건, 환불 ${refunded}건, 오류 ${errors}건`);
-    
-    // 슈퍼관리자에게 요약 알림 (환불 발생 시에만)
-    if (refunded > 0) {
-      await sendTelegramToSuper(`🔄 <b>자동 환불 처리</b>\n\n완료: ${completed}건\n환불: ${refunded}건\n오류: ${errors}건`);
+    if (cancelled > 0) {
+      await sendTelegramToSuper(`🔄 <b>Peakerr → GLOW 자동 반영</b>\n\n완료: ${completed}건\n취소·환불: ${cancelled}건\n오류: ${errors}건`);
     }
   } catch(e) { console.log('주문 동기화 실패:', e.message); }
 }
@@ -3703,6 +3735,7 @@ async function placeOrderHandler(req, res, ctx) {
 
 app.get('/api/orders/my', requireAuth, async (req, res) => {
   try {
+    await syncActiveOrdersForUser(req.session.userId).catch(() => null);
     const r = await query(`SELECT * FROM orders WHERE uid=$1 ORDER BY created DESC`, [req.session.userId]);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -3898,6 +3931,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
 app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
+    await syncActiveOrdersForSite(siteId).catch(() => null);
     const r = siteId
       ? await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id WHERE o.site_id=$1 ORDER BY o.created DESC`, [siteId])
       : await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id ORDER BY o.created DESC`);
@@ -3905,32 +3939,12 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-/** 진행 중 주문 Peakerr 동기화 — 시작 카운트·진행률 갱신 */
+/** 진행 중 주문 Peakerr 동기화 — 시작 카운트·진행률 갱신 (수동 버튼용) */
 app.post('/api/admin/orders/sync-active', requireAdmin, async (req, res) => {
   try {
-    const apiKey = await getGlobalSetting('peakerr_api_key');
-    if (!apiKey) return res.json({ error: 'API 키 미설정' });
-    const isSuper = req.session.role === 'superadmin';
-    const r = isSuper
-      ? await query(`SELECT * FROM orders WHERE status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 50`)
-      : await query(`SELECT * FROM orders WHERE site_id=$1 AND status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 50`, [req.siteId]);
-    let synced = 0;
-    for (const order of r.rows) {
-      let o = order;
-      if (!o.api_order_id) {
-        const recovered = await reconcileOrderMissingApiId(o);
-        if (recovered) {
-          await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [recovered, o.id]);
-          o = (await query(`SELECT * FROM orders WHERE id=$1`, [o.id])).rows[0];
-        }
-      }
-      if (o.api_order_id) {
-        const ok = await pullPeakerrOrderSnapshot(o, apiKey);
-        if (ok) synced++;
-      }
-      await new Promise(r => setTimeout(r, 80));
-    }
-    res.json({ ok: true, synced, total: r.rows.length });
+    const siteId = req.session.role === 'superadmin' ? null : req.siteId;
+    const stats = await syncActiveOrdersForSite(siteId);
+    res.json({ ok: true, synced: stats?.synced || 0, total: (stats?.synced || 0) + (stats?.errors || 0) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5741,10 +5755,10 @@ app.listen(PORT, async () => {
     await checkPeakerrBalance().catch(() => {});
   }, 6 * 60 * 60 * 1000);
   
-  // 🔄 주문 상태 자동 동기화 (30분마다)
+  // 🔄 주문 상태 자동 동기화 (5분마다 — Peakerr 취소·완료 즉시 반영)
   setInterval(async () => {
     await syncAllOrderStatuses().catch(e => console.log('주문 동기화 스케줄러 오류:', e.message));
-  }, 30 * 60 * 1000);
+  }, 5 * 60 * 1000);
   
   // 💱 USD/KRW 환율 자동 갱신 (6시간마다 + 시작 시 1회)
   autoSyncGlobalExrate({ notify: false }).catch(e => console.log('환율 자동 갱신 오류:', e.message));
@@ -5775,7 +5789,7 @@ app.listen(PORT, async () => {
     }
   }, 60 * 60 * 1000);
   
-  // 서버 시작 후 5분 뒤 한 번 실행 (DB 준비 대기)
+  // 서버 시작 후 30초 뒤 자동 동기화 (DB 준비 대기)
   setTimeout(async () => {
     console.log('🔄 서버 시작 후 자동 동기화 실행');
     await syncAllOrderStatuses().catch(() => {});
@@ -5791,8 +5805,6 @@ app.listen(PORT, async () => {
     else console.log('🇻🇳 베트남 스캔:', vn.error);
     if (!niche.error && niche.count === 0) console.log('🛒 Peakerr 이커머스·보너스: 추가할 상품 없음');
     else if (niche.error) console.log('🛒 이커머스 스캔:', niche.error);
-  }, 5 * 60 * 1000);
-
-  // 📊 매일 23:50 KST — 사이트별 당일 매출·신규 가입 텔레그램 요약
+  }, 30 * 1000);
   startDailyReportScheduler(query, getGlobalSetting, setGlobalSetting, sendTelegramToSuper);
 });

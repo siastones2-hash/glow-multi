@@ -3491,10 +3491,7 @@ function _orderCountCell(o){
     h+='<div style="font-size:10px;color:var(--tl)">+'+delivered.toLocaleString()+' / '+qty.toLocaleString()+'</div>';
   return h;
 }
-async function loadAdmOrders(doSync){
-  if(doSync!==false){
-    await api('/api/admin/orders/sync-active','POST').catch(function(){});
-  }
+async function loadAdmOrders(){
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
@@ -3528,7 +3525,7 @@ async function syncAdmOrders(){
   var d=await api('/api/admin/orders/sync-active','POST');
   if(d&&d.error){toast(d.error,'err');return}
   toast((d.synced||0)+'건 동기화 완료','ok');
-  loadAdmOrders(false);
+  loadAdmOrders();
 }
 async function admCancelOrder(id){
   if(!confirm('Peakerr 주문을 취소하고 환불·크레딧을 복구할까요?'))return;
