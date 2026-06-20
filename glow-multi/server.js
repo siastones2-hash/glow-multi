@@ -1782,7 +1782,9 @@ async function scrapePlatformStartCount(order) {
       }
     }
     const bucket = detectServiceTypeKo(label);
-    if (pl === 'tiktok' && bucket === '조회수' && order.link) {
+    const isTikTokViews = (pl === 'tiktok' || order.pl === 'tiktok') &&
+      (bucket === '조회수' || /조회수|view/i.test(label));
+    if (isTikTokViews && order.link) {
       return await fetchTikTokPlayCount(order.link);
     }
   } catch (e) { console.log('플랫폼 시작 숫자 조회:', e.message); }
@@ -1790,15 +1792,12 @@ async function scrapePlatformStartCount(order) {
 }
 
 async function fetchTikTokPlayCount(url) {
+  const normalized = normalizeOrderLink(url, 'tiktok');
   try {
-    const normalized = normalizeOrderLink(url, 'tiktok');
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
     const apiResp = await fetch(
       `https://www.tikwm.com/api/?url=${encodeURIComponent(normalized)}`,
-      { signal: controller.signal, headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' } }
+      { timeout: 22000, headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' } }
     );
-    clearTimeout(timer);
     if (apiResp.ok) {
       const data = await apiResp.json();
       const n = parseInt(data?.data?.play_count ?? data?.data?.view_count ?? 0, 10);
@@ -1806,11 +1805,8 @@ async function fetchTikTokPlayCount(url) {
     }
   } catch (e) { console.log('TikTok tikwm:', e.message); }
   try {
-    const normalized = normalizeOrderLink(url, 'tiktok');
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 14000);
     const resp = await fetch(normalized, {
-      signal: controller.signal,
+      timeout: 18000,
       redirect: 'follow',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -1818,7 +1814,6 @@ async function fetchTikTokPlayCount(url) {
         'Accept': 'text/html,application/xhtml+xml'
       }
     });
-    clearTimeout(timer);
     if (!resp.ok) return null;
     const html = await resp.text();
     const patterns = [
@@ -1837,6 +1832,21 @@ async function fetchTikTokPlayCount(url) {
     }
   } catch (e) { console.log('TikTok HTML fetch:', e.message); }
   return null;
+}
+
+/** Peakerr/TikTok에서 시작 숫자 미수집 시 DB 직접 보정 */
+async function backfillOrderStartCount(order) {
+  if (!order?.id) return 0;
+  const prev = parseInt(order.starts_count || 0, 10);
+  if (prev > 0) return prev;
+  const scraped = await scrapePlatformStartCount(order);
+  if (scraped == null || scraped < 0) return 0;
+  await query(
+    `UPDATE orders SET starts_count=$1 WHERE id=$2 AND COALESCE(starts_count,0)=0`,
+    [scraped, order.id]
+  );
+  console.log(`✓ 시작 숫자 보정: ${order.id} → ${scraped}`);
+  return scraped;
 }
 
 async function enrichPeakerrStartCount(order, peakerrData) {
@@ -2100,12 +2110,17 @@ async function syncOrdersWithPeakerr(orders, apiKey, opts = {}) {
         o = (await query(`SELECT * FROM orders WHERE id=$1`, [o.id])).rows[0];
       } else { errors++; continue; }
     }
-    const result = await pullPeakerrOrderSnapshot(o, apiKey);
+    const result = await pullPeakerrOrderSnapshot(o, apiKey, { startPollTries: 3 });
     if (result) {
       synced++;
       if (result.status === 'completed') completed++;
       if (result.refundPercent > 0 || result.status === 'cancelled' || result.status === 'canceled') cancelled++;
     } else errors++;
+    const freshR = await query(`SELECT * FROM orders WHERE id=$1`, [o.id]);
+    const fresh = freshR.rows[0];
+    if (fresh && parseInt(fresh.starts_count || 0, 10) <= 0) {
+      await backfillOrderStartCount(fresh);
+    }
     if (delay) await new Promise(r => setTimeout(r, delay));
   }
   return { synced, cancelled, completed, errors };
@@ -4146,10 +4161,13 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
     const apiKey = await getPeakerrApiKey();
     if (!apiKey) return res.json({ error: 'API 키 미설정' });
     
-    const result = await pullPeakerrOrderSnapshot(order, apiKey, { startPollTries: 5 });
-    if (!result) return res.json({ error: '상태 조회 실패' });
-    
-    const updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
+    await pullPeakerrOrderSnapshot(order, apiKey, { startPollTries: 5 });
+    let updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
+    let updated = updR.rows[0];
+    if (updated && parseInt(updated.starts_count || 0, 10) <= 0) {
+      await backfillOrderStartCount(updated);
+      updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
+    }
     res.json({ ok: true, order: updR.rows[0], status: updR.rows[0]?.status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
