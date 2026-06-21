@@ -1557,6 +1557,11 @@ tr:last-child td{border-bottom:none}
                 <button type="button" class="aUserChip" data-role="admin" onclick="setAdmUserRoleFilter('admin')">관리자</button>
                 <button type="button" class="aUserChip" data-role="user" onclick="setAdmUserRoleFilter('user')">일반 회원</button>
               </div>
+              <div id="aUserSortChips" style="display:none;flex-wrap:wrap;gap:6px">
+                <button type="button" class="aUserChip on" data-sort="name" onclick="setAdmUserSort('name')">이름순</button>
+                <button type="button" class="aUserChip" data-sort="joined" onclick="setAdmUserSort('joined')">가입일순</button>
+                <button type="button" class="aUserChip" data-sort="balance" onclick="setAdmUserSort('balance')">잔액순</button>
+              </div>
               <span id="aUserCount" style="font-size:12px;color:var(--tl);margin-left:auto;white-space:nowrap"></span>
             </div>
           </div>
@@ -4644,17 +4649,33 @@ function setAdmUserRoleFilter(role){
   });
   renderAdmUsersFilter();
 }
+function setAdmUserSort(sort){
+  window._admUserSort=sort||'name';
+  document.querySelectorAll('#aUserSortChips .aUserChip').forEach(function(el){
+    el.classList.toggle('on',el.getAttribute('data-sort')===(sort||'name'));
+  });
+  renderAdmUsersFilter();
+}
 function _userRoleLabel(role){
   if(role==='admin'||role==='partner')return '관리자';
   return '';
 }
-function _sortAdmUsers(list){
-  var roleOrder={admin:0,partner:0,user:1};
-  list.sort(function(a,b){
-    var ra=(roleOrder[a.role]??9)-(roleOrder[b.role]??9);
-    if(ra!==0)return ra;
-    return (b.joined||'').localeCompare(a.joined||'');
-  });
+function _sortAdmUsers(list,membersOnly){
+  if(membersOnly){
+    var sortBy=window._admUserSort||'name';
+    list.sort(function(a,b){
+      if(sortBy==='balance')return (b.balance||0)-(a.balance||0);
+      if(sortBy==='joined')return (b.joined||'').localeCompare(a.joined||'');
+      return (a.name||'').localeCompare(b.name||'','ko');
+    });
+  }else{
+    var roleOrder={admin:0,partner:0,user:1};
+    list.sort(function(a,b){
+      var ra=(roleOrder[a.role]??9)-(roleOrder[b.role]??9);
+      if(ra!==0)return ra;
+      return (b.joined||'').localeCompare(a.joined||'');
+    });
+  }
   return list;
 }
 function _countByRole(users){
@@ -4671,12 +4692,12 @@ function _roleSummary(c){
   if(c.user)p.push('회원 '+c.user);
   return p.join(' · ')||'0명';
 }
-function _appendAdmUserRow(tbody,u){
+function _appendAdmUserRow(tbody,u,membersOnly){
   var isBanned=u.status==='banned';
   var isStaff=['admin','partner'].includes(u.role);
   var tr=document.createElement('tr');
   if(isBanned)tr.style.opacity='0.5';
-  var roleLbl=_userRoleLabel(u.role);
+  var roleLbl=membersOnly?'':_userRoleLabel(u.role);
   var roleBadge=roleLbl?(' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+roleLbl+'</span>'):'';
   var marginHint='';
   if(isPartnerSiteAdmin()&&!isStaff&&u.margin!=null&&u.margin>=0){
@@ -4717,7 +4738,7 @@ function _appendAdmUserRow(tbody,u){
   }
   tbody.appendChild(tr);
 }
-function _makeAdmUserTable(users){
+function _makeAdmUserTable(users,membersOnly){
   var wrap=document.createElement('div');
   wrap.className='tw';
   wrap.style.borderTop='none';
@@ -4725,10 +4746,22 @@ function _makeAdmUserTable(users){
   var table=document.createElement('table');
   table.innerHTML='<thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead>';
   var tbody=document.createElement('tbody');
-  _sortAdmUsers(users).forEach(function(u){_appendAdmUserRow(tbody,u)});
+  _sortAdmUsers(users,membersOnly).forEach(function(u){_appendAdmUserRow(tbody,u,membersOnly)});
   table.appendChild(tbody);
   wrap.appendChild(table);
   return wrap;
+}
+function _renderAdmUserMemberList(users){
+  var block=document.createElement('div');
+  block.className='aUserGroup';
+  var siteLabel=(users[0]&&users[0].site_name)||(SITE_CONFIG&&SITE_CONFIG.name)||'내 사이트';
+  var head=document.createElement('div');
+  head.className='aUserGroupHead';
+  head.innerHTML='<div style="font-size:15px;font-weight:800;color:#1A1030">'+siteLabel+' 회원</div>'
+    +'<div style="font-size:12px;color:var(--p2);margin-top:6px;font-weight:600">회원 '+users.length+'명</div>';
+  block.appendChild(head);
+  block.appendChild(_makeAdmUserTable(users,true));
+  return block;
 }
 function _renderAdmUserSiteBlock(siteId,meta,users){
   var block=document.createElement('div');
@@ -4767,18 +4800,28 @@ function _renderAdmUserRoleSections(users,sections){
 function renderAdmUsersFilter(){
   var d=window._allAdmUsers||[];
   var isSuper=CUR&&CUR.role==='superadmin';
+  var partnerAdm=isPartnerSiteAdmin();
+  var roleChips=ge('aUserRoleChips');
+  var sortChips=ge('aUserSortChips');
+  if(roleChips)roleChips.style.display=partnerAdm?'none':'flex';
+  if(sortChips)sortChips.style.display=partnerAdm?'flex':'none';
+  if(partnerAdm&&window._admUserSort===undefined)window._admUserSort='name';
   var root=ge('aUserGrouped');
   if(!root)return;
-  var roleF=window._admUserRoleFilter||'';
+  var roleF=partnerAdm?'':(window._admUserRoleFilter||'');
   var q=((ge('aUserSearch')&&ge('aUserSearch').value)||'').trim().toLowerCase();
   var list=d.filter(function(u){
-    if(roleF==='admin'&&u.role!=='admin'&&u.role!=='partner')return false;
-    if(roleF==='user'&&u.role!=='user')return false;
+    if(partnerAdm){
+      if(u.role!=='user')return false;
+    }else{
+      if(roleF==='admin'&&u.role!=='admin'&&u.role!=='partner')return false;
+      if(roleF==='user'&&u.role!=='user')return false;
+    }
     if(q&&(u.name||'').toLowerCase().indexOf(q)<0&&(u.email||'').toLowerCase().indexOf(q)<0)return false;
     return true;
   });
   var cnt=ge('aUserCount');
-  if(cnt)cnt.textContent='표시 '+list.length+'명 · 전체 '+d.length+'명';
+  if(cnt)cnt.textContent=partnerAdm?('회원 '+list.length+'명'):('표시 '+list.length+'명 · 전체 '+d.length+'명');
   var overview=ge('aUserSiteOverview');
   root.innerHTML='';
   if(!list.length){
@@ -4807,6 +4850,9 @@ function renderAdmUsersFilter(){
       var s=sites[id];
       root.appendChild(_renderAdmUserSiteBlock(id,{name:s.name,domain:s.domain},s.users));
     });
+  }else if(partnerAdm){
+    if(overview){overview.style.display='none';overview.innerHTML='';}
+    root.appendChild(_renderAdmUserMemberList(list));
   }else{
     if(overview){overview.style.display='none';overview.innerHTML='';}
     root.appendChild(_renderAdmUserRoleSections(list,[
