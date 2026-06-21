@@ -3657,6 +3657,19 @@ async function openUserDetail(uid){
   var d=await api('/api/admin/users/'+uid+'/detail');
   if(d.error){toast(d.error,'err');return}
   var u=d.user,orders=d.orders||[];
+  var siteDefaultMargin=d.siteDefaultMargin!=null?d.siteDefaultMargin:(SITE_CONFIG&&SITE_CONFIG.margin!=null?SITE_CONFIG.margin:0);
+  var userMarginLabel=(u.margin!=null&&u.margin>=0)?(u.margin+'%'):('기본 '+siteDefaultMargin+'%');
+  var marginBlock='';
+  if(isPartnerSiteAdmin()&&u.role==='user'){
+    marginBlock='<div class="card" style="margin-bottom:12px">'
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">💰 회원 마진율 (%)</div>'
+      +'<div style="font-size:11px;color:var(--tl);margin-bottom:8px;line-height:1.5">비우면 사이트 기본 마진('+siteDefaultMargin+'%) 적용 · 현재: <strong>'+userMarginLabel+'</strong></div>'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<input type="number" id="userMarginInput" min="0" max="500" step="1" placeholder="사이트 기본 사용" style="flex:1;min-width:120px" value="'+(u.margin!=null&&u.margin>=0?u.margin:'')+'"/>'
+      +'<button class="bp bsm" style="white-space:nowrap;padding:10px 14px" onclick="saveUserMargin(\''+u.id+'\')">저장</button>'
+      +'<button class="bo bsm" onclick="clearUserMargin(\''+u.id+'\')">기본값</button>'
+      +'</div></div>';
+  }
   var html='<div style="padding:20px">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
     +'<div style="font-size:16px;font-weight:800">👤 '+u.name+'</div>'
@@ -3670,6 +3683,7 @@ async function openUserDetail(uid){
     +'<div><span style="color:var(--tl);font-size:11px">상태</span><br><strong style="color:'+(u.status==='banned'?'#EF4444':'#10B981')+'">'+(u.status==='banned'?'정지':'정상')+'</strong></div>'
     +'<div><span style="color:var(--tl);font-size:11px">총 주문</span><br><strong>'+orders.length+'건</strong></div>'
     +'</div></div>'
+    +marginBlock
     +'<div class="card" style="margin-bottom:12px">'
     +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">비밀번호 초기화</div>'
     +'<div style="display:flex;gap:8px"><input type="text" id="newPwInput" placeholder="새 비밀번호 (6자 이상)" style="flex:1"/>'
@@ -3705,6 +3719,19 @@ async function changeRole(uid,role){
   var d=await api('/api/admin/users/role','POST',{uid:uid,role:role});
   if(d.error){toast(d.error,'err');return}
   toast('등급 변경 완료','ok');closeM('mDetail');loadAdmUsers();
+}
+async function saveUserMargin(uid){
+  var raw=ge('userMarginInput')?.value;
+  var margin=(raw===''||raw==null)?null:parseFloat(raw);
+  if(margin!=null&&(isNaN(margin)||margin<0||margin>500)){toast('마진율 0~500% 로 입력하세요','err');return}
+  var d=await api('/api/admin/users/margin','POST',{uid:uid,margin:margin});
+  if(d.error){toast(d.error,'err');return}
+  toast(margin==null?'사이트 기본 마진으로 복원 ✨':'회원 마진 '+margin+'% 저장 ✨','ok');
+  closeM('mDetail');loadAdmUsers();
+}
+async function clearUserMargin(uid){
+  if(ge('userMarginInput'))ge('userMarginInput').value='';
+  await saveUserMargin(uid);
 }
 
 // 설정 저장
@@ -4651,8 +4678,12 @@ function _appendAdmUserRow(tbody,u){
   if(isBanned)tr.style.opacity='0.5';
   var roleLbl=_userRoleLabel(u.role);
   var roleBadge=roleLbl?(' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+roleLbl+'</span>'):'';
+  var marginHint='';
+  if(isPartnerSiteAdmin()&&!isStaff&&u.margin!=null&&u.margin>=0){
+    marginHint=' <span class="bdg" style="background:#ecfdf5;color:#059669;font-size:10px">마진 '+u.margin+'%</span>';
+  }
   var statusBadge='<span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span>';
-  tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+'</td>'
+  tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+marginHint+'</td>'
     +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
     +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
     +'<td>'+statusBadge+'</td>'

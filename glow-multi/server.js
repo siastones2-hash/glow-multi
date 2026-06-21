@@ -179,6 +179,7 @@ async function initDB() {
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by TEXT DEFAULT NULL`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''`).catch(()=>{});
+  try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS margin REAL DEFAULT NULL`); } catch(e) {}
 
   await query(`
     CREATE TABLE IF NOT EXISTS charges (
@@ -968,15 +969,21 @@ function neutralAdminMsg(msg, isSuperAdmin) {
   return t || '처리할 수 없습니다';
 }
 
-/** 사이트별 마진·환율 (주문/환불 공통) */
-async function getSiteMargins(site) {
+/** 회원 개별 마진 → 없으면 사이트 기본 마진 */
+function resolveSiteMargin(site, user) {
+  if (user && user.margin != null && user.margin >= 0) return user.margin;
+  return site ? (site.margin != null ? site.margin : 0) : 0;
+}
+
+/** 사이트별 마진·환율 (주문/환불 공통). user 있으면 회원 개별 마진 우선 */
+async function getSiteMargins(site, user = null) {
   const globalExrateStr = await getGlobalSetting('global_exrate');
   const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrateStr || '1500');
   let superMg;
   if (site && site.super_margin >= 0) superMg = site.super_margin;
   else superMg = parseFloat((await getGlobalSetting('super_margin')) || '50');
   const globalSiteMg = parseFloat((await getGlobalSetting('global_site_margin')) || '50');
-  const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
+  const siteMg = resolveSiteMargin(site, user);
   return { ex, superMg, globalSiteMg, siteMg };
 }
 
@@ -4131,7 +4138,14 @@ app.post('/api/referral/apply', requireAuth, async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const site = req.site;
-    const siteMg = site ? (site.margin != null ? site.margin : 0) : 0;
+    let priceUser = null;
+    const svcToken = getToken(req);
+    const svcPayload = svcToken ? verifyToken(svcToken) : null;
+    if (svcPayload?.userId) {
+      const uR = await query(`SELECT margin, role FROM users WHERE id=$1`, [svcPayload.userId]);
+      priceUser = uR.rows[0] || null;
+    }
+    const siteMg = resolveSiteMargin(site, priceUser);
     // 환율: 사이트별 → 글로벌 순으로 적용
     const globalExrate = await getGlobalSetting('global_exrate');
     const ex = (site && site.exrate > 0) ? site.exrate : parseFloat(globalExrate || '1500');
@@ -4272,12 +4286,12 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     }
 
     const site = req.site;
-    const margins = await getSiteMargins(site);
+    const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
+    const user = userR.rows[0];
+    const margins = await getSiteMargins(site, user);
     const isDefaultSite2 = !site || site.id === 'default';
     let { charge: calcCharge, apiCost, orderCostKrw } = computeOrderAmounts(svc, qtyNum, site, margins);
     let charge = calcCharge;
-    const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
-    const user = userR.rows[0];
     const adminCreditOnly = !isDefaultSite2 && user && ['admin', 'partner'].includes(user.role);
     if (adminCreditOnly) charge = 0;
 
@@ -4901,15 +4915,61 @@ app.post('/api/admin/users/role', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/admin/users/margin', requireAdmin, async (req, res) => {
+  try {
+    if (req.session.role === 'superadmin') {
+      return res.json({ error: '회원별 마진은 파트너 사이트 관리자 전용입니다' });
+    }
+    if (req.siteId === 'default') {
+      return res.json({ error: '본사 사이트는 사이트 마진 설정을 사용하세요' });
+    }
+    const { uid, margin } = req.body;
+    if (!uid) return res.json({ error: '회원을 지정해주세요' });
+
+    const userR = await query(`SELECT * FROM users WHERE id=$1`, [uid]);
+    const user = userR.rows[0];
+    if (!user) return res.json({ error: '회원을 찾을 수 없습니다' });
+    if (user.site_id !== req.siteId) return res.json({ error: '다른 사이트 회원은 수정할 수 없습니다' });
+    if (user.role !== 'user') return res.json({ error: '일반 회원만 개별 마진을 설정할 수 있습니다' });
+
+    let marginVal = null;
+    if (margin !== null && margin !== undefined && String(margin).trim() !== '') {
+      marginVal = parseFloat(margin);
+      if (isNaN(marginVal) || marginVal < 0 || marginVal > 500) {
+        return res.json({ error: '마진율은 0~500% 사이여야 합니다' });
+      }
+    }
+
+    await query(`UPDATE users SET margin=$1 WHERE id=$2`, [marginVal, uid]);
+    const siteR = await query(`SELECT margin FROM sites WHERE id=$1`, [req.siteId]);
+    const siteDefaultMargin = siteR.rows[0]?.margin ?? 0;
+    await logActivity(
+      req.siteId, req.session.userId, '',
+      '회원 마진 변경', 'user', uid,
+      marginVal == null ? `사이트 기본(${siteDefaultMargin}%)으로 복원` : `${marginVal}%`
+    );
+    res.json({ ok: true, margin: marginVal, siteDefaultMargin });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/users/:uid/detail', requireAdmin, async (req, res) => {
   try {
-    const userR = await query(`SELECT id,name,email,phone,role,balance,status,joined FROM users WHERE id=$1`, [req.params.uid]);
+    const userR = await query(`SELECT id,name,email,phone,role,balance,status,joined,margin,site_id FROM users WHERE id=$1`, [req.params.uid]);
     if (!userR.rows[0]) return res.json({ error: '회원을 찾을 수 없습니다' });
+    const user = userR.rows[0];
+    const siteR = await query(`SELECT margin FROM sites WHERE id=$1`, [user.site_id]);
+    const siteDefaultMargin = siteR.rows[0]?.margin ?? 0;
     const orders = await query(`SELECT * FROM orders WHERE uid=$1 ORDER BY created DESC`, [req.params.uid]);
     const charges = await query(`SELECT * FROM charges WHERE uid=$1 ORDER BY created DESC`, [req.params.uid]);
     // 💰 잔액 변동 로그 포함
     const balanceLogs = await query(`SELECT * FROM balance_logs WHERE user_id=$1 ORDER BY created DESC LIMIT 50`, [req.params.uid]);
-    res.json({ user: userR.rows[0], orders: orders.rows, charges: charges.rows, balanceLogs: balanceLogs.rows });
+    res.json({
+      user,
+      siteDefaultMargin,
+      orders: orders.rows,
+      charges: charges.rows,
+      balanceLogs: balanceLogs.rows
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
