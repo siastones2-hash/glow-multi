@@ -3667,8 +3667,8 @@ async function openUserDetail(uid){
   var marginBlock='';
   if(isPartnerSiteAdmin()&&u.role==='user'){
     marginBlock='<div class="card" style="margin-bottom:12px">'
-      +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">💰 회원 마진율 (%)</div>'
-      +'<div style="font-size:11px;color:var(--tl);margin-bottom:8px;line-height:1.5">비우면 사이트 기본 마진('+siteDefaultMargin+'%) 적용 · 현재: <strong>'+userMarginLabel+'</strong></div>'
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">💰 회원 수익률 (%)</div>'
+      +'<div style="font-size:11px;color:var(--tl);margin-bottom:8px;line-height:1.5">비우면 사이트 기본 수익률('+siteDefaultMargin+'%) 적용 · 현재: <strong>'+userMarginLabel+'</strong></div>'
       +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
       +'<input type="number" id="userMarginInput" min="0" max="500" step="1" placeholder="사이트 기본 사용" style="flex:1;min-width:120px" value="'+(u.margin!=null&&u.margin>=0?u.margin:'')+'"/>'
       +'<button class="bp bsm" style="white-space:nowrap;padding:10px 14px" onclick="saveUserMargin(\''+u.id+'\')">저장</button>'
@@ -3728,11 +3728,21 @@ async function changeRole(uid,role){
 async function saveUserMargin(uid){
   var raw=ge('userMarginInput')?.value;
   var margin=(raw===''||raw==null)?null:parseFloat(raw);
-  if(margin!=null&&(isNaN(margin)||margin<0||margin>500)){toast('마진율 0~500% 로 입력하세요','err');return}
+  if(margin!=null&&(isNaN(margin)||margin<0||margin>500)){toast('수익률 0~500% 로 입력하세요','err');return}
   var d=await api('/api/admin/users/margin','POST',{uid:uid,margin:margin});
   if(d.error){toast(d.error,'err');return}
-  toast(margin==null?'사이트 기본 마진으로 복원 ✨':'회원 마진 '+margin+'% 저장 ✨','ok');
+  toast(margin==null?'사이트 기본 수익률로 복원 ✨':'회원 수익률 '+margin+'% 저장 ✨','ok');
   closeM('mDetail');loadAdmUsers();
+}
+async function saveUserMarginInline(uid,useDefault){
+  var inp=document.getElementById('umg_'+uid);
+  var raw=useDefault?'':(inp?inp.value:'');
+  var margin=(raw===''||raw==null)?null:parseFloat(raw);
+  if(margin!=null&&(isNaN(margin)||margin<0||margin>500)){toast('수익률 0~500% 로 입력하세요','err');return}
+  var d=await api('/api/admin/users/margin','POST',{uid:uid,margin:margin});
+  if(d.error){toast(d.error,'err');return}
+  toast(margin==null?'사이트 기본 수익률로 복원 ✨':'회원 수익률 '+margin+'% 저장 ✨','ok');
+  loadAdmUsers();
 }
 async function clearUserMargin(uid){
   if(ge('userMarginInput'))ge('userMarginInput').value='';
@@ -4692,6 +4702,9 @@ function _roleSummary(c){
   if(c.user)p.push('회원 '+c.user);
   return p.join(' · ')||'0명';
 }
+function _siteDefaultMargin(){
+  return (SITE_CONFIG&&SITE_CONFIG.margin!=null)?SITE_CONFIG.margin:0;
+}
 function _appendAdmUserRow(tbody,u,membersOnly){
   var isBanned=u.status==='banned';
   var isStaff=['admin','partner'].includes(u.role);
@@ -4700,16 +4713,46 @@ function _appendAdmUserRow(tbody,u,membersOnly){
   var roleLbl=membersOnly?'':_userRoleLabel(u.role);
   var roleBadge=roleLbl?(' <span class="bdg" style="background:rgba(114,9,183,.1);color:#B5179E;font-size:10px">'+roleLbl+'</span>'):'';
   var marginHint='';
-  if(isPartnerSiteAdmin()&&!isStaff&&u.margin!=null&&u.margin>=0){
-    marginHint=' <span class="bdg" style="background:#ecfdf5;color:#059669;font-size:10px">마진 '+u.margin+'%</span>';
+  if(!membersOnly&&isPartnerSiteAdmin()&&!isStaff&&u.margin!=null&&u.margin>=0){
+    marginHint=' <span class="bdg" style="background:#ecfdf5;color:#059669;font-size:10px">수익 '+u.margin+'%</span>';
   }
   var statusBadge='<span class="bdg" style="'+(isBanned?'background:#FEE2E2;color:#EF4444':'background:#D1FAE5;color:#10B981')+'">'+(isBanned?'정지':'정상')+'</span>';
-  tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+marginHint+'</td>'
-    +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
-    +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
-    +'<td>'+statusBadge+'</td>'
-    +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
-    +'<td><div class="ubtn_wrap" style="display:flex;gap:4px;flex-wrap:wrap"></div></td>';
+  if(membersOnly){
+    tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+'</td>'
+      +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
+      +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
+      +'<td class="umg-cell"></td>'
+      +'<td>'+statusBadge+'</td>'
+      +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
+      +'<td><div class="ubtn_wrap" style="display:flex;gap:4px;flex-wrap:wrap"></div></td>';
+    var siteMg=_siteDefaultMargin();
+    var mcell=tr.querySelector('.umg-cell');
+    var mwrap=document.createElement('div');
+    mwrap.style.cssText='display:flex;gap:4px;align-items:center;flex-wrap:wrap';
+    var minp=document.createElement('input');
+    minp.type='number';minp.min='0';minp.max='500';minp.step='1';
+    minp.id='umg_'+u.id;
+    minp.placeholder='기본 '+siteMg+'%';
+    minp.title='비우고 저장하면 사이트 기본 '+siteMg+'% 적용';
+    minp.style.cssText='width:76px;padding:6px 8px;font-size:12px;border-radius:8px;border:1px solid var(--bd)';
+    if(u.margin!=null&&u.margin>=0)minp.value=String(u.margin);
+    var msBtn=document.createElement('button');
+    msBtn.className='btn bok bxs';msBtn.textContent='저장';
+    msBtn.onclick=(function(id){return function(){saveUserMarginInline(id,false)}})(u.id);
+    var mdBtn=document.createElement('button');
+    mdBtn.className='btn bxs';mdBtn.textContent='기본';
+    mdBtn.title='사이트 기본 수익률('+siteMg+'%)로 복원';
+    mdBtn.onclick=(function(id){return function(){saveUserMarginInline(id,true)}})(u.id);
+    mwrap.appendChild(minp);mwrap.appendChild(msBtn);mwrap.appendChild(mdBtn);
+    mcell.appendChild(mwrap);
+  }else{
+    tr.innerHTML='<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+u.name+roleBadge+marginHint+'</td>'
+      +'<td style="font-size:12px;color:#5A4A7A">'+u.email+'</td>'
+      +'<td style="font-weight:700;color:#B5179E">'+gf(u.balance||0)+'</td>'
+      +'<td>'+statusBadge+'</td>'
+      +'<td style="font-size:11px;color:#9A8AB0">'+(u.joined?u.joined.slice(0,10):'-')+'</td>'
+      +'<td><div class="ubtn_wrap" style="display:flex;gap:4px;flex-wrap:wrap"></div></td>';
+  }
   var btnDiv=tr.querySelector('.ubtn_wrap');
   var balBtn=document.createElement('button');
   balBtn.className='btn binf bxs';
@@ -4744,7 +4787,9 @@ function _makeAdmUserTable(users,membersOnly){
   wrap.style.borderTop='none';
   wrap.style.borderRadius='0';
   var table=document.createElement('table');
-  table.innerHTML='<thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead>';
+  table.innerHTML=membersOnly
+    ?'<thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>수익률 (%)</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead>'
+    :'<thead><tr><th>닉네임</th><th>이메일</th><th>잔액</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead>';
   var tbody=document.createElement('tbody');
   _sortAdmUsers(users,membersOnly).forEach(function(u){_appendAdmUserRow(tbody,u,membersOnly)});
   table.appendChild(tbody);
@@ -4755,10 +4800,12 @@ function _renderAdmUserMemberList(users){
   var block=document.createElement('div');
   block.className='aUserGroup';
   var siteLabel=(users[0]&&users[0].site_name)||(SITE_CONFIG&&SITE_CONFIG.name)||'내 사이트';
+  var siteMg=_siteDefaultMargin();
   var head=document.createElement('div');
   head.className='aUserGroupHead';
   head.innerHTML='<div style="font-size:15px;font-weight:800;color:#1A1030">'+siteLabel+' 회원</div>'
-    +'<div style="font-size:12px;color:var(--p2);margin-top:6px;font-weight:600">회원 '+users.length+'명</div>';
+    +'<div style="font-size:12px;color:var(--p2);margin-top:6px;font-weight:600">회원 '+users.length+'명 · 사이트 기본 수익률 '+siteMg+'%</div>'
+    +'<div style="font-size:11px;color:var(--tl);margin-top:4px;line-height:1.5">회원마다 수익률(%)을 다르게 줄 수 있습니다. 비우고 저장하면 사이트 기본('+siteMg+'%)이 적용됩니다.</div>';
   block.appendChild(head);
   block.appendChild(_makeAdmUserTable(users,true));
   return block;
