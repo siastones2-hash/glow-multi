@@ -180,6 +180,11 @@ async function initDB() {
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''`).catch(()=>{});
   try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS margin REAL DEFAULT NULL`); } catch(e) {}
+  try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS refill_guaranteed INTEGER DEFAULT 0`); } catch(e) {}
+  try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS target_count INTEGER DEFAULT 0`); } catch(e) {}
+  try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_count INTEGER DEFAULT 0`); } catch(e) {}
+  try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_last_at TIMESTAMP`); } catch(e) {}
+  try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP`); } catch(e) {}
 
   await query(`
     CREATE TABLE IF NOT EXISTS charges (
@@ -433,7 +438,7 @@ async function initDB() {
       {id:'ptt10',name:'TikTok 공유 — 프리미엄 글로벌',pl:'tiktok',rate:1.13,min:1,max:5000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 공유 서비스입니다. 공유는 틱톡에서 가장 강력한 바이럴 신호입니다. 공유가 많은 영상은 외부 트래픽을 유입시키고 알고리즘이 바이럴 콘텐츠로 판단해 대규모 배포합니다.',api_id:'30998'},
       {id:'ptt11',name:'TikTok 스토리 조회수 — 프리미엄 글로벌',pl:'tiktok',rate:0.18,min:10,max:10000000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 스토리 조회수 서비스입니다. 틱톡 스토리 조회수를 늘려 계정 활성도를 높입니다. 활발한 스토리 활동은 알고리즘이 활성 크리에이터로 인식하게 만들어 콘텐츠 노출 범위를 확대합니다.',api_id:'25820'},
       {id:'ptt12',name:'TikTok 조회수 — 브라질 타겟 (드롭 보상)',pl:'tiktok',rate:0.08,min:1,max:1000000,description:'브라질 기반 고품질 TikTok 조회수 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 틱톡에서 바이럴을 만드는 가장 빠른 방법입니다. 초기 조회수가 빠르게 쌓이면 알고리즘이 영상을 더 넓은 포유 탭에 배포하며, 이 바이럴 루프에 진입하면 수백만 조회수까지 자연 성장이 가능합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31183'},
-      {id:'ptt13',name:'TikTok 조회수 — 프리미엄 글로벌 (드롭 보상)',pl:'tiktok',rate:0.44,min:10,max:1000000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 조회수 서비스입니다. 틱톡에서 바이럴을 만드는 가장 빠른 방법입니다. 초기 조회수가 빠르게 쌓이면 알고리즘이 영상을 더 넓은 포유 탭에 배포하며, 이 바이럴 루프에 진입하면 수백만 조회수까지 자연 성장이 가능합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'20976'},
+      {id:'ptt13',name:'TikTok 조회수 — 프리미엄 글로벌 (중단)',pl:'tiktok',rate:0.44,min:10,max:1000000,description:'[판매 중단] 공급사 취소·실패 빈번 — TikTok 조회수 브라질 타겟(ptt12) 사용 권장. 영상(/video/) 링크만 가능.',api_id:'20976',active:0},
       {id:'ptt14',name:'TikTok 공유 — 무제한 (평생 보장)',pl:'tiktok',rate:0.0182,min:100,max:1000000,description:'틱톡 게시물 공유를 무제한으로 유입시키는 평생 보장 프리미엄 서비스입니다. 공유는 틱톡 알고리즘이 "진짜 가치 있는 콘텐츠"로 판단하는 가장 강력한 신호로, 포유(For You) 탭 바이럴 확률을 급격히 높입니다. 평생 보장 리필로 장기 가치가 영구 유지됩니다.',api_id:'29453'},
       {id:'ptt15',name:'TikTok 맞춤 댓글 — 리얼 HQ 계정',pl:'tiktok',rate:2.03,min:10,max:500,description:'원하는 문구로 틱톡 댓글을 작성해주는 맞춤형 프리미엄 서비스입니다. 실제 HQ 계정이 자연스러운 댓글을 남기며, 초기 댓글 군집은 영상의 "인기 콘텐츠" 신호로 작용해 탐색 탭 노출 우선순위를 극대화합니다. 브랜드 캠페인이나 이벤트 영상의 초기 반응 유도에 가장 효과적입니다.',api_id:'27194'},
       {id:'ptt2',name:'TikTok 팔로워 — 아랍 타겟 (드롭 보상)',pl:'tiktok',rate:1.82,min:10,max:1000000,description:'아랍 기반 고품질 TikTok 팔로워 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 틱톡 팔로워는 포유(For You) 탭 배포의 기본 신뢰도 지표로, 팔로워가 많을수록 알고리즘이 새 영상을 더 넓은 범위에 먼저 배포합니다. 실계정 기반으로 계정 안전성을 유지하며 인플루언서 레벨로 성장할 기반을 만들어드립니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'26191'},
@@ -481,8 +486,13 @@ async function initDB() {
     ];
 
     for (const s of svcs) {
-      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id, active=1`,
-        [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description||'', s.api_id||null, 1]);
+      const active = s.active != null ? s.active : 1;
+      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id`,
+        [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description||'', s.api_id||null, active]);
+      if (active === 0) {
+        await query(`UPDATE services SET active=0 WHERE id=$1`, [s.id]);
+      }
     }
   }
 
@@ -1313,6 +1323,9 @@ function isCuratedServiceId(id) {
   return /^[a-z]{2,3}\d/i.test(String(id || ''));
 }
 
+/** 시드 중 영구 판매 중단 (공급 불안정·반복 실패) */
+const PERMANENTLY_DISABLED_SEEDS = new Set(['ptt13']);
+
 async function ensurePeakerrCatalogLoaded(opts = {}) {
   if (peakerrCatalogCache.size > 0) return;
   if (opts.background) {
@@ -1325,21 +1338,230 @@ async function ensurePeakerrCatalogLoaded(opts = {}) {
   }
 }
 
+/** 최근 주문이 전부 실패·취소인 상품 (성공 0건) — 시드 상품도 숨김 대상 */
+async function getUnreliableServiceIds(opts = {}) {
+  const minOrders = opts.minOrders ?? 2;
+  const days = opts.days ?? 30;
+  const r = await query(`
+    SELECT sid FROM orders
+    WHERE created >= NOW() - ($2 || ' days')::interval
+    GROUP BY sid
+    HAVING COUNT(*) >= $1
+       AND COUNT(*) FILTER (WHERE status IN ('completed','processing','pending')) = 0
+  `, [minOrders, days]);
+  return new Set(r.rows.map(row => row.sid));
+}
+
+async function deactivateUnreliableServices(opts = {}) {
+  const unreliable = await getUnreliableServiceIds(opts);
+  let n = 0;
+  for (const sid of unreliable) {
+    const u = await query(`UPDATE services SET active=0 WHERE id=$1 AND active=1 RETURNING id, name`, [sid]);
+    if (u.rowCount) {
+      n++;
+      console.log(`⚠️ 미작동 상품 숨김: ${sid} (${u.rows[0]?.name || ''})`);
+    }
+  }
+  return n;
+}
+
 async function reactivateCuratedSeedServices() {
   await ensurePeakerrCatalogLoaded();
   if (peakerrCatalogCache.size === 0) return 0;
+  const unreliable = await getUnreliableServiceIds();
   const r = await query(`
     SELECT id, api_id FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
   `);
   let n = 0;
   for (const row of r.rows) {
-    if (!peakerrCatalogCache.has(String(row.api_id))) continue;
+    if (unreliable.has(row.id)) continue;
+    if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) continue;
+    if (!peakerrCatalogCacheHas(row.api_id)) continue;
     const u = await query(`UPDATE services SET active=1 WHERE id=$1 AND active=0 RETURNING id`, [row.id]);
     if (u.rowCount) n++;
   }
   if (n > 0) console.log(`✅ 검증 시드 상품 ${n}개 재활성화`);
   return n;
+}
+
+function peakerrCatalogCacheHas(apiId) {
+  return peakerrCatalogCache.has(String(apiId));
+}
+
+function peakerrServiceHasRefill(s) {
+  if (!s) return false;
+  const v = s.refill;
+  return v === true || v === 1 || v === '1' || String(v).toLowerCase() === 'true';
+}
+
+function peakerrBucketKeyFromService(s) {
+  const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+  const pl = detectPlat(full);
+  const bucket = detectServiceTypeKo(full);
+  return `${pl}:${bucket}`;
+}
+
+/** 공급 카탈로그에서 리필 보장·고품질 SKU 선택 (팔로워·좋아요·조회수) */
+function findBestRefillPeakerrService(pl, bucket, excludeApiIds = new Set()) {
+  let best = null;
+  let bestScore = -1;
+  for (const s of peakerrCatalogCache.values()) {
+    if (excludeApiIds.has(String(s.service))) continue;
+    const key = peakerrBucketKeyFromService(s);
+    if (key !== `${pl}:${bucket}`) continue;
+    if (!peakerrServiceHasRefill(s)) continue;
+    const score = scorePeakerrService(s);
+    if (score > bestScore) {
+      bestScore = score;
+      best = s;
+    }
+  }
+  return best;
+}
+
+/** 시드 상품 — 공급 리필 SKU로 api_id 교체 + 리필 없는 참여형 상품 비활성화 */
+async function upgradeEngagementSeedsFromPeakerr() {
+  await ensurePeakerrCatalogLoaded();
+  if (peakerrCatalogCache.size === 0) return { upgraded: 0, disabled: 0 };
+
+  const ENGAGEMENT = new Set(['팔로워', '좋아요', '조회수']);
+  const PLATFORMS = new Set(['tiktok', 'threads', 'instagram']);
+  const r = await query(`
+    SELECT id, name, pl, api_id, active FROM services
+    WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+  `);
+
+  let upgraded = 0, disabled = 0;
+  const refillBuckets = new Set();
+  const upgradedIds = new Set();
+
+  for (const row of r.rows) {
+    if (!PLATFORMS.has(row.pl)) continue;
+    const bucket = serviceOrderBucket(row);
+    if (!ENGAGEMENT.has(bucket)) continue;
+
+    const peak = peakerrCatalogCache.get(String(row.api_id));
+    const hasRefill = peakerrServiceHasRefill(peak);
+    await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill ? 1 : 0, row.id]);
+
+    if (hasRefill) {
+      refillBuckets.add(`${row.pl}:${bucket}`);
+      continue;
+    }
+
+    const alt = findBestRefillPeakerrService(row.pl, bucket, new Set([String(row.api_id)]));
+    if (alt) {
+      await query(`UPDATE services SET api_id=$1, refill_guaranteed=1, active=1, rate=$2, min=$3, max=$4 WHERE id=$5`, [
+        String(alt.service),
+        parseFloat(alt.rate || 0),
+        Math.max(1, parseInt(alt.min, 10) || 10),
+        parseInt(alt.max, 10) || 1000000,
+        row.id
+      ]);
+      refillBuckets.add(`${row.pl}:${bucket}`);
+      upgraded++;
+      upgradedIds.add(row.id);
+      console.log(`🔄 리필 SKU 교체: ${row.id} → api ${alt.service} (${(alt.name || '').slice(0, 40)})`);
+    }
+  }
+
+  for (const row of r.rows) {
+    if (upgradedIds.has(row.id)) continue;
+    if (!PLATFORMS.has(row.pl)) continue;
+    const bucket = serviceOrderBucket(row);
+    if (!ENGAGEMENT.has(bucket)) continue;
+    if (!refillBuckets.has(`${row.pl}:${bucket}`)) continue;
+
+    const peak = peakerrCatalogCache.get(String(row.api_id));
+    if (peakerrServiceHasRefill(peak)) continue;
+    const altExists = findBestRefillPeakerrService(row.pl, bucket);
+    if (!altExists || String(altExists.service) === String(row.api_id)) continue;
+
+    const u = await query(`UPDATE services SET active=0 WHERE id=$1 AND active=1 RETURNING id`, [row.id]);
+    if (u.rowCount) disabled++;
+  }
+
+  if (upgraded || disabled) {
+    console.log(`✅ 참여형 시드 정리: 리필 교체 ${upgraded} · 리필 없음 숨김 ${disabled}`);
+  }
+  return { upgraded, disabled };
+}
+
+async function syncServiceRefillFlagsFromPeakerr(peakerrMap) {
+  const r = await query(`SELECT id, api_id FROM services WHERE api_id IS NOT NULL AND TRIM(api_id) <> ''`);
+  for (const row of r.rows) {
+    const peak = peakerrMap.get(String(row.api_id));
+    const hasRefill = peakerrServiceHasRefill(peak);
+    await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill ? 1 : 0, row.id]);
+  }
+}
+
+async function submitPeakerrRefill(apiKey, apiOrderId) {
+  if (!apiKey || !apiOrderId) return { ok: false, error: 'missing' };
+  try {
+    const resp = await peakerrFetch({ key: apiKey, action: 'refill', order: String(apiOrderId) });
+    const data = await resp.json();
+    if (data?.error) return { ok: false, error: String(data.error) };
+    if (/success|refill/i.test(String(data?.status || data?.message || ''))) {
+      return { ok: true, data };
+    }
+    if (data?.refill) return { ok: true, data };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+/** 완료 주문 — 리필 보장 상품 드롭 자동 보충 (공급 refill API) */
+async function processEligibleRefills(opts = {}) {
+  const apiKey = await getPeakerrApiKey();
+  if (!apiKey) return { processed: 0 };
+
+  const maxPerRun = opts.maxPerRun ?? 15;
+  const r = await query(`
+    SELECT o.*, s.refill_guaranteed
+    FROM orders o
+    INNER JOIN services s ON s.id = o.sid
+    WHERE o.status = 'completed'
+      AND COALESCE(s.refill_guaranteed, 0) = 1
+      AND o.api_order_id IS NOT NULL AND TRIM(o.api_order_id) <> ''
+      AND o.created >= NOW() - INTERVAL '30 days'
+      AND COALESCE(o.refill_count, 0) < 4
+      AND (
+        o.refill_last_at IS NULL
+        OR o.refill_last_at < NOW() - INTERVAL '48 hours'
+      )
+      AND COALESCE(o.completed_at, o.created) <= NOW() - INTERVAL '24 hours'
+    ORDER BY o.created ASC
+    LIMIT $1
+  `, [maxPerRun]);
+
+  let processed = 0, ok = 0;
+  for (const order of r.rows) {
+    processed++;
+    const daysSince = (Date.now() - new Date(order.completed_at || order.created).getTime()) / 86400000;
+    const checkpoints = [1, 3, 7, 14, 21];
+    const checkIdx = Math.min(order.refill_count || 0, checkpoints.length - 1);
+    if (daysSince < checkpoints[checkIdx]) continue;
+
+    const result = await submitPeakerrRefill(apiKey, order.api_order_id);
+    await query(`
+      UPDATE orders SET refill_count=COALESCE(refill_count,0)+1, refill_last_at=NOW() WHERE id=$1
+    `, [order.id]);
+
+    if (result.ok) {
+      ok++;
+      await logActivity(order.site_id, 'system', '자동리필',
+        `드롭 보충 요청`, 'order', order.id,
+        `${order.sname} · 공급 #${order.api_order_id}`);
+      console.log(`♻️ 자동 리필: ${order.id} → #${order.api_order_id}`);
+    } else {
+      console.log(`♻️ 리필 스킵/실패 ${order.id}: ${result.error || 'unknown'}`);
+    }
+    await new Promise(res => setTimeout(res, 300));
+  }
+  return { processed, ok };
 }
 
 async function resolveOrderService(sid) {
@@ -1638,8 +1860,15 @@ function validateUrl(url, platform, svc = null) {
       if (bucket === '스토리 조회수' || bucket === '스토리') {
         return { ok: true };
       }
-      const isVideo = /\/video\/|\/photo\/|\/t\/|vm\.tiktok|vt\.tiktok/.test(pathHost);
-      if (!isVideo) {
+      if (bucket === '조회수' && /\/photo\//.test(u.pathname)) {
+        return { ok: false, error: '틱톡 조회수는 영상(/video/) 링크를 입력해주세요. 사진(/photo/) 링크는 조회수 작업이 불가합니다.' };
+      }
+      const isVideo = /\/video\/|\/t\/|vm\.tiktok|vt\.tiktok/.test(pathHost);
+      const isPhotoLike = /\/photo\//.test(u.pathname);
+      if (bucket === '좋아요' && isPhotoLike) {
+        return { ok: true };
+      }
+      if (!isVideo && !isPhotoLike) {
         return { ok: false, error: '틱톡 영상·좋아요·조회수는 영상 공유 링크를 입력해주세요. (vm·vt 단축 URL 가능)' };
       }
     }
@@ -1659,8 +1888,19 @@ function filterPartnerServiceRows(rows) {
   const curatedBuckets = new Set(
     rows.filter(s => isCuratedServiceId(s.id)).map(serviceBucketKey)
   );
+  const refillBuckets = new Set(
+    rows.filter(s => isCuratedServiceId(s.id) && parseInt(s.refill_guaranteed || 0, 10) === 1).map(serviceBucketKey)
+  );
+  const ENGAGEMENT = new Set(['팔로워', '좋아요']);
+  const ENG_PL = new Set(['tiktok', 'threads']);
   return rows.filter(s => {
-    if (isCuratedServiceId(s.id)) return true;
+    if (isCuratedServiceId(s.id)) {
+      const bucket = serviceBucketKey(s);
+      if (ENG_PL.has(s.pl) && ENGAGEMENT.has(serviceOrderBucket(s))) {
+        if (refillBuckets.has(bucket) && !parseInt(s.refill_guaranteed || 0, 10)) return false;
+      }
+      return true;
+    }
     if (/^pk_|^api_|^svc_/.test(s.id)) return !curatedBuckets.has(serviceBucketKey(s));
     return true;
   });
@@ -1671,7 +1911,8 @@ function linkHintForService(svc) {
   if (svc.pl === 'tiktok') {
     if (bucket === '팔로워') return '틱톡 팔로워는 프로필(@username) 링크를 입력해주세요.';
     if (bucket === '스토리 조회수' || bucket === '스토리') return '틱톡 스토리 링크를 입력해주세요.';
-    return '틱톡 영상·좋아요·조회수는 영상 공유 링크를 입력해주세요. (vm·vt 단축 URL 가능)';
+    if (bucket === '조회수') return '틱톡 조회수는 영상(/video/) 공유 링크를 입력해주세요. 사진(/photo/) 링크는 불가합니다.';
+    return '틱톡 영상·좋아요는 영상 공유 링크를 입력해주세요. (vm·vt 단축 URL 가능)';
   }
   if (svc.pl === 'instagram' && bucket === '팔로워') return '인스타 팔로워는 프로필 링크를 입력해주세요.';
   if (svc.pl === 'youtube' && bucket === '구독자') return '유튜브 구독자는 채널 링크를 입력해주세요.';
@@ -2043,6 +2284,18 @@ async function alertMissingStartCounts() {
   return toAlert.length;
 }
 
+/** 공급 전량 전달(remains=0)인데 failed로 남은 주문 보정 */
+async function repairDeliveredButFailedOrders() {
+  const r = await query(`
+    UPDATE orders SET status='completed'
+    WHERE status='failed'
+    AND remains=0 AND qty > 0
+    AND api_order_id IS NOT NULL AND TRIM(api_order_id) <> ''
+    RETURNING id
+  `);
+  return r.rowCount || 0;
+}
+
 async function cleanupUnpaidPendingOrders() {
   const r = await query(`
     SELECT * FROM orders
@@ -2080,7 +2333,9 @@ async function runPreflightHealthCheck(opts = {}) {
     const backfilled = await backfillAllMissingStartCounts();
     await cleanupUnpaidPendingOrders();
     await refundStuckOrdersWithoutApiId();
-    console.log(`🛡️ 사전점검: orphan=${orphan} 결제확정=${confirmed} 시작숫자=${backfilled}`);
+    const repairedDelivered = await repairDeliveredButFailedOrders();
+    await query(`UPDATE orders SET completed_at=created WHERE status='completed' AND completed_at IS NULL`).catch(() => null);
+    console.log(`🛡️ 사전점검: orphan=${orphan} 결제확정=${confirmed} 시작숫자=${backfilled} 전달보정=${repairedDelivered}`);
     if (issues.length && opts.notify !== false) {
       await sendTelegramToSuper(`🛡️ <b>GLOW 사전점검</b>\n\n${issues.join('\n')}`).catch(() => null);
     }
@@ -2309,17 +2564,30 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
     } else if (status === 'in progress' || status === 'processing' || status === 'pending') {
       newStatus = 'processing';
     } else if (status === 'error' || status === 'failed') {
-      refundPercent = 100;
-      newStatus = 'refunded';
+      // 공급사가 failed 표시해도 remains=0이면 실제 전량 전달된 경우가 많음
+      if (remains === 0 && order.qty > 0) {
+        newStatus = 'completed';
+      } else {
+        refundPercent = 100;
+        newStatus = 'refunded';
+      }
     }
     
+    const targetCount = startsCount + parseInt(order.qty || 0, 10);
+    const justCompleted = newStatus === 'completed' && order.status !== 'completed';
+
     // 진행률 저장 (starts_count, remains)
-    await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3 WHERE id=$4`,
-      [newStatus, startsCount, remains, order.id]);
+    if (justCompleted) {
+      await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3, target_count=$4, completed_at=NOW() WHERE id=$5`,
+        [newStatus, startsCount, remains, targetCount, order.id]);
+    } else {
+      await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3 WHERE id=$4`,
+        [newStatus, startsCount, remains, order.id]);
+    }
     if (startsCount > 0) await clearStartCountAlert(order.id);
     
     // 🎁 완료 시 포인트 적립
-    if (newStatus === 'completed' && order.status !== 'completed') {
+    if (justCompleted) {
       await earnPoints({ ...order, status: 'processing' }); // status를 completed 이전으로 전달
     }
     
@@ -2469,6 +2737,7 @@ async function syncPeakerrServices() {
     const peakerrMap = new Map();
     services.forEach(s => peakerrMap.set(String(s.service), s));
     peakerrCatalogCache = peakerrMap;
+    await syncServiceRefillFlagsFromPeakerr(peakerrMap);
     
     // GLOW DB의 모든 서비스 조회
     const glowR = await query(`SELECT id, name, api_id, rate, min, max, active FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
@@ -2585,20 +2854,14 @@ async function reconcileServiceCatalog(opts = {}) {
     const sync = await syncPeakerrServices();
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
     await reactivateCuratedSeedServices();
+    await upgradeEngagementSeedsFromPeakerr();
     const purged = await purgeUnsellableServices();
     await backfillPartnerOrderCosts();
 
-    const failOnlyR = await query(`
-      SELECT sid FROM orders
-      WHERE created >= NOW() - INTERVAL '30 days'
-      GROUP BY sid
-      HAVING COUNT(*) FILTER (WHERE status = 'failed') >= 1
-         AND COUNT(*) FILTER (WHERE status NOT IN ('failed','cancelled','canceled','refunded','partial_refunded')) = 0
-    `);
-    for (const row of failOnlyR.rows) {
-      if (isCuratedServiceId(row.sid)) continue;
-      const u = await query(`UPDATE services SET active=0 WHERE id=$1 AND active=1 RETURNING id`, [row.sid]);
-      if (u.rowCount) failHide++;
+    failHide = await deactivateUnreliableServices();
+
+    for (const seedId of PERMANENTLY_DISABLED_SEEDS) {
+      await query(`UPDATE services SET active=0 WHERE id=$1`, [seedId]);
     }
 
     await query(`
@@ -2615,7 +2878,7 @@ async function reconcileServiceCatalog(opts = {}) {
       let msg = `🧹 <b>상품 카탈로그 정리</b>\n\n`;
       if (sync?.disabled) msg += `⚠️ 공급사 삭제됨: ${sync.disabled}개 숨김\n`;
       if (noApi) msg += `🔗 API 미연동: ${noApi}개 숨김\n`;
-      if (failHide) msg += `❌ 주문 실패만 있음: ${failHide}개 숨김\n`;
+      if (failHide) msg += `❌ 최근 주문 전부 실패·취소: ${failHide}개 숨김\n`;
       msg += `\n✅ 활성 상품 ${activeCount}개 (작동 가능만 노출)`;
       await sendTelegramToSuper(msg);
     }
@@ -6625,6 +6888,12 @@ app.listen(PORT, async () => {
   setInterval(async () => {
     await syncAllOrderStatuses().catch(e => console.log('주문 동기화 스케줄러 오류:', e.message));
   }, 5 * 60 * 1000);
+
+  // ♻️ 리필 보장 상품 — 완료 후 드롭 자동 보충 (12시간마다)
+  processEligibleRefills({ maxPerRun: 10 }).catch(e => console.log('리필 초기 실행:', e.message));
+  setInterval(async () => {
+    await processEligibleRefills({ maxPerRun: 15 }).catch(e => console.log('리필 스케줄러:', e.message));
+  }, 12 * 60 * 60 * 1000);
   
   // 💱 USD/KRW 환율 자동 갱신 (6시간마다 + 시작 시 1회)
   autoSyncGlobalExrate({ notify: false }).catch(e => console.log('환율 자동 갱신 오류:', e.message));
@@ -6660,6 +6929,8 @@ app.listen(PORT, async () => {
     console.log('🔄 서버 시작 후 자동 동기화 실행');
     await runPreflightHealthCheck({ notify: true }).catch(() => {});
     await syncAllOrderStatuses().catch(() => {});
+    await upgradeEngagementSeedsFromPeakerr().catch(e => console.log('참여형 시드 업그레이드:', e.message));
+    await processEligibleRefills({ maxPerRun: 20 }).catch(() => {});
     await runCatalogHealthCheck(true).catch(() => {});
     const niche = await importNichePeakerrServices({ notify: false }).catch(e => ({ error: e.message, count: 0 }));
     if (niche.count > 0) console.log(`🛒 이커머스·보너스 상품 ${niche.count}개 추가`);
