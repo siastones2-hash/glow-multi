@@ -767,7 +767,7 @@ async function getPeakerrApiKey() {
 async function savePeakerrApiKeySafely(newKey) {
   const v = String(newKey || '').trim();
   if (!isValidPeakerrApiKey(v)) {
-    return { ok: false, error: 'Peakerr API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' };
+    return { ok: false, error: '공급 API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' };
   }
 
   const current = await getPeakerrApiKey();
@@ -775,7 +775,7 @@ async function savePeakerrApiKeySafely(newKey) {
   if (!test.ok) {
     return {
       ok: false,
-      error: (test.error || 'Peakerr 연결 실패') + ' — 키가 저장되지 않았습니다. 기존 연동은 유지됩니다.'
+      error: (test.error || '공급 API 연결 실패') + ' — 키가 저장되지 않았습니다. 기존 연동은 유지됩니다.'
     };
   }
 
@@ -833,7 +833,7 @@ async function reconcilePeakerrApiKey(opts = {}) {
 
 function peakerrBalanceErrorKo(msg) {
   const s = String(msg || '');
-  if (/invalid.*key|api key/i.test(s)) return 'API 키가 올바르지 않습니다. Peakerr에서 복사한 키를 다시 저장하세요.';
+  if (/invalid.*key|api key/i.test(s)) return 'API 키가 올바르지 않습니다. 공급 API 키를 다시 저장하세요.';
   if (/키|설정/.test(s)) return s;
   if (/timeout|abort|network|fetch|ECONN|ETIMED|ENOTFOUND/i.test(s)) {
     return '공급사 서버 연결 실패. 잠시 후 다시 시도하세요.';
@@ -953,7 +953,21 @@ async function assertPhoneAvailableForReferral(siteId, phone, excludeUserId) {
   return { ok: true, norm };
 }
 
-/** 지인 사이트 관리자 API — 슈퍼·본사 등 상위 계층 표현 제거 */
+/** 외부 노출 문구 — 공급사 브랜드명·업체 주문번호 라벨 제거 */
+function stripSupplierBrand(msg) {
+  if (msg == null || msg === '') return msg;
+  let t = String(msg);
+  t = t.replace(/Peakerr\s*→\s*GLOW/gi, '자동 동기화');
+  t = t.replace(/Peakerr\s*#/gi, '');
+  t = t.replace(/Peakerr\s+ID/gi, '작업 번호');
+  t = t.replace(/Peakerr/gi, '공급');
+  t = t.replace(/peakerr\.com/gi, '공급 연동');
+  t = t.replace(/피커/g, '공급');
+  t = t.replace(/\s{2,}/g, ' ').trim();
+  return t;
+}
+
+/** 지인 사이트 관리자 API — 슈퍼·본사·공급사 브랜드 표현 제거 */
 function neutralAdminMsg(msg, isSuperAdmin) {
   if (isSuperAdmin || msg == null || msg === '') return msg;
   let t = String(msg);
@@ -966,6 +980,7 @@ function neutralAdminMsg(msg, isSuperAdmin) {
   t = t.replace(/본사/gi, '');
   t = t.replace(/슈퍼/gi, '');
   t = t.replace(/\s{2,}/g, ' ').trim();
+  t = stripSupplierBrand(t);
   return t || '처리할 수 없습니다';
 }
 
@@ -1481,7 +1496,7 @@ async function refundStuckOrdersWithoutApiId() {
       if (fin.alreadyRefunded) continue;
       await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, o.id]);
       await logActivity(o.site_id, 'system', '자동환불', '미전송 주문 환불', 'order', o.id,
-        `Peakerr 미연동 · ₩${(fin.refundAmount || 0).toLocaleString()} 환불`);
+        `공급 미연동 · ₩${(fin.refundAmount || 0).toLocaleString()} 환불`);
       refunded++;
     }
     if (refunded > 0) console.log(`💸 미전송 주문 ${refunded}건 자동 환불`);
@@ -1669,10 +1684,11 @@ async function sendTelegramToSuper(message) {
     const token = await getGlobalSetting('tg_token');
     const chat = await getGlobalSetting('tg_chat');
     if (!token || !chat) return false;
+    const text = stripSupplierBrand(message);
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: message, parse_mode: 'HTML' })
+      body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML' })
     });
     return true;
   } catch(e) { console.log('텔레그램 발송 실패:', e.message); return false; }
@@ -1682,7 +1698,7 @@ async function sendTelegramToSuper(message) {
 async function fetchPeakerrBalance(apiKey) {
   const key = String(apiKey || '').trim();
   if (!key) return { ok: false, error: 'API 키 미설정' };
-  if (!isValidPeakerrApiKey(key)) return { ok: false, error: 'API 키 형식 오류 — Peakerr 키를 다시 붙여넣고 저장하세요.' };
+  if (!isValidPeakerrApiKey(key)) return { ok: false, error: 'API 키 형식 오류 — 공급 API 키를 다시 저장하세요.' };
 
   const params = { key, action: 'balance' };
   let lastErr = '조회 실패';
@@ -1758,18 +1774,25 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-/** 지인 사이트(default 제외) 관리자 API — 슈퍼·본사 표현 일괄 제거 */
+/** 지인 사이트(default 제외) — 슈퍼·공급사 브랜드 표현 JSON 마스킹 */
 function attachPartnerAdminJsonMask(req, res) {
   const role = req.session?.role;
   if (role === 'superadmin' || req.siteId === 'default') return;
-  if (!['admin', 'partner'].includes(role)) return;
   if (res._partnerJsonWrapped) return;
   res._partnerJsonWrapped = true;
   const orig = res.json.bind(res);
   res.json = (body) => {
     if (body && typeof body === 'object') {
-      if (body.error) body.error = neutralAdminMsg(body.error, false);
-      if (body.message) body.message = neutralAdminMsg(body.message, false);
+      if (body.error) {
+        body.error = stripSupplierBrand(
+          ['admin', 'partner'].includes(role) ? neutralAdminMsg(body.error, false) : body.error
+        );
+      }
+      if (body.message) {
+        body.message = stripSupplierBrand(
+          ['admin', 'partner'].includes(role) ? neutralAdminMsg(body.message, false) : body.message
+        );
+      }
     }
     return orig(body);
   };
@@ -2043,13 +2066,13 @@ async function runPreflightHealthCheck(opts = {}) {
   try {
     const keyOk = await reconcilePeakerrApiKey({ silent: true }).catch(() => null);
     const apiKey = await getPeakerrApiKey();
-    if (!apiKey) issues.push('❌ Peakerr API 키 없음');
+    if (!apiKey) issues.push('❌ 공급 API 키 없음');
     else {
       const resp = await peakerrFetch({ key: apiKey, action: 'balance' }).catch(() => null);
       if (resp) {
         const data = await resp.json().catch(() => ({}));
         const bal = parseFloat(data.balance ?? data.balance_usd ?? 0);
-        if (Number.isFinite(bal) && bal < 10) issues.push(`⚠️ Peakerr 잔액 $${bal.toFixed(2)}`);
+        if (Number.isFinite(bal) && bal < 10) issues.push(`⚠️ 공급 API 잔액 $${bal.toFixed(2)}`);
       }
     }
     const orphan = await reconcileOrphanPeakerrOrders();
@@ -2114,8 +2137,8 @@ async function pollPeakerrStatus(apiKey, apiOrderId, tries = 5, delayMs = 1500) 
 function peakerrCancelErrorKo(msg) {
   const m = String(msg || '');
   if (/progress|processing|started|cannot|can't|unable|not allow|already/i.test(m))
-    return '이미 처리가 시작되어 Peakerr에서 취소할 수 없습니다.';
-  return m ? `취소 실패: ${m}` : 'Peakerr에서 취소를 거절했습니다.';
+    return '이미 처리가 시작되어 공급사에서 취소할 수 없습니다.';
+  return m ? `취소 실패: ${stripSupplierBrand(m)}` : '공급사에서 취소를 거절했습니다.';
 }
 
 async function pullPeakerrOrderSnapshot(order, apiKey, opts = {}) {
@@ -2200,7 +2223,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     if (!statusData || statusData.error) {
       return {
         ok: false,
-        error: 'Peakerr 취소 확인 실패. 1~2분 후 🔄 새로고침하면 자동 반영됩니다.',
+        error: '공급사 취소 확인 실패. 1~2분 후 🔄 새로고침하면 자동 반영됩니다.',
         pendingCancel: true
       };
     }
@@ -2209,12 +2232,12 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     if (['in progress', 'processing', 'pending'].includes(apiStatus)) {
       return {
         ok: false,
-        error: 'Peakerr에서 아직 작업 중입니다. 취소 반영 후 자동 환불됩니다. 잠시 후 🔄 새로고침해주세요.',
+        error: '공급사에서 아직 작업 중입니다. 취소 반영 후 자동 환불됩니다. 잠시 후 🔄 새로고침해주세요.',
         pendingCancel: true
       };
     }
     if (apiStatus === 'completed') {
-      return { ok: false, error: '이미 Peakerr에서 완료된 주문은 취소·환불할 수 없습니다.' };
+      return { ok: false, error: '이미 공급사에서 완료된 주문은 취소·환불할 수 없습니다.' };
     }
 
     const result = await autoRefundOrder(order, statusData, { notifyTg: false });
@@ -2252,7 +2275,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
 
     return {
       ok: false,
-      error: 'Peakerr 취소는 접수됐지만 환불 조건을 확인하지 못했습니다. 🔄 새로고침 후 다시 확인해주세요.',
+      error: '공급사 취소는 접수됐지만 환불 조건을 확인하지 못했습니다. 🔄 새로고침 후 다시 확인해주세요.',
       pendingCancel: true
     };
   } finally {
@@ -2318,7 +2341,7 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
         if (opts.notifyTg !== false) {
           let extra = `💰 환불 ₩${(fin.refundAmount || 0).toLocaleString()} (${refundPercent}%)`;
           if (fin.creditRefund) extra += `\n💳 크레딧 $${fin.creditRefund.toFixed(4)} 복구`;
-          extra += `\n📡 Peakerr: ${peakerrData.status || status}`;
+          extra += `\n📡 상태: ${peakerrData.status || status}`;
           await tgOrderNotify('💸 <b>자동 환불</b>', order, { actorId: 'system', extra });
         }
       }
@@ -2427,7 +2450,7 @@ async function syncAllOrderStatuses() {
     console.log(`✅ 동기화 완료: 완료 ${completed}건, 취소·환불 ${cancelled}건, 오류 ${errors}건`);
     
     if (cancelled > 0) {
-      await sendTelegramToSuper(`🔄 <b>Peakerr → GLOW 자동 반영</b>\n\n완료: ${completed}건\n취소·환불: ${cancelled}건\n오류: ${errors}건`);
+      await sendTelegramToSuper(`🔄 <b>주문 자동 동기화</b>\n\n완료: ${completed}건\n취소·환불: ${cancelled}건\n오류: ${errors}건`);
     }
   } catch(e) { console.log('주문 동기화 실패:', e.message); }
 }
@@ -3637,10 +3660,11 @@ async function tgAlert(msg, site) {
 
   await Promise.all(sendList.map(async ({ token, chat }) => {
     try {
+      const text = stripSupplierBrand(msg);
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chat, text: msg, parse_mode: 'HTML' })
+        body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML' })
       });
     } catch(e) { console.log('TG 오류:', e.message); }
   }));
@@ -3670,7 +3694,7 @@ async function tgOrderNotify(title, order, opts = {}) {
     const actorId = opts.actorId || order.uid;
     let actorBlock;
     if (actorId === 'system') {
-      actorBlock = '🤖 <b>처리:</b> Peakerr 자동 동기화';
+      actorBlock = '🤖 <b>처리:</b> 자동 동기화';
     } else if (actorId === order.uid) {
       actorBlock = `👤 <b>주문자:</b> ${customer.name} (${tgRoleLabel(customer.role)})`;
     } else {
@@ -3682,7 +3706,6 @@ async function tgOrderNotify(title, order, opts = {}) {
 
     let msg = `${title}\n\n🏷 <b>${site.name || 'GLOW'}</b>\n${actorBlock}\n\n`;
     msg += `📋 <code>${order.id}</code>`;
-    if (order.api_order_id) msg += ` · Peakerr #${order.api_order_id}`;
     msg += `\n✦ ${order.sname || '—'} ×${(order.qty || 0).toLocaleString()}`;
     if (order.link) msg += `\n🔗 ${String(order.link).slice(0, 68)}`;
     const sc = parseInt(order.starts_count || 0, 10);
@@ -4338,7 +4361,7 @@ async function placeOrderHandler(req, res, ctx) {
     const conflict = await findActiveOrderConflict(req.siteId, linkNorm, svc);
     if (conflict) {
       const label = conflict.bucket || svc.name;
-      return res.json({ error: `이 링크로 ${label} 작업이 진행 중입니다. 중복 Peakerr 전송을 차단했습니다.` });
+      return res.json({ error: `이 링크로 ${label} 작업이 진행 중입니다. 중복 주문을 차단했습니다.` });
     }
 
     const placement = await placeOrderWithFallback(apiKey, svc, linkNorm, qtyNum, req.siteId);
@@ -4397,7 +4420,7 @@ async function placeOrderHandler(req, res, ctx) {
     }
 
     if (!apiOrderId) {
-      await tgOrderNotify('⚠️ <b>Peakerr ID 미확인</b>', {
+      await tgOrderNotify('⚠️ <b>작업 번호 미확인</b>', {
         id: orderId, site_id: req.siteId, uid: user.id, uname: user.name,
         sid: usedSvc.id, sname: usedSvc.name, link: linkNorm, qty: qtyNum, api_order_id: null
       }, {
@@ -4725,7 +4748,7 @@ app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
 
     // Peakerr 연동 주문 — 수동 상태 변경 금지 (동기화·취소 API만 허용)
     if (order.api_order_id && status !== order.status) {
-      return res.json({ error: 'Peakerr 연동 주문은 수동 상태 변경이 불가합니다. 🔄 새로고침으로 동기화하거나 ✕ 취소를 사용하세요.' });
+      return res.json({ error: '공급 연동 주문은 수동 상태 변경이 불가합니다. 🔄 새로고침으로 동기화하거나 ✕ 취소를 사용하세요.' });
     }
 
     // 그 외 상태 변경은 단순 변경 (API 미연동 주문만)
@@ -4763,7 +4786,7 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
           message: result.message
         });
       }
-      return res.json({ error: 'Peakerr 연동 주문은 부분 환불을 수동으로 할 수 없습니다. 🔄 새로고침으로 Peakerr 상태를 동기화해주세요.' });
+      return res.json({ error: '공급 연동 주문은 부분 환불을 수동으로 할 수 없습니다. 🔄 새로고침으로 상태를 동기화해주세요.' });
     }
     
     const fin = await restoreRefundFinancials(order, pct, {

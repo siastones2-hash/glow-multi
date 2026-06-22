@@ -1502,7 +1502,7 @@ tr:last-child td{border-bottom:none}
           <span style="color:#94a3b8">(고객 매출·잔액과 별도 · API 크레딧에서 차감)</span>
         </div>
         <div id="aApiBalanceBox" style="display:none;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#047857">
-          🔑 Peakerr API 잔액: <strong id="aApiBalance" style="font-size:16px">-</strong>
+          🔑 공급 API 잔액: <strong id="aApiBalance" style="font-size:16px">-</strong>
           <span style="font-size:11px;color:#64748b;margin-left:6px">(공급사 실잔액 · 슈퍼관리자 전용)</span>
         </div>
         <!-- API 크레딧 표시 (파트너 사이트) -->
@@ -1889,7 +1889,7 @@ tr:last-child td{border-bottom:none}
                 <button class="bo bsm" onclick="syncSvcs()">🔄 서비스 동기화</button>
               </div>
               <div id="spApiRes" style="font-size:12px;color:var(--tm)"></div>
-              <div style="font-size:11px;color:#64748b;margin-top:8px">🔒 <strong>안전 잠금</strong> — Peakerr 연결 테스트 통과한 키만 저장 · 백업 자동복구 · 잘못된 키는 기존 연동 유지</div>
+              <div style="font-size:11px;color:#64748b;margin-top:8px">🔒 <strong>안전 잠금</strong> — 공급 API 연결 테스트 통과한 키만 저장 · 백업 자동복구 · 잘못된 키는 기존 연동 유지</div>
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔄 자동 동기화</div>
@@ -2223,6 +2223,12 @@ function _partnerMsg(s){
   t=t.replace(/본사에서만[^.]*\.?/gi,'이 설정은 변경할 수 없습니다.');
   t=t.replace(/본사/gi,'');
   t=t.replace(/슈퍼/gi,'');
+  t=t.replace(/Peakerr\s*→\s*GLOW/gi,'자동 동기화');
+  t=t.replace(/Peakerr\s*#/gi,'');
+  t=t.replace(/Peakerr\s+ID/gi,'작업 번호');
+  t=t.replace(/Peakerr/gi,'공급');
+  t=t.replace(/peakerr\.com/gi,'공급 연동');
+  t=t.replace(/피커/g,'공급');
   t=t.replace(/\s{2,}/g,' ').trim();
   return t||'처리할 수 없습니다';
 }
@@ -3356,7 +3362,7 @@ async function refreshOrder(orderId){
 
 // 🚫 주문 취소 요청
 async function cancelOrder(orderId){
-  if(!confirm('이 주문을 취소하시겠어요?\n\n취소되면 Peakerr 주문도 중단되고, 결제·크레딧이 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
+  if(!confirm('이 주문을 취소하시겠어요?\n\n취소되면 작업도 중단되고, 결제·크레딧이 환불됩니다.\n이미 처리가 시작된 경우 취소가 불가할 수 있습니다.'))return;
   var d=await api('/api/orders/cancel/'+orderId,'POST');
   if(d.error){toast(d.error,'err');return}
   var msg=d.message||'취소 처리되었습니다';
@@ -3574,7 +3580,7 @@ async function syncAdmOrders(){
   loadAdmOrders();
 }
 async function admCancelOrder(id){
-  if(!confirm('Peakerr 주문을 취소하고 환불·크레딧을 복구할까요?'))return;
+  if(!confirm('주문을 취소하고 환불·크레딧을 복구할까요?'))return;
   var d=await api('/api/orders/cancel/'+id,'POST');
   if(d&&d.error){toast(d.error,'err');return}
   var msg=d.message||'취소 완료';
@@ -4012,10 +4018,10 @@ async function saveGlobalSetting(key,inputId){
   ge(inputId).value='••••(설정됨)';
   if(key==='peakerr_api_key'&&d.peakerrTest){
     if(d.peakerrTest.balance!=null){
-      toast('🔒 Peakerr 잠금 저장 · $'+parseFloat(d.peakerrTest.balance).toFixed(2)+' ✨','ok');
+      toast('🔒 공급 API 잠금 저장 · $'+parseFloat(d.peakerrTest.balance).toFixed(2)+' ✨','ok');
       if(ge('sApiBalance'))ge('sApiBalance').textContent='$'+parseFloat(d.peakerrTest.balance).toFixed(2);
     }else{
-      toast('저장됐지만 Peakerr 연결 실패: '+(d.peakerrTest.error||''),'err');
+      toast('저장됐지만 공급 API 연결 실패: '+(d.peakerrTest.error||''),'err');
     }
   }else{
     toast('저장 완료 ✨','ok');
@@ -4274,7 +4280,7 @@ async function loadSuperDash(){
   if(lockEl){
     if(d.peakerrLocked){
       lockEl.style.display='inline';
-      lockEl.title='Peakerr 연동 잠금 · 백업·자동복구 활성';
+      lockEl.title='공급 API 연동 잠금 · 백업·자동복구 활성';
     }else{
       lockEl.style.display='none';
     }
