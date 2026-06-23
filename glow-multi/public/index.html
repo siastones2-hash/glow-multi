@@ -3992,14 +3992,16 @@ function previewMargin(){
     supplyPer1000=cheapest.supplyPer1000;
     svcName=cheapest.name;
   } else {
-    // fallback: 로컬 계산
+    // fallback: 서버가 내려준 도매가(₩/1K) 사용 — rate 필드 없음
     var exrate=d.exrate||1500;
-    var minRate=0.15;
+    var wholesalePer1K=0;
     if(window._svcs&&window._svcs.length>0){
-      var rates=window._svcs.map(function(s){return parseFloat(s.rate)||9999;}).filter(function(r){return r>0;});
-      if(rates.length)minRate=Math.min.apply(null,rates);
+      var costs=window._svcs.map(function(s){
+        return s.baseCostPer1K!=null?s.baseCostPer1K:(s.baseCost!=null?Math.round(s.baseCost*1000):0);
+      }).filter(function(r){return r>0;});
+      if(costs.length)wholesalePer1K=Math.min.apply(null,costs);
     }
-    supplyPer1000=Math.round(minRate*exrate);
+    supplyPer1000=wholesalePer1K||Math.round(0.15*exrate);
   }
 
   var finalPer1000=Math.round(supplyPer1000*(1+mg/100));
@@ -5250,6 +5252,17 @@ async function calcPriceTable(){
   var minPrice = Infinity, maxPrice = 0;
 
   _pcSvcs.forEach(function(s){
+    var wholesalePer1K, custPer1K;
+    if(isPartner||s.isPartnerView){
+      wholesalePer1K=s.baseCostPer1K!=null?s.baseCostPer1K:Math.round((s.baseCost||0)*1000);
+      custPer1K=s.sellPer1K!=null?s.sellPer1K:Math.round((s.sell||s.baseCost||0)*1000);
+      if(!wholesalePer1K&&s.rate)wholesalePer1K=Math.round(s.rate*ex*(1+superMg/100));
+      if(!custPer1K&&wholesalePer1K)custPer1K=Math.round(wholesalePer1K*(1+siteMg/100));
+      rows.push({s:s,name:s.name,pl:s.pl,wholesalePer1K:wholesalePer1K,custPer1K:custPer1K});
+      if(wholesalePer1K<minPrice)minPrice=wholesalePer1K;
+      if(wholesalePer1K>maxPrice)maxPrice=wholesalePer1K;
+      return;
+    }
     var costKrw = s.rate * ex;
     var myPrice = Math.round(costKrw * (1 + superMg/100));
     var myProfit = myPrice - Math.round(costKrw);
@@ -5260,31 +5273,29 @@ async function calcPriceTable(){
   });
 
   var minEl = ge('pcMinPrice'), maxEl = ge('pcMaxPrice');
-  if(minEl) minEl.textContent = isPartner ? (rows.length?'₩'+rows.reduce((a,r)=>Math.min(a,r.myPrice),Infinity).toLocaleString():'-') : '₩'+minPrice.toLocaleString();
-  if(maxEl) maxEl.textContent = isPartner ? (rows.length?'₩'+rows.reduce((a,r)=>Math.max(a,r.myPrice),0).toLocaleString():'-') : '₩'+maxPrice.toLocaleString();
+  if(minEl) minEl.textContent = isPartner ? (rows.length?'₩'+rows.reduce(function(a,r){return Math.min(a,r.wholesalePer1K||Infinity);},Infinity).toLocaleString():'-') : '₩'+minPrice.toLocaleString();
+  if(maxEl) maxEl.textContent = isPartner ? (rows.length?'₩'+rows.reduce(function(a,r){return Math.max(a,r.wholesalePer1K||0);},0).toLocaleString():'-') : '₩'+maxPrice.toLocaleString();
 
   var h = '';
   rows.forEach(function(r){
-    var profitRate = Math.round(r.myProfit / (r.s.rate * ex) * 100);
     if(isPartner){
-      // Partner 뷰: 기준원가(공급가) + 고객가만 표시
       h += '<tr style="border-bottom:1px solid var(--bd)">'
         + '<td style="padding:7px 8px;font-weight:600;font-size:12px">' + r.s.name + '</td>'
         + '<td style="padding:7px 8px;text-align:center"><span style="font-size:10px;background:#f5f0ff;padding:2px 6px;border-radius:20px;color:var(--p2)">' + (PLKlocal[r.s.pl]||r.s.pl) + '</span></td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2)">₩' + r.myPrice.toLocaleString() + '</td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#F59E0B">₩' + r.custPrice.toLocaleString() + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2)">₩' + r.wholesalePer1K.toLocaleString() + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#F59E0B">₩' + r.custPer1K.toLocaleString() + '</td>'
         + '</tr>';
-    } else {
-      // 슈퍼관리자 뷰: 전체 표시 (보안모드 마스킹 가능)
-      h += '<tr style="border-bottom:1px solid var(--bd);transition:background .15s" onmouseover="this.style.background=\'#f5f0ff\'" onmouseout="this.style.background=\'\'">'
-        + '<td style="padding:7px 8px;font-weight:600;font-size:12px">' + r.s.name + '</td>'
-        + '<td style="padding:7px 8px;text-align:center"><span style="font-size:10px;background:#f5f0ff;padding:2px 6px;border-radius:20px;color:var(--p2)">' + (PLKlocal[r.s.pl]||r.s.pl) + '</span></td>'
-        + '<td style="padding:7px 8px;text-align:right;color:var(--tl);font-size:11px" class="amount-mask">$' + r.s.rate.toFixed(3) + '</td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2)" class="amount-mask">₩' + r.myPrice.toLocaleString() + '</td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#10B981" class="amount-mask">₩' + r.myProfit.toLocaleString() + ' <span style="font-size:10px">(+' + profitRate + '%)</span></td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#F59E0B">₩' + r.custPrice.toLocaleString() + '</td>'
-        + '</tr>';
+      return;
     }
+    var profitRate = r.costKrw > 0 ? Math.round(r.myProfit / r.costKrw * 100) : 0;
+    h += '<tr style="border-bottom:1px solid var(--bd);transition:background .15s" onmouseover="this.style.background=\'#f5f0ff\'" onmouseout="this.style.background=\'\'">'
+      + '<td style="padding:7px 8px;font-weight:600;font-size:12px">' + r.s.name + '</td>'
+      + '<td style="padding:7px 8px;text-align:center"><span style="font-size:10px;background:#f5f0ff;padding:2px 6px;border-radius:20px;color:var(--p2)">' + (PLKlocal[r.s.pl]||r.s.pl) + '</span></td>'
+      + '<td style="padding:7px 8px;text-align:right;color:var(--tl);font-size:11px" class="amount-mask">$' + (r.s.rate||0).toFixed(3) + '</td>'
+      + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--p2)" class="amount-mask">₩' + r.myPrice.toLocaleString() + '</td>'
+      + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#10B981" class="amount-mask">₩' + r.myProfit.toLocaleString() + ' <span style="font-size:10px">(+' + profitRate + '%)</span></td>'
+      + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#F59E0B">₩' + r.custPrice.toLocaleString() + '</td>'
+      + '</tr>';
   });
   tbody.innerHTML = h;
 }

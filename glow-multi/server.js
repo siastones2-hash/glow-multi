@@ -1002,6 +1002,54 @@ function neutralAdminMsg(msg, isSuperAdmin) {
   return t || '처리할 수 없습니다';
 }
 
+/** 고객·파트너 API — 연동 원가($)·상품코드·내부메모 제거 */
+function sanitizeServiceForClient(svc, priceExtras = {}) {
+  return {
+    id: svc.id,
+    name: svc.name,
+    pl: svc.pl,
+    min: svc.min,
+    max: svc.max,
+    description: svc.description || '',
+    active: svc.active,
+    global_active: svc.global_active,
+    site_active: svc.site_active,
+    ...priceExtras
+  };
+}
+
+/** 슈퍼관리자 전용 — Peakerr $원가·api_id 포함 */
+function sanitizeServiceForSuper(svc, priceExtras = {}) {
+  return {
+    id: svc.id,
+    name: svc.name,
+    pl: svc.pl,
+    rate: svc.rate,
+    min: svc.min,
+    max: svc.max,
+    description: svc.description || '',
+    active: svc.active,
+    api_id: svc.api_id || '',
+    ...priceExtras
+  };
+}
+
+function sanitizeHiddenServiceNote(note) {
+  return stripSupplierBrand(String(note || '')
+    .replace(/공급\s*API\s*연동\s*코드\s*없음/gi, '연동 코드 없음'));
+}
+
+/** 주문 API — 외부 작업번호·USD 원가 제거 (슈퍼만 유지) */
+function sanitizeOrderForClient(order, isSuperAdmin) {
+  if (!order) return order;
+  const o = { ...order };
+  if (!isSuperAdmin) {
+    delete o.api_order_id;
+    delete o.api_cost;
+  }
+  return o;
+}
+
 /** 회원 개별 마진 → 없으면 사이트 기본 마진 */
 function resolveSiteMargin(site, user) {
   if (user && user.margin != null && user.margin >= 0) return user.margin;
@@ -3123,7 +3171,7 @@ async function syncPeakerrServices() {
     // 슈퍼관리자 알림 (변경사항 있을 때만)
     if (disabled > 0 || priceChanged > 0 || stuckRefunded > 0) {
       let msg = `🔄 <b>서비스 자동 동기화</b>\n\n`;
-      if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (공급사에서 삭제됨)\n`;
+      if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (목록에서 삭제·중단)\n`;
       if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
       if (priceChanged > 0) {
         msg += `💰 가격 업데이트: ${priceChanged}개\n`;
@@ -3154,7 +3202,7 @@ async function reconcileServiceCatalog(opts = {}) {
       WHERE active=1 AND (api_id IS NULL OR TRIM(api_id) = '')
     `);
     for (const row of noApiR.rows) {
-      await hideServiceWithNote(row.id, '공급 API 연동 코드 없음 — 판매 불가');
+      await hideServiceWithNote(row.id, '연동 코드 없음 — 판매 불가');
     }
     noApi = noApiR.rowCount || 0;
 
@@ -3183,7 +3231,7 @@ async function reconcileServiceCatalog(opts = {}) {
 
     if (notify && (noApi || failHide || sync?.disabled > 0)) {
       let msg = `🧹 <b>상품 카탈로그 정리</b>\n\n`;
-      if (sync?.disabled) msg += `⚠️ 공급사 삭제됨: ${sync.disabled}개 숨김\n`;
+      if (sync?.disabled) msg += `⚠️ 삭제·중단: ${sync.disabled}개 숨김\n`;
       if (noApi) msg += `🔗 API 미연동: ${noApi}개 숨김\n`;
       if (failHide) msg += `❌ 최근 주문 전부 실패·취소: ${failHide}개 숨김\n`;
       msg += `\n✅ 활성 상품 ${activeCount}개 (작동 가능만 노출)`;
@@ -4783,6 +4831,7 @@ app.get('/api/services', async (req, res) => {
       const allR = await query(`SELECT * FROM services WHERE active=1 ORDER BY id`);
       serviceRows = allR.rows;
     }
+    const isSuperAdmin = svcPayload?.role === 'superadmin';
     const isPartner = req.session && req.session.role === 'partner';
     const isDefaultSite = !site || site.id === 'default';
     
@@ -4838,11 +4887,23 @@ app.get('/api/services', async (req, res) => {
       const baseCost = Math.max(Math.round(baseCostPer1000 / 1000), 1);
       
       if (isPartner || !isDefaultSite) {
-        // 지인/파트너: GLOW 판매가를 원가로 보여줌 (실제 Peakerr 원가 숨김)
-        return { ...s, sell: sellPrice, baseCost, isPartnerView: true };
+        return sanitizeServiceForClient(s, {
+          sell: sellPrice,
+          baseCost,
+          sellPer1K: Math.max(Math.round(sellPer1000), 1),
+          baseCostPer1K: Math.max(Math.round(baseCostPer1000), 1),
+          isPartnerView: true
+        });
       }
-      // GLOW 본사(슈퍼관리자): 모든 정보 공개
-      return { ...s, sell: sellPrice, originalCost, supplyCost, myProfit: supplyCost - originalCost };
+      if (isSuperAdmin) {
+        return sanitizeServiceForSuper(s, {
+          sell: sellPrice,
+          originalCost,
+          supplyCost,
+          myProfit: supplyCost - originalCost
+        });
+      }
+      return sanitizeServiceForClient(s, { sell: sellPrice });
     }));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -5077,7 +5138,8 @@ app.get('/api/orders/my', requireAuth, async (req, res) => {
   try {
     await syncActiveOrdersForUser(req.session.userId).catch(() => null);
     const r = await query(`SELECT * FROM orders WHERE uid=$1 ORDER BY created DESC`, [req.session.userId]);
-    res.json(r.rows);
+    const isSuper = req.session.role === 'superadmin';
+    res.json(r.rows.map(o => sanitizeOrderForClient(o, isSuper)));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5107,7 +5169,11 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
       await backfillOrderStartCount(updated);
       updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
     }
-    res.json({ ok: true, order: updR.rows[0], status: updR.rows[0]?.status });
+    res.json({
+      ok: true,
+      order: sanitizeOrderForClient(updR.rows[0], req.session?.role === 'superadmin'),
+      status: updR.rows[0]?.status
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5286,11 +5352,11 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
     const r = siteId
       ? await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id WHERE o.site_id=$1 ORDER BY o.created DESC`, [siteId])
       : await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id ORDER BY o.created DESC`);
-    res.json(r.rows);
+    const isSuper = req.session.role === 'superadmin';
+    res.json(r.rows.map(o => sanitizeOrderForClient(o, isSuper)));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-/** 진행 중 주문 Peakerr 동기화 — 시작 카운트·진행률 갱신 (수동 버튼용) */
 app.post('/api/admin/orders/sync-active', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
@@ -5737,7 +5803,7 @@ app.get('/api/admin/site-services', requireAdmin, async (req, res) => {
         id: h.id,
         name: h.name,
         pl: h.pl,
-        note: h.inactive_note || '판매 중단',
+        note: sanitizeHiddenServiceNote(h.inactive_note || '판매 중단'),
         replaceId: h.replace_service_id,
         replaceName: h.replace_name || null,
         inactiveAt: h.inactive_at
