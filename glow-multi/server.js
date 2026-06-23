@@ -181,6 +181,9 @@ async function initDB() {
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''`).catch(()=>{});
   try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS margin REAL DEFAULT NULL`); } catch(e) {}
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS refill_guaranteed INTEGER DEFAULT 0`); } catch(e) {}
+  try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS inactive_note TEXT DEFAULT ''`); } catch(e) {}
+  try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS replace_service_id TEXT DEFAULT NULL`); } catch(e) {}
+  try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS inactive_at TIMESTAMP`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS target_count INTEGER DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_count INTEGER DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_last_at TIMESTAMP`); } catch(e) {}
@@ -437,7 +440,7 @@ async function initDB() {
       {id:'ptt1',name:'TikTok 댓글 — 프리미엄 글로벌',pl:'tiktok',rate:0.91,min:1,max:50000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 댓글 서비스입니다. 댓글이 많은 영상은 알고리즘이 높은 인게이지먼트로 인식해 포유 탭 노출을 늘립니다. 질문 형태의 댓글은 다른 시청자들의 댓글 참여를 유발하는 연쇄 효과가 있어 영상 활성도를 자연스럽게 높여줍니다.',api_id:'31288'},
       {id:'ptt10',name:'TikTok 공유 — 프리미엄 글로벌',pl:'tiktok',rate:1.13,min:1,max:5000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 공유 서비스입니다. 공유는 틱톡에서 가장 강력한 바이럴 신호입니다. 공유가 많은 영상은 외부 트래픽을 유입시키고 알고리즘이 바이럴 콘텐츠로 판단해 대규모 배포합니다.',api_id:'30998'},
       {id:'ptt11',name:'TikTok 스토리 조회수 — 프리미엄 글로벌',pl:'tiktok',rate:0.18,min:10,max:10000000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 스토리 조회수 서비스입니다. 틱톡 스토리 조회수를 늘려 계정 활성도를 높입니다. 활발한 스토리 활동은 알고리즘이 활성 크리에이터로 인식하게 만들어 콘텐츠 노출 범위를 확대합니다.',api_id:'25820'},
-      {id:'ptt12',name:'TikTok 조회수 — 브라질 타겟 (드롭 보상)',pl:'tiktok',rate:0.08,min:1,max:1000000,description:'브라질 기반 고품질 TikTok 조회수 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 틱톡에서 바이럴을 만드는 가장 빠른 방법입니다. 초기 조회수가 빠르게 쌓이면 알고리즘이 영상을 더 넓은 포유 탭에 배포하며, 이 바이럴 루프에 진입하면 수백만 조회수까지 자연 성장이 가능합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31183'},
+      {id:'ptt12',name:'TikTok 조회수 — 브라질 타겟 (드롭 보상)',pl:'tiktok',rate:0.08,min:1,max:1000000,description:'브라질 기반 고품질 TikTok 조회수 서비스입니다. 틱톡 조회수 대표 상품으로, 초기 조회수가 빠르게 쌓이면 포유 탭 배포가 넓어집니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31183'},
       {id:'ptt13',name:'TikTok 조회수 — 프리미엄 글로벌 (중단)',pl:'tiktok',rate:0.44,min:10,max:1000000,description:'[판매 중단] 공급사 취소·실패 빈번 — TikTok 조회수 브라질 타겟(ptt12) 사용 권장. 영상(/video/) 링크만 가능.',api_id:'20976',active:0},
       {id:'ptt14',name:'TikTok 공유 — 무제한 (평생 보장)',pl:'tiktok',rate:0.0182,min:100,max:1000000,description:'틱톡 게시물 공유를 무제한으로 유입시키는 평생 보장 프리미엄 서비스입니다. 공유는 틱톡 알고리즘이 "진짜 가치 있는 콘텐츠"로 판단하는 가장 강력한 신호로, 포유(For You) 탭 바이럴 확률을 급격히 높입니다. 평생 보장 리필로 장기 가치가 영구 유지됩니다.',api_id:'29453'},
       {id:'ptt15',name:'TikTok 맞춤 댓글 — 리얼 HQ 계정',pl:'tiktok',rate:2.03,min:10,max:500,description:'원하는 문구로 틱톡 댓글을 작성해주는 맞춤형 프리미엄 서비스입니다. 실제 HQ 계정이 자연스러운 댓글을 남기며, 초기 댓글 군집은 영상의 "인기 콘텐츠" 신호로 작용해 탐색 탭 노출 우선순위를 극대화합니다. 브랜드 캠페인이나 이벤트 영상의 초기 반응 유도에 가장 효과적입니다.',api_id:'27194'},
@@ -465,8 +468,8 @@ async function initDB() {
       {id:'ptg2',name:'Telegram 멤버 — 프리미엄 글로벌 (드롭 보상)',pl:'telegram',rate:0.71,min:10,max:1000000,description:'전 세계 실계정 기반으로 제공되는 고품질 Telegram 멤버 서비스입니다. 텔레그램 채널 멤버 수는 채널 신뢰도와 광고 단가에 직접 영향을 줍니다. 멤버가 많을수록 광고주 제안 단가가 올라가며 자연 유입도 가속화됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29546'},
       {id:'ptg4',name:'Telegram 멤버 — 리얼 (365일 보장)',pl:'telegram',rate:0.658,min:100,max:1000000,description:'텔레그램 채널 리얼 멤버를 365일 초장기 보장으로 제공하는 프리미엄 서비스입니다. 1년 내 드롭 발생 시 자동 보충되며, 실제 활성 계정 기반이라 채널 신뢰도와 활성도 지표에 긍정적으로 작용합니다. 장기 채널 성장이나 비즈니스 채널 구축에 가장 강력한 자산입니다.',api_id:'29545'},
       {id:'ptg5',name:'Telegram 멤버 — 리얼 (30일 보장, 저가)',pl:'telegram',rate:0.434,min:100,max:1000000,description:'텔레그램 채널 리얼 멤버 30일 보장 저가형 서비스입니다. 30일간 드롭 발생 시 자동 보충되며, 채널 초기 멤버 확보나 단기 프로모션에 비용 효율적입니다. 대량 주문(최대 100만)이 가능해 신규 채널 부스트에 최적화되어 있습니다.',api_id:'29541'},
-      {id:'pth1',name:'Threads 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'threads',rate:21.0,min:100,max:50000,description:'전 세계 실계정 기반으로 제공되는 고품질 Threads 팔로워 서비스입니다. 메타의 Threads 팔로워는 인스타그램과 연동되어 증가할수록 인스타그램 계정 노출에도 시너지 효과가 발생합니다. 빠르게 성장하는 플랫폼에서 초기 팔로워 확보는 장기적 경쟁 우위를 만듭니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29558'},
-      {id:'pth2',name:'Threads 좋아요 — 프리미엄 글로벌 (드롭 보상)',pl:'threads',rate:12.6,min:50,max:50000,description:'전 세계 실계정 기반으로 제공되는 고품질 Threads 좋아요 서비스입니다. Threads 게시물 좋아요로 참여도를 높입니다. 좋아요가 많은 게시물은 Threads 피드 상위에 노출되어 추가 팔로워와 인게이지먼트를 유도하며, 인스타그램 연동 시너지도 발휘합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29560'},
+      {id:'pth1',name:'Threads 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'threads',rate:21.0,min:100,max:50000,description:'전 세계 실계정 기반 Threads 팔로워 서비스입니다. 인스타그램과 연동된 계정의 신뢰도·노출을 함께 높입니다. 드롭 발생 시 자동 보상되어 장기 운영에 적합합니다.',api_id:'29558'},
+      {id:'pth2',name:'Threads 좋아요 — 프리미엄 글로벌 (드롭 보상)',pl:'threads',rate:12.6,min:50,max:50000,description:'전 세계 실계정 기반 Threads 좋아요 서비스입니다. 게시물 참여도를 높여 피드 상위 노출을 유도합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29560'},
       {id:'pth3',name:'Threads 공유 — 프리미엄 글로벌 (드롭 보상)',pl:'threads',rate:28.0,min:50,max:50000,description:'전 세계 실계정 기반으로 제공되는 고품질 Threads 공유 서비스입니다. Threads 리포스트는 강력한 확산 신호로, 리포스트가 많은 게시물은 알고리즘에서 화제 콘텐츠로 분류되어 피드 상단 노출이 크게 증가합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29562'},
       {id:'psp1',name:'Spotify 재생수 — 프리미엄 글로벌',pl:'spotify',rate:1.029,min:1000,max:1000000,description:'스포티파이 프리미엄 계정 기반 재생수를 빠르게 늘립니다. 재생수가 기준치를 넘으면 Discover Weekly·Release Radar 등 개인화 추천 플레이리스트에 포함될 가능성이 크게 높아집니다. 즉시 시작되며 일 1천 스트림 속도로 자연스럽게 처리되어 아티스트 페이지 신뢰도와 월간 리스너 수 동반 상승 효과를 만들어냅니다.',api_id:'28251'},
       {id:'psp2',name:'Spotify 재생수 — 프리 계정 (고속)',pl:'spotify',rate:0.4368,min:1000,max:1000000,description:'스포티파이 프리 계정 기반 재생수로 빠르고 저렴하게 스트림 수를 확보합니다. 일 5천 스트림 속도로 대량 처리가 가능하여 신곡 발매 초기 알고리즘 부스트 효과를 극대화할 수 있습니다. 차트 진입과 편집팀 플레이리스트 선정을 목표로 하는 아티스트에게 가장 비용 효율적인 서비스입니다.',api_id:'28250'},
@@ -1323,8 +1326,55 @@ function isCuratedServiceId(id) {
   return /^[a-z]{2,3}\d/i.test(String(id || ''));
 }
 
-/** 시드 중 영구 판매 중단 (공급 불안정·반복 실패) */
-const PERMANENTLY_DISABLED_SEEDS = new Set(['ptt13']);
+/** 시드 중 영구 판매 중단 — 사유·대체 상품 메모 포함 */
+const DISABLED_SEED_META = {
+  ptt13: {
+    note: '공급사에서 TikTok 조회수 주문이 반복 취소·실패했습니다. 사진(/photo/) 링크로는 조회수 작업이 불가합니다.',
+    replaceId: 'ptt12',
+    replaceHint: 'TikTok 조회수 — 브라질 타겟 (드롭 보상)'
+  }
+};
+const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
+
+async function hideServiceWithNote(serviceId, note, replaceId = null) {
+  const repR = replaceId ? await query(`SELECT name FROM services WHERE id=$1`, [replaceId]) : { rows: [] };
+  const repName = repR.rows[0]?.name || '';
+  let fullNote = String(note || '').trim();
+  if (replaceId && repName && !fullNote.includes(repName)) {
+    fullNote += (fullNote ? ' ' : '') + `→ 대체 상품: ${repName}`;
+  }
+  await query(`
+    UPDATE services SET active=0, inactive_note=$1, replace_service_id=$2, inactive_at=COALESCE(inactive_at, NOW())
+    WHERE id=$3
+  `, [fullNote, replaceId || null, serviceId]);
+  await query(`
+    UPDATE site_services SET active=0
+    WHERE service_id=$1
+  `, [serviceId]);
+}
+
+async function applyDisabledSeedMeta() {
+  for (const [id, meta] of Object.entries(DISABLED_SEED_META)) {
+    await hideServiceWithNote(id, meta.note, meta.replaceId || null);
+  }
+}
+
+async function getUnreliableServiceDetails(opts = {}) {
+  const minOrders = opts.minOrders ?? 2;
+  const days = opts.days ?? 30;
+  const r = await query(`
+    SELECT sid,
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE status IN ('cancelled','canceled'))::int AS cancelled,
+      COUNT(*) FILTER (WHERE status IN ('failed','refunded'))::int AS failed
+    FROM orders
+    WHERE created >= NOW() - ($2 || ' days')::interval
+    GROUP BY sid
+    HAVING COUNT(*) >= $1
+       AND COUNT(*) FILTER (WHERE status IN ('completed','processing','pending')) = 0
+  `, [minOrders, days]);
+  return r.rows;
+}
 
 async function ensurePeakerrCatalogLoaded(opts = {}) {
   if (peakerrCatalogCache.size > 0) return;
@@ -1353,13 +1403,22 @@ async function getUnreliableServiceIds(opts = {}) {
 }
 
 async function deactivateUnreliableServices(opts = {}) {
-  const unreliable = await getUnreliableServiceIds(opts);
+  const details = await getUnreliableServiceDetails(opts);
   let n = 0;
-  for (const sid of unreliable) {
-    const u = await query(`UPDATE services SET active=0 WHERE id=$1 AND active=1 RETURNING id, name`, [sid]);
+  for (const row of details) {
+    const parts = [`최근 ${opts.days ?? 30}일 주문 ${row.total}건 전부 미완료`];
+    if (row.cancelled > 0) parts.push(`취소 ${row.cancelled}건`);
+    if (row.failed > 0) parts.push(`실패·환불 ${row.failed}건`);
+    parts.push('자동 판매 중단');
+    const note = parts.join(' · ');
+    const u = await query(`
+      UPDATE services SET active=0, inactive_note=$1, inactive_at=COALESCE(inactive_at, NOW())
+      WHERE id=$2 AND active=1 RETURNING id, name
+    `, [note, row.sid]);
     if (u.rowCount) {
       n++;
-      console.log(`⚠️ 미작동 상품 숨김: ${sid} (${u.rows[0]?.name || ''})`);
+      await query(`UPDATE site_services SET active=0 WHERE service_id=$1`, [row.sid]);
+      console.log(`⚠️ 미작동 상품 숨김: ${row.sid} (${u.rows[0]?.name || ''})`);
     }
   }
   return n;
@@ -1452,7 +1511,9 @@ async function upgradeEngagementSeedsFromPeakerr() {
 
     const alt = findBestRefillPeakerrService(row.pl, bucket, new Set([String(row.api_id)]));
     if (alt) {
-      await query(`UPDATE services SET api_id=$1, refill_guaranteed=1, active=1, rate=$2, min=$3, max=$4 WHERE id=$5`, [
+      await query(`UPDATE services SET api_id=$1, refill_guaranteed=1, active=1, rate=$2, min=$3, max=$4,
+        inactive_note='', replace_service_id=NULL
+        WHERE id=$5`, [
         String(alt.service),
         parseFloat(alt.rate || 0),
         Math.max(1, parseInt(alt.min, 10) || 10),
@@ -1478,13 +1539,23 @@ async function upgradeEngagementSeedsFromPeakerr() {
     const altExists = findBestRefillPeakerrService(row.pl, bucket);
     if (!altExists || String(altExists.service) === String(row.api_id)) continue;
 
-    const u = await query(`UPDATE services SET active=0 WHERE id=$1 AND active=1 RETURNING id`, [row.id]);
-    if (u.rowCount) disabled++;
+    const rep = r.rows.find(x => {
+      if (x.id === row.id || x.pl !== row.pl) return false;
+      if (serviceOrderBucket(x) !== bucket) return false;
+      if (upgradedIds.has(x.id)) return true;
+      return peakerrServiceHasRefill(peakerrCatalogCache.get(String(x.api_id)));
+    });
+    const note = rep
+      ? '리필 보장이 없는 동일 종류 상품 — 리필 SKU로 통합하여 판매 중단'
+      : '리필 보장 없음 · 동일 종류 리필 상품 없음 — 판매 중단';
+    await hideServiceWithNote(row.id, note, rep?.id || null);
+    disabled++;
   }
 
   if (upgraded || disabled) {
     console.log(`✅ 참여형 시드 정리: 리필 교체 ${upgraded} · 리필 없음 숨김 ${disabled}`);
   }
+  await syncServiceDescriptionFooters();
   return { upgraded, disabled };
 }
 
@@ -1807,7 +1878,8 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
     }
     if (isPeakerrServiceDeadError(result.error) || isPeakerrQuantityError(result.error)) {
       if (!isCuratedServiceId(svc.id)) {
-        await query(`UPDATE services SET active=0 WHERE id=$1`, [svc.id]).catch(() => null);
+        const why = isPeakerrQuantityError(result.error) ? '수량·최소주문 조건 불일치' : '공급사 서비스 중단·거절';
+        await hideServiceWithNote(svc.id, `${why}: ${stripSupplierBrand(result.error)}`).catch(() => null);
       }
       continue;
     }
@@ -1916,7 +1988,58 @@ function linkHintForService(svc) {
   }
   if (svc.pl === 'instagram' && bucket === '팔로워') return '인스타 팔로워는 프로필 링크를 입력해주세요.';
   if (svc.pl === 'youtube' && bucket === '구독자') return '유튜브 구독자는 채널 링크를 입력해주세요.';
+  if (svc.pl === 'threads') {
+    if (bucket === '팔로워') return 'Threads 프로필 링크를 입력해주세요.';
+    if (bucket === '좋아요' || bucket === '공유') return 'Threads 게시물 링크를 입력해주세요.';
+  }
   return '링크 형식을 확인해주세요. 공유 → 링크 복사로 다시 시도해주세요.';
+}
+
+/** 상품 설명 하단 자동 안내 (고객 주문 화면 description에 표시) */
+function stripAutoDescriptionFooters(desc) {
+  const d = String(desc || '');
+  const idx = d.indexOf('\n\n---\n');
+  return (idx >= 0 ? d.slice(0, idx) : d).trim();
+}
+
+function buildServiceDescriptionFooters(svc) {
+  const blocks = [];
+  const bucket = serviceOrderBucket(svc);
+  const label = `${svc.name || ''} ${svc.description || ''}`;
+  const hasRefill = parseInt(svc.refill_guaranteed || 0, 10) === 1
+    || /드롭\s*보상|드롭보상|평생\s*보장|\d+일\s*보장|365일/.test(label);
+
+  if (hasRefill) {
+    blocks.push('【드롭보상】작업 완료 후 팔로워·좋아요·조회수 등이 줄어들면 보증 기간 내 자동 보충(리필)을 요청합니다. 플랫폼 정책에 따라 1~7일 안에 회복되며, 즉시 반영되지 않을 수 있습니다.');
+  } else if (['팔로워', '좋아요', '조회수'].includes(bucket) && ['tiktok', 'threads', 'instagram'].includes(svc.pl)) {
+    blocks.push('【안내】작업 후 며칠 뒤 숫자가 일시적으로 줄어들 수 있습니다. 장기 유지가 필요하면 상품명에 「드롭 보상」이 있는 상품을 선택하세요.');
+  }
+
+  const linkHint = linkHintForService(svc);
+  if (linkHint && !linkHint.startsWith('링크 형식')) {
+    blocks.push(`【링크안내】${linkHint}`);
+  }
+
+  if (!blocks.length) return '';
+  return '\n\n---\n' + blocks.join('\n');
+}
+
+async function syncServiceDescriptionFooters() {
+  const r = await query(`
+    SELECT id, name, pl, description, refill_guaranteed FROM services WHERE active=1
+  `);
+  let n = 0;
+  for (const row of r.rows) {
+    const base = stripAutoDescriptionFooters(row.description);
+    const footers = buildServiceDescriptionFooters(row);
+    const next = base + footers;
+    if (next !== (row.description || '')) {
+      await query(`UPDATE services SET description=$1 WHERE id=$2`, [next, row.id]);
+      n++;
+    }
+  }
+  if (n > 0) console.log(`📝 상품 설명 안내 갱신: ${n}건`);
+  return n;
 }
 
 // 🤖 텔레그램 알림 발송 (통합 함수)
@@ -2752,7 +2875,7 @@ async function syncPeakerrServices() {
       if (!peakerrSvc) {
         // Peakerr에서 삭제됨 → 비활성화
         if (glowSvc.active === 1) {
-          await query(`UPDATE services SET active=0 WHERE id=$1`, [glowSvc.id]);
+          await hideServiceWithNote(glowSvc.id, '공급사 카탈로그에서 삭제·중단됨');
           disabled++;
           console.log(`  ⚠️ 비활성화: ${glowSvc.name}`);
         }
@@ -2845,10 +2968,12 @@ async function reconcileServiceCatalog(opts = {}) {
   let noApi = 0, failHide = 0;
   try {
     const noApiR = await query(`
-      UPDATE services SET active=0
+      SELECT id FROM services
       WHERE active=1 AND (api_id IS NULL OR TRIM(api_id) = '')
-      RETURNING id
     `);
+    for (const row of noApiR.rows) {
+      await hideServiceWithNote(row.id, '공급 API 연동 코드 없음 — 판매 불가');
+    }
     noApi = noApiR.rowCount || 0;
 
     const sync = await syncPeakerrServices();
@@ -2860,9 +2985,9 @@ async function reconcileServiceCatalog(opts = {}) {
 
     failHide = await deactivateUnreliableServices();
 
-    for (const seedId of PERMANENTLY_DISABLED_SEEDS) {
-      await query(`UPDATE services SET active=0 WHERE id=$1`, [seedId]);
-    }
+    await applyDisabledSeedMeta();
+
+    await syncServiceDescriptionFooters();
 
     await query(`
       UPDATE site_services ss SET active=0
@@ -3767,6 +3892,15 @@ async function pruneServiceCatalog(opts = {}) {
   }
 
   const stats = { bad: 0, duplicate: 0, namedup: 0, overflow: 0, typeoverflow: 0, autimport: 0 };
+  const PRUNE_REASON_KO = {
+    bad: '저품질·테스트·무효 상품으로 판매 중단',
+    duplicate: '동일 공급 코드 중복 — 품질·가격 우수한 상품만 유지',
+    namedup: '동일 한글 상품명 중복 — 하나만 판매',
+    overflow: '플랫폼별 판매 상품 수 상한(28개) 초과',
+    typeoverflow: '동일 종류(팔로워·좋아요 등) 상품 수 상한 초과',
+    autimport: '검증 시드와 동일 종류 — 자동등록(pk_) 상품 숨김',
+    miscat: '카테고리 오분류(웹 트래픽·지도 리뷰 혼동 등)'
+  };
   const items = [];
   for (const [id, info] of toDeactivate) {
     stats[info.reason] = (stats[info.reason] || 0) + 1;
@@ -3775,11 +3909,9 @@ async function pruneServiceCatalog(opts = {}) {
   const total = items.length;
 
   if (!dryRun && total > 0) {
-    await query(`UPDATE services SET active=0 WHERE id = ANY($1)`, [items.map(i => i.id)]);
-    await query(`
-      UPDATE site_services ss SET active=0
-      FROM services s WHERE ss.service_id = s.id AND s.active=0 AND ss.active=1
-    `);
+    for (const item of items) {
+      await hideServiceWithNote(item.id, PRUNE_REASON_KO[item.reason] || `카탈로그 정리 (${item.reason})`);
+    }
     await query(`DELETE FROM site_services WHERE service_id NOT IN (SELECT id FROM services)`);
     await repairAllPartnerSiteServices();
   }
@@ -5404,7 +5536,31 @@ app.get('/api/admin/site-services', requireAdmin, async (req, res) => {
         // ⚠️ s.rate (Peakerr 진짜 원가)는 절대 내보내지 않음
       };
     });
-    res.json(hiddenServices);
+    const hiddenR = await query(`
+      SELECT s.id, s.name, s.pl, s.inactive_note, s.replace_service_id, s.inactive_at,
+        rs.name AS replace_name
+      FROM services s
+      LEFT JOIN services rs ON rs.id = s.replace_service_id
+      WHERE s.active = 0
+        AND (
+          COALESCE(TRIM(s.inactive_note), '') <> ''
+          OR s.id = ANY($1::text[])
+        )
+      ORDER BY s.inactive_at DESC NULLS LAST, s.pl, s.name
+      LIMIT 80
+    `, [Array.from(PERMANENTLY_DISABLED_SEEDS)]);
+    res.json({
+      services: hiddenServices,
+      hidden: hiddenR.rows.map(h => ({
+        id: h.id,
+        name: h.name,
+        pl: h.pl,
+        note: h.inactive_note || '판매 중단',
+        replaceId: h.replace_service_id,
+        replaceName: h.replace_name || null,
+        inactiveAt: h.inactive_at
+      }))
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

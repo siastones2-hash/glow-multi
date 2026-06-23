@@ -1596,10 +1596,15 @@ tr:last-child td{border-bottom:none}
               <button class="bo bsm" onclick="purgeDeadSiteServices()" style="color:#DC143C;border-color:rgba(220,20,60,.3)">🗑 미작동 제거</button>
             </div>
           </div>
-          <div style="font-size:12px;color:var(--tl);margin-bottom:12px">판매중인 검증 상품만 표시됩니다. 예전 「미판매」였던 자동등록·죽은 SKU는 「미작동 제거」로 정리하세요.</div>
+          <div style="font-size:12px;color:var(--tl);margin-bottom:12px">판매중 상품만 표시됩니다. <strong>드롭 보상·링크 안내</strong>는 각 상품 설명(주문 화면) 하단에 자동 표시됩니다.</div>
           <!-- 플랫폼 필터 -->
           <div id="svcMgmtFilter" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none"></div>
           <div id="svcMgmtList" style="display:flex;flex-direction:column;gap:6px"></div>
+          <div id="svcMgmtHiddenWrap" style="margin-top:20px;display:none">
+            <div style="font-size:14px;font-weight:800;margin-bottom:8px;color:#92400E">📋 숨김·중단 상품 <span id="svcHiddenCount" style="font-size:12px;font-weight:600;color:var(--tl)"></span></div>
+            <div style="font-size:11px;color:var(--tl);margin-bottom:10px;line-height:1.5">관리자 참고용입니다. 고객에게는 <strong>주문 화면 상품 설명</strong>에 드롭보상·링크 안내가 표시됩니다.</div>
+            <div id="svcMgmtHiddenList" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
         </div>
 
         <div class="atab-body" id="ap-settings">
@@ -3210,7 +3215,7 @@ function renderSvcList(){
       +'<div class="spi" style="background:'+PLC[s.pl]+'">'+PLI[s.pl]+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;font-weight:700;color:var(--tx);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.name+'</div>'
-      +'<div style="font-size:12px;color:var(--tm);line-height:1.6;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px">'+s.description+'</div>'
+      +'<div style="font-size:12px;color:var(--tm);line-height:1.6;font-weight:300;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px">'+s.description+'</div>'
       +'<div style="font-size:11px;color:var(--tl)">최소 '+(s.min||0).toLocaleString()+' ~ 최대 '+(s.max||0).toLocaleString()+'개</div>'
       +'</div>'
       +'<div style="flex-shrink:0;text-align:right;padding-left:10px">'
@@ -3223,7 +3228,7 @@ function selSvc(id){
   SEL=null;for(var i=0;i<SVCS.length;i++){if(SVCS[i].id===id){SEL=SVCS[i];break}}
   if(!SEL)return;
   ge('selName').innerHTML='<strong style="font-size:14px">'+PLI[SEL.pl]+' '+SEL.name+'</strong>'
-    +'<div style="font-size:12px;color:var(--tm);font-weight:300;margin-top:5px;line-height:1.6">'+SEL.description+'</div>';
+    +'<div style="font-size:12px;color:var(--tm);font-weight:300;margin-top:5px;line-height:1.65;white-space:pre-line">'+SEL.description+'</div>';
   ge('qHint').textContent='최소 '+(SEL.min||0).toLocaleString()+' / 최대 '+(SEL.max||0).toLocaleString()+'개';
   ge('linkHint').textContent=HINTS[SEL.pl]||'서비스 대상 URL';
   var gb=ge('orderGuideBox'),g=ORDERGUIDE[SEL.pl];
@@ -3268,7 +3273,7 @@ function renderQCards(){
     return'<div class="card" style="cursor:pointer" onclick="goTab(\'order\');setTimeout(function(){selSvc(\''+s.id+'\')},50)">'
       +'<div style="font-size:22px;margin-bottom:8px">'+PLI[s.pl]+'</div>'
       +'<div style="font-size:13px;font-weight:700;margin-bottom:3px;color:var(--tx)">'+s.name+'</div>'
-      +'<div style="font-size:11px;color:var(--tl);margin-bottom:8px;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+s.description+'</div>'
+      +'<div style="font-size:11px;color:var(--tl);margin-bottom:8px;font-weight:300;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">'+s.description+'</div>'
       +'<div class="gt" style="font-size:13px;font-weight:800">'+gf(p.amount)+(p.label.indexOf('크레딧')>=0?'/1K 크레딧':'/1K')+'</div></div>';
   }).join('');
 }
@@ -3843,14 +3848,22 @@ async function saveCustomTexts(){
 
 // ── 관리자 서비스 관리 ──
 var SITE_SVCS=[];
+var SITE_SVCS_HIDDEN=[];
 var SITE_SVC_FLT='all';
 
 async function loadSvcMgmt(){
   var d=await api('/api/admin/site-services');
-  if(!Array.isArray(d)){toast(d.error||'오류','err');return;}
-  SITE_SVCS=d;
+  if(d.error){toast(d.error||'오류','err');return;}
+  if(Array.isArray(d)){
+    SITE_SVCS=d;
+    SITE_SVCS_HIDDEN=[];
+  }else{
+    SITE_SVCS=d.services||[];
+    SITE_SVCS_HIDDEN=d.hidden||[];
+  }
   renderSvcMgmtFilter();
   renderSvcMgmtList();
+  renderSvcMgmtHidden();
 }
 
 function renderSvcMgmtFilter(){
@@ -3888,6 +3901,30 @@ function renderSvcMgmtList(){
       +'<input type="checkbox" '+(on?'checked':'')+' onchange="toggleSiteService(this.dataset.id,this.checked)" data-id="'+s.id+'" style="width:16px;height:16px;cursor:pointer"/>'
       +'<span style="font-size:12px;color:'+(on?'var(--ok)':'var(--tl)')+'">'+( on?'판매중':'미판매')+'</span>'
       +'</label>'
+      +'</div>';
+  }).join('');
+}
+
+function renderSvcMgmtHidden(){
+  var wrap=ge('svcMgmtHiddenWrap');
+  var listEl=ge('svcMgmtHiddenList');
+  var cntEl=ge('svcHiddenCount');
+  if(!wrap||!listEl)return;
+  var list=SITE_SVCS_HIDDEN||[];
+  if(!list.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  if(cntEl)cntEl.textContent='('+list.length+'개)';
+  var plLbl={youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok',threads:'Threads',twitter:'X',facebook:'Facebook',telegram:'Telegram',spotify:'Spotify',traffic:'웹트래픽',other:'기타'};
+  listEl.innerHTML=list.map(function(h){
+    var pl=plLbl[h.pl]||h.pl||'';
+    var when=h.inactiveAt?('<div style="font-size:10px;color:#9A8AB0;margin-top:6px">중단: '+fd(h.inactiveAt)+'</div>'):'';
+    var rep=h.replaceName
+      ?('<div style="margin-top:6px;padding:6px 8px;background:rgba(16,185,129,.08);border-radius:6px;font-size:11px;color:#047857"><strong>대체 상품</strong> · '+h.replaceName+'</div>')
+      :'';
+    return'<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px 12px">'
+      +'<div style="font-size:12px;font-weight:700;color:#92400E">'+pl+' · '+h.name+'</div>'
+      +'<div style="font-size:11px;color:#78350F;margin-top:6px;line-height:1.55">'+String(h.note||'판매 중단').replace(/</g,'&lt;')+'</div>'
+      +rep+when
       +'</div>';
   }).join('');
 }
