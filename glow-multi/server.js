@@ -977,8 +977,13 @@ function stripSupplierBrand(msg) {
   t = t.replace(/peakerr\.com/gi, '');
   t = t.replace(/피커/g, '');
   t = t.replace(/공급사/g, '시스템');
-  t = t.replace(/공급\s*API/gi, 'API');
-  t = t.replace(/공급\s*연동/gi, 'API 연동');
+  t = t.replace(/API\s*크레딧/gi, '크레딧');
+  t = t.replace(/사이트\s*API/gi, '사이트');
+  t = t.replace(/API\s*연동/gi, '연동');
+  t = t.replace(/API\s*키/gi, '연동 설정');
+  t = t.replace(/공급\s*API/gi, '');
+  t = t.replace(/API\s*미/gi, '미');
+  t = t.replace(/공급\s*연동/gi, '연동');
   t = t.replace(/공급\s*#/g, '');
   t = t.replace(/공급/g, '');
   t = t.replace(/\s{2,}/g, ' ').trim();
@@ -4994,7 +4999,7 @@ async function placeOrderHandler(req, res, ctx) {
       maxApiCost = Math.max(maxApiCost, computeOrderAmounts(alt, qtyNum, site, margins).apiCost);
     }
     if (site && site.credit < maxApiCost && site.id !== 'default')
-      return res.json({ error: '사이트 API 크레딧이 부족합니다. 관리자 → 크레딧 요청으로 충전하세요.' });
+      return res.json({ error: '사이트 크레딧이 부족합니다. 관리자 → 크레딧 요청으로 충전하세요.' });
 
     const conflict = await findActiveOrderConflict(req.siteId, linkNorm, svc);
     if (conflict) {
@@ -5119,7 +5124,7 @@ async function placeOrderHandler(req, res, ctx) {
     }
     
     res.json({
-      ok: true, orderId, apiOrderId, balance: updR.rows[0].balance,
+      ok: true, orderId, balance: updR.rows[0].balance,
       message: apiOrderId
         ? '작업 신청이 접수되었습니다.'
         : '작업 신청이 접수되었습니다. 확인 중입니다.',
@@ -5214,7 +5219,7 @@ app.post('/api/charges', requireAuth, async (req, res) => {
     const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [req.siteId]);
     const site = siteR.rows[0];
     if (site && site.id !== 'default' && user && ['admin', 'partner'].includes(user.role))
-      return res.json({ error: '관리자는 API 크레딧으로 주문하세요. 관리자 → 크레딧 요청을 이용해주세요.' });
+      return res.json({ error: '관리자는 크레딧으로 주문하세요. 관리자 → 크레딧 요청을 이용해주세요.' });
     const { amount, note } = req.body;
     const amt = parseFloat(amount);
     if (!amt || amt < 5000) return res.json({ error: '최소 ₩5,000 이상' });
@@ -5683,7 +5688,7 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
       const reqUserR = await query(`SELECT role FROM users WHERE id=$1`, [charge.uid]);
       const chargerRole = reqUserR.rows[0]?.role || 'user';
       if (charge.site_id && charge.site_id !== 'default' && ['admin', 'partner'].includes(chargerRole))
-        return res.json({ error: '관리자는 API 크레딧으로 주문합니다. 잔액 충전 승인 불가.' });
+        return res.json({ error: '관리자는 크레딧으로 주문합니다. 잔액 충전 승인 불가.' });
     }
     const status = action === 'approve' ? 'approved' : 'rejected';
     await query(`UPDATE charges SET status=$1 WHERE id=$2`, [status, id]);

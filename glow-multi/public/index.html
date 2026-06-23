@@ -1386,7 +1386,7 @@ tr:last-child td{border-bottom:none}
       <!-- 주문 -->
       <div class="tab" id="tab-order">
         <div class="ibox" id="adminCreditNote" style="display:none;margin-bottom:12px;background:#ecfdf5;border-color:#6ee7b7;color:#065f46">
-          💰 관리자 주문은 <strong>API 크레딧</strong>에서 차감됩니다. 크레딧 부족 시 관리자 → 크레딧 요청.
+          💰 관리자 주문은 <strong>크레딧</strong>에서 차감됩니다. 크레딧 부족 시 관리자 → 크레딧 요청.
         </div>
         <div style="margin-bottom:10px">
           <input type="text" id="svcSearch" placeholder="🔍 서비스 검색..." oninput="renderSvcList()" style="border-radius:100px;padding:10px 18px;font-size:14px"/>
@@ -1499,7 +1499,7 @@ tr:last-child td{border-bottom:none}
         </div>
         <div id="aAdminOrderBox" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#64748b">
           🛠 <strong style="color:#475569">내가 직접 주문한 작업분</strong> — 크레딧 사용 <strong id="aAdmCost">₩0</strong>
-          <span style="color:#94a3b8">(고객 매출·잔액과 별도 · API 크레딧에서 차감)</span>
+          <span style="color:#94a3b8">(고객 매출·잔액과 별도 · 크레딧에서 차감)</span>
         </div>
         <div id="aApiBalanceBox" style="display:none;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#047857">
           🔑 공급 API 잔액: <strong id="aApiBalance" style="font-size:16px">-</strong>
@@ -1507,7 +1507,7 @@ tr:last-child td{border-bottom:none}
         </div>
         <!-- API 크레딧 표시 (파트너 사이트) -->
         <div class="ibox" style="margin-bottom:14px;display:none" id="creditInfo">
-          💰 API 크레딧 잔액: <strong id="creditBal">₩0</strong> | 부족 시 <strong>크레딧 요청</strong> 탭에서 충전 요청하세요
+          💰 크레딧 잔액: <strong id="creditBal">₩0</strong> | 부족 시 <strong>크레딧 요청</strong> 탭에서 충전 요청하세요
         </div>
         <div class="admtabs">
           <button class="admtab on" onclick="goAdm('orders',this)">📦 주문</button>
@@ -2235,6 +2235,11 @@ function _partnerMsg(s){
   t=t.replace(/peakerr\.com/gi,'');
   t=t.replace(/피커/g,'');
   t=t.replace(/공급사/g,'시스템');
+  t=t.replace(/API\s*크레딧/gi,'크레딧');
+  t=t.replace(/사이트\s*API/gi,'사이트');
+  t=t.replace(/API\s*연동/gi,'연동');
+  t=t.replace(/API\s*키/gi,'연동 설정');
+  t=t.replace(/API\s*미/gi,'미');
   t=t.replace(/공급/g,'');
   t=t.replace(/\s{2,}/g,' ').trim();
   return t||'처리할 수 없습니다';
@@ -3046,7 +3051,7 @@ async function enterDash(){
   if(wm){
     if(!window._welMsgDefault)window._welMsgDefault=wm.innerHTML;
     wm.innerHTML=aco
-      ? '관리자 작업은 <strong style="color:var(--tx)">API 크레딧</strong>으로 처리됩니다. 크레딧 부족 시 <strong style="color:var(--tx)">관리자 → 크레딧 요청</strong>을 이용하세요.'
+      ? '관리자 작업은 <strong style="color:var(--tx)">크레딧</strong>으로 처리됩니다. 크레딧 부족 시 <strong style="color:var(--tx)">관리자 → 크레딧 요청</strong>을 이용하세요.'
       : window._welMsgDefault;
   }
   var hbl=ge('homeBalLabel');if(hbl&&!aco)hbl.textContent='잔액';
@@ -3064,7 +3069,7 @@ async function enterDash(){
     var dash=await api('/api/admin/stats');
     if(dash&&(dash.creditKrw!==undefined||dash.credit!==undefined)){
       var aEx=(dash.exrate&&dash.exrate>0)?dash.exrate:_globalExrate;
-      var hbl2=ge('homeBalLabel');if(hbl2)hbl2.textContent='API 크레딧';
+      var hbl2=ge('homeBalLabel');if(hbl2)hbl2.textContent='크레딧';
       var sb=ge('stBal');if(sb)sb.textContent=gf(dash.creditKrw!=null?dash.creditKrw:parseFloat(dash.credit||0)*aEx);
     }
   }
@@ -3292,7 +3297,7 @@ async function placeOrder(){
   try{d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});}
   finally{window._orderInFlight=false;btn.disabled=false;btn.innerHTML='✨ 주문하기';}
   if(d.error){toast(d.error,'err');return}
-  var okMsg=d.message||(d.apiOrderId?'✨ 작업 신청 완료! #'+d.apiOrderId:'✨ 작업 신청이 접수되었습니다.');
+  var okMsg=d.message||'✨ 작업 신청이 접수되었습니다.'+(d.orderId?' (#'+d.orderId+')':'');
   if(d.startCount>0){
     okMsg+=' · 시작 '+Number(d.startCount).toLocaleString()+' → 목표 '+Number(d.goalCount).toLocaleString();
   }
