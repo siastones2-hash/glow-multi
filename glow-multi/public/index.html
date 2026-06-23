@@ -2231,9 +2231,11 @@ function _partnerMsg(s){
   t=t.replace(/Peakerr\s*→\s*GLOW/gi,'자동 동기화');
   t=t.replace(/Peakerr\s*#/gi,'');
   t=t.replace(/Peakerr\s+ID/gi,'작업 번호');
-  t=t.replace(/Peakerr/gi,'공급');
-  t=t.replace(/peakerr\.com/gi,'공급 연동');
-  t=t.replace(/피커/g,'공급');
+  t=t.replace(/Peakerr/gi,'');
+  t=t.replace(/peakerr\.com/gi,'');
+  t=t.replace(/피커/g,'');
+  t=t.replace(/공급사/g,'시스템');
+  t=t.replace(/공급/g,'');
   t=t.replace(/\s{2,}/g,' ').trim();
   return t||'처리할 수 없습니다';
 }
@@ -3350,7 +3352,7 @@ async function loadOrders(){
   ge('stDone').textContent=d.filter(function(o){return o.status==='completed'}).length;
 }
 
-// 🔄 주문 상태 실시간 새로고침 (공급사에서 가져옴)
+// 🔄 주문 상태 실시간 새로고침
 async function refreshOrder(orderId){
   toast('상태 확인 중...','ok');
   var d=await api('/api/orders/refresh/'+orderId,'POST');
@@ -3522,7 +3524,7 @@ function _orderProgressCell(o){
   var qty=o.qty||0;
   var start=o.starts_count!=null?parseInt(o.starts_count,10):null;
   if(o.status==='pending'&&!parseInt(o.paid||0,10))
-    return '<span style="font-size:10px;color:#9A8AB0">공급사 확인 중 · 차감 전</span>';
+    return '<span style="font-size:10px;color:#9A8AB0">접수 확인 중 · 차감 전</span>';
   if(!o.api_order_id&&['pending','processing'].includes(o.status))
     return '<span style="font-size:10px;color:#9A8AB0">시작 숫자 확인 중...</span>';
   if((start==null||start===0)&&['pending','processing'].includes(o.status)&&o.api_order_id)

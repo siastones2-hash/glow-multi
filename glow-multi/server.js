@@ -441,7 +441,7 @@ async function initDB() {
       {id:'ptt10',name:'TikTok 공유 — 프리미엄 글로벌',pl:'tiktok',rate:1.13,min:1,max:5000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 공유 서비스입니다. 공유는 틱톡에서 가장 강력한 바이럴 신호입니다. 공유가 많은 영상은 외부 트래픽을 유입시키고 알고리즘이 바이럴 콘텐츠로 판단해 대규모 배포합니다.',api_id:'30998'},
       {id:'ptt11',name:'TikTok 스토리 조회수 — 프리미엄 글로벌',pl:'tiktok',rate:0.18,min:10,max:10000000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 스토리 조회수 서비스입니다. 틱톡 스토리 조회수를 늘려 계정 활성도를 높입니다. 활발한 스토리 활동은 알고리즘이 활성 크리에이터로 인식하게 만들어 콘텐츠 노출 범위를 확대합니다.',api_id:'25820'},
       {id:'ptt12',name:'TikTok 조회수 — 브라질 타겟 (드롭 보상)',pl:'tiktok',rate:0.08,min:1,max:1000000,description:'브라질 기반 고품질 TikTok 조회수 서비스입니다. 틱톡 조회수 대표 상품으로, 초기 조회수가 빠르게 쌓이면 포유 탭 배포가 넓어집니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31183'},
-      {id:'ptt13',name:'TikTok 조회수 — 프리미엄 글로벌 (중단)',pl:'tiktok',rate:0.44,min:10,max:1000000,description:'[판매 중단] 공급사 취소·실패 빈번 — TikTok 조회수 브라질 타겟(ptt12) 사용 권장. 영상(/video/) 링크만 가능.',api_id:'20976',active:0},
+      {id:'ptt13',name:'TikTok 조회수 — 프리미엄 글로벌 (중단)',pl:'tiktok',rate:0.44,min:10,max:1000000,description:'[판매 중단] 반복 취소·실패 — TikTok 조회수 브라질 타겟(ptt12) 사용 권장. 영상(/video/) 링크만 가능.',api_id:'20976',active:0},
       {id:'ptt14',name:'TikTok 공유 — 무제한 (평생 보장)',pl:'tiktok',rate:0.0182,min:100,max:1000000,description:'틱톡 게시물 공유를 무제한으로 유입시키는 평생 보장 프리미엄 서비스입니다. 공유는 틱톡 알고리즘이 "진짜 가치 있는 콘텐츠"로 판단하는 가장 강력한 신호로, 포유(For You) 탭 바이럴 확률을 급격히 높입니다. 평생 보장 리필로 장기 가치가 영구 유지됩니다.',api_id:'29453'},
       {id:'ptt15',name:'TikTok 맞춤 댓글 — 리얼 HQ 계정',pl:'tiktok',rate:2.03,min:10,max:500,description:'원하는 문구로 틱톡 댓글을 작성해주는 맞춤형 프리미엄 서비스입니다. 실제 HQ 계정이 자연스러운 댓글을 남기며, 초기 댓글 군집은 영상의 "인기 콘텐츠" 신호로 작용해 탐색 탭 노출 우선순위를 극대화합니다. 브랜드 캠페인이나 이벤트 영상의 초기 반응 유도에 가장 효과적입니다.',api_id:'27194'},
       {id:'ptt2',name:'TikTok 팔로워 — 아랍 타겟 (드롭 보상)',pl:'tiktok',rate:1.82,min:10,max:1000000,description:'아랍 기반 고품질 TikTok 팔로워 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 틱톡 팔로워는 포유(For You) 탭 배포의 기본 신뢰도 지표로, 팔로워가 많을수록 알고리즘이 새 영상을 더 넓은 범위에 먼저 배포합니다. 실계정 기반으로 계정 안전성을 유지하며 인플루언서 레벨로 성장할 기반을 만들어드립니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'26191'},
@@ -849,7 +849,7 @@ function peakerrBalanceErrorKo(msg) {
   if (/invalid.*key|api key/i.test(s)) return 'API 키가 올바르지 않습니다. 공급 API 키를 다시 저장하세요.';
   if (/키|설정/.test(s)) return s;
   if (/timeout|abort|network|fetch|ECONN|ETIMED|ENOTFOUND/i.test(s)) {
-    return '공급사 서버 연결 실패. 잠시 후 다시 시도하세요.';
+    return '서버 연결 실패. 잠시 후 다시 시도하세요.';
   }
   return s || '조회 실패';
 }
@@ -966,16 +966,21 @@ async function assertPhoneAvailableForReferral(siteId, phone, excludeUserId) {
   return { ok: true, norm };
 }
 
-/** 외부 노출 문구 — 공급사 브랜드명·업체 주문번호 라벨 제거 */
+/** 외부 노출 문구 — 외부 연동·업체 브랜드명 제거 (본사 톤) */
 function stripSupplierBrand(msg) {
   if (msg == null || msg === '') return msg;
   let t = String(msg);
   t = t.replace(/Peakerr\s*→\s*GLOW/gi, '자동 동기화');
-  t = t.replace(/Peakerr\s*#/gi, '');
+  t = t.replace(/Peakerr\s*#\d*/gi, '');
   t = t.replace(/Peakerr\s+ID/gi, '작업 번호');
-  t = t.replace(/Peakerr/gi, '공급');
-  t = t.replace(/peakerr\.com/gi, '공급 연동');
-  t = t.replace(/피커/g, '공급');
+  t = t.replace(/Peakerr/gi, '');
+  t = t.replace(/peakerr\.com/gi, '');
+  t = t.replace(/피커/g, '');
+  t = t.replace(/공급사/g, '시스템');
+  t = t.replace(/공급\s*API/gi, 'API');
+  t = t.replace(/공급\s*연동/gi, 'API 연동');
+  t = t.replace(/공급\s*#/g, '');
+  t = t.replace(/공급/g, '');
   t = t.replace(/\s{2,}/g, ' ').trim();
   return t;
 }
@@ -1257,11 +1262,11 @@ function isPeakerrQuantityError(msg) {
 
 function peakerrNetworkErrorKo(err) {
   const m = String(err?.message || err || '');
-  if (/abort|timeout|timed out/i.test(m)) return '공급사 응답이 지연되고 있습니다. 1~2분 후 다시 시도해주세요.';
+  if (/abort|timeout|timed out/i.test(m)) return '시스템 응답이 지연되고 있습니다. 1~2분 후 다시 시도해주세요.';
   if (/fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|socket|network|TLS/i.test(m)) {
-    return '공급사 서버 연결이 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.';
+    return '서버 연결이 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.';
   }
-  return '공급사 연결 오류입니다. 잠시 후 다시 시도해주세요.';
+  return '연결 오류입니다. 잠시 후 다시 시도해주세요.';
 }
 
 /** Peakerr API — node-fetch 대신 https 직접 호출 (Render에서 안정적) */
@@ -1329,7 +1334,7 @@ function isCuratedServiceId(id) {
 /** 시드 중 영구 판매 중단 — 사유·대체 상품 메모 포함 */
 const DISABLED_SEED_META = {
   ptt13: {
-    note: '공급사에서 TikTok 조회수 주문이 반복 취소·실패했습니다. 사진(/photo/) 링크로는 조회수 작업이 불가합니다.',
+    note: 'TikTok 조회수 주문이 반복 취소·실패하여 판매를 중단했습니다. 사진(/photo/) 링크로는 조회수 작업이 불가합니다.',
     replaceId: 'ptt12',
     replaceHint: 'TikTok 조회수 — 브라질 타겟 (드롭 보상)'
   }
@@ -1584,10 +1589,10 @@ async function submitPeakerrRefill(apiKey, apiOrderId) {
   }
 }
 
-/** 완료 주문 — 리필 보장 상품 드롭 자동 보충 (공급 refill API) */
+/** 완료 주문 — 드롭 보장 상품: 실제 감소 확인 후 자동 보충 */
 async function processEligibleRefills(opts = {}) {
   const apiKey = await getPeakerrApiKey();
-  if (!apiKey) return { processed: 0 };
+  if (!apiKey) return { processed: 0, ok: 0, skipped: 0 };
 
   const maxPerRun = opts.maxPerRun ?? 15;
   const r = await query(`
@@ -1598,7 +1603,7 @@ async function processEligibleRefills(opts = {}) {
       AND COALESCE(s.refill_guaranteed, 0) = 1
       AND o.api_order_id IS NOT NULL AND TRIM(o.api_order_id) <> ''
       AND o.created >= NOW() - INTERVAL '30 days'
-      AND COALESCE(o.refill_count, 0) < 4
+      AND COALESCE(o.refill_count, 0) < 5
       AND (
         o.refill_last_at IS NULL
         OR o.refill_last_at < NOW() - INTERVAL '48 hours'
@@ -1608,31 +1613,52 @@ async function processEligibleRefills(opts = {}) {
     LIMIT $1
   `, [maxPerRun]);
 
-  let processed = 0, ok = 0;
+  let processed = 0, ok = 0, skipped = 0;
+  const checkpoints = [1, 3, 7, 14, 21];
   for (const order of r.rows) {
     processed++;
     const daysSince = (Date.now() - new Date(order.completed_at || order.created).getTime()) / 86400000;
-    const checkpoints = [1, 3, 7, 14, 21];
-    const checkIdx = Math.min(order.refill_count || 0, checkpoints.length - 1);
+    const checkRound = parseInt(order.refill_count || 0, 10);
+    const checkIdx = Math.min(checkRound, checkpoints.length - 1);
     if (daysSince < checkpoints[checkIdx]) continue;
 
-    const result = await submitPeakerrRefill(apiKey, order.api_order_id);
+    const drop = await detectOrderDrop(order);
     await query(`
       UPDATE orders SET refill_count=COALESCE(refill_count,0)+1, refill_last_at=NOW() WHERE id=$1
     `, [order.id]);
 
+    if (!drop.needsRefill) {
+      skipped++;
+      const why = drop.reason === 'unmeasured' ? '숫자 확인 불가' : `감소 없음 (${drop.current ?? '?'}/${drop.target ?? '?'})`;
+      console.log(`♻️ 리필 보류 ${order.id}: ${why}`);
+      await new Promise(res => setTimeout(res, 200));
+      continue;
+    }
+
+    const result = await submitPeakerrRefill(apiKey, order.api_order_id);
     if (result.ok) {
       ok++;
+      const detail = `목표 ${drop.target.toLocaleString()} → 현재 ${drop.current.toLocaleString()} (${drop.drop.toLocaleString()} 감소)`;
       await logActivity(order.site_id, 'system', '자동리필',
-        `드롭 보충 요청`, 'order', order.id,
-        `${order.sname} · 공급 #${order.api_order_id}`);
-      console.log(`♻️ 자동 리필: ${order.id} → #${order.api_order_id}`);
+        `드롭 자동 보충`, 'order', order.id, `${order.sname} · ${detail}`);
+      console.log(`♻️ 자동 보충: ${order.id} · ${detail}`);
+      await tgOrderNotify('♻️ <b>드롭 자동 보충</b>', order, {
+        actorId: 'system',
+        extra: `📉 ${detail}\n✅ 보충 작업 요청 완료`
+      }).catch(() => null);
+      await sendTelegramToSuper(
+        `♻️ <b>드롭 자동 보충</b>\n\n주문 <code>${order.id}</code>\n${order.sname}\n${detail}`
+      ).catch(() => null);
     } else {
-      console.log(`♻️ 리필 스킵/실패 ${order.id}: ${result.error || 'unknown'}`);
+      const errKo = stripSupplierBrand(result.error || '보충 요청 실패');
+      console.log(`♻️ 보충 실패 ${order.id}: ${errKo}`);
+      await sendTelegramToSuper(
+        `⚠️ <b>드롭 보충 실패</b>\n\n주문 <code>${order.id}</code>\n${order.sname}\n${errKo}`
+      ).catch(() => null);
     }
-    await new Promise(res => setTimeout(res, 300));
+    await new Promise(res => setTimeout(res, 400));
   }
-  return { processed, ok };
+  return { processed, ok, skipped };
 }
 
 async function resolveOrderService(sid) {
@@ -1878,7 +1904,7 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
     }
     if (isPeakerrServiceDeadError(result.error) || isPeakerrQuantityError(result.error)) {
       if (!isCuratedServiceId(svc.id)) {
-        const why = isPeakerrQuantityError(result.error) ? '수량·최소주문 조건 불일치' : '공급사 서비스 중단·거절';
+        const why = isPeakerrQuantityError(result.error) ? '수량·최소주문 조건 불일치' : '서비스 중단·거절';
         await hideServiceWithNote(svc.id, `${why}: ${stripSupplierBrand(result.error)}`).catch(() => null);
       }
       continue;
@@ -2005,14 +2031,12 @@ function stripAutoDescriptionFooters(desc) {
 function buildServiceDescriptionFooters(svc) {
   const blocks = [];
   const bucket = serviceOrderBucket(svc);
-  const label = `${svc.name || ''} ${svc.description || ''}`;
-  const hasRefill = parseInt(svc.refill_guaranteed || 0, 10) === 1
-    || /드롭\s*보상|드롭보상|평생\s*보장|\d+일\s*보장|365일/.test(label);
+  const hasRefill = parseInt(svc.refill_guaranteed || 0, 10) === 1;
 
   if (hasRefill) {
-    blocks.push('【드롭보상】작업 완료 후 팔로워·좋아요·조회수 등이 줄어들면 보증 기간 내 자동 보충(리필)을 요청합니다. 플랫폼 정책에 따라 1~7일 안에 회복되며, 즉시 반영되지 않을 수 있습니다.');
+    blocks.push('【드롭보상】작업 완료 후 숫자가 줄어들면 본사에서 자동으로 보충 작업을 진행합니다. 플랫폼 정책에 따라 1~7일 안에 회복되며, 즉시 반영되지 않을 수 있습니다.');
   } else if (['팔로워', '좋아요', '조회수'].includes(bucket) && ['tiktok', 'threads', 'instagram'].includes(svc.pl)) {
-    blocks.push('【안내】작업 후 며칠 뒤 숫자가 일시적으로 줄어들 수 있습니다. 장기 유지가 필요하면 상품명에 「드롭 보상」이 있는 상품을 선택하세요.');
+    blocks.push('【안내】작업 후 며칠 뒤 숫자가 일시적으로 줄어들 수 있습니다. 「드롭 보상」표시 상품은 줄어든 만큼 자동 보충됩니다.');
   }
 
   const linkHint = linkHintForService(svc);
@@ -2204,7 +2228,7 @@ async function scrapePlatformStartCount(order) {
   return null;
 }
 
-async function fetchTikTokPlayCountFromTikwm(pageUrl) {
+async function fetchTikTokMediaFromTikwm(pageUrl) {
   try {
     const data = await new Promise((resolve, reject) => {
       const path = `/api/?url=${encodeURIComponent(pageUrl)}`;
@@ -2229,10 +2253,168 @@ async function fetchTikTokPlayCountFromTikwm(pageUrl) {
       req.on('timeout', () => { req.destroy(new Error('ETIMEDOUT')); });
       req.end();
     });
-    const n = parseInt(data?.data?.play_count ?? data?.data?.view_count ?? 0, 10);
-    if (Number.isFinite(n) && n >= 0) return n;
+    return data?.data || null;
   } catch (e) { console.log('TikTok tikwm:', e.message); }
   return null;
+}
+
+async function fetchTikTokPlayCountFromTikwm(pageUrl) {
+  const media = await fetchTikTokMediaFromTikwm(pageUrl);
+  if (!media) return null;
+  const n = parseInt(media.play_count ?? media.view_count ?? 0, 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+async function fetchTikTokUserFromTikwm(uniqueId) {
+  const uid = String(uniqueId || '').replace(/^@/, '').trim();
+  if (!uid) return null;
+  try {
+    const data = await new Promise((resolve, reject) => {
+      const path = `/api/user/info?unique_id=${encodeURIComponent(uid)}`;
+      const req = https.request({
+        hostname: 'www.tikwm.com',
+        port: 443,
+        path,
+        method: 'GET',
+        agent: peakerrHttpsAgent,
+        family: 4,
+        headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' },
+        timeout: 25000
+      }, (res) => {
+        let raw = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => { raw += c; });
+        res.on('end', () => {
+          try { resolve(JSON.parse(raw || '{}')); } catch (e) { reject(e); }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(new Error('ETIMEDOUT')); });
+      req.end();
+    });
+    return data?.data?.stats || data?.data || null;
+  } catch (e) { console.log('TikTok user tikwm:', e.message); }
+  return null;
+}
+
+function extractTikTokUsername(link) {
+  const m = String(link || '').match(/tiktok\.com\/@([^/?#]+)/i);
+  return m ? m[1] : null;
+}
+
+async function fetchTikTokFollowerCount(link) {
+  const user = extractTikTokUsername(link);
+  if (!user) return null;
+  const stats = await fetchTikTokUserFromTikwm(user);
+  if (!stats) return null;
+  const n = parseInt(stats.followerCount ?? stats.follower_count ?? stats.fans ?? 0, 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+async function fetchThreadsMetricFromHtml(url, patterns) {
+  try {
+    const resp = await fetch(url, {
+      timeout: 18000,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
+        Accept: 'text/html,application/xhtml+xml'
+      }
+    });
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    for (const re of patterns) {
+      const m = html.match(re);
+      if (m) {
+        const n = parseInt(String(m[1]).replace(/,/g, ''), 10);
+        if (Number.isFinite(n) && n >= 0) return n;
+      }
+    }
+  } catch (e) { console.log('Threads HTML:', e.message); }
+  return null;
+}
+
+async function fetchThreadsFollowerCount(link) {
+  const normalized = normalizeOrderLink(link, 'threads');
+  return fetchThreadsMetricFromHtml(normalized, [
+    /"follower_count"\s*:\s*(\d+)/,
+    /"followerCount"\s*:\s*(\d+)/,
+    /followers?\\":\\"([\d,]+)/i
+  ]);
+}
+
+async function fetchThreadsLikeCount(link) {
+  const normalized = normalizeOrderLink(link, 'threads');
+  return fetchThreadsMetricFromHtml(normalized, [
+    /"like_count"\s*:\s*(\d+)/,
+    /"likeCount"\s*:\s*(\d+)/,
+    /likes?\\":\\"([\d,]+)/i
+  ]);
+}
+
+function getOrderTargetCount(order) {
+  const tc = parseInt(order.target_count || 0, 10);
+  if (tc > 0) return tc;
+  const start = parseInt(order.starts_count || 0, 10);
+  const qty = parseInt(order.qty || 0, 10);
+  return start + qty;
+}
+
+/** 완료 주문 — 현재 플랫폼 숫자 (드롭 감지용) */
+async function measureOrderCurrentCount(order) {
+  try {
+    let pl = order.pl;
+    let label = order.sname || '';
+    if (order.sid) {
+      const r = await query(`SELECT pl, name, description FROM services WHERE id=$1`, [order.sid]);
+      if (r.rows[0]) {
+        pl = pl || r.rows[0].pl;
+        label = `${r.rows[0].name || ''} ${r.rows[0].description || ''}`;
+      }
+    }
+    const bucket = detectServiceTypeKo(label);
+    const link = order.link;
+    if (!link) return null;
+
+    if (pl === 'tiktok') {
+      const norm = normalizeOrderLink(link, 'tiktok');
+      if (bucket === '조회수' || /조회수|view/i.test(label)) {
+        return await fetchTikTokPlayCount(link);
+      }
+      if (bucket === '좋아요' || /좋아요|like/i.test(label)) {
+        const media = await fetchTikTokMediaFromTikwm(norm);
+        const n = parseInt(media?.digg_count ?? media?.like_count ?? 0, 10);
+        return Number.isFinite(n) && n >= 0 ? n : null;
+      }
+      if (bucket === '팔로워' || /팔로워|follower/i.test(label)) {
+        return await fetchTikTokFollowerCount(link);
+      }
+    }
+    if (pl === 'threads') {
+      if (bucket === '팔로워' || /팔로워|follower/i.test(label)) {
+        return await fetchThreadsFollowerCount(link);
+      }
+      if (bucket === '좋아요' || /좋아요|like/i.test(label)) {
+        return await fetchThreadsLikeCount(link);
+      }
+    }
+  } catch (e) { console.log('현재 숫자 조회:', e.message); }
+  return null;
+}
+
+/** 목표 대비 실제 감소 여부 — 확인 불가 시 보충 안 함 */
+async function detectOrderDrop(order) {
+  const target = getOrderTargetCount(order);
+  if (target <= 0) return { needsRefill: false, reason: 'no_target', target };
+  const current = await measureOrderCurrentCount(order);
+  if (current == null) return { needsRefill: false, reason: 'unmeasured', target };
+  const drop = target - current;
+  const minDrop = Math.max(3, Math.floor(target * 0.02));
+  if (drop >= minDrop) {
+    return { needsRefill: true, current, target, drop };
+  }
+  return { needsRefill: false, reason: 'no_drop', current, target, drop };
 }
 
 async function fetchTikTokPlayCount(url) {
@@ -2515,8 +2697,8 @@ async function pollPeakerrStatus(apiKey, apiOrderId, tries = 5, delayMs = 1500) 
 function peakerrCancelErrorKo(msg) {
   const m = String(msg || '');
   if (/progress|processing|started|cannot|can't|unable|not allow|already/i.test(m))
-    return '이미 처리가 시작되어 공급사에서 취소할 수 없습니다.';
-  return m ? `취소 실패: ${stripSupplierBrand(m)}` : '공급사에서 취소를 거절했습니다.';
+    return '이미 처리가 시작되어 취소할 수 없습니다.';
+  return m ? `취소 실패: ${stripSupplierBrand(m)}` : '취소 요청이 거절되었습니다.';
 }
 
 async function pullPeakerrOrderSnapshot(order, apiKey, opts = {}) {
@@ -2601,7 +2783,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     if (!statusData || statusData.error) {
       return {
         ok: false,
-        error: '공급사 취소 확인 실패. 1~2분 후 🔄 새로고침하면 자동 반영됩니다.',
+        error: '취소 확인 실패. 1~2분 후 🔄 새로고침하면 자동 반영됩니다.',
         pendingCancel: true
       };
     }
@@ -2610,12 +2792,12 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
     if (['in progress', 'processing', 'pending'].includes(apiStatus)) {
       return {
         ok: false,
-        error: '공급사에서 아직 작업 중입니다. 취소 반영 후 자동 환불됩니다. 잠시 후 🔄 새로고침해주세요.',
+        error: '아직 작업 중입니다. 취소 반영 후 자동 환불됩니다. 잠시 후 🔄 새로고침해주세요.',
         pendingCancel: true
       };
     }
     if (apiStatus === 'completed') {
-      return { ok: false, error: '이미 공급사에서 완료된 주문은 취소·환불할 수 없습니다.' };
+      return { ok: false, error: '이미 완료된 주문은 취소·환불할 수 없습니다.' };
     }
 
     const result = await autoRefundOrder(order, statusData, { notifyTg: false });
@@ -2653,7 +2835,7 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
 
     return {
       ok: false,
-      error: '공급사 취소는 접수됐지만 환불 조건을 확인하지 못했습니다. 🔄 새로고침 후 다시 확인해주세요.',
+      error: '취소는 접수됐지만 환불 조건을 확인하지 못했습니다. 🔄 새로고침 후 다시 확인해주세요.',
       pendingCancel: true
     };
   } finally {
@@ -2875,7 +3057,7 @@ async function syncPeakerrServices() {
       if (!peakerrSvc) {
         // Peakerr에서 삭제됨 → 비활성화
         if (glowSvc.active === 1) {
-          await hideServiceWithNote(glowSvc.id, '공급사 카탈로그에서 삭제·중단됨');
+          await hideServiceWithNote(glowSvc.id, '카탈로그에서 삭제·중단됨');
           disabled++;
           console.log(`  ⚠️ 비활성화: ${glowSvc.name}`);
         }
@@ -4765,8 +4947,8 @@ async function placeOrderHandler(req, res, ctx) {
       const errMsg = placement.linkError || isPeakerrLinkError(placement.error)
         ? linkHintForService(svc)
         : /balance|insufficient|not enough|잔액|부족/i.test(placement.error || '')
-          ? '공급사 잔액 부족으로 주문이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
-          : `주문 접수에 실패했습니다. (${placement.error || '공급사 거절'})`;
+          ? '일시적 사유로 주문이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
+          : `주문 접수에 실패했습니다. (${stripSupplierBrand(placement.error) || '접수 거절'})`;
       try {
         await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed']);
@@ -4825,7 +5007,7 @@ async function placeOrderHandler(req, res, ctx) {
       });
       return res.json({
         ok: true, orderId, apiOrderId: null, balance: user.balance,
-        message: '공급사 주문번호 확인 중입니다. 확인되면 자동 차감·처리됩니다. (잠시 후 🔄 새로고침)',
+        message: '작업 번호 확인 중입니다. 확인되면 자동 차감·처리됩니다. (잠시 후 🔄 새로고침)',
         pendingVerify: true,
         adminCreditOnly: !!adminCreditOnly
       });
@@ -4879,7 +5061,7 @@ async function placeOrderHandler(req, res, ctx) {
       ok: true, orderId, apiOrderId, balance: updR.rows[0].balance,
       message: apiOrderId
         ? '작업 신청이 접수되었습니다.'
-        : '작업 신청이 접수되었습니다. 공급사 주문번호 확인 중입니다.',
+        : '작업 신청이 접수되었습니다. 확인 중입니다.',
       adminCreditOnly: !!adminCreditOnly,
       creditDeductedKrw: adminCreditOnly ? Math.round(usedOrderCostKrw) : null,
       creditKrw: creditKrwAfter,
@@ -4911,7 +5093,7 @@ app.post('/api/orders/refresh/:orderId', requireAuth, async (req, res) => {
         const updR = await query(`SELECT * FROM orders WHERE id=$1`, [order.id]);
         order = updR.rows[0];
       } else {
-        return res.json({ error: '공급사 주문번호 확인 중입니다. 1~2분 후 🔄 새로고침 해주세요.' });
+        return res.json({ error: '작업 번호 확인 중입니다. 1~2분 후 🔄 새로고침 해주세요.' });
       }
     }
     
@@ -5143,7 +5325,7 @@ app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
 
     // Peakerr 연동 주문 — 수동 상태 변경 금지 (동기화·취소 API만 허용)
     if (order.api_order_id && status !== order.status) {
-      return res.json({ error: '공급 연동 주문은 수동 상태 변경이 불가합니다. 🔄 새로고침으로 동기화하거나 ✕ 취소를 사용하세요.' });
+      return res.json({ error: '자동 동기화 주문은 수동 상태 변경이 불가합니다. 🔄 새로고침으로 동기화하거나 ✕ 취소를 사용하세요.' });
     }
 
     // 그 외 상태 변경은 단순 변경 (API 미연동 주문만)
@@ -5181,7 +5363,7 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
           message: result.message
         });
       }
-      return res.json({ error: '공급 연동 주문은 부분 환불을 수동으로 할 수 없습니다. 🔄 새로고침으로 상태를 동기화해주세요.' });
+      return res.json({ error: '자동 동기화 주문은 부분 환불을 수동으로 할 수 없습니다. 🔄 새로고침으로 상태를 동기화해주세요.' });
     }
     
     const fin = await restoreRefundFinancials(order, pct, {
