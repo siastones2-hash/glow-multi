@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F172A;--surface:#1E293B;--glass:rgba(30,41,59,.94);--glass-bd:#334155;--card-border:#334155;--navy:#0F172A;--gold:#D4AF37;--gold-light:#E8C969;--gold-dim:#B8962E;--text:#F1F5F9;--heading:#F8FAFC;--muted:#94A3B8;--green:#34D399;--cyan:var(--gold);--magenta:var(--gold-light);--nav-h:68px;--accent:var(--gold);--accent2:var(--gold-light);--section-y:clamp(100px,12vw,140px);--block-gap:clamp(32px,5vw,48px);--shadow:0 4px 24px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.04);--shadow-lg:0 24px 64px rgba(0,0,0,.42),0 0 0 1px rgba(51,65,85,.55);}
+:root{--bg:#0F172A;--surface:#1E293B;--glass:rgba(30,41,59,.94);--glass-bd:#334155;--card-border:#334155;--navy:#0F172A;--gold:#D4AF37;--gold-light:#E8C969;--gold-dim:#B8962E;--gold-glow:rgba(212,175,55,.45);--text:#F1F5F9;--heading:#F8FAFC;--muted:#94A3B8;--green:#34D399;--cyan:var(--gold);--magenta:var(--gold-light);--nav-h:68px;--accent:var(--gold);--accent2:var(--gold-light);--section-y:clamp(100px,12vw,140px);--block-gap:clamp(32px,5vw,48px);--shadow:0 4px 24px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.04);--shadow-lg:0 24px 64px rgba(0,0,0,.42),0 0 0 1px rgba(51,65,85,.55);--ease:cubic-bezier(.16,1,.3,1);}
 body.trinity-theme{--bg:#0F172A;--surface:#1A2332;--text:#F1F5F9;--heading:#F8FAFC;--accent:#EA580C;--accent2:#16A34A;--cyan:#EA580C;--magenta:#16A34A;}
 body.trinity-theme::before{background:radial-gradient(900px circle at 15% 10%,rgba(234,88,12,.08),transparent 55%),radial-gradient(700px circle at 85% 80%,rgba(22,163,74,.06),transparent 50%);}
 body.magnificat-theme{--bg:#1C1917;--surface:#292524;--accent:#D4AF37;--accent2:#B8962E;--cyan:#D4AF37;--magenta:#E8C969;--text:#F5F5F4;--heading:#FAFAF9;--muted:#A8A29E;--gold:#D4AF37;--gold-light:#E8C969;--glass-bd:#44403C;}
@@ -108,6 +108,8 @@ html{scroll-behavior:smooth;background:var(--bg);}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;overflow-x:hidden;word-break:keep-all;line-height:1.75;font-size:16px;-webkit-font-smoothing:antialiased;min-height:100vh;}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(900px circle at 12% 8%,rgba(212,175,55,.07),transparent 52%),radial-gradient(800px circle at 88% 92%,rgba(30,41,59,.35),transparent 50%);}
 body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.06;background-image:linear-gradient(rgba(148,163,184,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.12) 1px,transparent 1px);background-size:56px 56px;}
+body:not(.trinity-theme):not(.magnificat-theme)::after{animation:grid-drift 48s linear infinite;}
+@keyframes grid-drift{to{background-position:56px 56px,56px 56px;}}
 .wrap{max-width:1200px;margin:0 auto;padding:0 clamp(20px,4vw,32px);position:relative;z-index:1;}
 .page{display:none;animation:fadeIn .35s ease;}.page.active{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
@@ -115,16 +117,42 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opac
 @keyframes heroSlide{0%,28%{opacity:1;}33%,100%{opacity:0;}}
 .reveal{opacity:0;transform:translateY(28px);transition:.7s cubic-bezier(.16,1,.3,1);}
 .reveal.on{opacity:1;transform:none;}
-.mouse-glow{display:none!important;}
+.reveal.hero-pop{opacity:0;transform:translateY(48px) scale(.92);filter:blur(10px);transition:opacity 1s cubic-bezier(.16,1,.3,1),transform 1.1s cubic-bezier(.16,1,.3,1),filter 1s ease;}
+.reveal.hero-pop.on{opacity:1;transform:none;filter:none;}
+body.intro-lock{overflow:hidden;}
+.intro-curtain{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.intro-curtain::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.1) 1px,transparent 1px);background-size:48px 48px;opacity:.35;}
+.intro-curtain::after{content:'';position:absolute;inset:0;background:radial-gradient(600px circle at 50% 45%,rgba(212,175,55,.12),transparent 65%);pointer-events:none;}
+.intro-inner{position:relative;z-index:2;text-align:center;padding:24px;}
+@keyframes intro-logo{to{opacity:1;transform:scale(1);}}
+.intro-num{font-family:'Playfair Display',serif;font-size:clamp(88px,22vw,168px);font-weight:800;line-height:1;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1.5px rgba(212,175,55,.55);opacity:0;transform:scale(1.12);margin-top:20px;animation:intro-num 1s cubic-bezier(.16,1,.3,1) .35s forwards;}
+@keyframes intro-num{0%{opacity:0;transform:scale(1.18);-webkit-text-stroke-color:rgba(212,175,55,0);}60%{opacity:1;-webkit-text-stroke-color:rgba(212,175,55,.7);}100%{opacity:1;transform:scale(1);color:var(--gold);-webkit-text-stroke-color:transparent;text-shadow:0 0 60px var(--gold-glow),0 0 120px rgba(212,175,55,.25);}}
+.intro-bar{width:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-light),var(--gold),transparent);margin:22px auto 18px;border-radius:2px;box-shadow:0 0 20px var(--gold-glow);animation:intro-bar .7s cubic-bezier(.16,1,.3,1) .75s forwards;}
+@keyframes intro-bar{to{width:min(280px,72vw);}}
+.intro-tag{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.32em;color:var(--muted);opacity:0;animation:intro-fade .6s ease .95s forwards;}
+.intro-since{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.28em;color:var(--gold-light);margin-top:10px;opacity:0;animation:intro-fade .6s ease 1.1s forwards;}
+@keyframes intro-fade{to{opacity:1;}}
+.intro-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,rgba(232,201,105,.45),rgba(212,175,55,.15) 35%,transparent 68%);opacity:0;pointer-events:none;z-index:3;}
+.intro-curtain.exit{animation:intro-lift 1s cubic-bezier(.76,0,.24,1) forwards;}
+.intro-curtain.exit .intro-flash{animation:intro-flash .65s ease-out;}
+@keyframes intro-lift{0%{transform:translateY(0);}100%{transform:translateY(-102%);}}
+@keyframes intro-flash{0%{opacity:0;}25%{opacity:1;}100%{opacity:0;}}
+.intro-curtain.done{visibility:hidden;pointer-events:none;}
+nav.intro-wait{transform:translateY(-110%);opacity:0;}
+nav.nav-in{transform:none;opacity:1;transition:transform .85s cubic-bezier(.16,1,.3,1),opacity .6s ease;}
+.mouse-glow{position:fixed;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,.14),transparent 68%);pointer-events:none;z-index:0;opacity:0;transition:opacity .45s;filter:blur(42px);will-change:transform;}
+body.mouse-active .mouse-glow{opacity:1;}
+body.trinity-theme .mouse-glow,body.magnificat-theme .mouse-glow{display:none;}
 nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-bd);box-shadow:0 4px 24px rgba(0,0,0,.25);}
 nav.scrolled{background:rgba(15,23,42,.96);}
 .nav-inner{max-width:1280px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .brand{display:flex;align-items:center;gap:14px;cursor:pointer;}
 .group-logo{display:flex;flex-direction:column;align-items:flex-start;line-height:1;}
-.musashi-logo-img{display:block;height:auto;object-fit:contain;flex-shrink:0;}
-.musashi-logo-img.nav{height:46px;width:auto;filter:brightness(0) invert(1) sepia(30%) saturate(500%) hue-rotate(5deg);}
-.musashi-logo-img.hero{height:clamp(108px,24vw,158px);width:auto;margin:0 auto;filter:none;}
-.musashi-logo-img.foot{height:40px;width:auto;filter:brightness(0) invert(1) sepia(30%) saturate(500%) hue-rotate(5deg);}
+.musashi-logo-img,.intro-logo,img[src*="musashi-logo-light"]{display:block;height:auto;object-fit:contain;flex-shrink:0;filter:none!important;-webkit-filter:none!important;}
+.musashi-logo-img.nav{height:46px;width:auto;}
+.musashi-logo-img.hero{height:clamp(108px,24vw,158px);width:auto;margin:0 auto;}
+.musashi-logo-img.foot{height:40px;width:auto;}
+.intro-logo{height:clamp(72px,16vw,108px);margin:0 auto;opacity:0;transform:scale(.82);animation:intro-logo .9s cubic-bezier(.16,1,.3,1) .15s forwards;}
 .brand-sub{font-size:9px;color:var(--muted);letter-spacing:.5px;display:block;margin-top:3px;font-weight:400;}
 .brand-text{font-size:11px;color:var(--muted);line-height:1.55;max-width:148px;letter-spacing:.02em;font-weight:500;}
 .asset-frame{border-radius:16px;overflow:hidden;border:1px solid var(--glass-bd);background:var(--surface);box-shadow:var(--shadow);}
@@ -155,10 +183,59 @@ h2{font-family:'Playfair Display','Sora','Noto Sans KR',serif;font-weight:700;fo
 h3{font-family:'Sora','Noto Sans KR',sans-serif;font-weight:600;font-size:clamp(18px,2.5vw,22px);line-height:1.35;color:var(--heading);}
 .sec-label{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin-bottom:22px;font-weight:500;}
 section.pad{padding:var(--section-y) 0;position:relative;z-index:2;}
-.hero{text-align:center;padding:clamp(96px,12vw,148px) 0 clamp(64px,8vw,96px);position:relative;}
+.hero{text-align:center;padding:clamp(108px,13vw,160px) 0 clamp(88px,10vw,120px);position:relative;overflow:hidden;}
+.hero .wrap{position:relative;z-index:2;}
+.hero-watermark{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);font-family:'Playfair Display',serif;font-size:clamp(140px,26vw,300px);font-weight:800;line-height:1;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:1px rgba(212,175,55,.07);pointer-events:none;z-index:0;opacity:0;scale:.88;}
+.hero.entered .hero-watermark{animation:wm-in 1.4s cubic-bezier(.16,1,.3,1) .2s forwards;}
+@keyframes wm-in{to{opacity:1;scale:1;}}
+.hero-burst{position:absolute;left:50%;top:42%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:2px solid rgba(212,175,55,.5);pointer-events:none;z-index:1;opacity:0;scale:1;}
+.hero.entered .hero-burst{animation:hero-burst 1.2s cubic-bezier(.16,1,.3,1) .1s forwards;}
+@keyframes hero-burst{0%{opacity:.85;scale:1;border-color:rgba(212,175,55,.6);}100%{opacity:0;scale:28;border-color:rgba(212,175,55,0);}}
+.hero-beams{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:0;}
+.hero.entered .hero-beams{animation:beams-in 1s ease .3s forwards;}
+@keyframes beams-in{to{opacity:1;}}
+.hero-beams::before,.hero-beams::after{content:'';position:absolute;top:50%;left:50%;width:140%;height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.18),transparent);transform-origin:center;}
+.hero-beams::before{transform:translate(-50%,-50%) rotate(-12deg);animation:beam-pulse 4s ease-in-out infinite;}
+.hero-beams::after{transform:translate(-50%,-50%) rotate(12deg);animation:beam-pulse 4s ease-in-out 2s infinite;}
+@keyframes beam-pulse{0%,100%{opacity:.35;}50%{opacity:.85;}}
+.hero-title{display:block;}
+.hero-tline{display:block;}
+.hero h1 .grad{text-shadow:0 0 40px rgba(212,175,55,.35);}
+.gleam{animation:gleam 3s ease-in-out infinite;}
+@keyframes gleam{0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent);}50%{filter:brightness(1.22) drop-shadow(0 0 24px rgba(212,175,55,.45));}}
+.marquee{transform:translateY(24px);opacity:0;transition:transform .9s cubic-bezier(.16,1,.3,1) .15s,opacity .9s ease .15s;}
+body.hero-ready .marquee{transform:none;opacity:1;}
+.marquee.marquee-2{border-top:none;background:rgba(15,23,42,.35);}
+.marquee.marquee-2 .track{animation-direction:reverse;animation-duration:34s;font-size:12px;opacity:.85;}
+.hero-aurora{position:absolute;inset:-20% -10% auto -10%;height:140%;z-index:0;pointer-events:none;opacity:.5;
+  background:radial-gradient(42% 52% at 18% 28%,rgba(212,175,55,.18),transparent 70%),radial-gradient(48% 55% at 82% 22%,rgba(232,201,105,.12),transparent 70%),radial-gradient(50% 48% at 55% 72%,rgba(30,41,59,.35),transparent 70%);
+  filter:blur(24px);animation:aurora 18s ease-in-out infinite;}
+@keyframes aurora{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(-3%,4%) scale(1.06);}66%{transform:translate(4%,-2%) scale(1.03);}}
+.hero-orbit{position:absolute;top:42%;right:-140px;width:640px;height:640px;transform:translateY(-50%);z-index:0;pointer-events:none;opacity:.42;}
+.hero-orbit span{position:absolute;inset:0;border:1px solid rgba(212,175,55,.1);border-radius:50%;animation:orbit-spin 30s linear infinite;}
+.hero-orbit span:nth-child(2){inset:68px;border-color:rgba(212,175,55,.16);animation-duration:22s;animation-direction:reverse;}
+.hero-orbit span:nth-child(3){inset:148px;border-color:rgba(212,175,55,.08);animation-duration:38s;}
+.hero-orbit span::before{content:"";position:absolute;top:-4px;left:50%;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold-glow);}
+@keyframes orbit-spin{to{transform:rotate(360deg);}}
+.hero-particles{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.hero-particles i{position:absolute;bottom:-10px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold-glow);opacity:0;animation:float-up linear infinite;}
+@keyframes float-up{0%{transform:translateY(0) translateX(0);opacity:0;}10%{opacity:.65;}90%{opacity:.35;}100%{transform:translateY(-92vh) translateX(24px);opacity:0;}}
+.hero-spot{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,.11),transparent 62%);left:var(--mx,50%);top:var(--my,38%);transform:translate(-50%,-50%);pointer-events:none;transition:left .35s,top .35s;z-index:1;}
+.hero-scroll{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:2;font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.28em;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:8px;}
+.hs-dot{width:22px;height:36px;border:1px solid var(--glass-bd);border-radius:14px;position:relative;}
+.hs-dot::before{content:"";position:absolute;top:6px;left:50%;transform:translateX(-50%);width:4px;height:7px;border-radius:3px;background:var(--gold);box-shadow:0 0 8px var(--gold-glow);animation:scroll-dot 1.8s ease-in-out infinite;}
+@keyframes scroll-dot{0%{opacity:0;transform:translate(-50%,0);}40%{opacity:1;}80%{opacity:0;transform:translate(-50%,14px);}100%{opacity:0;}}
+.marquee{border-top:1px solid var(--glass-bd);border-bottom:1px solid var(--glass-bd);padding:15px 0;overflow:hidden;white-space:nowrap;background:rgba(15,23,42,.55);position:relative;z-index:2;}
+.marquee .track{display:inline-flex;gap:44px;animation:marquee-scroll 40s linear infinite;font-family:'IBM Plex Mono';font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--muted);}
+.marquee b{color:var(--gold);font-weight:700;}
+.marquee .hi{color:var(--gold-light);text-shadow:0 0 16px var(--gold-glow);}
+.marquee .wh{color:var(--text);}
+@keyframes marquee-scroll{to{transform:translateX(-50%);}}
 .hero p{color:var(--text);font-size:17px;max-width:640px;margin:32px auto 40px;line-height:1.85;}
 .hero-btns{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
 .grad{background:linear-gradient(120deg,var(--gold-light),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+@media(max-width:760px){.hero-orbit{display:none;}.hero-scroll{bottom:18px;font-size:9px;}}
+@media(prefers-reduced-motion:reduce){body::after,.hero-aurora,.hero-orbit span,.hero-particles i,.hs-dot::before,.gleam,.marquee .track,.intro-curtain,.hero-burst,.hero-watermark,.hero-beams::before,.hero-beams::after{animation:none!important;}.hero-spot{transition:none;}.intro-curtain{display:none!important;}body.hero-ready .marquee,.marquee{transform:none;opacity:1;}nav.intro-wait{transform:none;opacity:1;}}
 .btn-primary{background:var(--gold);color:var(--navy);border:1px solid var(--gold);padding:16px 36px;font-weight:700;}
 .btn-primary:hover{background:var(--gold-light);border-color:var(--gold-light);box-shadow:0 8px 32px rgba(212,175,55,.28);transform:translateY(-2px);}
 .btn-ghost{background:transparent;border:1px solid var(--glass-bd);color:var(--text);box-shadow:none;padding:16px 32px;}
@@ -184,9 +261,11 @@ section.pad{padding:var(--section-y) 0;position:relative;z-index:2;}
 .hero-slide-overlay p{color:rgba(255,255,255,.85);font-size:14px;margin-top:8px;}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--block-gap);margin-top:48px;}
 .sc-label{font-size:12px;color:var(--muted);letter-spacing:0;margin-bottom:8px;font-weight:500;}
-.sc-val{font-size:38px;font-weight:700;font-family:'Playfair Display','IBM Plex Mono',serif;color:var(--gold);}
+.sc-val{font-size:38px;font-weight:700;font-family:'Playfair Display','IBM Plex Mono',serif;color:var(--gold);text-shadow:0 0 28px rgba(212,175,55,.2);}
 .sc-delta{font-size:12px;color:var(--muted);margin-top:6px;letter-spacing:0;line-height:1.5;}
-.stat-card{background:var(--surface);border:1px solid var(--card-border);border-radius:16px;padding:36px 28px;position:relative;transition:.3s;box-shadow:var(--shadow);}
+.stat-card{background:var(--surface);border:1px solid var(--card-border);border-radius:16px;padding:36px 28px;position:relative;transition:.35s var(--ease);box-shadow:var(--shadow);overflow:hidden;}
+.stat-card::after{content:'';position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .4s var(--ease);background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(212,175,55,.1),transparent 62%);pointer-events:none;}
+.stat-card:hover::after{opacity:1;}
 .stat-card:hover{transform:translateY(-4px);border-color:rgba(212,175,55,.35);box-shadow:var(--shadow-lg);}
 .prod-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:32px;}
 .prod-card:hover{border-color:var(--gold);transform:translateY(-4px);}
@@ -214,8 +293,11 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 .series-col.left li:hover{padding-right:12px;padding-left:0;}
 .series-col.right li:hover{padding-left:12px;padding-right:0;}
 .flagship-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--block-gap);margin-top:40px;}
-.flagship-card{background:var(--surface);border:1px solid var(--glass-bd);border-radius:16px;overflow:hidden;cursor:pointer;transition:.3s;box-shadow:var(--shadow);}
-.flagship-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:rgba(212,175,55,.28);}
+.flagship-card{background:var(--surface);border:1px solid var(--glass-bd);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .35s var(--ease),border-color .35s,box-shadow .45s;box-shadow:var(--shadow);position:relative;}
+.flagship-card::after{content:'';position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .4s var(--ease);background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(212,175,55,.12),transparent 60%);pointer-events:none;z-index:1;}
+.flagship-card:hover::after{opacity:1;}
+.flagship-card:hover{transform:translateY(-5px);box-shadow:0 26px 54px -28px rgba(212,175,55,.22);border-color:rgba(212,175,55,.32);}
+.flagship-card .fc-body{position:relative;z-index:2;}
 .flagship-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--surface);}
 .flagship-card .fc-body{padding:24px;}
 .flagship-card .fc-tag{font-family:'IBM Plex Mono';font-size:10px;color:var(--gold);letter-spacing:.1em;margin-bottom:8px;}
@@ -467,6 +549,16 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 </style>
 </head>
 <body>
+<div class="intro-curtain" id="introCurtain" aria-hidden="true">
+  <div class="intro-inner">
+    <img src="assets/musashi-logo-light.png" alt="" class="intro-logo musashi-logo-img" width="220" height="108">
+    <div class="intro-num">634</div>
+    <div class="intro-bar"></div>
+    <p class="intro-tag">INTERNATIONAL MUSASHI GROUP</p>
+    <p class="intro-since">SINCE 1956 · JAPAN FORGED</p>
+  </div>
+  <div class="intro-flash"></div>
+</div>
 <div class="mouse-glow" id="mouseGlow"></div>
 <div class="m-backdrop" id="mBackdrop" onclick="closeMenu()"></div>
 <div class="m-drawer" id="mDrawer">
@@ -480,10 +572,10 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
   <a onclick="navGo('franchise')">Trinity 가맹</a>
 </div>
 
-<nav id="nav">
+<nav id="nav" class="intro-wait">
   <div class="nav-inner">
     <div class="brand brand-musashi" onclick="navGo('home')">
-      <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img nav" width="140" height="46">
+      <img src="assets/musashi-logo-light.png" alt="MUSASHI 634" class="musashi-logo-img nav" width="140" height="46">
       <div class="brand-text">인터네셔널<br>무사시 634 그룹</div>
     </div>
     <div class="nav-links" id="navLinks">
@@ -502,20 +594,41 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 
 <!-- HOME · MUSASHI ONLY -->
 <div id="page-home" class="page active">
-  <section class="hero"><div class="wrap">
-    <div style="display:inline-flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--glass-bd);padding:8px 18px;border-radius:100px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono';margin-bottom:28px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite;"></span> SINCE 1956</div>
-    <h1>인터네셔널<br>무사시 634 <span class="grad">그룹</span></h1>
-    <p>70년 전통의 프리미엄 골프채 브랜드. 일본 제조 무사시골프채 10개 시리즈를 선보입니다.</p>
-    <div class="hero-btns">
-      <button class="btn btn-primary" onclick="navGo('products')">골프채 라인업 →</button>
-      <button class="btn btn-ghost" onclick="navGo('nigodemo')">니고데모 드라이버</button>
+  <section class="hero" id="homeHero">
+    <div class="hero-watermark" aria-hidden="true">634</div>
+    <div class="hero-burst" aria-hidden="true"></div>
+    <div class="hero-beams" aria-hidden="true"></div>
+    <div class="hero-aurora"></div>
+    <div class="hero-orbit"><span></span><span></span><span></span></div>
+    <div class="hero-particles" id="heroParticles"></div>
+    <div class="hero-spot" id="heroSpot"></div>
+    <div class="wrap">
+      <div class="reveal hero-pop intro-wait" style="display:inline-flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--glass-bd);padding:8px 18px;border-radius:100px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono';margin-bottom:28px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite;"></span> SINCE 1956</div>
+      <h1 class="hero-title">
+        <span class="hero-tline reveal hero-pop intro-wait">인터네셔널</span>
+        <span class="hero-tline reveal hero-pop intro-wait">무사시 634 <span class="grad gleam">그룹</span></span>
+      </h1>
+      <p class="reveal hero-pop intro-wait">70년 전통의 프리미엄 골프채 브랜드. 일본 제조 무사시골프채 10개 시리즈를 선보입니다.</p>
+      <div class="hero-btns reveal hero-pop intro-wait">
+        <button class="btn btn-primary" onclick="navGo('products')">골프채 라인업 →</button>
+        <button class="btn btn-ghost" onclick="navGo('nigodemo')">니고데모 드라이버</button>
+      </div>
+      <div class="stat-grid reveal hero-pop intro-wait" style="margin-top:48px;">
+        <div class="stat-card"><div class="sc-label">역사</div><div class="sc-val" data-target="70">0</div><div class="sc-delta">1956—2026</div></div>
+        <div class="stat-card"><div class="sc-label">브랜드</div><div class="sc-val" data-target="10">0</div><div class="sc-delta">골프채 시리즈</div></div>
+        <div class="stat-card"><div class="sc-label">제조</div><div class="sc-val" style="font-size:22px;">일본</div><div class="sc-delta">단조 · 장인 정신</div></div>
+      </div>
     </div>
-    <div class="stat-grid reveal" style="margin-top:48px;">
-      <div class="stat-card"><div class="sc-label">역사</div><div class="sc-val" data-target="70">0</div><div class="sc-delta">1956—2026</div></div>
-      <div class="stat-card"><div class="sc-label">브랜드</div><div class="sc-val" data-target="10">0</div><div class="sc-delta">골프채 시리즈</div></div>
-      <div class="stat-card"><div class="sc-label">제조</div><div class="sc-val" style="font-size:22px;">일본</div><div class="sc-delta">단조 · 장인 정신</div></div>
-    </div>
-  </div></section>
+    <div class="hero-scroll intro-wait"><span class="hs-dot"></span>SCROLL</div>
+  </section>
+  <div class="marquee"><div class="track">
+    <span><i class="wh">SINCE 1956</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JAPAN FORGED</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MUSASHI 634</i>&nbsp;<b>·</b>&nbsp;<i class="hi">CPS GRAPHENE</i>&nbsp;<b>·</b>&nbsp;<i class="wh">NIGODEMO</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MAGNIFICAT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">10 SERIES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JEHOVAH NISSI III</i>&nbsp;<b>·</b>&nbsp;<i class="wh">FORGED IRONS</i>&nbsp;<b>·</b>&nbsp;<i class="hi">SOLI DEO GLORIA</i>&nbsp;<b>·</b>&nbsp;</span>
+    <span><i class="wh">SINCE 1956</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JAPAN FORGED</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MUSASHI 634</i>&nbsp;<b>·</b>&nbsp;<i class="hi">CPS GRAPHENE</i>&nbsp;<b>·</b>&nbsp;<i class="wh">NIGODEMO</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MAGNIFICAT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">10 SERIES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JEHOVAH NISSI III</i>&nbsp;<b>·</b>&nbsp;<i class="wh">FORGED IRONS</i>&nbsp;<b>·</b>&nbsp;<i class="hi">SOLI DEO GLORIA</i>&nbsp;<b>·</b>&nbsp;</span>
+  </div></div>
+  <div class="marquee marquee-2"><div class="track">
+    <span><i class="hi">FORGED IN JAPAN</i>&nbsp;<b>·</b>&nbsp;<i class="wh">634 CPS IRON</i>&nbsp;<b>·</b>&nbsp;<i class="hi">NICODEMUS DRIVER</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MAGNIFICAT SHOES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">ARTISAN SPIRIT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">PREMIUM GOLF</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MUSASHI GOLF CLUBS</i>&nbsp;<b>·</b>&nbsp;</span>
+    <span><i class="hi">FORGED IN JAPAN</i>&nbsp;<b>·</b>&nbsp;<i class="wh">634 CPS IRON</i>&nbsp;<b>·</b>&nbsp;<i class="hi">NICODEMUS DRIVER</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MAGNIFICAT SHOES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">ARTISAN SPIRIT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">PREMIUM GOLF</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MUSASHI GOLF CLUBS</i>&nbsp;<b>·</b>&nbsp;</span>
+  </div></div>
   <section class="pad" style="padding-top:0;"><div class="wrap reveal">
     <div class="sec-label">Flagship</div>
     <h2>대표 <span class="grad">제품</span></h2>
@@ -543,7 +656,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
         <p style="color:var(--muted);line-height:1.85;font-size:15px;margin-bottom:16px;"><strong style="color:var(--text)">인터네셔널 무사시 634 그룹</strong>은 일본식 단조 기법으로 프리미엄 골프클럽을 개발·생산합니다. JEHOVAH NISHI, NICODEMUS, PASSOVER 등 각 시리즈명과 제품 슬로건에는 제작 철학과 뜻이 담겨 있으며, 장인의 기술과 그 정신이 함께합니다.</p>
       </div>
       <div style="background:var(--surface);border:1px solid var(--glass-bd);border-radius:20px;padding:40px;text-align:center;box-shadow:var(--shadow-lg);">
-        <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img hero" width="300" height="158">
+        <img src="assets/musashi-logo-light.png" alt="MUSASHI 634" class="musashi-logo-img hero" width="300" height="158">
         <p style="font-family:'IBM Plex Mono';font-size:12px;color:var(--muted);letter-spacing:.08em;margin-top:16px;">INTERNATIONAL MUSASHI 634 GROUP</p>
       </div>
     </div>
@@ -1111,7 +1224,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
   <div class="foot-main">
     <div class="foot-brand-col">
       <div class="foot-logos">
-        <img src="assets/musashi-logo.png" alt="MUSASHI 634" class="musashi-logo-img foot" width="118" height="40">
+        <img src="assets/musashi-logo-light.png" alt="MUSASHI 634" class="musashi-logo-img foot" width="118" height="40">
         <div class="foot-logo-div"></div>
         <div class="trinity-logo" style="font-size:15px;">TRINITY<small>SCREEN PARK GOLF</small></div>
         <div class="foot-logo-div"></div>
@@ -1256,15 +1369,61 @@ function handleSubmit(e,brand){e.preventDefault();toast('문의가 접수되었�
 function toggleMenu(){const open=document.getElementById('nav').classList.toggle('menu-open');document.getElementById('mDrawer').classList.toggle('open');document.getElementById('mBackdrop').classList.toggle('open');document.body.classList.toggle('menu-open',open);}
 function closeMenu(){document.getElementById('nav').classList.remove('menu-open');document.getElementById('mDrawer').classList.remove('open');document.getElementById('mBackdrop').classList.remove('open');document.body.classList.remove('menu-open');}
 const glow=document.getElementById('mouseGlow');
-document.addEventListener('mousemove',e=>{document.body.classList.add('mouse-active');glow.style.left=(e.clientX-140)+'px';glow.style.top=(e.clientY-140)+'px';});
+const heroSpot=document.getElementById('heroSpot');
+document.addEventListener('mousemove',e=>{
+  document.body.classList.add('mouse-active');
+  if(glow){glow.style.left=(e.clientX-150)+'px';glow.style.top=(e.clientY-150)+'px';}
+  if(heroSpot&&e.clientY<720){heroSpot.style.setProperty('--mx',e.clientX+'px');heroSpot.style.setProperty('--my',e.clientY+'px');}
+  const c=e.target.closest('.flagship-card,.stat-card,.prod-card,.iron-card');
+  if(c){const r=c.getBoundingClientRect();c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');}
+});
 document.addEventListener('mouseleave',()=>document.body.classList.remove('mouse-active'));
+(function(){const box=document.getElementById('heroParticles');if(!box||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const n=28;
+  for(let i=0;i<n;i++){const p=document.createElement('i');const size=2+Math.random()*4;
+    p.style.left=Math.random()*100+'%';p.style.width=p.style.height=size+'px';
+    p.style.animationDuration=(8+Math.random()*14)+'s';p.style.animationDelay=(Math.random()*14)+'s';box.appendChild(p);}
+})();
+function startHeroEntrance(fast){
+  const hero=document.getElementById('homeHero');
+  const nav=document.getElementById('nav');
+  if(hero)hero.classList.add('entered');
+  if(nav){nav.classList.remove('intro-wait');nav.classList.add('nav-in');}
+  document.body.classList.add('hero-ready');
+  document.querySelectorAll('#page-home .hero .intro-wait').forEach((el,i)=>{
+    el.classList.remove('intro-wait');
+    setTimeout(()=>el.classList.add('on'),fast?70*i:140*i+120);
+  });
+  const grid=document.querySelector('#page-home .stat-grid');
+  if(grid&&!fast)setTimeout(()=>grid.querySelectorAll('[data-target]').forEach(v=>{if(v.textContent==='0')countUp(v,+v.dataset.target);}),900);
+}
+function runIntro(){
+  const curtain=document.getElementById('introCurtain');
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!curtain||reduced||sessionStorage.getItem('musashi_intro')){
+    if(curtain)curtain.remove();
+    startHeroEntrance(true);
+    initReveal();
+    return;
+  }
+  document.body.classList.add('intro-lock');
+  setTimeout(()=>curtain.classList.add('exit'),1500);
+  setTimeout(()=>{
+    curtain.classList.add('done');
+    document.body.classList.remove('intro-lock');
+    sessionStorage.setItem('musashi_intro','1');
+    startHeroEntrance(false);
+    initReveal();
+    setTimeout(()=>curtain.remove(),900);
+  },2500);
+}
 function countUp(el,t){let c=0;const s=Math.max(1,Math.ceil(t/40));const i=setInterval(()=>{c+=s;if(c>=t){el.textContent=t+(t>=1000?'+':'');clearInterval(i);}else el.textContent=c;},45);}
-function initReveal(){document.querySelectorAll('.page.active .reveal:not(.on)').forEach((el,i)=>{setTimeout(()=>el.classList.add('on'),80*i);});}
+function initReveal(){document.querySelectorAll('.page.active .reveal:not(.on):not(.intro-wait)').forEach((el,i)=>{setTimeout(()=>el.classList.add('on'),80*i);});}
 const statObs=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;e.target.querySelectorAll('[data-target]').forEach(v=>{if(v.textContent==='0')countUp(v,+v.dataset.target);});statObs.unobserve(e.target);});},{threshold:.3});
 document.querySelectorAll('.stat-grid').forEach(g=>statObs.observe(g));
-const revObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');revObs.unobserve(e.target);}});},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+const revObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&!e.target.classList.contains('intro-wait')){e.target.classList.add('on');revObs.unobserve(e.target);}});},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
 function bindReveal(){document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));}
-bindReveal();initReveal();
+bindReveal();
+runIntro();
 window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',scrollY>40));
 function openLightbox(src){document.getElementById('lightboxImg').src=src;document.getElementById('lightbox').classList.add('open');}
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
