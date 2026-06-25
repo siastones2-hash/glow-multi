@@ -14,6 +14,10 @@ function formatKrw(n) {
   return '₩' + v.toLocaleString('ko-KR');
 }
 
+function escHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 /**
  * @param {Function} query - server.js 의 query()
  * @param {Function} getGlobalSetting
@@ -29,14 +33,7 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
   }
 
   const sitesR = await query(`SELECT id, name, domain FROM sites WHERE active=1 ORDER BY name`);
-  const lines = [
-    '📊 <b>GLOW 일일 요약</b>',
-    `📅 ${reportDateKst} (KST)`,
-    '',
-  ];
-
-  let totalRevenue = 0;
-  let totalNewUsers = 0;
+  const stats = [];
 
   for (const site of sitesR.rows) {
     const revR = await query(
@@ -45,8 +42,6 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
       FROM orders
       WHERE site_id = $1
         AND ${EXCLUDE_ORDER_STATUSES}
-        -- created 컬럼은 TIMESTAMP(타임존 없음)이라 UTC 기준으로 저장될 수 있음.
-        -- UTC로 해석 후 KST로 변환해 날짜 비교해야 누락이 없음.
         AND ((created AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Seoul')::date = $2::date
       `,
       [site.id, reportDateKst]
@@ -62,21 +57,56 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
       [site.id, reportDateKst]
     );
 
-    const revenue = parseFloat(revR.rows[0].revenue) || 0;
-    const orders = parseInt(revR.rows[0].orders, 10) || 0;
-    const newUsers = parseInt(userR.rows[0].c, 10) || 0;
-    totalRevenue += revenue;
-    totalNewUsers += newUsers;
-
-    lines.push(`🏢 <b>${site.name}</b> (${site.domain || site.id})`);
-    lines.push(`   💰 당일 매출: ${formatKrw(revenue)} (${orders}건)`);
-    lines.push(`   👤 신규 가입: ${newUsers}명`);
-    lines.push('');
+    stats.push({
+      id: site.id,
+      name: site.name || site.id,
+      domain: site.domain || site.id,
+      revenue: parseFloat(revR.rows[0].revenue) || 0,
+      orders: parseInt(revR.rows[0].orders, 10) || 0,
+      newUsers: parseInt(userR.rows[0].c, 10) || 0,
+    });
   }
 
-  lines.push('────────────');
-  lines.push(`💰 <b>전체 당일 매출</b>: ${formatKrw(totalRevenue)}`);
-  lines.push(`👤 <b>전체 신규 가입</b>: ${totalNewUsers}명`);
+  const totalRevenue = stats.reduce((s, x) => s + x.revenue, 0);
+  const totalOrders = stats.reduce((s, x) => s + x.orders, 0);
+  const totalNewUsers = stats.reduce((s, x) => s + x.newUsers, 0);
+  const active = stats.filter((x) => x.orders > 0 || x.newUsers > 0);
+  const quiet = stats.filter((x) => x.orders === 0 && x.newUsers === 0);
+
+  // 매출 많은 순 → 가입 많은 순
+  active.sort((a, b) => b.revenue - a.revenue || b.newUsers - a.newUsers || a.name.localeCompare(b.name, 'ko'));
+
+  const lines = [
+    `📊 <b>일일 요약</b> · ${reportDateKst}`,
+    '',
+    `💰 <b>전체</b> ${formatKrw(totalRevenue)} · 주문 ${totalOrders}건 · 신규 ${totalNewUsers}명`,
+    `🏢 활동 ${active.length}곳 / 전체 ${stats.length}곳`,
+    '',
+  ];
+
+  if (active.length === 0) {
+    lines.push('📭 오늘 매출·신규 가입 없음');
+  } else {
+    lines.push('<b>── 활동 사이트 ──</b>');
+    for (const s of active) {
+      const domain = s.domain !== s.id ? s.domain : '';
+      lines.push('');
+      lines.push(`▸ <b>${escHtml(s.name)}</b>${domain ? ` <i>${escHtml(domain)}</i>` : ''}`);
+      const parts = [];
+      if (s.revenue > 0 || s.orders > 0) parts.push(`💰 ${formatKrw(s.revenue)} (${s.orders}건)`);
+      else parts.push('💰 —');
+      parts.push(`👤 +${s.newUsers}명`);
+      lines.push(`   ${parts.join(' · ')}`);
+    }
+  }
+
+  if (quiet.length > 0 && quiet.length <= 6) {
+    lines.push('');
+    lines.push(`💤 활동 없음: ${quiet.map((s) => escHtml(s.name)).join(', ')}`);
+  } else if (quiet.length > 6) {
+    lines.push('');
+    lines.push(`💤 활동 없음 ${quiet.length}곳 (생략)`);
+  }
 
   const message = lines.join('\n');
   const sent = await sendTelegramToSuper(message);
@@ -86,7 +116,7 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
   } else {
     console.log('⚠️ 일일 리포트: 텔레그램 미설정 또는 발송 실패 (tg_token / tg_chat 확인)');
   }
-  return { ok: sent, date: reportDateKst, message };
+  return { ok: sent, date: reportDateKst, active: active.length, total: stats.length };
 }
 
 /**

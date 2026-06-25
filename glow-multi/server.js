@@ -4346,6 +4346,27 @@ async function tgOrderNotify(title, order, opts = {}) {
   } catch (e) { console.log('주문 TG 알림:', e.message); }
 }
 
+/** 신규 회원가입 — 사이트명·도메인 포함 (슈퍼 + 해당 사이트 TG) */
+async function tgSignupNotify(user, site, opts = {}) {
+  try {
+    if (!user?.email) return;
+    const siteObj = site || { name: 'GLOW', id: 'default' };
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const domain = siteObj.domain && siteObj.domain !== siteObj.id ? siteObj.domain : '';
+
+    let msg = `👤 <b>신규 가입</b>\n\n`;
+    msg += `🏷 <b>${esc(siteObj.name || 'GLOW')}</b>`;
+    if (domain) msg += `\n🌐 ${esc(domain)}`;
+    msg += `\n\n닉네임: ${esc(user.name)}\n📧 ${esc(user.email)}`;
+    if (user.phone) msg += `\n📱 ${esc(user.phone)}`;
+    if (opts.referralCode) msg += `\n🔗 추천코드: ${esc(opts.referralCode)}`;
+    if (opts.signupBonus) msg += `\n🎁 가입 보너스: ${opts.signupBonus}P`;
+    msg += `\n⏰ ${tgKstNow()}`;
+
+    await tgAlert(msg, siteObj);
+  } catch (e) { console.log('가입 TG 알림:', e.message); }
+}
+
 async function tgChargeAlert(chargeId, userName, amount, note, site, requesterRole, currentBalance) {
   const siteName = typeof site === 'object' ? site.name : site;
   const siteObj = typeof site === 'object' ? site : null;
@@ -4567,17 +4588,11 @@ app.post('/api/register', async (req, res) => {
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance,referral_code,referred_by,points,phone) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [id, req.siteId, name, email, hash, 'user', 0, refCode, referredBy, signupBonus, phoneNorm || phone]);
     const token = createToken({ userId: id, role: 'user', siteId: req.siteId });
-    // 본사(default) 사이트 가입만 슈퍼관리자 텔레그램 알림 (파트너·지인 사이트 제외)
-    if (req.siteId === 'default') {
-      const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const siteLabel = esc(req.site?.name || 'GLOW');
-      let tgMsg = `👤 <b>신규 가입</b> [${siteLabel}]\n닉네임: ${esc(name)}\n이메일: ${esc(email)}`;
-      if (phone) tgMsg += `\n📱 ${esc(phone)}`;
-      if (referral_code) tgMsg += `\n🔗 추천코드 입력: ${esc(refNorm)}`;
-      if (signupBonus) tgMsg += `\n🎁 가입 보너스: ${signupBonus}P`;
-      tgMsg += `\n⏰ ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`;
-      sendTelegramToSuper(tgMsg).catch(() => {});
-    }
+    tgSignupNotify(
+      { name, email, phone: phoneNorm || phone },
+      req.site,
+      { referralCode: refNorm || null, signupBonus: signupBonus || 0 }
+    ).catch(() => null);
     res.json({ ok: true, token, user: { id, name, email, role: 'user', balance: 0, points: signupBonus, referral_code: refCode }});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
