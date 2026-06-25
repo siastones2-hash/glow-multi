@@ -5369,9 +5369,16 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     await syncActiveOrdersForSite(siteId).catch(() => null);
+    await backfillPartnerOrderCosts().catch(() => null);
     const r = siteId
       ? await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id WHERE o.site_id=$1 ORDER BY o.created DESC`, [siteId])
-      : await query(`SELECT o.*, u.role AS user_role FROM orders o LEFT JOIN users u ON o.uid=u.id ORDER BY o.created DESC`);
+      : await query(`
+          SELECT o.*, u.role AS user_role, s.name AS site_name
+          FROM orders o
+          LEFT JOIN users u ON o.uid=u.id
+          LEFT JOIN sites s ON o.site_id=s.id
+          ORDER BY o.created DESC
+        `);
     const isSuper = req.session.role === 'superadmin';
     res.json(r.rows.map(o => sanitizeOrderForClient(o, isSuper)));
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -7111,8 +7118,10 @@ app.post('/api/super/admin/delete', requireSuperAdmin, async (req, res) => {
 
 app.get('/api/super/orders', requireSuperAdmin, async (req, res) => {
   try {
-    const r = await query(`SELECT o.*, COALESCE(s.name, o.site_id) AS site_name
-      FROM orders o LEFT JOIN sites s ON o.site_id = s.id
+    const r = await query(`SELECT o.*, COALESCE(s.name, o.site_id) AS site_name, u.role AS user_role
+      FROM orders o
+      LEFT JOIN sites s ON o.site_id = s.id
+      LEFT JOIN users u ON o.uid = u.id
       ORDER BY o.created DESC LIMIT 200`);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }

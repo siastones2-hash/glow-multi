@@ -1544,7 +1544,7 @@ tr:last-child td{border-bottom:none}
           <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
             <button class="bo bsm" onclick="syncAdmOrders()">🔄 진행중 주문 동기화</button>
           </div>
-          <div class="tw"><table><thead><tr><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>시작→현재</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th id="aOrderSiteTh" style="display:none">사이트</th><th>회원</th><th>서비스</th><th>링크</th><th>수량</th><th>금액</th><th>시작→현재</th><th>상태</th><th>날짜</th><th>변경</th></tr></thead><tbody id="aOTb"></tbody></table></div>
           <div style="font-size:11px;color:var(--tl);margin-top:6px">📊 시작=작업 전 · 현재=지금 · 목표=시작+수량 (135+100→235)</div>
         </div>
         <div class="atab-body" id="ap-users">
@@ -3328,6 +3328,7 @@ async function loadOrders(){
   if(amtTh)amtTh.textContent=aco?'크레딧':'금액';
   if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:26px;color:#9A8AB0">주문 내역이 없습니다</td></tr>';return}
   d.forEach(function(o){
+    if(!o.user_role&&CUR)o.user_role=CUR.role;
     var canCancel = ['pending','processing'].includes(o.status);
     var actionBtns = '<button onclick="refreshOrder(\''+o.id+'\')" style="background:rgba(114,9,183,.1);color:var(--p2);border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;margin-right:4px" title="실시간 상태 확인">🔄</button>';
     if(canCancel) {
@@ -3346,7 +3347,7 @@ async function loadOrders(){
       +'<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="'+o.link+'" target="_blank" style="color:#B5179E;text-decoration:none;font-size:12px">'+o.link+'</a></td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
       +'<td style="min-width:110px">'+_orderProgressCell(o)+'</td>'
-      +'<td style="font-weight:700">'+(aco?(o.cost>0?gf(o.cost):(o.status==='failed'?'—':'₩0')):gf(o.charge))+'</td>'
+      +'<td style="font-weight:700">'+_orderAmtCell(o)+'</td>'
       +'<td>'+badge(o.status)+progressHtml+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+'</td>'
       +'<td style="white-space:nowrap">'+actionBtns+'</td></tr>';
@@ -3520,10 +3521,18 @@ function goAdm(tab,el){
 }
 function _isStaffOrder(o){return ['admin','partner','superadmin'].includes(o.user_role||'');}
 function _orderAmtCell(o){
-  if(_isStaffOrder(o)&&CUR.role!=='superadmin'){
-    return gf(o.cost||0)+' <span style="font-size:10px;color:#64748b;font-weight:600">크레딧</span>';
+  var charge=Math.round(parseFloat(o.charge||0)||0);
+  var cost=Math.round(parseFloat(o.cost||0)||0);
+  if(_isStaffOrder(o)){
+    if(cost>0)return gf(cost)+' <span style="font-size:10px;color:#64748b;font-weight:600">크레딧</span>';
+    if(charge>0)return gf(charge);
+    if(o.status==='pending'&&!parseInt(o.paid||0,10))
+      return '<span style="font-size:10px;color:#9A8AB0">차감 전</span>';
+    if(['cancelled','canceled','failed','refunded','partial_refunded'].includes(o.status))
+      return '<span style="font-size:10px;color:#9A8AB0">—</span>';
+    return '<span style="font-size:10px;color:#9A8AB0" title="크레딧 기록 없음">₩0</span>';
   }
-  return gf(o.charge||0);
+  return gf(charge);
 }
 function _orderProgressCell(o){
   var qty=o.qty||0;
@@ -3557,7 +3566,11 @@ function _orderProgressCell(o){
 function _orderCountCell(o){return _orderProgressCell(o)}
 async function loadAdmOrders(){
   var d=await api('/api/admin/orders');var tb=ge('aOTb'),h='';
-  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
+  var isSuper=CUR&&CUR.role==='superadmin';
+  var siteTh=ge('aOrderSiteTh');if(siteTh)siteTh.style.display=isSuper?'':'none';
+  var amtTh=document.querySelector('#ap-orders thead th:nth-child('+(isSuper?6:5)+')');
+  if(amtTh)amtTh.textContent=isSuper?'금액/크레딧':(window._adminCreditOnly?'크레딧':'금액');
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="'+(isSuper?10:9)+'" style="text-align:center;padding:22px;color:#9A8AB0">주문이 없습니다</td></tr>';return}
   var done=['cancelled','canceled','failed','completed','refunded','partial_refunded'];
   d.forEach(function(o){
     var canCancel=['pending','processing'].includes(o.status);
@@ -3570,7 +3583,8 @@ async function loadAdmOrders(){
     var linkCell=o.link
       ?'<a href="'+o.link+'" target="_blank" rel="noopener" style="color:#7209B7;text-decoration:underline;font-size:11px">바로가기 ↗</a>'
       :'<span style="color:#9A8AB0;font-size:11px">-</span>';
-    h+='<tr><td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
+    h+='<tr>'+(isSuper?'<td style="font-size:11px;color:var(--p2);font-weight:600;white-space:nowrap">'+(o.site_name||o.site_id||'-')+'</td>':'')
+      +'<td style="font-weight:700;color:#1A1030;white-space:nowrap">'+o.uname+'</td>'
       +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
       +'<td style="white-space:nowrap">'+linkCell+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
@@ -3721,9 +3735,10 @@ async function openUserDetail(uid){
     +'<div style="font-size:13px;font-weight:700;margin-bottom:8px">최근 주문 ('+orders.length+'건)</div>'
     +'<div class="tw"><table><thead><tr><th>서비스</th><th>수량</th><th>금액</th><th>상태</th></tr></thead><tbody>'
     +orders.slice(0,5).map(function(o){
+      if(!o.user_role)o.user_role=u.role;
       return'<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+o.sname+'</td>'
         +'<td style="font-size:12px">'+(o.qty||0).toLocaleString()+'</td>'
-        +'<td style="font-size:12px;font-weight:700">'+gf(o.charge)+'</td>'
+        +'<td style="font-size:12px;font-weight:700">'+_orderAmtCell(o)+'</td>'
         +'<td>'+badge(o.status)+'</td></tr>';
     }).join('')+(orders.length===0?'<tr><td colspan="4" style="text-align:center;padding:14px;color:#9A8AB0">주문 없음</td></tr>':'')
     +'</tbody></table></div></div>';
@@ -4453,7 +4468,7 @@ async function loadSuperOrders(){
       +'<td style="white-space:nowrap">'+linkCell+'</td>'
       +'<td style="white-space:nowrap">'+apiOid+'</td>'
       +'<td style="font-weight:600">'+(o.qty||0).toLocaleString()+'</td>'
-      +'<td style="font-weight:700">'+gf(o.charge)+'</td>'
+      +'<td style="font-weight:700">'+_orderAmtCell(o)+'</td>'
       +'<td>'+badge(o.status)+'</td>'
       +'<td style="font-size:11px;color:#9A8AB0;white-space:nowrap">'+fd(o.created)+delBtn+'</td></tr>';
   });
