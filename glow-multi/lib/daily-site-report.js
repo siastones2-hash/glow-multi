@@ -18,6 +18,73 @@ function escHtml(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** 텔레그램 HTML — 섹션 사이 빈 줄(칸) 확보 */
+function gap(lines, n = 1) {
+  for (let i = 0; i < n; i++) lines.push('');
+}
+
+/**
+ * @param {Array<{id,name,domain,revenue,orders,newUsers}>} stats
+ * @param {string} reportDateKst
+ */
+function formatDailyReportMessage(stats, reportDateKst) {
+  const totalRevenue = stats.reduce((s, x) => s + x.revenue, 0);
+  const totalOrders = stats.reduce((s, x) => s + x.orders, 0);
+  const totalNewUsers = stats.reduce((s, x) => s + x.newUsers, 0);
+  const active = stats.filter((x) => x.orders > 0 || x.newUsers > 0);
+  const quiet = stats.filter((x) => x.orders === 0 && x.newUsers === 0);
+
+  active.sort((a, b) => b.revenue - a.revenue || b.newUsers - a.newUsers || a.name.localeCompare(b.name, 'ko'));
+
+  const lines = [];
+
+  lines.push(`📊 <b>일일 요약</b>`);
+  lines.push(`📅 ${reportDateKst}`);
+  gap(lines, 2);
+
+  lines.push(`<b>── 전체 ──</b>`);
+  gap(lines);
+  lines.push(`💰 매출　　<b>${formatKrw(totalRevenue)}</b>`);
+  lines.push(`📦 주문　　<b>${totalOrders}건</b>`);
+  lines.push(`👤 신규　　<b>${totalNewUsers}명</b>`);
+  lines.push(`🏢 활동　　<b>${active.length}곳</b> / ${stats.length}곳`);
+  gap(lines, 2);
+
+  if (active.length === 0) {
+    lines.push('📭 오늘 매출·신규가입 없음');
+  } else {
+    lines.push(`<b>── 활동 사이트 ${active.length}곳 ──</b>`);
+    gap(lines, 2);
+
+    active.forEach((s, idx) => {
+      const domain = s.domain && s.domain !== s.id ? s.domain : '';
+      lines.push(`▸ <b>${escHtml(s.name)}</b>`);
+      if (domain) lines.push(`　<i>${escHtml(domain)}</i>`);
+      gap(lines);
+      if (s.revenue > 0 || s.orders > 0) {
+        lines.push(`　💰 ${formatKrw(s.revenue)}　·　${s.orders}건`);
+      } else {
+        lines.push(`　💰 —`);
+      }
+      lines.push(`　👤 신규 +${s.newUsers}명`);
+      if (idx < active.length - 1) gap(lines, 2);
+    });
+  }
+
+  if (quiet.length > 0) {
+    gap(lines, 2);
+    lines.push(`<b>── 활동 없음 ──</b>`);
+    gap(lines);
+    if (quiet.length <= 6) {
+      quiet.forEach((s) => lines.push(`💤 ${escHtml(s.name)}`));
+    } else {
+      lines.push(`💤 ${quiet.length}곳 (생략)`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
 /**
  * @param {Function} query - server.js 의 query()
  * @param {Function} getGlobalSetting
@@ -67,48 +134,8 @@ async function buildAndSendDailySiteReport(query, getGlobalSetting, setGlobalSet
     });
   }
 
-  const totalRevenue = stats.reduce((s, x) => s + x.revenue, 0);
-  const totalOrders = stats.reduce((s, x) => s + x.orders, 0);
-  const totalNewUsers = stats.reduce((s, x) => s + x.newUsers, 0);
   const active = stats.filter((x) => x.orders > 0 || x.newUsers > 0);
-  const quiet = stats.filter((x) => x.orders === 0 && x.newUsers === 0);
-
-  // 매출 많은 순 → 가입 많은 순
-  active.sort((a, b) => b.revenue - a.revenue || b.newUsers - a.newUsers || a.name.localeCompare(b.name, 'ko'));
-
-  const lines = [
-    `📊 <b>일일 요약</b> · ${reportDateKst}`,
-    '',
-    `💰 <b>전체</b> ${formatKrw(totalRevenue)} · 주문 ${totalOrders}건 · 신규 ${totalNewUsers}명`,
-    `🏢 활동 ${active.length}곳 / 전체 ${stats.length}곳`,
-    '',
-  ];
-
-  if (active.length === 0) {
-    lines.push('📭 오늘 매출·신규 가입 없음');
-  } else {
-    lines.push('<b>── 활동 사이트 ──</b>');
-    for (const s of active) {
-      const domain = s.domain !== s.id ? s.domain : '';
-      lines.push('');
-      lines.push(`▸ <b>${escHtml(s.name)}</b>${domain ? ` <i>${escHtml(domain)}</i>` : ''}`);
-      const parts = [];
-      if (s.revenue > 0 || s.orders > 0) parts.push(`💰 ${formatKrw(s.revenue)} (${s.orders}건)`);
-      else parts.push('💰 —');
-      parts.push(`👤 +${s.newUsers}명`);
-      lines.push(`   ${parts.join(' · ')}`);
-    }
-  }
-
-  if (quiet.length > 0 && quiet.length <= 6) {
-    lines.push('');
-    lines.push(`💤 활동 없음: ${quiet.map((s) => escHtml(s.name)).join(', ')}`);
-  } else if (quiet.length > 6) {
-    lines.push('');
-    lines.push(`💤 활동 없음 ${quiet.length}곳 (생략)`);
-  }
-
-  const message = lines.join('\n');
+  const message = formatDailyReportMessage(stats, reportDateKst);
   const sent = await sendTelegramToSuper(message);
   if (sent) {
     await setGlobalSetting('daily_report_last_sent', reportDateKst);
@@ -148,5 +175,6 @@ function startDailyReportScheduler(query, getGlobalSetting, setGlobalSetting, se
 module.exports = {
   buildAndSendDailySiteReport,
   startDailyReportScheduler,
+  formatDailyReportMessage,
   kstDateString,
 };

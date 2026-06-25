@@ -54,7 +54,19 @@ async function sendTelegramToSuper(message) {
     process.exit(1);
   }
   const force = process.argv.includes('--force');
+  const preview = process.argv.includes('--preview');
   if (force) await setGlobalSetting('daily_report_last_sent', '');
+  if (preview) {
+    const { formatDailyReportMessage, kstDateString } = require('../lib/daily-site-report');
+    const sitesR = await query(`SELECT id, name, domain FROM sites WHERE active=1 ORDER BY name LIMIT 3`);
+    const sample = sitesR.rows.map((s, i) => ({
+      id: s.id, name: s.name, domain: s.domain,
+      revenue: i === 0 ? 50000 : 0, orders: i === 0 ? 5 : 0, newUsers: i === 0 ? 2 : 0,
+    }));
+    console.log(formatDailyReportMessage(sample, kstDateString()));
+    await pool.end();
+    return;
+  }
   const result = await buildAndSendDailySiteReport(
     query,
     getGlobalSetting,
