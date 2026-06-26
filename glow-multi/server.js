@@ -1543,7 +1543,7 @@ async function upgradeEngagementSeedsFromPeakerr() {
   if (peakerrCatalogCache.size === 0) return { upgraded: 0, disabled: 0 };
 
   const ENGAGEMENT = new Set(['팔로워', '좋아요', '조회수']);
-  const PLATFORMS = new Set(['tiktok', 'threads', 'instagram']);
+  const PLATFORMS = new Set(['tiktok', 'threads', 'instagram', 'facebook']);
   const r = await query(`
     SELECT id, name, pl, api_id, active FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
@@ -1974,6 +1974,146 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
 }
 
 // 🔗 URL 검증 (플랫폼·상품 유형별)
+function peakerrStatusKo(status) {
+  const s = String(status || '').toLowerCase();
+  if (s === 'partial') return '일부 완료 (미달분 환불)';
+  if (s === 'completed') return '완료';
+  if (s === 'canceled' || s === 'cancelled') return '취소';
+  if (s === 'in progress' || s === 'processing') return '처리중';
+  if (s === 'pending') return '대기';
+  if (s === 'error' || s === 'failed') return '실패';
+  return status || '—';
+}
+
+const FB_RESERVED_PATHS = new Set([
+  'reel', 'watch', 'videos', 'video', 'photo', 'photos', 'posts', 'groups', 'people',
+  'share', 'sharer', 'gaming', 'marketplace', 'events', 'notes', 'login', 'help',
+  'privacy', 'policies', 'business', 'ads', 'l.php', 'story.php', 'permalink.php',
+]);
+
+/** facebook.com URL — page / post·reel·video / group */
+function facebookPathKind(url) {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, '').toLowerCase();
+    if (host === 'fb.watch') return 'video';
+    const p = u.pathname.toLowerCase();
+    if (/\/reel\//.test(p)) return 'reel';
+    if (/\/watch\//.test(p) || /\/videos\//.test(p)) return 'video';
+    if (/\/photo/.test(p) || /\/posts\//.test(p) || /story\.php/.test(p) || /permalink\.php/.test(p)) return 'post';
+    if (/\/groups\//.test(p)) return 'group';
+    if (/\/pages\//.test(p) || /profile\.php/.test(p)) return 'page';
+    const m = p.match(/^\/([^/?#]+)\/?$/);
+    if (m && !FB_RESERVED_PATHS.has(m[1])) return 'page';
+    return 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/** 상품명 기준 필요 링크 종류 */
+function facebookServiceLinkKind(svc) {
+  const label = `${svc?.name || ''} ${svc?.description || ''}`;
+  if (/멤버|member/i.test(label)) return 'group';
+  if (/페이지/.test(label) && (/좋아요|팔로워|like|follow/i.test(label))) return 'page';
+  if (/조회수|view|play|릴|reel/i.test(label)) return 'media';
+  if (/댓글|comment/i.test(label)) return 'media';
+  if (/좋아요|like/i.test(label)) return 'media';
+  if (/팔로워|follow/i.test(label)) return 'page';
+  return 'any';
+}
+
+function validateFacebookLink(svc, url) {
+  const need = facebookServiceLinkKind(svc);
+  if (need === 'any') return { ok: true };
+  const kind = facebookPathKind(url);
+  if (need === 'page') {
+    if (['reel', 'video', 'post', 'group'].includes(kind)) {
+      return {
+        ok: false,
+        error: '페이스북 페이지 상품은 페이지 URL이 필요합니다. (facebook.com/페이지이름) 릴·게시물 링크는 사용할 수 없습니다.',
+      };
+    }
+    if (kind !== 'page') {
+      return { ok: false, error: '페이스북 페이지 링크를 입력해주세요. (facebook.com/페이지이름 또는 pages/...)' };
+    }
+    return { ok: true };
+  }
+  if (need === 'group') {
+    if (kind !== 'group') {
+      return { ok: false, error: '페이스북 그룹 링크(groups/...)를 입력해주세요.' };
+    }
+    return { ok: true };
+  }
+  if (need === 'media') {
+    if (kind === 'page') {
+      return {
+        ok: false,
+        error: '게시물·릴·동영상 공유 링크를 입력해주세요. (reel / watch / videos / posts) 페이지 링크는 불가합니다.',
+      };
+    }
+    if (!['reel', 'video', 'post'].includes(kind)) {
+      return { ok: false, error: '페이스북 게시물·릴·동영상 공유 링크를 입력해주세요.' };
+    }
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+/** 공급 카탈로그에서 Facebook 조회수 시드(pfb10) 자동 등록 */
+async function ensureFacebookViewsSeed() {
+  if (peakerrCatalogCache.size === 0) return 0;
+  const hasR = await query(`
+    SELECT id FROM services WHERE pl='facebook' AND active=1
+      AND (name LIKE '%조회%' OR description LIKE '%조회%')
+    LIMIT 1
+  `);
+  if (hasR.rows.length) return 0;
+
+  let best = null;
+  let bestScore = -1;
+  for (const s of peakerrCatalogCache.values()) {
+    const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+    if (detectPlat(full) !== 'facebook') continue;
+    if (BAD_SERVICE_NAME.test(full)) continue;
+    const bucket = detectServiceTypeKo(full);
+    if (!['조회수', '릴스 조회수'].includes(bucket)) continue;
+    const score = scorePeakerrService(s) + (peakerrServiceHasRefill(s) ? 40 : 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = s;
+    }
+  }
+  if (!best || bestScore < 50) return 0;
+
+  const id = 'pfb10';
+  const baseName = formatPeakerrServiceName(best.name, 'facebook');
+  const displayName = /조회/.test(baseName)
+    ? baseName
+    : `Facebook 릴·동영상 조회수 — ${baseName.replace(/^Facebook\s*/i, '').slice(0, 72)}`;
+  const desc = '페이스북 릴·동영상·게시물 조회수 서비스입니다. 릴(/reel/) 또는 동영상(/watch/, /videos/) 공유 링크를 입력해주세요. 페이지 링크는 사용할 수 없습니다.';
+  const hasRefill = peakerrServiceHasRefill(best) ? 1 : 0;
+  await query(`
+    INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed)
+    VALUES($1,$2,'facebook',$3,$4,$5,$6,$7,1,$8)
+    ON CONFLICT(id) DO UPDATE SET
+      name=EXCLUDED.name, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max,
+      description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
+      refill_guaranteed=EXCLUDED.refill_guaranteed,
+      inactive_note='', replace_service_id=NULL
+  `, [
+    id, displayName,
+    parseFloat(best.rate || 0),
+    Math.max(1, parseInt(best.min, 10) || 10),
+    parseInt(best.max, 10) || 1000000,
+    desc, String(best.service), hasRefill,
+  ]);
+  await linkServiceToAllSites(id);
+  await syncServiceDescriptionFooters();
+  console.log(`✅ Facebook 조회수 시드 등록: ${id} (api ${best.service})`);
+  return 1;
+}
+
 function validateUrl(url, platform, svc = null) {
   if (!url || typeof url !== 'string') return { ok: false, error: 'URL을 입력해주세요' };
   try {
@@ -2028,6 +2168,10 @@ function validateUrl(url, platform, svc = null) {
         return { ok: false, error: '인스타 팔로워는 프로필 링크를 입력해주세요. (게시물 링크 불가)' };
       }
     }
+    if (platform === 'facebook' && svc) {
+      const fbCheck = validateFacebookLink(svc, url);
+      if (!fbCheck.ok) return fbCheck;
+    }
     return { ok: true };
   } catch(e) {
     return { ok: false, error: '올바른 URL 형식이 아닙니다 (예: https://...)' };
@@ -2070,6 +2214,12 @@ function linkHintForService(svc) {
   if (svc.pl === 'threads') {
     if (bucket === '팔로워') return 'Threads 프로필 링크를 입력해주세요.';
     if (bucket === '좋아요' || bucket === '공유') return 'Threads 게시물 링크를 입력해주세요.';
+  }
+  if (svc.pl === 'facebook') {
+    const need = facebookServiceLinkKind(svc);
+    if (need === 'page') return '페이스북 페이지 URL을 입력해주세요. (facebook.com/페이지이름) 릴·게시물 링크 불가.';
+    if (need === 'group') return '페이스북 그룹 링크(groups/...)를 입력해주세요.';
+    if (need === 'media') return '페이스북 릴·동영상·게시물 공유 링크를 입력해주세요. (reel / watch / videos)';
   }
   return '링크 형식을 확인해주세요. 공유 → 링크 복사로 다시 시도해주세요.';
 }
@@ -2967,7 +3117,7 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
         if (opts.notifyTg !== false) {
           let extra = `💰 환불 ₩${(fin.refundAmount || 0).toLocaleString()} (${refundPercent}%)`;
           if (fin.creditRefund) extra += `\n💳 크레딧 $${fin.creditRefund.toFixed(4)} 복구`;
-          extra += `\n📡 상태: ${peakerrData.status || status}`;
+          extra += `\n📡 상태: ${peakerrStatusKo(peakerrData.status || status)}`;
           await tgOrderNotify('💸 <b>자동 환불</b>', order, { actorId: 'system', extra });
         }
       }
@@ -3192,6 +3342,7 @@ async function syncPeakerrServices() {
       FROM services s WHERE ss.service_id = s.id AND s.active=0 AND ss.active=1
     `);
     await repairAllPartnerSiteServices();
+    await ensureFacebookViewsSeed().catch(() => null);
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(e => console.log('상품 정리:', e.message));
     return { disabled, priceChanged, stuckRefunded, checked };
   } catch(e) { console.log('서비스 동기화 실패:', e.message); return { error: e.message }; }
@@ -3215,6 +3366,7 @@ async function reconcileServiceCatalog(opts = {}) {
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
     await reactivateCuratedSeedServices();
     await upgradeEngagementSeedsFromPeakerr();
+    await ensureFacebookViewsSeed().catch(() => null);
     const purged = await purgeUnsellableServices();
     await backfillPartnerOrderCosts();
 
