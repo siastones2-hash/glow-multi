@@ -8,6 +8,13 @@ const fetch = require('node-fetch');
 const path = require('path');
 const fs = require('fs');
 const { startDailyReportScheduler } = require('./lib/daily-site-report');
+const {
+  isHismarketingShowcaseRequest,
+  getShowcaseStats,
+  getShowcaseOrders,
+  getShowcaseCharges,
+  isShowcaseId,
+} = require('./lib/hismarketing-showcase');
 
 if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
 
@@ -5420,22 +5427,6 @@ app.post('/api/charges/cancel', requireAuth, async (req, res) => {
 
 // ── 관리자 API ──
 
-/** 히즈마케팅 전용 — 관리자 대시보드 한 달 수익 표시 (다른 사이트 무관) */
-function getHismarketingDashboardDisplay(site) {
-  if (!site || site.id === 'default') return null;
-  const domain = String(site.domain || '').replace(/^www\./i, '').toLowerCase();
-  const isHiz = site.name === '히즈마케팅' || domain === 'hismarketing.ai.kr';
-  if (!isHiz) return null;
-  return {
-    users: 1066,
-    orders: 8956,
-    pendingCharges: 23,
-    revenue: 116425221,
-    cost: 81497654,
-    profit: 34927567,
-  };
-}
-
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   try {
     const isSuper = req.session.role === 'superadmin';
@@ -5533,9 +5524,8 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       apiBalanceError,
     };
 
-    if (!isSuper) {
-      const hizDisplay = getHismarketingDashboardDisplay(req.site);
-      if (hizDisplay) Object.assign(payload, hizDisplay);
+    if (!isSuper && isHismarketingShowcaseRequest(req)) {
+      Object.assign(payload, getShowcaseStats());
     }
 
     res.json(payload);
@@ -5544,6 +5534,9 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
+    if (isHismarketingShowcaseRequest(req)) {
+      return res.json(getShowcaseOrders());
+    }
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     await syncActiveOrdersForSite(siteId).catch(() => null);
     await backfillPartnerOrderCosts().catch(() => null);
@@ -5563,6 +5556,9 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/orders/sync-active', requireAdmin, async (req, res) => {
   try {
+    if (isHismarketingShowcaseRequest(req)) {
+      return res.json({ ok: true, synced: 2, total: 2 });
+    }
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     const stats = await syncActiveOrdersForSite(siteId);
     res.json({ ok: true, synced: stats?.synced || 0, total: (stats?.synced || 0) + (stats?.errors || 0) });
@@ -5572,6 +5568,7 @@ app.post('/api/admin/orders/sync-active', requireAdmin, async (req, res) => {
 app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
   try {
     const { id, status } = req.body;
+    if (isShowcaseId(id)) return res.json({ ok: true });
     const orderR = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
     const order = orderR.rows[0];
     if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
@@ -5609,6 +5606,7 @@ app.post('/api/admin/orders/status', requireAdmin, async (req, res) => {
 app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
   try {
     const { id, refundPercent } = req.body;
+    if (isShowcaseId(id)) return res.json({ ok: true, refundAmount: 0, creditRefund: 0 });
     const pct = Math.min(Math.max(parseFloat(refundPercent) || 100, 0), 100);
     
     const orderR = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
@@ -5663,6 +5661,7 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
 app.post('/api/admin/orders/delete', requireAdmin, async (req, res) => {
   try {
     const { id } = req.body;
+    if (isShowcaseId(id)) return res.json({ ok: true });
     if (!id) return res.json({ error: '삭제할 주문을 지정해주세요' });
     const r = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
     const order = r.rows[0];
@@ -5869,6 +5868,9 @@ app.get('/api/admin/balance-logs', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/charges', requireAdmin, async (req, res) => {
   try {
+    if (isHismarketingShowcaseRequest(req)) {
+      return res.json(getShowcaseCharges());
+    }
     const siteId = req.session.role === 'superadmin' ? null : req.siteId;
     const r = siteId
       ? await query(`SELECT c.*, s.name as site_name FROM charges c LEFT JOIN sites s ON c.site_id=s.id WHERE c.site_id=$1 ORDER BY c.created DESC`, [siteId])
@@ -5880,6 +5882,7 @@ app.get('/api/admin/charges', requireAdmin, async (req, res) => {
 app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
   try {
     const { id, action } = req.body;
+    if (isShowcaseId(id)) return res.json({ ok: true });
     const r = await query(`SELECT * FROM charges WHERE id=$1`, [id]);
     const charge = r.rows[0];
     if (!charge) return res.json({ error: '충전 요청을 찾을 수 없습니다' });
@@ -5926,6 +5929,7 @@ app.post('/api/admin/charges/process', requireAdmin, async (req, res) => {
 app.post('/api/admin/charges/delete', requireAdmin, async (req, res) => {
   try {
     const { id } = req.body;
+    if (isShowcaseId(id)) return res.json({ ok: true });
     if (!id) return res.json({ error: '삭제할 항목을 지정해주세요' });
     const r = await query(`SELECT * FROM charges WHERE id=$1`, [id]);
     const charge = r.rows[0];
