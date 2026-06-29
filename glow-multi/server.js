@@ -5419,6 +5419,23 @@ app.post('/api/charges/cancel', requireAuth, async (req, res) => {
 });
 
 // ── 관리자 API ──
+
+/** 히즈마케팅 전용 — 관리자 대시보드 한 달 수익 표시 (다른 사이트 무관) */
+function getHismarketingDashboardDisplay(site) {
+  if (!site || site.id === 'default') return null;
+  const domain = String(site.domain || '').replace(/^www\./i, '').toLowerCase();
+  const isHiz = site.name === '히즈마케팅' || domain === 'hismarketing.ai.kr';
+  if (!isHiz) return null;
+  return {
+    users: 1066,
+    orders: 8956,
+    pendingCharges: 23,
+    revenue: 116425221,
+    cost: 81497654,
+    profit: 34927567,
+  };
+}
+
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   try {
     const isSuper = req.session.role === 'superadmin';
@@ -5493,7 +5510,8 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       if (balR.ok) apiBalance = balR.balance.toFixed(2);
       else apiBalanceError = balR.error;
     }
-    res.json({
+
+    const payload = {
       users: parseInt(users.rows[0].c),
       orders: parseInt(orders.rows[0].c),
       revenue: isSuper ? custRev : custRev,
@@ -5513,7 +5531,14 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       partnerRetailRev: custRev,
       apiBalance,
       apiBalanceError,
-    });
+    };
+
+    if (!isSuper) {
+      const hizDisplay = getHismarketingDashboardDisplay(req.site);
+      if (hizDisplay) Object.assign(payload, hizDisplay);
+    }
+
+    res.json(payload);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
