@@ -2179,8 +2179,96 @@ var ORDERGUIDE={
 
 var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 var _globalExrate=1500; // 크레딧 원화 환산용 글로벌 환율
+var _sessionSyncing=false;
 
-async function api(url,method,body){
+function applyMeUser(d){
+  if(!d||!d.id)return null;
+  if(d.token)localStorage.setItem('glow_token',d.token);
+  delete d.token;
+  delete d.roleSynced;
+  CUR=Object.assign({},CUR||{},d);
+  return CUR;
+}
+function applyAuthMenus(){
+  if(!CUR)return;
+  var roleMap={superadmin:'슈퍼관리자 👑',admin:'관리자 👑',partner:'관리자 👑',user:'일반 회원'};
+  if(ge('sbRole'))ge('sbRole').textContent=roleMap[CUR.role]||'일반 회원';
+  if(ge('sbAv'))ge('sbAv').textContent=(CUR.name||'U').charAt(0).toUpperCase();
+  if(ge('sbName'))ge('sbName').textContent=CUR.name||'';
+  if(ge('welName'))ge('welName').textContent=CUR.name||'';
+  var isAdmin=['admin','partner','superadmin'].includes(CUR.role);
+  var isSuper=CUR.role==='superadmin';
+  ge('si-admin').style.display=isAdmin?'flex':'none';
+  ge('bni-admin').style.display=isAdmin?'flex':'none';
+  ge('si-super').style.display=isSuper?'flex':'none';
+  ge('bni-super').style.display=isSuper?'flex':'none';
+  applyPartnerAdminChrome();
+  var admHead=ge('admPanelHead');if(admHead&&!isPartnerSiteAdmin())admHead.style.display='none';
+  window._adminCreditOnly=SITE_CONFIG&&!SITE_CONFIG.isDefault&&(CUR.role==='admin'||CUR.role==='partner');
+  var aco=window._adminCreditOnly;
+  ['si-charge','bni-charge'].forEach(function(id){var el=ge(id);if(el)el.style.display=aco?'none':'flex';});
+  ['hdrBalChip','hdrChargeBtn','topBalChip','welChargeBtn'].forEach(function(id){var el=ge(id);if(el)el.style.display=aco?'none':'';});
+  var acn=ge('adminCreditNote');if(acn)acn.style.display=aco?'block':'none';
+  var wm=ge('welMsg');
+  if(wm){
+    if(!window._welMsgDefault)window._welMsgDefault=wm.innerHTML;
+    wm.innerHTML=aco
+      ? '관리자 작업은 <strong style="color:var(--tx)">크레딧</strong>으로 처리됩니다. 크레딧 부족 시 <strong style="color:var(--tx)">관리자 → 크레딧 요청</strong>을 이용하세요.'
+      : window._welMsgDefault;
+  }
+  var hbl=ge('homeBalLabel');if(hbl)hbl.textContent=aco?'크레딧':'잔액';
+}
+async function syncSessionFromServer(opts){
+  if(_sessionSyncing)return CUR;
+  _sessionSyncing=true;
+  try{
+    var token=localStorage.getItem('glow_token');
+    if(!token)return null;
+    var res=await fetch('/api/me',{headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}});
+    if(res.status===401){
+      localStorage.removeItem('glow_token');
+      CUR=null;
+      showPg('pg-land');
+      if(!opts||!opts.quiet)toast('로그인이 만료되었습니다. 다시 로그인해 주세요.','err');
+      return null;
+    }
+    var d=await res.json();
+    if(d.error){
+      if(!opts||!opts.quiet)toast(d.error,'err');
+      return null;
+    }
+    applyMeUser(d);
+    applyAuthMenus();
+    return CUR;
+  }catch(e){
+    return null;
+  }finally{
+    _sessionSyncing=false;
+  }
+}
+async function ensureAdminSession(){
+  await syncSessionFromServer({quiet:true});
+  if(!CUR||!['admin','partner','superadmin'].includes(CUR.role)){
+    toast('로그인 정보가 바뀌었습니다. 로그아웃 후 관리자 계정으로 다시 로그인해 주세요.','err');
+    return false;
+  }
+  return true;
+}
+function onAuthStorageChanged(){
+  syncSessionFromServer({quiet:true}).then(function(){
+    if(!CUR||!CUR.id)return;
+    var admOpen=ge('tab-admin')&&ge('tab-admin').classList.contains('on');
+    if(admOpen&&!['admin','partner','superadmin'].includes(CUR.role)){
+      goTab('home');
+      toast('다른 탭에서 로그인이 바뀌어 관리자 화면을 닫았습니다.','warn');
+      return;
+    }
+    if(admOpen&&['admin','partner','superadmin'].includes(CUR.role))loadAdmDash();
+    updBal();
+  });
+}
+
+async function api(url,method,body,_retried){
   try{
     var opts={method:method||'GET',headers:{'Content-Type':'application/json'}};
     var token=localStorage.getItem('glow_token');
@@ -2189,8 +2277,14 @@ async function api(url,method,body){
     var res=await fetch(url,opts);
     if(res.status===401){localStorage.removeItem('glow_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
     var data=await res.json();
+    if(res.status===403&&!_retried&&data&&data.error&&/권한/.test(String(data.error))){
+      var synced=await syncSessionFromServer({quiet:true});
+      if(synced&&['admin','partner','superadmin'].includes(synced.role))return api(url,method,body,true);
+      if(synced)applyAuthMenus();
+    }
     if(data&&data.error&&!_isSuperUser())data.error=_partnerMsg(data.error);
     if(data&&data.message&&!_isSuperUser())data.message=_partnerMsg(data.message);
+    if(data&&data.token)applyMeUser(data);
     return data;
   }catch(e){
     return {error:'서버에 연결할 수 없습니다. Wi‑Fi 확인 후 새로고침(F5)하고 다시 시도해주세요.'};
@@ -2999,6 +3093,7 @@ async function doLogin(){
   var d=await api('/api/login','POST',{email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
   if(d.token)localStorage.setItem('glow_token',d.token);
+  localStorage.setItem('glow_session_ver',String(Date.now()));
   CUR=d.user;enterDash();
 }
 async function doRegister(){
@@ -3012,6 +3107,7 @@ async function doRegister(){
   var d=await api('/api/register','POST',body);
   if(d.error){toast(d.error,'err');return}
   if(d.token)localStorage.setItem('glow_token',d.token);
+  localStorage.setItem('glow_session_ver',String(Date.now()));
   CUR=d.user;
   if(d.user&&d.user.points>0) toast('가입 완료! '+d.user.points+'P 지급! ✨','ok');
   else if(ref&&phone) toast('가입 완료! (추천 500P는 전화번호 확인 후 홈에서 받을 수 있어요) ✨','ok');
@@ -3019,51 +3115,21 @@ async function doRegister(){
   else toast('가입 완료! 환영합니다 ✨','ok');
   enterDash();
 }
-async function doLogout(){await api('/api/logout','POST');localStorage.removeItem('glow_token');CUR=null;showPg('pg-land')}
+async function doLogout(){await api('/api/logout','POST');localStorage.removeItem('glow_token');localStorage.removeItem('glow_session_ver');CUR=null;showPg('pg-land')}
 
 async function enterDash(){
   showPg('pg-dash');
-  ge('sbAv').textContent=(CUR.name||'U').charAt(0).toUpperCase();
-  ge('sbName').textContent=CUR.name;
-  ge('welName').textContent=CUR.name;
+  applyAuthMenus();
 
-  var roleMap={superadmin:'슈퍼관리자 👑',admin:'관리자 👑',partner:'관리자 👑',user:'일반 회원'};
-  ge('sbRole').textContent=roleMap[CUR.role]||'관리자 👑';
-
-  // 메뉴 권한
-  var isAdmin=['admin','partner','superadmin'].includes(CUR.role);
-  var isSuper=CUR.role==='superadmin';
-  var isPartner=CUR.role==='partner';
-  ge('si-admin').style.display=isAdmin?'flex':'none';
-  ge('bni-admin').style.display=isAdmin?'flex':'none';
-  ge('si-super').style.display=isSuper?'flex':'none';
-  ge('bni-super').style.display=isSuper?'flex':'none';
-  applyPartnerAdminChrome();
-  var admHead=ge('admPanelHead');if(admHead&&!isPartnerSiteAdmin())admHead.style.display='none';
-
-  // 파트너·지인 사이트 관리자 → 크레딧만 사용 (잔액 충전 메뉴 숨김)
-  window._adminCreditOnly = SITE_CONFIG && !SITE_CONFIG.isDefault && (CUR.role==='admin'||CUR.role==='partner');
-  var aco = window._adminCreditOnly;
-  ['si-charge','bni-charge'].forEach(function(id){var el=ge(id);if(el)el.style.display=aco?'none':'flex';});
-  ['hdrBalChip','hdrChargeBtn','topBalChip','welChargeBtn'].forEach(function(id){var el=ge(id);if(el)el.style.display=aco?'none':'';});
-  var acn=ge('adminCreditNote');if(acn)acn.style.display=aco?'block':'none';
-  var wm=ge('welMsg');
-  if(wm){
-    if(!window._welMsgDefault)window._welMsgDefault=wm.innerHTML;
-    wm.innerHTML=aco
-      ? '관리자 작업은 <strong style="color:var(--tx)">크레딧</strong>으로 처리됩니다. 크레딧 부족 시 <strong style="color:var(--tx)">관리자 → 크레딧 요청</strong>을 이용하세요.'
-      : window._welMsgDefault;
-  }
-  var hbl=ge('homeBalLabel');if(hbl&&!aco)hbl.textContent='잔액';
-
-  // 최신 유저 정보 (포인트, 추천코드 포함)
-  var me = await api('/api/me');
-  if(me && me.id) CUR = Object.assign({}, CUR, me);
+  var me=await syncSessionFromServer({quiet:true});
+  if(!me&&!CUR)return;
+  applyAuthMenus();
 
   updBal();
   await loadSvcs();
   renderQCards();renderSfBar();
   loadOrders();loadChargeHis();
+  var aco=window._adminCreditOnly;
   if(!aco)loadBankInfo();
   if(aco){
     var dash=await api('/api/admin/stats');
@@ -3170,8 +3236,24 @@ async function changePassword(){
 
 function goTab(tab){
   if(tab==='charge'&&window._adminCreditOnly){toast('관리자는 크레딧으로 주문합니다. 관리자 → 크레딧 요청을 이용하세요','err');return}
-  if(tab==='admin'&&(!CUR||!['admin','partner','superadmin'].includes(CUR.role))){toast('접근 권한이 없습니다','err');return}
-  if(tab==='super'&&(!CUR||CUR.role!=='superadmin')){toast('접근 권한이 없습니다','err');return}
+  if(tab==='admin'){
+    syncSessionFromServer({quiet:true}).then(function(){
+      applyAuthMenus();
+      if(!CUR||!['admin','partner','superadmin'].includes(CUR.role)){toast('접근 권한이 없습니다','err');return}
+      _openTab(tab);
+    });
+    return;
+  }
+  if(tab==='super'){
+    syncSessionFromServer({quiet:true}).then(function(){
+      if(!CUR||CUR.role!=='superadmin'){toast('접근 권한이 없습니다','err');return}
+      _openTab(tab);
+    });
+    return;
+  }
+  _openTab(tab);
+}
+function _openTab(tab){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
   document.querySelectorAll('.si').forEach(function(s){s.classList.remove('on')});
   document.querySelectorAll('.bni').forEach(function(b){b.classList.remove('on')});
@@ -3802,6 +3884,7 @@ function syncAdminUiStyleOptions(isDefault){
 }
 
 async function saveUiStyle(){
+  if(!await ensureAdminSession())return;
   var layout=ge('stUiLayout')?.value||'classic';
   var themeSel=ge('stTheme')?.value||'glow';
   var fields={
@@ -3823,6 +3906,7 @@ async function saveUiStyle(){
 }
 
 async function saveCustomTexts(){
+  if(!await ensureAdminSession())return;
   var fields={
     hero_prefix:ge('stHeroPrefix')?.value,
     hero_badge:ge('stHeroBadge')?.value,
@@ -4039,6 +4123,7 @@ function previewMargin(){
 }
 
 async function saveSiteSettings(){
+  if(!await ensureAdminSession())return;
   var sn=ge('st사이트Name'),sk=ge('stKakao'),sb=ge('stBank'),sm=ge('stMg');
   try {
     if(sn&&sn.value){var r=await api('/api/admin/settings/save','POST',{key:'name',value:sn.value});if(r.error){toast(r.error,'err');return;}}
@@ -4050,6 +4135,7 @@ async function saveSiteSettings(){
   } catch(e) { toast('저장 실패: '+e.message,'err'); }
 }
 async function saveTgSettings(){
+  if(!await ensureAdminSession())return;
   var tt=ge('stTgToken'),tc=ge('stTgChat');
   if(tt&&tt.value&&!tt.value.includes('설정됨')){
     var r=await api('/api/admin/settings/save','POST',{key:'tg_token',value:tt.value});
@@ -5405,10 +5491,16 @@ window.addEventListener('DOMContentLoaded',async function(){
   if(isResetPage)return;
   var token=localStorage.getItem('glow_token');
   if(token){
-    api('/api/me').then(function(d){
-      if(d&&d.id){CUR=d;enterDash()}
-    }).catch(function(){});
+    syncSessionFromServer({quiet:true}).then(function(me){
+      if(me&&me.id)enterDash();
+    });
   }
+  window.addEventListener('storage',function(e){
+    if(e.key==='glow_token'||e.key==='glow_session_ver')onAuthStorageChanged();
+  });
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'&&localStorage.getItem('glow_token')&&CUR)syncSessionFromServer({quiet:true});
+  });
 });
 </script>
 </body>

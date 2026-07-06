@@ -2346,30 +2346,58 @@ async function checkPeakerrBalance() {
   } catch(e) { console.log('Peakerr 잔액 체크 실패:', e.message); return null; }
 }
 
-function requireAuth(req, res, next) {
-  const token = getToken(req);
-  const payload = token ? verifyToken(token) : null;
-  if (!payload) return res.status(401).json({ error: '로그인 필요' });
-  req.session = payload;
-  attachPartnerAdminJsonMask(req, res);
-  next();
+async function refreshUserSession(payload) {
+  if (!payload?.userId) return null;
+  const r = await query(`SELECT id, role, status FROM users WHERE id=$1`, [payload.userId]);
+  const user = r.rows[0];
+  if (!user || user.status === 'banned') return null;
+  return { userId: payload.userId, role: user.role, siteId: payload.siteId };
 }
-function requireAdmin(req, res, next) {
+
+async function requireAuth(req, res, next) {
   const token = getToken(req);
   const payload = token ? verifyToken(token) : null;
   if (!payload) return res.status(401).json({ error: '로그인 필요' });
-  if (!['admin','partner','superadmin'].includes(payload.role)) return res.status(403).json({ error: '관리자 권한 필요' });
-  req.session = payload;
-  attachPartnerAdminJsonMask(req, res);
-  next();
+  try {
+    const session = await refreshUserSession(payload);
+    if (!session) return res.status(401).json({ error: '로그인 필요' });
+    req.session = session;
+    attachPartnerAdminJsonMask(req, res);
+    next();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 }
-function requireSuperAdmin(req, res, next) {
+async function requireAdmin(req, res, next) {
   const token = getToken(req);
   const payload = token ? verifyToken(token) : null;
   if (!payload) return res.status(401).json({ error: '로그인 필요' });
-  if (payload.role !== 'superadmin') return res.status(403).json({ error: '접근 권한이 없습니다' });
-  req.session = payload;
-  next();
+  try {
+    const session = await refreshUserSession(payload);
+    if (!session) return res.status(401).json({ error: '로그인 필요' });
+    if (!['admin','partner','superadmin'].includes(session.role)) {
+      return res.status(403).json({ error: '관리자 권한이 없습니다. 로그아웃 후 관리자 계정으로 다시 로그인해 주세요.' });
+    }
+    req.session = session;
+    attachPartnerAdminJsonMask(req, res);
+    next();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+async function requireSuperAdmin(req, res, next) {
+  const token = getToken(req);
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) return res.status(401).json({ error: '로그인 필요' });
+  try {
+    const session = await refreshUserSession(payload);
+    if (!session) return res.status(401).json({ error: '로그인 필요' });
+    if (session.role !== 'superadmin') return res.status(403).json({ error: '접근 권한이 없습니다' });
+    req.session = session;
+    next();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 }
 
 /** 지인 사이트(default 제외) — 슈퍼·공급사 브랜드 표현 JSON 마스킹 */
@@ -4890,7 +4918,12 @@ app.get('/api/me', requireAuth, async (req, res) => {
       await query(`UPDATE users SET referral_code=$1 WHERE id=$2`, [refCode, req.session.userId]);
       user.referral_code = refCode;
     }
-    res.json(user);
+    const out = { ...user };
+    if (user.role !== req.session.role) {
+      out.token = createToken({ userId: user.id, role: user.role, siteId: req.session.siteId });
+      out.roleSynced = true;
+    }
+    res.json(out);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
