@@ -1,0 +1,38 @@
+# GLOW PostgreSQL 자동 백업 → GitHub Artifacts (30일 보관)
+# 최초 1회: GitHub repo → Settings → Secrets → DATABASE_URL (Render Postgres External URL)
+name: GLOW DB backup
+
+on:
+  schedule:
+    # 매일 04:00 KST (전날 19:00 UTC)
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret이 없습니다. GitHub Settings → Secrets에 Render Postgres URL을 넣어 주세요."
+            exit 1
+          fi
+          STAMP=$(date -u +%Y%m%d-%H%M%S)
+          pg_dump "$DATABASE_URL" --no-owner --no-acl -Fc -f "glow-db-${STAMP}.dump"
+          pg_dump "$DATABASE_URL" --no-owner --no-acl -f "glow-db-${STAMP}.sql"
+          ls -lh glow-db-*
+
+      - name: Upload backup artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: glow-db-backup
+          path: glow-db-*.*
+          retention-days: 30
+          if-no-files-found: error
