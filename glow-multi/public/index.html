@@ -642,9 +642,10 @@ tr:last-child td{border-bottom:none}
 .aUserGroup{margin-bottom:16px;border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:var(--w)}
 .aUserGroupHead{padding:12px 16px;background:linear-gradient(135deg,rgba(114,9,183,.07),rgba(168,85,247,.03));border-bottom:1px solid var(--bd)}
 .aUserSubHead{padding:9px 16px;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--p2);background:#faf5ff;border-bottom:1px solid var(--bd);text-transform:uppercase}
-.aUserOverview{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.aUserOverview{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.aUserOverview .aUserChip b{font-size:13px;margin-left:4px;font-weight:800}
+.aUserOverview .aUserChip.on b{color:#fff}
 .aUserOverviewItem{font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;background:var(--w);border:1px solid var(--bd);color:var(--tm)}
-.aUserOverviewItem b{color:var(--p2);font-size:14px;margin-left:4px}
 .sts{display:grid;grid-template-columns:repeat(4,1fr);background:var(--w);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}
 .st{padding:22px 12px;text-align:center;border-right:1px solid var(--bd)}.st:last-child{border-right:none}
 .abox{background:var(--w);border:1px solid var(--bd);border-radius:22px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(114,9,183,.1)}
@@ -4821,6 +4822,7 @@ async function loadAdmUsers(){
   if(!Array.isArray(d))return;
   window._allAdmUsers=d;
   if(window._admUserRoleFilter===undefined)window._admUserRoleFilter='';
+  if(window._admUserSiteFilter===undefined)window._admUserSiteFilter='';
   renderAdmUsersFilter();
 }
 function setAdmUserRoleFilter(role){
@@ -4828,6 +4830,10 @@ function setAdmUserRoleFilter(role){
   document.querySelectorAll('#aUserRoleChips .aUserChip').forEach(function(el){
     el.classList.toggle('on',el.getAttribute('data-role')===(role||''));
   });
+  renderAdmUsersFilter();
+}
+function setAdmUserSiteFilter(siteId){
+  window._admUserSiteFilter=siteId||'';
   renderAdmUsersFilter();
 }
 function setAdmUserSort(sort){
@@ -5055,14 +5061,35 @@ function renderAdmUsersFilter(){
       sites[sid].users.push(u);
     });
     var siteIds=Object.keys(sites).sort(function(a,b){
-      return (sites[a].name||'').localeCompare(sites[b].name||'');
+      return (sites[a].name||'').localeCompare(sites[b].name||'','ko');
     });
+    var siteF=window._admUserSiteFilter||'';
+    if(siteF&&sites[siteF])siteIds=[siteF];
+    else if(siteF)siteIds=[];
     if(overview){
       overview.style.display='flex';
-      overview.innerHTML=siteIds.map(function(id){
-        var s=sites[id];
-        return '<div class="aUserOverviewItem">'+(s.name||id)+' <b>'+s.users.length+'</b></div>';
-      }).join('');
+      var allSites={};
+      d.forEach(function(u){
+        var sid=u.site_id||'unknown';
+        if(!allSites[sid])allSites[sid]={name:u.site_name||sid,count:0};
+        if(roleF==='admin'&&(u.role!=='admin'&&u.role!=='partner'))return;
+        if(roleF==='user'&&u.role!=='user')return;
+        if(q&&(u.name||'').toLowerCase().indexOf(q)<0&&(u.email||'').toLowerCase().indexOf(q)<0)return;
+        allSites[sid].count++;
+      });
+      var allSiteIds=Object.keys(allSites).sort(function(a,b){
+        return (allSites[a].name||'').localeCompare(allSites[b].name||'','ko');
+      });
+      overview.innerHTML='<button type="button" class="aUserChip aUserSiteChip'+(!siteF?' on':'')+'" onclick="setAdmUserSiteFilter(\'\')">전체 사이트</button>'
+        +allSiteIds.map(function(id){
+          var s=allSites[id];
+          var esc=String(id).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+          return '<button type="button" class="aUserChip aUserSiteChip'+(siteF===id?' on':'')+'" onclick="setAdmUserSiteFilter(\''+esc+'\')">'+(s.name||id)+' <b>'+s.count+'</b></button>';
+        }).join('');
+    }
+    if(!siteIds.length){
+      root.innerHTML='<div style="text-align:center;padding:32px 16px;color:#9A8AB0;font-size:14px">조건에 맞는 회원이 없습니다</div>';
+      return;
     }
     siteIds.forEach(function(id){
       var s=sites[id];
