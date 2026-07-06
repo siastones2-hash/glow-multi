@@ -1360,13 +1360,14 @@ tr:last-child td{border-bottom:none}
             <div style="font-size:14px;font-weight:800">🎁 내 포인트</div>
             <div style="font-size:18px;font-weight:800;color:#F59E0B"><span id="myPoints">0</span>P</div>
           </div>
-          <div style="font-size:12px;color:#92400E;margin-bottom:10px">주문 완료 시 결제금액의 1% 적립 · 1P = ₩1</div>
-          <button onclick="convertPoints()" class="bp bsm" style="background:#F59E0B;border-color:#F59E0B">💰 잔액으로 전환</button>
+          <div style="font-size:12px;color:#92400E;margin-bottom:6px">주문 완료 시 결제금액의 1% 적립 · 1P = ₩1</div>
+          <div id="pointsLockHint" style="display:none;font-size:12px;color:#B45309;margin-bottom:10px;line-height:1.5;background:rgba(245,158,11,.12);padding:8px 10px;border-radius:8px">🔒 가입·추천 포인트는 <strong>잔액 충전(승인 완료)</strong> 후 사용할 수 있습니다.</div>
+          <button onclick="convertPoints()" id="pointsConvertBtn" class="bp bsm" style="background:#F59E0B;border-color:#F59E0B">💰 잔액으로 전환</button>
         </div>
         <!-- 추천인 카드 -->
         <div class="card" style="margin-bottom:16px">
           <div style="font-size:14px;font-weight:800;margin-bottom:8px">🔗 친구 추천</div>
-          <div style="font-size:12px;color:var(--tl);margin-bottom:8px">친구가 내 코드로 가입하면 나와 친구 모두 500P (전화번호 1개당 1회)</div>
+          <div style="font-size:12px;color:var(--tl);margin-bottom:8px">친구가 내 코드로 가입하면 나와 친구 모두 500P (전화번호 1개당 1회) · <strong>충전 승인 후</strong> 사용</div>
           <div style="display:flex;gap:8px;align-items:center">
             <div style="flex:1;background:#f5f0ff;border:1.5px solid var(--bd2);border-radius:10px;padding:10px;font-size:14px;font-weight:700;color:var(--p2);text-align:center" id="myRefCode">로딩 중...</div>
             <button onclick="copyRefCode()" class="bo bsm">복사</button>
@@ -3109,7 +3110,7 @@ async function doRegister(){
   if(d.token)localStorage.setItem('glow_token',d.token);
   localStorage.setItem('glow_session_ver',String(Date.now()));
   CUR=d.user;
-  if(d.user&&d.user.points>0) toast('가입 완료! '+d.user.points+'P 지급! ✨','ok');
+  if(d.user&&d.user.points>0) toast('가입 완료! '+d.user.points+'P 지급 (충전 승인 후 사용) ✨','ok');
   else if(ref&&phone) toast('가입 완료! (추천 500P는 전화번호 확인 후 홈에서 받을 수 있어요) ✨','ok');
   else if(ref) toast('가입 완료! 추천 500P는 홈에서 전화번호+코드 입력 시 받을 수 있어요 ✨','ok');
   else toast('가입 완료! 환영합니다 ✨','ok');
@@ -3160,6 +3161,21 @@ function updBal(){
   }
   // 포인트 카드 — 0이어도 추천 등록 가능하면 표시
   var pc=ge('pointsCard');if(pc)pc.style.display=(pts>0||!CUR.referred_by)?'block':'none';
+  renderPointsUi();
+}
+function renderPointsUi(){
+  if(!CUR)return;
+  var pts=CUR.points||0;
+  var usable=!!CUR.points_usable;
+  var hint=ge('pointsLockHint');
+  var btn=ge('pointsConvertBtn');
+  if(hint)hint.style.display=(pts>0&&!usable)?'block':'none';
+  if(btn){
+    btn.disabled=pts<=0||!usable;
+    btn.style.opacity=(pts>0&&usable)?'1':'0.55';
+    btn.style.cursor=(pts>0&&usable)?'pointer':'not-allowed';
+    btn.textContent=usable?'💰 잔액으로 전환':'🔒 충전 후 사용 가능';
+  }
 }
 async function applyRefCode(){
   var code=(ge('applyRefCode')?.value||'').trim().toUpperCase();
@@ -3169,6 +3185,7 @@ async function applyRefCode(){
   var d=await api('/api/referral/apply','POST',{referral_code:code,phone:phone});
   if(d.error){toast(d.error,'err');return}
   CUR.points=d.points||0;
+  if(d.points_usable!==undefined)CUR.points_usable=d.points_usable;
   CUR.referred_by='applied';
   toast(d.message||'500P 지급 완료! ✨','ok');
   updBal();
@@ -3178,6 +3195,7 @@ async function applyRefCode(){
 async function convertPoints(){
   var pts = CUR.points||0;
   if(pts<=0){toast('전환할 포인트가 없습니다','err');return}
+  if(!CUR.points_usable){toast('충전 승인 후 포인트를 사용할 수 있습니다. 충전 탭에서 먼저 충전해 주세요.','err');return}
   if(!confirm(pts.toLocaleString()+'P를 ₩'+pts.toLocaleString()+'으로 전환하시겠습니까?'))return;
   var d=await api('/api/points/convert','POST');
   if(d.error){toast(d.error,'err');return}

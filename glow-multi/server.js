@@ -3170,6 +3170,16 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
   } catch(e) { console.log('자동 환불 실패:', e.message); return null; }
 }
 
+/** 포인트 → 잔액 전환 가능 여부 (일반 회원은 충전 승인 1회 이상 필요) */
+async function userCanUsePoints(uid, siteId, role) {
+  if (['admin', 'partner', 'superadmin'].includes(role)) return true;
+  const r = await query(
+    `SELECT 1 FROM charges WHERE uid=$1 AND site_id=$2 AND status='approved' LIMIT 1`,
+    [uid, siteId]
+  );
+  return r.rows.length > 0;
+}
+
 // 🎁 포인트 적립 (주문 완료 시 결제금액의 1%)
 async function earnPoints(order) {
   try {
@@ -4707,6 +4717,7 @@ app.post('/api/login', async (req, res) => {
     }
     
     const token = createToken({ userId: targetUser.id, role: targetUser.role, siteId: req.siteId });
+    const pointsUsable = await userCanUsePoints(targetUser.id, req.siteId, targetUser.role);
     res.json({ ok: true, token, user: {
       id: targetUser.id,
       name: targetUser.name,
@@ -4714,7 +4725,8 @@ app.post('/api/login', async (req, res) => {
       role: targetUser.role,
       balance: targetUser.balance,
       points: targetUser.points || 0,
-      referral_code: targetUser.referral_code
+      referral_code: targetUser.referral_code,
+      points_usable: pointsUsable
     }});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -4780,7 +4792,7 @@ app.post('/api/register', async (req, res) => {
       req.site,
       { referralCode: refNorm || null, signupBonus: signupBonus || 0 }
     ).catch(() => null);
-    res.json({ ok: true, token, user: { id, name, email, role: 'user', balance: 0, points: signupBonus, referral_code: refCode }});
+    res.json({ ok: true, token, user: { id, name, email, role: 'user', balance: 0, points: signupBonus, referral_code: refCode, points_usable: false }});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -4919,6 +4931,7 @@ app.get('/api/me', requireAuth, async (req, res) => {
       user.referral_code = refCode;
     }
     const out = { ...user };
+    out.points_usable = await userCanUsePoints(user.id, req.siteId, user.role);
     if (user.role !== req.session.role) {
       out.token = createToken({ userId: user.id, role: user.role, siteId: req.session.siteId });
       out.roleSynced = true;
@@ -4991,7 +5004,13 @@ app.post('/api/referral/apply', requireAuth, async (req, res) => {
       [referrer.id]
     );
     const afterR = await query(`SELECT points FROM users WHERE id=$1`, [user.id]);
-    res.json({ ok: true, points: afterR.rows[0]?.points || 0, message: '500P 지급 완료!' });
+    const pointsUsable = await userCanUsePoints(user.id, req.siteId, user.role);
+    res.json({
+      ok: true,
+      points: afterR.rows[0]?.points || 0,
+      points_usable: pointsUsable,
+      message: pointsUsable ? '500P 지급 완료!' : '500P 지급! 충전 승인 후 잔액으로 전환할 수 있어요.'
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5411,6 +5430,10 @@ app.post('/api/points/convert', requireAuth, async (req, res) => {
     if (!user) return res.json({ error: '사용자 없음' });
     const points = Math.floor(user.points || 0);
     if (points <= 0) return res.json({ error: '전환할 포인트가 없습니다' });
+    const canUse = await userCanUsePoints(user.id, req.siteId, user.role);
+    if (!canUse) {
+      return res.json({ error: '포인트는 잔액 충전(승인 완료) 후 사용할 수 있습니다. 충전 탭에서 먼저 충전해 주세요.' });
+    }
     // 1포인트 = 1원
     await query(`UPDATE users SET balance=balance+$1, points=0 WHERE id=$2`, [points, user.id]);
     await logBalance(user.site_id, user.id, user.name, points,
