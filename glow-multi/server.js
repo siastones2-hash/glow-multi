@@ -187,6 +187,8 @@ async function initDB() {
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus INTEGER DEFAULT 0`).catch(()=>{});
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''`).catch(()=>{});
   try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS margin REAL DEFAULT NULL`); } catch(e) {}
+  try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`); } catch(e) {}
+  try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_by TEXT`); } catch(e) {}
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS refill_guaranteed INTEGER DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS inactive_note TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS replace_service_id TEXT DEFAULT NULL`); } catch(e) {}
@@ -2350,8 +2352,19 @@ async function refreshUserSession(payload) {
   if (!payload?.userId) return null;
   const r = await query(`SELECT id, role, status FROM users WHERE id=$1`, [payload.userId]);
   const user = r.rows[0];
-  if (!user || user.status === 'banned') return null;
+  if (!user || user.status === 'banned' || user.status === 'deleted') return null;
   return { userId: payload.userId, role: user.role, siteId: payload.siteId };
+}
+
+/** 관리자가 해당 회원을 다룰 수 있는지 (다른 사이트·탈퇴·슈퍼 차단) */
+function adminUserManageDenied(req, user) {
+  if (!user) return '회원을 찾을 수 없습니다';
+  if (user.role === 'superadmin') return '처리할 수 없습니다';
+  if (req.session.role !== 'superadmin' && user.site_id !== req.siteId) {
+    return '다른 사이트 회원은 수정할 수 없습니다';
+  }
+  if (user.status === 'deleted') return '이미 탈퇴 처리된 회원입니다';
+  return null;
 }
 
 async function requireAuth(req, res, next) {
@@ -4708,6 +4721,8 @@ app.post('/api/login', async (req, res) => {
       return res.json({ error: '이메일 또는 비밀번호가 올바르지 않습니다' });
     if (targetUser.status === 'banned')
       return res.json({ error: '정지된 계정입니다. 관리자에게 문의하세요.' });
+    if (targetUser.status === 'deleted')
+      return res.json({ error: '탈퇴 처리된 계정입니다.' });
     
     // 레퍼럴 코드 없으면 자동 생성
     if (!targetUser.referral_code) {
@@ -5746,14 +5761,14 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
           SELECT u.*, s.name AS site_name, s.domain AS site_domain
           FROM users u
           LEFT JOIN sites s ON u.site_id = s.id
-          WHERE u.site_id=$1 AND u.role!='superadmin'
+          WHERE u.site_id=$1 AND u.role!='superadmin' AND COALESCE(u.status,'active') <> 'deleted'
           ORDER BY u.role, u.joined DESC
         `, [siteId])
       : await query(`
           SELECT u.*, s.name AS site_name, s.domain AS site_domain
           FROM users u
           LEFT JOIN sites s ON u.site_id = s.id
-          WHERE u.role != 'superadmin'
+          WHERE u.role != 'superadmin' AND COALESCE(u.status,'active') <> 'deleted'
           ORDER BY COALESCE(s.name, u.site_id), u.role, u.joined DESC
         `);
     res.json(r.rows);
@@ -5771,6 +5786,8 @@ app.post('/api/admin/users/balance', requireAdmin, async (req, res) => {
     const beforeR = await query(`SELECT * FROM users WHERE id=$1`, [uid]);
     const beforeUser = beforeR.rows[0];
     if (!beforeUser) return res.json({ error: '회원을 찾을 수 없습니다' });
+    const denyBal = adminUserManageDenied(req, beforeUser);
+    if (denyBal) return res.json({ error: denyBal });
     const beforeBal = beforeUser.balance || 0;
     
     await query(`UPDATE users SET balance=GREATEST(0,balance+$1) WHERE id=$2`, [deltaNum, uid]);
@@ -5799,23 +5816,43 @@ app.post('/api/admin/users/ban', requireAdmin, async (req, res) => {
     const { uid } = req.body;
     const r = await query(`SELECT * FROM users WHERE id=$1`, [uid]);
     const user = r.rows[0];
-    if (!user || user.role === 'superadmin') return res.json({ error: '처리할 수 없습니다' });
+    const deny = adminUserManageDenied(req, user);
+    if (deny) return res.json({ error: deny });
+    if (['admin', 'partner'].includes(user.role) && req.session.role !== 'superadmin') {
+      return res.json({ error: '관리자 계정은 정지할 수 없습니다' });
+    }
     const newStatus = user.status === 'banned' ? 'active' : 'banned';
     await query(`UPDATE users SET status=$1 WHERE id=$2`, [newStatus, uid]);
+    await logActivity(req.siteId, req.session.userId, '', newStatus === 'banned' ? '회원 정지' : '회원 정지 해제', 'user', uid, user.email);
     res.json({ ok: true, status: newStatus });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/users/delete', requireAdmin, async (req, res) => {
   try {
-    const { uid } = req.body;
+    const { uid, confirmEmail } = req.body;
     const r = await query(`SELECT * FROM users WHERE id=$1`, [uid]);
     const user = r.rows[0];
-    if (!user || ['admin','superadmin'].includes(user.role)) return res.json({ error: '삭제할 수 없습니다' });
-    await query(`DELETE FROM users WHERE id=$1`, [uid]);
-    await query(`DELETE FROM orders WHERE uid=$1`, [uid]);
-    await query(`DELETE FROM charges WHERE uid=$1`, [uid]);
-    res.json({ ok: true });
+    const deny = adminUserManageDenied(req, user);
+    if (deny) return res.json({ error: deny });
+    if (['admin', 'partner', 'superadmin'].includes(user.role)) {
+      return res.json({ error: '관리자 계정은 탈퇴 처리할 수 없습니다. 정지를 이용하세요.' });
+    }
+    const emailNorm = String(confirmEmail || '').trim().toLowerCase();
+    if (!emailNorm || emailNorm !== String(user.email || '').trim().toLowerCase()) {
+      return res.json({ error: '안전 확인: 회원 이메일을 정확히 입력해 주세요.' });
+    }
+    // 주문·충전·포인트 DB 보존 — 로그인만 차단 (소프트 탈퇴)
+    await query(
+      `UPDATE users SET status='deleted', deleted_at=NOW(), deleted_by=$1 WHERE id=$2`,
+      [req.session.userId, uid]
+    );
+    await logActivity(
+      req.siteId, req.session.userId, '',
+      '회원 탈퇴(데이터 보존)', 'user', uid,
+      `${user.name} · ${user.email} · 잔액 ₩${Math.round(user.balance || 0).toLocaleString()}`
+    );
+    res.json({ ok: true, soft: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -7158,12 +7195,33 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
 
 app.post('/api/super/sites/delete', requireSuperAdmin, async (req, res) => {
   try {
-    const { siteId } = req.body;
+    const { siteId, confirmName } = req.body;
     if (!siteId || siteId === 'default') return res.json({ error: '기본 사이트는 삭제할 수 없습니다' });
-    await query(`DELETE FROM orders WHERE site_id=$1`, [siteId]);
-    await query(`DELETE FROM charges WHERE site_id=$1`, [siteId]);
-    await query(`DELETE FROM users WHERE site_id=$1`, [siteId]);
-    await query(`DELETE FROM sites WHERE id=$1`, [siteId]);
+    const siteR = await query(`SELECT id, name FROM sites WHERE id=$1`, [siteId]);
+    const site = siteR.rows[0];
+    if (!site) return res.json({ error: '사이트를 찾을 수 없습니다' });
+    if (String(confirmName || '').trim() !== String(site.name || '').trim()) {
+      return res.json({ error: '사이트 이름 확인이 일치하지 않습니다' });
+    }
+    const memberR = await query(`SELECT COUNT(*)::int AS c FROM users WHERE site_id=$1 AND role='user' AND COALESCE(status,'active') <> 'deleted'`, [siteId]);
+    // 회원·주문·충전 데이터는 유지하고 사이트만 비활성화
+    await query(`UPDATE sites SET active=0 WHERE id=$1`, [siteId]);
+    await logActivity('default', req.session.userId, '', '사이트 비활성화(데이터 보존)', 'site', siteId,
+      `${site.name} · 회원 ${memberR.rows[0]?.c || 0}명 데이터 보존`);
+    res.json({ ok: true, deactivated: true, membersPreserved: memberR.rows[0]?.c || 0 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/super/users/restore', requireSuperAdmin, async (req, res) => {
+  try {
+    const { uid } = req.body;
+    if (!uid) return res.json({ error: '회원을 지정해 주세요' });
+    const r = await query(`SELECT * FROM users WHERE id=$1`, [uid]);
+    const user = r.rows[0];
+    if (!user) return res.json({ error: '회원을 찾을 수 없습니다' });
+    if (user.status !== 'deleted') return res.json({ error: '탈퇴 상태가 아닙니다' });
+    await query(`UPDATE users SET status='active', deleted_at=NULL, deleted_by=NULL WHERE id=$1`, [uid]);
+    await logActivity(user.site_id, req.session.userId, '', '회원 복구', 'user', uid, user.email);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

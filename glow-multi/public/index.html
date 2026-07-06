@@ -1552,6 +1552,7 @@ tr:last-child td{border-bottom:none}
         <div class="atab-body" id="ap-users">
           <div id="aUserSiteOverview" class="aUserOverview" style="display:none"></div>
           <div id="aUserToolbar" style="margin-bottom:12px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:11px;color:var(--tl);line-height:1.5;padding:8px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px">🔒 회원 데이터는 자동 삭제되지 않습니다. 탈퇴 처리 시 로그인만 차단되고 주문·충전 기록은 보존됩니다.</div>
             <input type="search" id="aUserSearch" placeholder="🔍 이름·이메일 검색" oninput="renderAdmUsersFilter()" style="width:100%;font-size:14px;padding:10px 14px;border-radius:10px;border:1px solid var(--bd);box-sizing:border-box"/>
             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
               <div id="aUserRoleChips" style="display:flex;flex-wrap:wrap;gap:6px">
@@ -3784,11 +3785,13 @@ async function banUser(uid,uname){
   toast(d.status==='banned'?uname+'님 정지됨':uname+'님 정지 해제','ok');
   loadAdmUsers();
 }
-async function deleteUser(uid,uname){
-  if(!confirm(uname+'님을 강제 탈퇴시키겠습니까?\n모든 주문/충전 내역이 삭제됩니다!'))return;
-  var d=await api('/api/admin/users/delete','POST',{uid:uid});
+async function deleteUser(uid,uname,email){
+  if(!confirm(uname+'님을 탈퇴 처리하시겠습니까?\n\n· 로그인만 차단됩니다\n· 주문·충전·포인트 기록은 서버에 보존됩니다\n· 실수 시 슈퍼관리자가 복구할 수 있습니다'))return;
+  var confirmEmail=prompt('안전 확인: 회원 이메일을 그대로 입력하세요.\n'+(email||''));
+  if(!confirmEmail||confirmEmail.trim().toLowerCase()!==String(email||'').trim().toLowerCase()){toast('이메일이 일치하지 않습니다','err');return;}
+  var d=await api('/api/admin/users/delete','POST',{uid:uid,confirmEmail:confirmEmail.trim()});
   if(d.error){toast(d.error,'err');return}
-  toast(uname+'님 탈퇴 처리 완료','ok');
+  toast(uname+'님 탈퇴 처리 완료 (데이터 보존)','ok');
   loadAdmUsers();loadAdmDash();
 }
 async function openUserDetail(uid){
@@ -4547,7 +4550,7 @@ function renderSiteList(sites){
       +'<button class="btn bxs" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74" onclick="editCredit(\''+s.id+'\',\''+s.name+'\','+creditUsd+','+siteEx+')">✏️ 크레딧 수정</button>'
       +'<button class="btn binf bxs" onclick="openEditSite(\''+s.id+'\')">' + '수정</button>'
       +'<button class="btn bpu bxs" onclick="manageAdmin(\''+s.id+'\')">👤 관리자</button>'
-      +(s.id!=='default'?'<button class="btn ber bxs" onclick="deleteSite(\''+s.id+'\',\''+s.name+'\')">🗑 삭제</button>':'')
+      +(s.id!=='default'?'<button class="btn ber bxs" onclick="deleteSite(\''+s.id+'\',\''+s.name+'\')" title="데이터 보존 · 접속만 중단">⏸ 비활성화</button>':'')
       +(s.pendingCharge>0?'<button class="btn ber bxs" style="animation:pulse 1.8s infinite">⚠ 충전 '+s.pendingCharge+'건</button>':'')
       +'</div>'
       +'</div>';
@@ -4674,12 +4677,12 @@ async function createSite(){
 
 // 관리자 관리
 async function deleteSite(siteId, siteName){
-  if(!confirm('⚠️ 정말로 [' + siteName + '] 사이트를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다!\n회원, 주문, 충전 데이터가 모두 삭제됩니다.')) return;
-  var confirm2 = prompt('삭제하려면 사이트 이름을 정확히 입력하세요:\n' + siteName);
+  if(!confirm('⚠️ [' + siteName + '] 사이트를 비활성화하시겠습니까?\n\n· 회원·주문·충전 데이터는 삭제되지 않고 보존됩니다\n· 도메인 접속만 중단됩니다 (복구 가능)')) return;
+  var confirm2 = prompt('확인: 사이트 이름을 정확히 입력하세요:\n' + siteName);
   if(confirm2 !== siteName){toast('사이트 이름이 일치하지 않습니다','err');return}
-  var d=await api('/api/super/sites/delete','POST',{siteId});
+  var d=await api('/api/super/sites/delete','POST',{siteId:siteId,confirmName:siteName});
   if(d.error){toast(d.error,'err');return}
-  toast('사이트가 삭제되었습니다 ✨','ok');
+  toast('사이트 비활성화 완료 (회원 '+((d.membersPreserved!=null)?d.membersPreserved:'')+'명 데이터 보존) ✨','ok');
   // 즉시 DOM에서 카드 제거
   var siteList=ge('siteList');
   if(siteList){
@@ -4952,8 +4955,9 @@ function _appendAdmUserRow(tbody,u,membersOnly){
     btnDiv.appendChild(banBtn);
     var delBtn=document.createElement('button');
     delBtn.className='btn ber bxs';
-    delBtn.textContent='탈퇴';
-    delBtn.onclick=(function(uid,uname){return function(){deleteUser(uid,uname)}})(u.id,u.name);
+    delBtn.textContent='탈퇴 처리';
+    delBtn.title='로그인 차단 · 주문·충전 기록은 보존';
+    delBtn.onclick=(function(uid,uname,em){return function(){deleteUser(uid,uname,em)}})(u.id,u.name,u.email);
     btnDiv.appendChild(delBtn);
   }
   tbody.appendChild(tr);
