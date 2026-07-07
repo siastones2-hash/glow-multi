@@ -5301,12 +5301,8 @@ async function placeOrderHandler(req, res, ctx) {
 
     ensurePeakerrCatalogLoaded({ background: true });
 
-    let maxOrderCostKrw = usedOrderCostKrw;
-    const altCandidates = await findAlternateServices(svc, req.siteId, qtyNum, new Set(), 8);
-    for (const alt of altCandidates) {
-      maxOrderCostKrw = Math.max(maxOrderCostKrw, computeOrderAmounts(alt, qtyNum, site, margins).orderCostKrw);
-    }
-    const creditErr = await assertPartnerCreditForOrder(site, margins, maxOrderCostKrw);
+    // 선택한 상품 기준만 검사 (대체 SKU는 실제 전환 시에만 재검사 — 과다 차단 방지)
+    const creditErr = await assertPartnerCreditForOrder(site, margins, usedOrderCostKrw);
     if (creditErr) return res.json({ error: creditErr });
 
     const conflict = await findActiveOrderConflict(req.siteId, linkNorm, svc);
@@ -5336,6 +5332,10 @@ async function placeOrderHandler(req, res, ctx) {
       const altAmounts = computeOrderAmounts(usedSvc, qtyNum, site, margins);
       usedApiCost = altAmounts.apiCost;
       usedOrderCostKrw = altAmounts.orderCostKrw;
+      const altCreditErr = await assertPartnerCreditForOrder(site, margins, usedOrderCostKrw);
+      if (altCreditErr) {
+        return res.json({ error: altCreditErr + ' (대체 상품 적용)' });
+      }
     }
 
     let apiOrderId = placement.apiOrderId || null;
