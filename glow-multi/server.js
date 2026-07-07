@@ -323,6 +323,7 @@ async function initDB() {
   } catch (e) { /* ignore */ }
 
   await normalizeAbnormalCredits();
+  reconcileAllPartnerCreditsFromLedger().catch(e => console.log('크레딧 장부 동기화:', e.message));
   await fixLegacyPartnerAdminOrders();
   await backfillPartnerOrderCosts();
   reconcileOrphanPeakerrOrders().catch(e => console.log('Peakerr ID 복구:', e.message));
@@ -949,6 +950,62 @@ async function getCreditBalanceKrw(siteId, creditUsd, siteEx) {
   const used = parseFloat(usedR.rows[0].s) || 0;
   if (received > 0) return Math.max(0, Math.round(received - used));
   return Math.round((parseFloat(creditUsd) || 0) * siteEx);
+}
+
+/** 승인된 크레딧 장부(원화)와 sites.credit(USD) 불일치 시 동기화 — 화면·주문 판단 일치 */
+async function reconcileSiteCreditUsdFromLedger(siteId) {
+  const siteR = await query(`SELECT credit, exrate FROM sites WHERE id=$1`, [siteId]);
+  const site = siteR.rows[0];
+  if (!site || siteId === 'default') return null;
+  const globalEx = parseFloat(await getGlobalSetting('global_exrate')) || 1500;
+  const siteEx = parseFloat(site.exrate) > 0 ? parseFloat(site.exrate) : globalEx;
+  const crAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM credit_requests WHERE site_id=$1 AND status='approved'`, [siteId]);
+  const received = parseFloat(crAp.rows[0].s) || 0;
+  if (received <= 0) return null;
+  const EXCLUDE = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+  const usedR = await query(`SELECT COALESCE(SUM(cost),0) as s FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [siteId]);
+  const used = parseFloat(usedR.rows[0].s) || 0;
+  const krwBal = Math.max(0, received - used);
+  const expectedUsd = krwBal / siteEx;
+  const currentUsd = parseFloat(site.credit) || 0;
+  if (Math.abs(currentUsd - expectedUsd) > 0.0001) {
+    await query(`UPDATE sites SET credit=$1 WHERE id=$2`, [expectedUsd, siteId]);
+    return { before: currentUsd, after: expectedUsd, krwBal };
+  }
+  return null;
+}
+
+/** 파트너 사이트 주문 — 화면과 동일한 원화 크레딧 기준으로 충분한지 확인 */
+async function assertPartnerCreditForOrder(site, margins, requiredKrw) {
+  if (!site || site.id === 'default') return null;
+  await reconcileSiteCreditUsdFromLedger(site.id);
+  const siteR = await query(`SELECT credit, exrate FROM sites WHERE id=$1`, [site.id]);
+  const row = siteR.rows[0] || site;
+  const siteEx = parseFloat(row.exrate) > 0 ? parseFloat(row.exrate) : margins.ex;
+  const creditUsd = parseFloat(row.credit) || 0;
+  const available = await getCreditBalanceKrw(site.id, creditUsd, siteEx);
+  const need = Math.ceil(parseFloat(requiredKrw) || 0);
+  if (need > 0 && available < need) {
+    return `사이트 크레딧이 부족합니다. (잔액 ₩${available.toLocaleString()} / 필요 약 ₩${need.toLocaleString()}) 관리자 → 크레딧 요청으로 충전하세요.`;
+  }
+  return null;
+}
+
+async function reconcileAllPartnerCreditsFromLedger() {
+  const r = await query(`SELECT id, name FROM sites WHERE id <> 'default' AND active=1`);
+  let fixed = 0;
+  for (const s of r.rows) {
+    try {
+      const res = await reconcileSiteCreditUsdFromLedger(s.id);
+      if (res) {
+        fixed++;
+        console.log(`✓ 크레딧 장부 동기화: ${s.name} $${res.before.toFixed(4)} → $${res.after.toFixed(4)} (₩${Math.round(res.krwBal).toLocaleString()})`);
+      }
+    } catch (e) {
+      console.log(`크레딧 동기화 실패 ${s.id}:`, e.message);
+    }
+  }
+  return fixed;
 }
 
 /** 휴대전화 정규화 (숫자만 · 010 형식) */
@@ -2771,6 +2828,16 @@ async function confirmPendingOrderPayment(order) {
       `주문 확정 차감 - ${order.id}`, 'system');
   }
   if (order.site_id && order.site_id !== 'default' && apiCost > 0) {
+    const margins = await getSiteMargins(site, user);
+    const siteEx = parseFloat(site.exrate) > 0 ? parseFloat(site.exrate) : margins.ex;
+    const orderCostKrw = parseFloat(order.cost || 0) > 0 ? parseFloat(order.cost) : apiCost * siteEx;
+    const creditErr = await assertPartnerCreditForOrder(site, margins, orderCostKrw);
+    if (creditErr) {
+      await sendTelegramToSuper(
+        `⚠️ <b>크레딧 부족 — 주문 확정 보류</b>\n\n주문 ${order.id}\n${order.sname}\n${creditErr}`
+      ).catch(() => null);
+      return null;
+    }
     await query(`UPDATE sites SET credit=GREATEST(0,credit-$1) WHERE id=$2`, [apiCost, order.site_id]);
   }
   await query(`UPDATE orders SET status='processing', paid=1 WHERE id=$1`, [order.id]);
@@ -5234,13 +5301,13 @@ async function placeOrderHandler(req, res, ctx) {
 
     ensurePeakerrCatalogLoaded({ background: true });
 
-    let maxApiCost = usedApiCost;
+    let maxOrderCostKrw = usedOrderCostKrw;
     const altCandidates = await findAlternateServices(svc, req.siteId, qtyNum, new Set(), 8);
     for (const alt of altCandidates) {
-      maxApiCost = Math.max(maxApiCost, computeOrderAmounts(alt, qtyNum, site, margins).apiCost);
+      maxOrderCostKrw = Math.max(maxOrderCostKrw, computeOrderAmounts(alt, qtyNum, site, margins).orderCostKrw);
     }
-    if (site && site.credit < maxApiCost && site.id !== 'default')
-      return res.json({ error: '사이트 크레딧이 부족합니다. 관리자 → 크레딧 요청으로 충전하세요.' });
+    const creditErr = await assertPartnerCreditForOrder(site, margins, maxOrderCostKrw);
+    if (creditErr) return res.json({ error: creditErr });
 
     const conflict = await findActiveOrderConflict(req.siteId, linkNorm, svc);
     if (conflict) {
@@ -5540,6 +5607,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
     const credit = isSuper ? null : (req.site?.credit || 0);
     const globalEx = parseFloat((await getGlobalSetting('global_exrate')) || '1500');
     const siteEx = (req.site && req.site.exrate > 0) ? req.site.exrate : globalEx;
+    if (!isSuper && siteId) await reconcileSiteCreditUsdFromLedger(siteId).catch(() => null);
     const creditKrw = (!isSuper && siteId)
       ? await getCreditBalanceKrw(siteId, credit, siteEx)
       : null;
