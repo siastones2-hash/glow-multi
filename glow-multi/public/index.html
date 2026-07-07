@@ -1409,6 +1409,7 @@ tr:last-child td{border-bottom:none}
               <div class="osr" id="oBalRow"><span style="color:var(--tm);font-weight:300" id="oBalLabel">내 잔액</span><span id="oBal">-</span></div>
               <div class="osr"><span id="oTotalLabel">총 결제</span><span class="gt" style="font-size:17px;font-weight:800" id="oTotal">₩0</span></div>
             </div>
+            <div id="oCreditWarn" style="display:none;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.25);border-radius:10px;padding:11px 13px;margin:0 0 12px;font-size:12px;line-height:1.55;color:var(--wn)"></div>
             <button class="bp bpf" id="orderBtn" onclick="placeOrder()">✨ 주문하기</button>
             <div style="font-size:11px;color:var(--tl);text-align:center;margin-top:8px">주문 후 취소가 어려울 수 있습니다</div>
           </div>
@@ -2338,6 +2339,10 @@ function _partnerMsg(s){
   t=t.replace(/API\s*키/gi,'연동 설정');
   t=t.replace(/API\s*미/gi,'미');
   t=t.replace(/공급/g,'');
+  t=t.replace(/사이트\s*크레딧이\s*부족[^.]*\./gi,'크레딧이 부족합니다. 관리자 → 크레딧 요청에서 충전 후 다시 주문해 주세요.');
+  t=t.replace(/잔액\s*부족[^.]*\./gi,'잔액이 부족합니다. 충전 탭에서 충전 후 다시 주문해 주세요.');
+  t=t.replace(/\(잔액[^)]*\)/gi,'');
+  t=t.replace(/\/\s*필요[^)]*/gi,'');
   t=t.replace(/\s{2,}/g,' ').trim();
   return t||'처리할 수 없습니다';
 }
@@ -3138,8 +3143,10 @@ async function enterDash(){
     var dash=await api('/api/admin/stats');
     if(dash&&(dash.creditKrw!==undefined||dash.credit!==undefined)){
       var aEx=(dash.exrate&&dash.exrate>0)?dash.exrate:_globalExrate;
+      var crKrw=dash.creditKrw!=null?dash.creditKrw:parseFloat(dash.credit||0)*aEx;
+      window._partnerCreditKrw=crKrw;
       var hbl2=ge('homeBalLabel');if(hbl2)hbl2.textContent='크레딧';
-      var sb=ge('stBal');if(sb)sb.textContent=gf(dash.creditKrw!=null?dash.creditKrw:parseFloat(dash.credit||0)*aEx);
+      var sb=ge('stBal');if(sb)sb.textContent=gf(crKrw);
     }
   }
   goTab('home');
@@ -3283,6 +3290,7 @@ function _openTab(tab){
   var ti={home:'대시보드',order:'서비스 주문',orders:'주문 내역',charge:'잔액 충전',profile:'내 정보',관리자:'관리자',super:'슈퍼관리자'};
   var dh=ge('dhTitle');if(dh)dh.textContent=ti[tab]||'';
   if(tab==='orders')loadOrders();
+  if(tab==='order')refreshOrderEstimate();
   if(tab==='charge'){refreshMe();loadChargeHis()}
   if(tab==='profile')loadProfile();
   if(tab==='admin'){applyPartnerAdminChrome();loadAdmDash();}
@@ -3356,6 +3364,35 @@ function selSvc(id){
   var ofc=document.querySelector('.ofc');
   if(ofc&&window.innerWidth<900)ofc.scrollIntoView({behavior:'smooth',block:'start'});
 }
+function applyOrderEstimateUi(d){
+  var warn=ge('oCreditWarn'), btn=ge('orderBtn');
+  if(warn){
+    if(d&&!d.error&&!d.ok&&d.message){
+      warn.style.display='block';
+      warn.innerHTML='⚠️ '+d.message;
+    }else{warn.style.display='none';warn.innerHTML='';}
+  }
+  if(btn&&!window._orderInFlight){
+    if(d&&!d.error&&!d.ok){
+      btn.disabled=true;
+      btn.textContent=window._adminCreditOnly?'크레딧 부족 — 충전 필요':'잔액 부족 — 충전 필요';
+    }else{
+      btn.disabled=false;
+      btn.textContent='✨ 주문하기';
+    }
+  }
+}
+async function refreshOrderEstimate(){
+  if(!SEL||!CUR){window._orderEstimate=null;applyOrderEstimateUi(null);return;}
+  var qty=parseInt(ge('o수량')?.value)||0;
+  if(!qty||qty<1){window._orderEstimate=null;applyOrderEstimateUi(null);return;}
+  var d=await api('/api/orders/estimate','POST',{sid:SEL.id,qty:qty});
+  window._orderEstimate=d;
+  if(d&&!d.error&&d.requiredKrw!=null&&ge('oTotal')){
+    ge('oTotal').textContent=gf(d.requiredKrw);
+  }
+  applyOrderEstimateUi(d);
+}
 function calcPrice(){
   if(!SEL||!CUR)return;
   var qty=parseInt(ge('o수량').value)||0;
@@ -3373,6 +3410,8 @@ function calcPrice(){
     ge('oBal').textContent=gf(CUR.balance||0);
     ge('oTotal').textContent=qty?gf(Math.round(SEL.sell*qty)):'₩0';
   }
+  clearTimeout(window._estimateTimer);
+  window._estimateTimer=setTimeout(refreshOrderEstimate,220);
 }
 function renderQCards(){
   var el=ge('qCards');if(!el)return;
@@ -3393,11 +3432,21 @@ async function placeOrder(){
   if(window._orderInFlight){return}
   var link=ge('o링크').value.trim(),qty=parseInt(ge('o수량').value);
   if(!link){toast('링크를 입력하세요','err');return}
+  if(!qty||qty<1){toast('수량을 입력하세요','err');return}
+  await refreshOrderEstimate();
+  if(window._orderEstimate&&!window._orderEstimate.ok){
+    toast(window._orderEstimate.message||'주문 조건을 확인해 주세요.','err');
+    return;
+  }
   window._orderInFlight=true;
   var btn=ge('orderBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>처리 중...';
   var d;
   try{d=await api('/api/orders','POST',{sid:SEL.id,link:link,qty:qty});}
-  finally{window._orderInFlight=false;btn.disabled=false;btn.innerHTML='✨ 주문하기';}
+  finally{
+    window._orderInFlight=false;
+    if(window._orderEstimate&&!window._orderEstimate.ok)applyOrderEstimateUi(window._orderEstimate);
+    else{btn.disabled=false;btn.innerHTML='✨ 주문하기';}
+  }
   if(d.error){toast(d.error,'err');return}
   var okMsg=d.message||'✨ 작업 신청이 접수되었습니다.'+(d.orderId?' (#'+d.orderId+')':'');
   if(d.startCount>0){
@@ -3412,6 +3461,7 @@ async function placeOrder(){
   if(window._adminCreditOnly){
     var dash=await api('/api/admin/stats');
     if(dash&&dash.creditKrw!=null){
+      window._partnerCreditKrw=dash.creditKrw;
       var sb=ge('stBal');if(sb)sb.textContent=gf(dash.creditKrw);
       var cb=ge('creditBal');if(cb)cb.textContent=gf(dash.creditKrw);
     }

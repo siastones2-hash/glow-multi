@@ -941,13 +941,44 @@ async function krwToCreditUsd(siteId, krwAmount) {
   return krw / exrate;
 }
 
+/** 크레딧 차감·예약 집계에 포함하지 않는 주문 상태 */
+const CREDIT_ORDER_EXCLUDE = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+
+/** 확정 차감(paid) + 미결제 예약(pending·미지급) 주문 cost 합 — excludeOrderId: 확정 시 자기 주문 제외 */
+async function sumSiteCreditUsedKrw(siteId, opts = {}) {
+  const excludeOrderId = opts.excludeOrderId || null;
+  let sql = `
+    SELECT COALESCE(SUM(cost),0) as s FROM orders
+    WHERE site_id=$1 AND ${CREDIT_ORDER_EXCLUDE}
+    AND COALESCE(cost,0) > 0
+    AND (
+      COALESCE(paid,0)=1
+      OR (status='pending' AND COALESCE(paid,0)=0)
+    )`;
+  const params = [siteId];
+  if (excludeOrderId) {
+    sql += ` AND id <> $2`;
+    params.push(excludeOrderId);
+  }
+  const r = await query(sql, params);
+  return parseFloat(r.rows[0]?.s) || 0;
+}
+
+/** sites.credit(USD) 동기화용 — 실제 확정 차감(paid)만 */
+async function sumSiteCreditPaidKrw(siteId) {
+  const r = await query(`
+    SELECT COALESCE(SUM(cost),0) as s FROM orders
+    WHERE site_id=$1 AND ${CREDIT_ORDER_EXCLUDE}
+    AND COALESCE(paid,0)=1 AND COALESCE(cost,0) > 0
+  `, [siteId]);
+  return parseFloat(r.rows[0]?.s) || 0;
+}
+
 /** 크레딧 잔액 원화 표시 — 충전 당시 원화 기준(지급합−사용합). 환율 변경해도 ₩10만 충전은 ₩10만으로 보임 */
-async function getCreditBalanceKrw(siteId, creditUsd, siteEx) {
-  const EXCLUDE = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
+async function getCreditBalanceKrw(siteId, creditUsd, siteEx, opts = {}) {
   const crAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM credit_requests WHERE site_id=$1 AND status='approved'`, [siteId]);
-  const usedR = await query(`SELECT COALESCE(SUM(cost),0) as s FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [siteId]);
   const received = parseFloat(crAp.rows[0].s) || 0;
-  const used = parseFloat(usedR.rows[0].s) || 0;
+  const used = await sumSiteCreditUsedKrw(siteId, opts);
   if (received > 0) return Math.max(0, Math.round(received - used));
   return Math.round((parseFloat(creditUsd) || 0) * siteEx);
 }
@@ -962,10 +993,8 @@ async function reconcileSiteCreditUsdFromLedger(siteId) {
   const crAp = await query(`SELECT COALESCE(SUM(amount),0) as s FROM credit_requests WHERE site_id=$1 AND status='approved'`, [siteId]);
   const received = parseFloat(crAp.rows[0].s) || 0;
   if (received <= 0) return null;
-  const EXCLUDE = `status NOT IN ('cancelled','canceled','failed','refunded','partial_refunded')`;
-  const usedR = await query(`SELECT COALESCE(SUM(cost),0) as s FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [siteId]);
-  const used = parseFloat(usedR.rows[0].s) || 0;
-  const krwBal = Math.max(0, received - used);
+  const usedPaid = await sumSiteCreditPaidKrw(siteId);
+  const krwBal = Math.max(0, received - usedPaid);
   const expectedUsd = krwBal / siteEx;
   const currentUsd = parseFloat(site.credit) || 0;
   if (Math.abs(currentUsd - expectedUsd) > 0.0001) {
@@ -976,19 +1005,67 @@ async function reconcileSiteCreditUsdFromLedger(siteId) {
 }
 
 /** 파트너 사이트 주문 — 화면과 동일한 원화 크레딧 기준으로 충분한지 확인 */
-async function assertPartnerCreditForOrder(site, margins, requiredKrw) {
+async function assertPartnerCreditForOrder(site, margins, requiredKrw, opts = {}) {
   if (!site || site.id === 'default') return null;
   await reconcileSiteCreditUsdFromLedger(site.id);
   const siteR = await query(`SELECT credit, exrate FROM sites WHERE id=$1`, [site.id]);
   const row = siteR.rows[0] || site;
   const siteEx = parseFloat(row.exrate) > 0 ? parseFloat(row.exrate) : margins.ex;
   const creditUsd = parseFloat(row.credit) || 0;
-  const available = await getCreditBalanceKrw(site.id, creditUsd, siteEx);
+  const available = await getCreditBalanceKrw(site.id, creditUsd, siteEx, opts);
   const need = Math.ceil(parseFloat(requiredKrw) || 0);
   if (need > 0 && available < need) {
-    return `사이트 크레딧이 부족합니다. (잔액 ₩${available.toLocaleString()} / 필요 약 ₩${need.toLocaleString()}) 관리자 → 크레딧 요청으로 충전하세요.`;
+    const shortfall = need - available;
+    return `크레딧이 약 ₩${shortfall.toLocaleString()} 더 필요합니다. 관리자 → 크레딧 요청에서 충전 후 다시 주문해 주세요.`;
   }
   return null;
+}
+
+/** 주문 전 화면·서버 동일 금액 미리보기 (크레딧/잔액 부족 사전 안내) */
+async function buildOrderEstimate(req, sid, qtyNum) {
+  const svc = await resolveOrderService(sid);
+  if (!svc) return { error: '선택한 상품을 찾을 수 없습니다. 페이지를 새로고침(F5) 후 다시 선택해 주세요.' };
+  if (qtyNum < (svc.min || 1) || qtyNum > (svc.max || 999999999)) {
+    return { error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다.` };
+  }
+  const site = req.site;
+  const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
+  const user = userR.rows[0];
+  const margins = await getSiteMargins(site, user);
+  const adminCreditOnly = site && site.id !== 'default' && ['admin', 'partner'].includes(user?.role || '');
+  const { charge, orderCostKrw } = computeOrderAmounts(svc, qtyNum, site, margins);
+  const requiredKrw = Math.ceil(adminCreditOnly ? orderCostKrw : charge);
+
+  if (adminCreditOnly) {
+    await reconcileSiteCreditUsdFromLedger(site.id).catch(() => null);
+    const siteR = await query(`SELECT credit, exrate FROM sites WHERE id=$1`, [site.id]);
+    const siteEx = parseFloat(siteR.rows[0]?.exrate) > 0 ? parseFloat(siteR.rows[0].exrate) : margins.ex;
+    const available = await getCreditBalanceKrw(site.id, parseFloat(siteR.rows[0]?.credit) || 0, siteEx);
+    const shortfall = Math.max(0, requiredKrw - available);
+    return {
+      ok: shortfall <= 0,
+      adminCreditOnly: true,
+      requiredKrw,
+      availableKrw: available,
+      shortfallKrw: shortfall,
+      message: shortfall > 0
+        ? `크레딧이 약 ₩${shortfall.toLocaleString()} 더 필요합니다. 관리자 → 크레딧 요청에서 충전 후 다시 주문해 주세요.`
+        : null
+    };
+  }
+
+  const available = Math.round(user?.balance || 0);
+  const shortfall = Math.max(0, requiredKrw - available);
+  return {
+    ok: shortfall <= 0,
+    adminCreditOnly: false,
+    requiredKrw,
+    availableKrw: available,
+    shortfallKrw: shortfall,
+    message: shortfall > 0
+      ? `잔액이 약 ₩${shortfall.toLocaleString()} 부족합니다. 충전 탭에서 충전 후 다시 주문해 주세요.`
+      : null
+  };
 }
 
 async function reconcileAllPartnerCreditsFromLedger() {
@@ -2815,8 +2892,11 @@ async function confirmPendingOrderPayment(order) {
   const charge = parseFloat(order.charge || 0);
   const apiCost = parseFloat(order.api_cost || 0);
   if (!adminCreditOnly && charge > 0 && (user.balance || 0) < charge) {
-    await sendTelegramToSuper(
-      `⚠️ <b>주문 결제 실패 (잔액부족)</b>\n\n주문 ${order.id}\n${order.sname}\n필요 ₩${Math.round(charge).toLocaleString()}`
+    const shortfall = Math.ceil(charge - (user.balance || 0));
+    const siteName = site?.name || 'GLOW';
+    await tgAlert(
+      `⚠️ <b>주문 결제 보류 (잔액 부족)</b>\n\n🏷 <b>${siteName}</b>\n📋 <code>${order.id}</code>\n✦ ${order.sname}\n\n잔액이 약 ₩${shortfall.toLocaleString()} 부족합니다. 충전 후 자동 확정됩니다.\n⏰ ${tgKstNow()}`,
+      site
     ).catch(() => null);
     return null;
   }
@@ -2831,10 +2911,12 @@ async function confirmPendingOrderPayment(order) {
     const margins = await getSiteMargins(site, user);
     const siteEx = parseFloat(site.exrate) > 0 ? parseFloat(site.exrate) : margins.ex;
     const orderCostKrw = parseFloat(order.cost || 0) > 0 ? parseFloat(order.cost) : apiCost * siteEx;
-    const creditErr = await assertPartnerCreditForOrder(site, margins, orderCostKrw);
+    const creditErr = await assertPartnerCreditForOrder(site, margins, orderCostKrw, { excludeOrderId: order.id });
     if (creditErr) {
-      await sendTelegramToSuper(
-        `⚠️ <b>크레딧 부족 — 주문 확정 보류</b>\n\n주문 ${order.id}\n${order.sname}\n${creditErr}`
+      const siteName = site?.name || order.site_id || '사이트';
+      await tgAlert(
+        `⚠️ <b>크레딧 부족 — 주문 확정 보류</b>\n\n🏷 <b>${siteName}</b>\n📋 <code>${order.id}</code>\n✦ ${order.sname}\n\n${creditErr}\n\n크레딧 충전 후 자동 확정됩니다.\n⏰ ${tgKstNow()}`,
+        site
       ).catch(() => null);
       return null;
     }
@@ -3455,9 +3537,15 @@ async function syncPeakerrServices() {
       if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
       if (priceChanged > 0) {
         msg += `💰 가격 업데이트: ${priceChanged}개\n`;
-        priceChangedList.slice(0, 5).forEach(p => {
-          msg += `  • ${p.name.substring(0, 30)}: $${p.old} → $${p.new} (${p.change}%)\n`;
-        });
+        priceChangedList
+          .sort((a, b) => Math.abs(parseFloat(b.change)) - Math.abs(parseFloat(a.change)))
+          .slice(0, 5)
+          .forEach(p => {
+            const pct = parseFloat(p.change);
+            const pctLabel = Math.abs(pct) >= 500 ? (pct > 0 ? '대폭 인상' : '대폭 인하') : `${p.change}%`;
+            msg += `  • ${p.name.substring(0, 30)}: $${p.old} → $${p.new} (${pctLabel})\n`;
+          });
+        if (priceChanged > 5) msg += `  … 외 ${priceChanged - 5}개\n`;
       }
       await sendTelegramToSuper(msg);
     }
@@ -5221,6 +5309,16 @@ app.get('/api/services', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/orders/estimate', requireAuth, async (req, res) => {
+  try {
+    const { sid, qty } = req.body;
+    const qtyNum = parseInt(qty, 10);
+    if (!sid || !qtyNum || qtyNum < 1) return res.json({ error: '서비스와 수량을 확인해 주세요.' });
+    const est = await buildOrderEstimate(req, sid, qtyNum);
+    res.json(est);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/orders', requireAuth, async (req, res) => {
   try {
     // 🚦 Rate Limit: 분당 10회 주문 제한 (무차별 주문 방지)
@@ -5269,8 +5367,10 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const adminCreditOnly = !isDefaultSite2 && user && ['admin', 'partner'].includes(user.role);
     if (adminCreditOnly) charge = 0;
 
-    if (!adminCreditOnly && (user.balance || 0) < charge)
-      return res.json({ error: `잔액 부족. 현재 ₩${Math.round(user.balance || 0).toLocaleString()}` });
+    if (!adminCreditOnly && (user.balance || 0) < charge) {
+      const shortfall = Math.ceil(charge - (user.balance || 0));
+      return res.json({ error: `잔액이 약 ₩${shortfall.toLocaleString()} 부족합니다. 충전 탭에서 충전 후 다시 주문해 주세요.` });
+    }
 
     const apiKey = await getPeakerrApiKey();
     if (!apiKey || !svc.api_id) {
@@ -5334,7 +5434,7 @@ async function placeOrderHandler(req, res, ctx) {
       usedOrderCostKrw = altAmounts.orderCostKrw;
       const altCreditErr = await assertPartnerCreditForOrder(site, margins, usedOrderCostKrw);
       if (altCreditErr) {
-        return res.json({ error: altCreditErr + ' (대체 상품 적용)' });
+        return res.json({ error: altCreditErr });
       }
     }
 
@@ -5390,7 +5490,7 @@ async function placeOrderHandler(req, res, ctx) {
     // ② ID 확정 → 차감 + processing
     const confirmed = await confirmPendingOrderPayment({ ...snapOrder, api_order_id: apiOrderId });
     if (!confirmed) {
-      return res.json({ error: '잔액 부족으로 주문을 확정할 수 없습니다. 충전 후 🔄 새로고침해주세요.' });
+      return res.json({ error: '잔액이 부족해 주문을 확정할 수 없습니다. 충전 탭에서 충전 후 새로고침해 주세요.' });
     }
     snapOrder = confirmed;
 
