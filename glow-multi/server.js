@@ -81,6 +81,81 @@ function getEffectiveSitePresentation(site) {
   return { uiLayout, theme, isDefault };
 }
 
+function escapeHtmlAttr(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/** 카카오·채팅 공유용 OG 메타 (무사시·고기몰처럼 링크 미리보기) */
+function buildSiteOgHtml(site, req) {
+  const name = escapeHtmlAttr(site?.name || 'GLOW');
+  const slogan = escapeHtmlAttr(site?.slogan || '콘텐츠가 빛나도록');
+  const sloganSub = escapeHtmlAttr(site?.slogan_sub || '우리가 성장시킵니다');
+  const descRaw = (site?.description || `${slogan} — ${sloganSub}`).replace(/\s+/g, ' ').trim();
+  const desc = escapeHtmlAttr(descRaw.slice(0, 160));
+  const host = String(req?.headers?.host || site?.domain || '').split(',')[0].trim();
+  const proto = (req?.headers?.['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const base = host ? `${proto}://${host}` : '';
+  const url = escapeHtmlAttr(base ? `${base}/` : '');
+  const img = escapeHtmlAttr(base ? `${base}/og-share.png` : '/og-share.png');
+  return [
+    `<meta name="description" content="${desc}"/>`,
+    `<meta property="og:type" content="website"/>`,
+    `<meta property="og:site_name" content="${name}"/>`,
+    `<meta property="og:title" content="${name} — 채널 성장 플랫폼"/>`,
+    `<meta property="og:description" content="${desc}"/>`,
+    url ? `<meta property="og:url" content="${url}"/>` : '',
+    `<meta property="og:image" content="${img}"/>`,
+    `<meta property="og:image:secure_url" content="${img}"/>`,
+    `<meta property="og:image:type" content="image/svg+xml"/>`,
+    `<meta property="og:image:width" content="1200"/>`,
+    `<meta property="og:image:height" content="630"/>`,
+    `<meta property="og:image:alt" content="${name}"/>`,
+    `<meta property="og:locale" content="ko_KR"/>`,
+    `<meta name="twitter:card" content="summary_large_image"/>`,
+    `<meta name="twitter:title" content="${name} — 채널 성장 플랫폼"/>`,
+    `<meta name="twitter:description" content="${desc}"/>`,
+    `<meta name="twitter:image" content="${img}"/>`
+  ].filter(Boolean).join('\n');
+}
+
+function buildOgShareSvg(site) {
+  const name = String(site?.name || 'GLOW').slice(0, 28);
+  const logo = String(site?.logo || '✨').slice(0, 8);
+  const slogan = String(site?.slogan || '콘텐츠가 빛나도록').slice(0, 36);
+  const sub = String(site?.slogan_sub || '우리가 성장시킵니다').slice(0, 40);
+  const p1 = String(site?.primary_color || '#7209B7').replace(/[^#A-Fa-f0-9]/g, '') || '#7209B7';
+  const p2 = String(site?.accent_color || '#F72585').replace(/[^#A-Fa-f0-9]/g, '') || '#F72585';
+  const esc = (s) => String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${esc(p1)}"/>
+      <stop offset="55%" stop-color="${esc(p2)}"/>
+      <stop offset="100%" stop-color="#1A1030"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <text x="600" y="250" text-anchor="middle" font-size="96">${esc(logo)}</text>
+  <text x="600" y="350" text-anchor="middle" fill="#FFFFFF" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="64" font-weight="800">${esc(name)}</text>
+  <text x="600" y="420" text-anchor="middle" fill="#F3E8FF" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="28">${esc(slogan)}</text>
+  <text x="600" y="470" text-anchor="middle" fill="#E9D5FF" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="22">${esc(sub)}</text>
+</svg>`;
+}
+
 // ── DB 초기화 ──
 async function initDB() {
   await query(`
@@ -743,6 +818,18 @@ app.use(async (req, res, next) => {
     req.siteId = 'default';
   }
   next();
+});
+
+/** 카카오톡·SNS 공유 미리보기 이미지 (사이트별 · 도메인 매핑 이후) */
+app.get(['/og-share.png', '/og-share.svg'], (req, res) => {
+  try {
+    const svg = buildOgShareSvg(req.site);
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(svg);
+  } catch (e) {
+    res.status(500).send('og error');
+  }
 });
 
 // 유틸
@@ -7698,6 +7785,7 @@ body{background:#050505!important;color:#E2E2E2!important}`,
     // HTML placeholder를 실제 값으로 치환 (모든 발생 위치)
     html = html.split('__SITE_NAME__').join(siteName);
     html = html.split('__SITE_LOGO__').join(siteLogo);
+    html = html.replace('<!-- __SITE_OG__ -->', buildSiteOgHtml(site, req));
     
     // 커스텀 테마 색상 주입 (FOUC 방지)
     const customTheme = presetPack

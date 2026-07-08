@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>__SITE_NAME__ — 채널 성장 플랫폼</title>
+<!-- __SITE_OG__ -->
 <!-- __CUSTOM_THEME__ -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -1049,10 +1050,79 @@ tr:last-child td{border-bottom:none}
   font-size:13px;color:#94B8E8;line-height:1.65;margin-bottom:20px;padding:12px 16px;
   border-left:3px solid rgba(0,180,255,.45);background:rgba(0,150,255,.06);border-radius:0 10px 10px 0;
 }
+
+/* ── 파트너 브랜드 인트로 (무사시·고기 스타일) — GLOW 본사 제외 ── */
+body.partner-intro-lock{overflow:hidden}
+.partner-intro{
+  position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;
+  background:var(--bg);overflow:hidden;
+}
+.partner-intro.on{display:flex}
+.partner-intro::before{
+  content:'';position:absolute;inset:0;opacity:.35;pointer-events:none;
+  background-image:linear-gradient(rgba(0,0,0,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.06) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+.partner-intro::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(560px circle at 50% 42%,color-mix(in srgb,var(--p2) 22%,transparent),transparent 68%);
+}
+.partner-intro-inner{position:relative;z-index:2;text-align:center;padding:24px;max-width:92vw}
+.partner-intro-logo{
+  font-size:clamp(52px,14vw,88px);line-height:1;margin:0 auto 8px;
+  opacity:0;transform:scale(.86);
+  animation:partnerIntroLogo .85s cubic-bezier(.16,1,.3,1) .12s forwards;
+}
+.partner-intro-name{
+  font-size:clamp(26px,7vw,42px);font-weight:800;letter-spacing:-.03em;color:var(--tx);
+  opacity:0;transform:translateY(10px);
+  animation:partnerIntroFadeUp .7s cubic-bezier(.16,1,.3,1) .35s forwards;
+}
+.partner-intro-bar{
+  width:0;height:2px;margin:18px auto 14px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--p2),var(--p1),var(--p2),transparent);
+  box-shadow:0 0 16px color-mix(in srgb,var(--p2) 40%,transparent);
+  animation:partnerIntroBar .65s cubic-bezier(.16,1,.3,1) .55s forwards;
+}
+.partner-intro-tag{
+  font-size:11px;letter-spacing:.28em;color:var(--tm);font-weight:600;
+  opacity:0;animation:partnerIntroFade .55s ease .72s forwards;
+}
+.partner-intro-sub{
+  font-size:12px;color:var(--tl);margin-top:10px;line-height:1.55;max-width:280px;margin-left:auto;margin-right:auto;
+  opacity:0;animation:partnerIntroFade .55s ease .9s forwards;
+}
+.partner-intro-flash{
+  position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--p1) 45%,transparent),color-mix(in srgb,var(--p2) 18%,transparent) 38%,transparent 70%);
+}
+.partner-intro.exit{animation:partnerIntroLift .9s cubic-bezier(.76,0,.24,1) forwards}
+.partner-intro.exit .partner-intro-flash{animation:partnerIntroFlash .55s ease-out}
+.partner-intro.done{visibility:hidden;pointer-events:none}
+@keyframes partnerIntroLogo{to{opacity:1;transform:scale(1)}}
+@keyframes partnerIntroFadeUp{to{opacity:1;transform:translateY(0)}}
+@keyframes partnerIntroBar{to{width:min(260px,70vw)}}
+@keyframes partnerIntroFade{to{opacity:1}}
+@keyframes partnerIntroLift{to{transform:translateY(-102%)}}
+@keyframes partnerIntroFlash{0%{opacity:0}28%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+  .partner-intro{display:none!important}
+  body.partner-intro-lock{overflow:auto}
+}
 </style>
 </head>
 <body>
 <div id="toast"></div>
+<div class="partner-intro" id="partnerIntro" aria-hidden="true">
+  <div class="partner-intro-inner">
+    <div class="partner-intro-logo" id="partnerIntroLogo">__SITE_LOGO__</div>
+    <div class="partner-intro-name gt" id="partnerIntroName">__SITE_NAME__</div>
+    <div class="partner-intro-bar"></div>
+    <p class="partner-intro-tag" id="partnerIntroTag">CHANNEL GROWTH</p>
+    <p class="partner-intro-sub" id="partnerIntroSub">소셜 성장 · 마케팅 플랫폼</p>
+  </div>
+  <div class="partner-intro-flash"></div>
+</div>
 <button id="kakaoFloatBtn" class="kakao-float" onclick="openKakaoInquiry()" hidden>💬 <span class="kakao-btn-text">카카오톡 문의</span></button>
 
 <!-- LANDING -->
@@ -2306,6 +2376,43 @@ function isPartnerSite(){
 function isPartnerSiteAdmin(){
   return !!(CUR&&['admin','partner'].includes(CUR.role)&&isPartnerSite());
 }
+function fillPartnerIntroBrand(d){
+  if(!d||d.isDefault)return;
+  var logo=d.logo||'✨';
+  var name=d.name||'SITE';
+  var elLogo=ge('partnerIntroLogo');if(elLogo)elLogo.textContent=logo;
+  var elName=ge('partnerIntroName');if(elName)elName.textContent=name;
+  var elTag=ge('partnerIntroTag');if(elTag)elTag.textContent='CHANNEL GROWTH';
+  var elSub=ge('partnerIntroSub');
+  if(elSub)elSub.textContent=(d.sloganSub||d.slogan||'소셜 성장 · 마케팅 플랫폼').slice(0,48);
+}
+function playPartnerBrandIntro(opts){
+  opts=opts||{};
+  if(!SITE_CONFIG||SITE_CONFIG.isDefault)return;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var curtain=ge('partnerIntro');if(!curtain)return;
+  var key='partner_intro_'+(SITE_CONFIG.siteId||'x');
+  try{
+    if(!opts.force&&opts.once!==false&&sessionStorage.getItem(key))return;
+  }catch(e){}
+  if(curtain.classList.contains('on')&&!curtain.classList.contains('done'))return;
+  fillPartnerIntroBrand(SITE_CONFIG);
+  curtain.classList.remove('done','exit');
+  curtain.classList.add('on');
+  curtain.setAttribute('aria-hidden','false');
+  document.body.classList.add('partner-intro-lock');
+  clearTimeout(window._partnerIntroTimer);
+  window._partnerIntroTimer=setTimeout(function(){
+    curtain.classList.add('exit');
+    setTimeout(function(){
+      curtain.classList.add('done');
+      curtain.classList.remove('on','exit');
+      curtain.setAttribute('aria-hidden','true');
+      document.body.classList.remove('partner-intro-lock');
+      try{sessionStorage.setItem(key,'1');}catch(e){}
+    },900);
+  },1580);
+}
 function applyPartnerAdminChrome(){
   if(!isPartnerSiteAdmin())return;
   var roleMap={admin:'관리자 👑',partner:'관리자 👑'};
@@ -2900,6 +3007,8 @@ async function loadSiteConfig(){
   var fn=ge('footerName');if(fn)fn.textContent=logo+' '+name;
   var hp=ge('heroVisual');if(hp&&(d.uiLayout||'')!=='glow-hq')hp.textContent=logo;
   var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
+  fillPartnerIntroBrand(d);
+  if(!d.isDefault)playPartnerBrandIntro({once:true});
 
   // 통계 숫자 (상단 2칸은 사이트별 설정 가능)
   var s1n=ge('stat1Num');if(s1n)s1n.textContent=d.stat1Num||'10K+';
@@ -3123,11 +3232,16 @@ async function doRegister(){
   else toast('가입 완료! 환영합니다 ✨','ok');
   enterDash();
 }
-async function doLogout(){await api('/api/logout','POST');localStorage.removeItem('glow_token');localStorage.removeItem('glow_session_ver');CUR=null;showPg('pg-land')}
-
 async function enterDash(){
   showPg('pg-dash');
   applyAuthMenus();
+  if(isPartnerSite()){
+    try{
+      var k='partner_intro_'+(SITE_CONFIG&&SITE_CONFIG.siteId||'x');
+      sessionStorage.removeItem(k);
+    }catch(e){}
+    playPartnerBrandIntro({force:true});
+  }
 
   var me=await syncSessionFromServer({quiet:true});
   if(!me&&!CUR)return;
@@ -3150,6 +3264,15 @@ async function enterDash(){
     }
   }
   goTab('home');
+}
+async function doLogout(){
+  await api('/api/logout','POST');
+  localStorage.removeItem('glow_token');
+  localStorage.removeItem('glow_session_ver');
+  try{
+    if(SITE_CONFIG&&SITE_CONFIG.siteId)sessionStorage.removeItem('partner_intro_'+SITE_CONFIG.siteId);
+  }catch(e){}
+  CUR=null;showPg('pg-land');
 }
 function updBal(){
   var b=gf(CUR.balance||0);
