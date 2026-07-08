@@ -1051,13 +1051,17 @@ tr:last-child td{border-bottom:none}
   border-left:3px solid rgba(0,180,255,.45);background:rgba(0,150,255,.06);border-radius:0 10px 10px 0;
 }
 
-/* ── 파트너 브랜드 인트로 (무사시·고기 스타일) — GLOW 본사 제외 ── */
+/* ── 브랜드 인트로 (무사시·고기 스타일) — 첫 페인트부터 덮어 FOUC 방지 ── */
 body.partner-intro-lock{overflow:hidden}
 .partner-intro{
-  position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;
+  position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
   background:var(--bg);overflow:hidden;
 }
 .partner-intro.on{display:flex}
+/* JS·세션에서 done 처리 전까지 뒤 화면 완전 차단 */
+body.partner-intro-lock #pg-land,
+body.partner-intro-lock #pg-auth,
+body.partner-intro-lock #pg-dash{visibility:hidden!important}
 .partner-intro::before{
   content:'';position:absolute;inset:0;opacity:.35;pointer-events:none;
   background-image:linear-gradient(rgba(0,0,0,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.06) 1px,transparent 1px);
@@ -1111,15 +1115,31 @@ body.partner-intro-lock{overflow:hidden}
 }
 </style>
 </head>
-<body>
+<body class="partner-intro-lock">
+<script>
+(function(){
+  try{
+    var sid='__SITE_ID__';
+    var key='partner_intro_v2_'+sid;
+    if(sessionStorage.getItem(key)){
+      document.documentElement.classList.add('partner-intro-skip');
+      document.body.classList.remove('partner-intro-lock');
+    }
+  }catch(e){}
+})();
+</script>
+<style>
+html.partner-intro-skip .partner-intro{display:none!important;visibility:hidden!important}
+html.partner-intro-skip body{overflow:auto!important}
+</style>
 <div id="toast"></div>
-<div class="partner-intro" id="partnerIntro" aria-hidden="true">
+<div class="partner-intro" id="partnerIntro" aria-hidden="false">
   <div class="partner-intro-inner">
     <div class="partner-intro-logo" id="partnerIntroLogo">__SITE_LOGO__</div>
     <div class="partner-intro-name gt" id="partnerIntroName">__SITE_NAME__</div>
     <div class="partner-intro-bar"></div>
-    <p class="partner-intro-tag" id="partnerIntroTag">CHANNEL GROWTH</p>
-    <p class="partner-intro-sub" id="partnerIntroSub">소셜 성장 · 마케팅 플랫폼</p>
+    <p class="partner-intro-tag" id="partnerIntroTag">__INTRO_TAG__</p>
+    <p class="partner-intro-sub" id="partnerIntroSub">__INTRO_SUB__</p>
   </div>
   <div class="partner-intro-flash"></div>
 </div>
@@ -2377,39 +2397,54 @@ function isPartnerSiteAdmin(){
   return !!(CUR&&['admin','partner'].includes(CUR.role)&&isPartnerSite());
 }
 function fillPartnerIntroBrand(d){
-  if(!d||d.isDefault)return;
+  if(!d)return;
   var logo=d.logo||'✨';
-  var name=d.name||'SITE';
+  var name=d.name||'GLOW';
   var elLogo=ge('partnerIntroLogo');if(elLogo)elLogo.textContent=logo;
   var elName=ge('partnerIntroName');if(elName)elName.textContent=name;
-  var elTag=ge('partnerIntroTag');if(elTag)elTag.textContent='CHANNEL GROWTH';
+  var elTag=ge('partnerIntroTag');
+  if(elTag)elTag.textContent=d.isDefault?'GLOW HEADQUARTERS':'CHANNEL GROWTH';
   var elSub=ge('partnerIntroSub');
   if(elSub)elSub.textContent=(d.sloganSub||d.slogan||'소셜 성장 · 마케팅 플랫폼').slice(0,48);
 }
+function finishPartnerBrandIntro(key){
+  var curtain=ge('partnerIntro');
+  if(!curtain)return;
+  curtain.classList.add('done');
+  curtain.classList.remove('on','exit');
+  curtain.setAttribute('aria-hidden','true');
+  document.body.classList.remove('partner-intro-lock');
+  document.documentElement.classList.add('partner-intro-skip');
+  try{if(key)sessionStorage.setItem(key,'1');}catch(e){}
+}
 function playPartnerBrandIntro(opts){
   opts=opts||{};
-  if(!SITE_CONFIG||SITE_CONFIG.isDefault)return;
-  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   var curtain=ge('partnerIntro');if(!curtain)return;
-  var key='partner_intro_v2_'+(SITE_CONFIG.siteId||'x');
+  var siteId=(SITE_CONFIG&&SITE_CONFIG.siteId)||'__SITE_ID__';
+  var key='partner_intro_v2_'+siteId;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    finishPartnerBrandIntro(key);return;
+  }
   try{
-    if(!opts.force&&opts.once!==false&&sessionStorage.getItem(key))return;
+    if(!opts.force&&opts.once!==false&&sessionStorage.getItem(key)){
+      finishPartnerBrandIntro(key);return;
+    }
   }catch(e){}
-  if(curtain.classList.contains('on')&&!curtain.classList.contains('done')&&!opts.force)return;
-  fillPartnerIntroBrand(SITE_CONFIG);
+  // SSR에서 이미 커튼이 올라온 상태 — 브랜드만 맞추고 퇴장 타이머만 돌림
+  if(SITE_CONFIG)fillPartnerIntroBrand(SITE_CONFIG);
+  document.documentElement.classList.remove('partner-intro-skip');
   curtain.classList.remove('done','exit');
   curtain.classList.add('on');
   curtain.setAttribute('aria-hidden','false');
   document.body.classList.add('partner-intro-lock');
+  if(window._partnerIntroRunning&&!opts.force)return;
+  window._partnerIntroRunning=true;
   clearTimeout(window._partnerIntroTimer);
   window._partnerIntroTimer=setTimeout(function(){
     curtain.classList.add('exit');
     setTimeout(function(){
-      curtain.classList.add('done');
-      curtain.classList.remove('on','exit');
-      curtain.setAttribute('aria-hidden','true');
-      document.body.classList.remove('partner-intro-lock');
-      try{sessionStorage.setItem(key,'1');}catch(e){}
+      finishPartnerBrandIntro(key);
+      window._partnerIntroRunning=false;
     },950);
   },2100);
 }
@@ -3008,7 +3043,8 @@ async function loadSiteConfig(){
   var hp=ge('heroVisual');if(hp&&(d.uiLayout||'')!=='glow-hq')hp.textContent=logo;
   var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
   fillPartnerIntroBrand(d);
-  if(!d.isDefault && !localStorage.getItem('glow_token'))playPartnerBrandIntro({once:true});
+  // 첫 화면: SSR 로고 커튼이 이미 덮고 있음 → 타이머만 시작 (옛 화면 깜빡임 방지)
+  playPartnerBrandIntro({once:true});
 
   // 통계 숫자 (상단 2칸은 사이트별 설정 가능)
   var s1n=ge('stat1Num');if(s1n)s1n.textContent=d.stat1Num||'10K+';
@@ -3235,6 +3271,7 @@ async function doRegister(){
 async function enterDash(){
   showPg('pg-dash');
   applyAuthMenus();
+  // 파트너 로그인 직후엔 인트로 다시 / 본사는 페이지 로드 인트로(once)만
   if(isPartnerSite()){
     try{
       var k='partner_intro_v2_'+(SITE_CONFIG&&SITE_CONFIG.siteId||'x');
@@ -5697,6 +5734,10 @@ function downloadPriceTable(){
 }
 
 window.addEventListener('DOMContentLoaded',async function(){
+  // SSR 로고 커튼이 올라가 있으면 타이머 즉시 시작 (JS 로드만 된 상태에서도 퇴장)
+  if(!document.documentElement.classList.contains('partner-intro-skip')){
+    playPartnerBrandIntro({once:true});
+  }
   await loadSiteConfig();
   // 🔗 추천인 코드 URL 파라미터 자동 감지 (?ref=XXXXX)
   var urlParams = new URLSearchParams(window.location.search);

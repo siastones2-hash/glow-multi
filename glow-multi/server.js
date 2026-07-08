@@ -7859,6 +7859,12 @@ body{background:#050505!important;color:#E2E2E2!important}`,
     // HTML placeholder를 실제 값으로 치환 (모든 발생 위치)
     html = html.split('__SITE_NAME__').join(siteName);
     html = html.split('__SITE_LOGO__').join(siteLogo);
+    html = html.split('__SITE_ID__').join(String(site?.id || 'default').replace(/[<>"']/g, ''));
+    const introTag = isDefaultSite ? 'GLOW HEADQUARTERS' : 'CHANNEL GROWTH';
+    const introSub = String(site?.slogan_sub || site?.slogan || '소셜 성장 · 마케팅 플랫폼')
+      .replace(/[<>"']/g, '').slice(0, 48);
+    html = html.split('__INTRO_TAG__').join(introTag);
+    html = html.split('__INTRO_SUB__').join(introSub);
     html = html.replace('<!-- __SITE_OG__ -->', buildSiteOgHtml(site, req));
     
     // 커스텀 테마 색상 주입 (FOUC 방지)
