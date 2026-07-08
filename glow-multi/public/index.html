@@ -1,9 +1,50 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="boot-intro">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>__SITE_NAME__ — 채널 성장 플랫폼</title>
+<!-- 첫 페인트부터 옛 화면 차단 (인트로 전용 · JS 전) -->
+<style id="boot-intro-css">
+html.boot-intro{background:__INTRO_BG__}
+html.boot-intro body{margin:0;overflow:hidden!important;background:__INTRO_BG__!important}
+html.boot-intro #pg-land,
+html.boot-intro #pg-auth,
+html.boot-intro #pg-dash,
+html.boot-intro #kakaoFloatBtn,
+html.boot-intro #toast{display:none!important}
+html.boot-intro #partnerIntro{
+  display:flex!important;position:fixed;inset:0;z-index:2147483647;
+  align-items:center;justify-content:center;overflow:hidden;
+  background:__INTRO_BG__!important;margin:0;
+}
+html.boot-intro.partner-intro-skip,
+html:not(.boot-intro){ }
+html.boot-intro.partner-intro-skip #partnerIntro{display:none!important}
+html.boot-intro.partner-intro-skip body{overflow:auto!important}
+html.boot-intro.partner-intro-skip #pg-land,
+html.boot-intro.partner-intro-skip #pg-auth,
+html.boot-intro.partner-intro-skip #pg-dash{display:block!important}
+html.boot-intro.partner-intro-skip #pg-land.pg{display:block!important}
+@media(prefers-reduced-motion:reduce){
+  html.boot-intro{ }
+  html.boot-intro #partnerIntro{display:none!important}
+  html.boot-intro #pg-land,
+  html.boot-intro #pg-auth,
+  html.boot-intro #pg-dash{display:block!important}
+  html.boot-intro body{overflow:auto!important}
+}
+</style>
+<script>
+(function(){
+  try{
+    if(sessionStorage.getItem('partner_intro_v2___SITE_ID__')){
+      document.documentElement.classList.add('partner-intro-skip');
+      document.documentElement.classList.remove('boot-intro');
+    }
+  }catch(e){}
+})();
+</script>
 <!-- __SITE_OG__ -->
 <!-- __CUSTOM_THEME__ -->
 <style>
@@ -1116,22 +1157,6 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
 </style>
 </head>
 <body class="partner-intro-lock">
-<script>
-(function(){
-  try{
-    var sid='__SITE_ID__';
-    var key='partner_intro_v2_'+sid;
-    if(sessionStorage.getItem(key)){
-      document.documentElement.classList.add('partner-intro-skip');
-      document.body.classList.remove('partner-intro-lock');
-    }
-  }catch(e){}
-})();
-</script>
-<style>
-html.partner-intro-skip .partner-intro{display:none!important;visibility:hidden!important}
-html.partner-intro-skip body{overflow:auto!important}
-</style>
 <div id="toast"></div>
 <div class="partner-intro" id="partnerIntro" aria-hidden="false">
   <div class="partner-intro-inner">
@@ -1143,6 +1168,31 @@ html.partner-intro-skip body{overflow:auto!important}
   </div>
   <div class="partner-intro-flash"></div>
 </div>
+<script>
+/* 인트로 DOM이 뜨자마자 퇴장 타이머 시작 — loadSiteConfig 기다리지 않음 */
+(function(){
+  if(document.documentElement.classList.contains('partner-intro-skip'))return;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    document.documentElement.classList.add('partner-intro-skip');
+    document.documentElement.classList.remove('boot-intro');
+    document.body.classList.remove('partner-intro-lock');
+    return;
+  }
+  window._partnerIntroBootStarted=true;
+  setTimeout(function(){
+    var c=document.getElementById('partnerIntro');
+    if(c)c.classList.add('exit');
+    setTimeout(function(){
+      document.documentElement.classList.add('partner-intro-skip');
+      document.documentElement.classList.remove('boot-intro');
+      document.body.classList.remove('partner-intro-lock');
+      if(c){c.classList.add('done');c.classList.remove('on','exit');c.setAttribute('aria-hidden','true');}
+      try{sessionStorage.setItem('partner_intro_v2___SITE_ID__','1');}catch(e){}
+      window._partnerIntroBootDone=true;
+    },950);
+  },2100);
+})();
+</script>
 <button id="kakaoFloatBtn" class="kakao-float" onclick="openKakaoInquiry()" hidden>💬 <span class="kakao-btn-text">카카오톡 문의</span></button>
 
 <!-- LANDING -->
@@ -2409,13 +2459,17 @@ function fillPartnerIntroBrand(d){
 }
 function finishPartnerBrandIntro(key){
   var curtain=ge('partnerIntro');
-  if(!curtain)return;
-  curtain.classList.add('done');
-  curtain.classList.remove('on','exit');
-  curtain.setAttribute('aria-hidden','true');
+  if(curtain){
+    curtain.classList.add('done');
+    curtain.classList.remove('on','exit');
+    curtain.setAttribute('aria-hidden','true');
+  }
   document.body.classList.remove('partner-intro-lock');
   document.documentElement.classList.add('partner-intro-skip');
+  document.documentElement.classList.remove('boot-intro');
   try{if(key)sessionStorage.setItem(key,'1');}catch(e){}
+  window._partnerIntroBootDone=true;
+  window._partnerIntroRunning=false;
 }
 function playPartnerBrandIntro(opts){
   opts=opts||{};
@@ -2430,22 +2484,28 @@ function playPartnerBrandIntro(opts){
       finishPartnerBrandIntro(key);return;
     }
   }catch(e){}
-  // SSR에서 이미 커튼이 올라온 상태 — 브랜드만 맞추고 퇴장 타이머만 돌림
+  // 부트 스크립트가 이미 커튼+타이머를 돌리는 중이면 브랜드만 갱신
   if(SITE_CONFIG)fillPartnerIntroBrand(SITE_CONFIG);
+  if(window._partnerIntroBootStarted&&!opts.force&&!window._partnerIntroBootDone){
+    document.documentElement.classList.add('boot-intro');
+    document.documentElement.classList.remove('partner-intro-skip');
+    document.body.classList.add('partner-intro-lock');
+    curtain.classList.add('on');
+    return;
+  }
+  if(window._partnerIntroRunning&&!opts.force)return;
+  document.documentElement.classList.add('boot-intro');
   document.documentElement.classList.remove('partner-intro-skip');
   curtain.classList.remove('done','exit');
   curtain.classList.add('on');
   curtain.setAttribute('aria-hidden','false');
   document.body.classList.add('partner-intro-lock');
-  if(window._partnerIntroRunning&&!opts.force)return;
   window._partnerIntroRunning=true;
+  window._partnerIntroBootStarted=true;
   clearTimeout(window._partnerIntroTimer);
   window._partnerIntroTimer=setTimeout(function(){
     curtain.classList.add('exit');
-    setTimeout(function(){
-      finishPartnerBrandIntro(key);
-      window._partnerIntroRunning=false;
-    },950);
+    setTimeout(function(){finishPartnerBrandIntro(key);},950);
   },2100);
 }
 function applyPartnerAdminChrome(){
@@ -5734,8 +5794,8 @@ function downloadPriceTable(){
 }
 
 window.addEventListener('DOMContentLoaded',async function(){
-  // SSR 로고 커튼이 올라가 있으면 타이머 즉시 시작 (JS 로드만 된 상태에서도 퇴장)
-  if(!document.documentElement.classList.contains('partner-intro-skip')){
+  // 부트 인트로가 이미 돌고 있으면 타이머 재시작하지 않음
+  if(!window._partnerIntroBootStarted&&!document.documentElement.classList.contains('partner-intro-skip')){
     playPartnerBrandIntro({once:true});
   }
   await loadSiteConfig();

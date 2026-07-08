@@ -7865,6 +7865,21 @@ body{background:#050505!important;color:#E2E2E2!important}`,
       .replace(/[<>"']/g, '').slice(0, 48);
     html = html.split('__INTRO_TAG__').join(introTag);
     html = html.split('__INTRO_SUB__').join(introSub);
+    // 인트로 배경색 — head 최상단 CSS에서 즉시 사용 (FOUC 방지)
+    let introBg = '#FAFAFA';
+    if (presetPack && (siteTheme === 'glow-blue' || siteTheme === 'anonymous')) {
+      introBg = siteTheme === 'glow-blue' ? '#020818' : '#050505';
+    } else if (site?.theme && String(site.theme).trim().startsWith('{')) {
+      try {
+        const td = JSON.parse(site.theme);
+        if (td.bg) introBg = String(td.bg).replace(/[<>"']/g, '');
+      } catch (e) {}
+    } else if (['dark', 'neon', 'glow-blue', 'anonymous'].includes(String(siteTheme))) {
+      introBg = ({ dark: '#0A0A0F', neon: '#050508', 'glow-blue': '#020818', anonymous: '#050505' })[siteTheme] || introBg;
+    } else if (primaryColor) {
+      introBg = '#FAFAFA';
+    }
+    html = html.split('__INTRO_BG__').join(introBg);
     html = html.replace('<!-- __SITE_OG__ -->', buildSiteOgHtml(site, req));
     
     // 커스텀 테마 색상 주입 (FOUC 방지)
