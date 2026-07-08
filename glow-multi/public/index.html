@@ -2391,11 +2391,11 @@ function playPartnerBrandIntro(opts){
   if(!SITE_CONFIG||SITE_CONFIG.isDefault)return;
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   var curtain=ge('partnerIntro');if(!curtain)return;
-  var key='partner_intro_'+(SITE_CONFIG.siteId||'x');
+  var key='partner_intro_v2_'+(SITE_CONFIG.siteId||'x');
   try{
     if(!opts.force&&opts.once!==false&&sessionStorage.getItem(key))return;
   }catch(e){}
-  if(curtain.classList.contains('on')&&!curtain.classList.contains('done'))return;
+  if(curtain.classList.contains('on')&&!curtain.classList.contains('done')&&!opts.force)return;
   fillPartnerIntroBrand(SITE_CONFIG);
   curtain.classList.remove('done','exit');
   curtain.classList.add('on');
@@ -2410,8 +2410,8 @@ function playPartnerBrandIntro(opts){
       curtain.setAttribute('aria-hidden','true');
       document.body.classList.remove('partner-intro-lock');
       try{sessionStorage.setItem(key,'1');}catch(e){}
-    },900);
-  },1580);
+    },950);
+  },2100);
 }
 function applyPartnerAdminChrome(){
   if(!isPartnerSiteAdmin())return;
@@ -3008,7 +3008,7 @@ async function loadSiteConfig(){
   var hp=ge('heroVisual');if(hp&&(d.uiLayout||'')!=='glow-hq')hp.textContent=logo;
   var ft=ge('footerText');if(ft)ft.textContent=d.footerText||'각 플랫폼과 공식 제휴된 서비스가 아닙니다.';
   fillPartnerIntroBrand(d);
-  if(!d.isDefault)playPartnerBrandIntro({once:true});
+  if(!d.isDefault && !localStorage.getItem('glow_token'))playPartnerBrandIntro({once:true});
 
   // 통계 숫자 (상단 2칸은 사이트별 설정 가능)
   var s1n=ge('stat1Num');if(s1n)s1n.textContent=d.stat1Num||'10K+';
@@ -3237,7 +3237,7 @@ async function enterDash(){
   applyAuthMenus();
   if(isPartnerSite()){
     try{
-      var k='partner_intro_'+(SITE_CONFIG&&SITE_CONFIG.siteId||'x');
+      var k='partner_intro_v2_'+(SITE_CONFIG&&SITE_CONFIG.siteId||'x');
       sessionStorage.removeItem(k);
     }catch(e){}
     playPartnerBrandIntro({force:true});
@@ -3270,7 +3270,10 @@ async function doLogout(){
   localStorage.removeItem('glow_token');
   localStorage.removeItem('glow_session_ver');
   try{
-    if(SITE_CONFIG&&SITE_CONFIG.siteId)sessionStorage.removeItem('partner_intro_'+SITE_CONFIG.siteId);
+    if(SITE_CONFIG&&SITE_CONFIG.siteId){
+      sessionStorage.removeItem('partner_intro_'+SITE_CONFIG.siteId);
+      sessionStorage.removeItem('partner_intro_v2_'+SITE_CONFIG.siteId);
+    }
   }catch(e){}
   CUR=null;showPg('pg-land');
 }
@@ -5694,7 +5697,7 @@ function downloadPriceTable(){
 }
 
 window.addEventListener('DOMContentLoaded',async function(){
-  loadSiteConfig();
+  await loadSiteConfig();
   // 🔗 추천인 코드 URL 파라미터 자동 감지 (?ref=XXXXX)
   var urlParams = new URLSearchParams(window.location.search);
   var refCode = urlParams.get('ref');
@@ -5713,9 +5716,8 @@ window.addEventListener('DOMContentLoaded',async function(){
   if(isResetPage)return;
   var token=localStorage.getItem('glow_token');
   if(token){
-    syncSessionFromServer({quiet:true}).then(function(me){
-      if(me&&me.id)enterDash();
-    });
+    var me=await syncSessionFromServer({quiet:true});
+    if(me&&me.id)enterDash();
   }
   window.addEventListener('storage',function(e){
     if(e.key==='glow_token'||e.key==='glow_session_ver')onAuthStorageChanged();
