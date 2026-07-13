@@ -1,15 +1,8 @@
-갱신: 2026-07-13 11:55
+갱신: 2026-07-13
 
-■ 지금 열리는 공개 링크
-  https://thick-socks-cough.loca.lt
+■ 로컬 (실행_Mac.command)
+  슈퍼시아: http://127.0.0.1:3000/?tenant=sh4-op-internal  (leestones/1234)
+  본사:     http://127.0.0.1:3000/?tenant=master  (master/master1234)
+  나인스토리: http://127.0.0.1:3000/?tenant=nine  (nineadmin/nine1234)
 
-  슈퍼관리자: https://thick-socks-cough.loca.lt/?tenant=sh4-op-internal
-  총판:       https://thick-socks-cough.loca.lt/?tenant=master
-  나인스토리: https://thick-socks-cough.loca.lt/?tenant=nine
-
-  leestones/1234 · master/master1234 · nineadmin/nine1234
-
-■ 링크 다시 켜기 → 공유링크.command 더블클릭
-■ 영구(24시간) → 배포-Render.command (Chrome Render Blueprint 2분)
-
-GitHub: siastones2-hash/glow-multi (render.yaml 준비됨)
+■ 공개 링크 → 공유링크.command 로 새 주소 생성

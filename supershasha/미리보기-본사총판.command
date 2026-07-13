@@ -1,11 +1,14 @@
 #!/bin/bash
 # 본사(숨김) + 총판 미리보기 2탭
-DIR="$(cd "$(dirname "$0")/demo" && pwd)"
+DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=open-new-window.sh
+source "$DIR/open-new-window.sh"
+DIR_DEMO="$(cd "$(dirname "$0")/demo" && pwd)"
 PORT=8765
 LOG="/tmp/supershasha-demo.log"
 BASE="http://127.0.0.1:${PORT}/index.html"
 
-cd "$DIR" || { echo "demo 폴더 없음: $DIR"; read -n1; exit 1; }
+cd "$DIR_DEMO" || { echo "demo 폴더 없음: $DIR_DEMO"; read -n1; exit 1; }
 
 if ! lsof -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "[슈퍼샤샤] 서버 시작 중... (포트 $PORT)"
@@ -27,12 +30,12 @@ if [ "$OK" != "1" ]; then
   exit 1
 fi
 
-echo "[OK] 브라우저 2탭 열기..."
-open "${BASE}?tenant=sh4-op-internal"
-sleep 0.6
-open "${BASE}?tenant=master"
+echo "[OK] 브라우저 새 창 2개 열기..."
+open_new_window "${BASE}?tenant=sh4-op-internal"
+sleep 0.4
+open_new_window "${BASE}?tenant=master"
 echo ""
-echo "  숨김본사: ${BASE}?tenant=sh4-op-internal  (leestones / 1234)"
-echo "  총판본사: ${BASE}?tenant=master           (master / master1234)"
+echo "  슈퍼시아: ${BASE}?tenant=sh4-op-internal  (leestones / 1234)"
+echo "  본사:     ${BASE}?tenant=master           (master / master1234)"
 echo ""
 sleep 2

@@ -43,6 +43,7 @@ function stripBrandText(msg) {
   t = t.replace(/SMM\s*패널/gi, "");
   t = t.replace(/관리자\s*패널/gi, "관리자");
   t = t.replace(/패널/g, "");
+  t = t.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "");
   t = t.replace(/\s{2,}/g, " ").trim();
   return t;
 }
@@ -59,7 +60,40 @@ function normalizeCategory(raw = "", name = "") {
   if (/naver|네이버|smartstore|스마트스토어/.test(t)) return "네이버";
   if (/kakao|카카오/.test(t)) return "카카오";
   if (/spotify|스포티/.test(t)) return "스포티파이";
+  if (/sooplive|soop|숲/.test(t)) return "숲(Soop)";
+  if (/linkedin|링크드인/.test(t)) return "링크드인";
+  if (/pinterest|핀터/.test(t)) return "핀터레스트";
+  if (/snapchat|스냅챗/.test(t)) return "스냅챗";
+  if (/discord|디스코드/.test(t)) return "디스코드";
+  if (/reddit|레딧/.test(t)) return "레딧";
+  if (/twitch|트위치/.test(t)) return "트위치";
+  if (/soundcloud/.test(t)) return "사운드클라우드";
+  if (/whatsapp|왓츠앱/.test(t)) return "왓츠앱";
+  if (/\bline\b|라인/.test(t)) return "라인";
+  if (/\bkick\b|kick\.com/.test(t)) return "Kick";
+  if (/rumble/.test(t)) return "Rumble";
+  if (/quora/.test(t)) return "Quora";
+  if (/google map|google business|gmb|구글맵|구글 지도/.test(t)) return "구글맵";
+  if (/steam/.test(t)) return "Steam";
+  if (/shopee|쇼피/.test(t)) return "Shopee";
+  if (/vimeo/.test(t)) return "Vimeo";
+  if (/medium\.com|\bmedium\b/.test(t)) return "Medium";
+  if (/clubhouse/.test(t)) return "Clubhouse";
+  if (/tumblr/.test(t)) return "Tumblr";
+  if (/\bvk\b|vkontakte/.test(t)) return "VK";
   return stripBrandText(raw) || "기타";
+}
+
+function isKoreanService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /한국|korea|south korea|국내|🇰🇷|\bkr\b/.test(t);
+}
+function isVietnameseService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /vietnam|vietnamese|베트남|🇻🇳|\bvn\b/.test(t);
+}
+function isPriorityRegionService(svc) {
+  return isKoreanService(svc) || isVietnameseService(svc);
 }
 function detectServiceKind(name = "") {
   const n = String(name).toLowerCase();
@@ -76,7 +110,8 @@ function serviceMetaKo(svc) {
   const name = stripBrandText(svc.name || "");
   const category = normalizeCategory(svc.category || svc.type || "", name);
   const kind = detectServiceKind(name);
-  const isKr = /한국|korea|korean|kr|국내/.test(name.toLowerCase());
+  const isKr = isKoreanService(svc);
+  const isVn = isVietnameseService(svc);
   const hasRefill = /refill|리필|refill|보장|guarantee|lifetime|평생|365|30일|7일/.test(name.toLowerCase());
   const isHq = /uhq|hq|premium|프리미엄|real|리얼|organic|오가닉|고품질/.test(name.toLowerCase());
 
@@ -93,6 +128,7 @@ function serviceMetaKo(svc) {
 
   let desc = `${category} ${kindKo} 상품입니다. `;
   if (isKr) desc += "한국 타겟·국내 알고리즘에 유리한 고품질 옵션으로, 국내 도달·탐색 노출 강화에 적합합니다. ";
+  else if (isVn) desc += "베트남 타겟·현지 사용자 기반 옵션으로, 동남아 시장·현지 도달 캠페인에 적합합니다. ";
   else if (isHq) desc += "고품질(HQ) 옵션으로 자연스러운 증가 속도와 안정적인 처리에 초점을 맞췄습니다. ";
   else desc += "빠른 처리와 합리적인 가격으로 캠페인·테스트 주문에 적합합니다. ";
   if (hasRefill) desc += "일정 기간 드롭(감소) 발생 시 보상(리필)이 포함된 안정형 상품입니다. ";
@@ -108,16 +144,121 @@ function serviceMetaKo(svc) {
     스레드: "게시물·프로필 URL",
     네이버: "블로그·스마트스토어·플레이스 URL",
     카카오: "채널·스토어 URL",
+    링크드인: "프로필·게시물·회사 페이지 URL",
+    핀터레스트: "핀·보드·프로필 URL",
+    스냅챗: "프로필·스토리·스냅 URL",
+    디스코드: "서버 초대·채널·메시지 URL",
+    레딧: "서브레딧·게시물 URL",
+    트위치: "채널·VOD·클립 URL",
+    구글맵: "구글 비즈니스·지도 리뷰 URL",
+    Steam: "게임·프로필·워크샵 URL",
+    Kick: "채널·VOD URL",
+    "숲(Soop)": "VOD·라이브 방송 URL",
   };
   const linkHint = `링크 입력: ${linkHints[category] || "해당 플랫폼의 공개 URL을 붙여넣으세요"}`;
 
   return { category, description: desc, linkHint, kind };
 }
 
-function providerErrorKo(resp) {
+const KIND_LABELS = {
+  followers: "팔로워·구독",
+  likes: "좋아요·반응",
+  views: "조회·노출",
+  comments: "댓글·참여",
+  shares: "공유·확산",
+  saves: "저장",
+  live: "라이브",
+  general: "기타",
+};
+const CORE_PLATFORMS = new Set([
+  "인스타그램", "유튜브", "틱톡", "X(트위터)", "페이스북", "텔레그램", "스레드", "스포티파이",
+]);
+const EXTENDED_PLATFORMS = new Set([
+  "링크드인", "핀터레스트", "스냅챗", "디스코드", "레딧", "트위치", "사운드클라우드", "왓츠앱", "라인",
+  "Kick", "Rumble", "Quora", "구글맵", "Steam", "Shopee", "Vimeo", "Medium", "Clubhouse", "Tumblr", "VK",
+  "숲(Soop)", "네이버", "카카오",
+]);
+const KNOWN_PLATFORMS = new Set([...CORE_PLATFORMS, ...EXTENDED_PLATFORMS]);
+const CURATE_CORE_PER_GROUP = 5;
+const PLATFORM_ORDER = [
+  "인스타그램", "유튜브", "틱톡", "X(트위터)", "페이스북", "텔레그램", "스레드", "스포티파이",
+  "링크드인", "핀터레스트", "스냅챗", "디스코드", "레딧", "트위치", "구글맵", "Kick", "Steam",
+  "사운드클라우드", "왓츠앱", "라인", "Rumble", "Quora", "Shopee", "VK", "Tumblr", "Medium", "Vimeo", "Clubhouse",
+  "숲(Soop)", "네이버", "카카오",
+];
+const BLOCK_SVC_NAME = /test|테스트|\bfree\b|무료|sample|샘플|disabled|adult|성인|casino|gambling|hack|크랙/i;
+
+function scoreService(svc) {
+  const name = String(svc.name || "").toLowerCase();
+  let score = 0;
+  if (isPriorityRegionService({ name: svc.name, category: svc.category })) score += 35;
+  if (/uhq|hq|premium|프리미엄|organic|오가닉|고품질|real|리얼|quality/.test(name)) score += 22;
+  if (/refill|리필|보장|guarantee|lifetime|평생|365|30일|7일/.test(name)) score += 12;
+  if (/저가|cheap|bulk|대량|fast|빠른/.test(name)) score += 6;
+  if (/slow|느린|low quality|저질|bot only|봇만/.test(name)) score -= 25;
+  if (name.length > 90) score -= 8;
+  return score;
+}
+
+function curateServices(arr) {
+  if (!Array.isArray(arr) || !arr.length) return arr;
+  const filtered = arr.filter((s) => {
+    const name = stripBrandText(s.name || "");
+    if (!name || BLOCK_SVC_NAME.test(name)) return false;
+    const cat = normalizeCategory(s.category || s.type || "", name);
+    if (!KNOWN_PLATFORMS.has(cat)) return false;
+    const min = parseInt(s.min, 10) || 0;
+    const max = parseInt(s.max, 10) || 0;
+    if (max < min || max <= 0) return false;
+    return true;
+  });
+  const picked = [];
+  const coreGroups = new Map();
+  const seen = new Set();
+  for (const s of filtered) {
+    const id = s.service;
+    const cat = normalizeCategory(s.category || s.type || "", s.name || "");
+    if (isPriorityRegionService(s) || EXTENDED_PLATFORMS.has(cat)) {
+      if (!seen.has(id)) {
+        picked.push(s);
+        seen.add(id);
+      }
+      continue;
+    }
+    const meta = serviceMetaKo(s);
+    const key = `${meta.category}|${meta.kind}`;
+    if (!coreGroups.has(key)) coreGroups.set(key, []);
+    coreGroups.get(key).push({ s, score: scoreService(s) });
+  }
+  for (const items of coreGroups.values()) {
+    items.sort((a, b) => b.score - a.score);
+    const take = Math.min(CURATE_CORE_PER_GROUP, items.length);
+    for (let i = 0; i < take; i++) {
+      const svc = items[i].s;
+      if (!seen.has(svc.service)) {
+        picked.push(svc);
+        seen.add(svc.service);
+      }
+    }
+  }
+  const catOrder = PLATFORM_ORDER;
+  picked.sort((a, b) => {
+    const ca = normalizeCategory(a.category || "", a.name || "");
+    const cb = normalizeCategory(b.category || "", b.name || "");
+    const ia = catOrder.indexOf(ca);
+    const ib = catOrder.indexOf(cb);
+    if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    return scoreService(b) - scoreService(a);
+  });
+  return picked.length ? picked : filtered.slice(0, 60);
+}
+
+function providerErrorKo(resp, forSuper = false) {
   const e = String(resp?.error || resp?.message || "").toLowerCase();
   if (e.includes("not enough funds") || e.includes("insufficient"))
-    return "공급사 USD 잔액이 부족합니다. 슈퍼관리자가 공급 계정을 충전해야 실제 주문이 접수됩니다.";
+    return forSuper
+      ? "공급사 USD 잔액이 부족합니다. 슈퍼시아에서 공급 계정을 충전해야 실제 주문이 접수됩니다."
+      : "공급이 일시적으로 중단되었습니다. 잠시 후 다시 시도하거나 관리자에게 문의하세요.";
   if (e.includes("invalid") && e.includes("service"))
     return "선택한 상품이 공급사에서 지원되지 않습니다. 페이지를 새로고침 후 다시 선택하세요.";
   if (e.includes("incorrect") || e.includes("invalid link"))
@@ -125,7 +266,7 @@ function providerErrorKo(resp) {
   const raw = resp?.error || resp?.message;
   return raw ? stripBrandText(raw) : "공급사 주문 접수에 실패했습니다.";
 }
-async function checkProviderFunds(svc, qty) {
+async function checkProviderFunds(svc, qty, forSuper = false) {
   if (DEMO) return null;
   const costUsd = ((parseFloat(svc.rate) || 0) * qty) / 1000;
   if (costUsd <= 0) return null;
@@ -133,7 +274,9 @@ async function checkProviderFunds(svc, qty) {
     const bal = await moreThan({ action: "balance" });
     const usd = parseFloat(bal.balance) || 0;
     if (usd + 1e-9 < costUsd) {
-      return `공급사 USD 잔액 부족 (보유 $${usd.toFixed(2)} · 필요 약 $${costUsd.toFixed(4)}). 공급 계정 충전 후 주문 가능합니다.`;
+      return forSuper
+        ? `공급사 USD 잔액 부족 (보유 $${usd.toFixed(2)} · 필요 약 $${costUsd.toFixed(4)}). 공급 계정 충전 후 주문 가능합니다.`
+        : "공급이 일시적으로 중단되었습니다. 잠시 후 다시 시도하세요.";
     }
   } catch {
     /* balance 조회 실패 시 add 단계에서 처리 */
@@ -160,7 +303,7 @@ let db = {
   topups: [],
   creditRequests: [],
   serviceOverrides: {}, // { [serviceId]: { hidden, mainMargin, customMargin } }
-  settings: { fx: null, koreaOnly: null, koreaKeywords: "한국,korea,korean,kr" },
+  settings: { fx: null, koreaOnly: null, koreaKeywords: "한국,korea,south korea,국내,kr" },
   seq: { user: 1, order: 1, topup: 1, creditReq: 1 },
 };
 function loadDB() {
@@ -299,13 +442,13 @@ function migrateDB() {
   const plat = platformTenant();
   if (plat && plat.slug !== platformSlug()) {
     plat.slug = platformSlug();
-    plat.name = "운영";
-    plat.brand = "운영";
+    plat.name = "슈퍼시아";
+    plat.brand = "슈퍼시아";
     changed = true;
   }
-  if (plat && (plat.name === "SUPERSHASHA" || plat.brand === "플랫폼")) {
-    plat.name = "운영";
-    plat.brand = "운영";
+  if (plat && (plat.name === "SUPERSHASHA" || plat.brand === "플랫폼" || plat.name === "운영" || plat.brand === "운영" || plat.name === "관리자")) {
+    plat.name = "슈퍼시아";
+    plat.brand = "슈퍼시아";
     changed = true;
   }
   for (const t of db.tenants) {
@@ -324,6 +467,26 @@ function migrateDB() {
     changed = true;
   }
   if (!db.seq.creditReq) db.seq.creditReq = 1;
+  ensureSeedPasswords();
+  if (changed) saveDB();
+}
+function ensureSeedPasswords() {
+  const defs = [
+    { username: CFG.adminUser, password: CFG.adminPass },
+    { username: "master", password: "master1234" },
+    { username: "nineadmin", password: "nine1234" },
+  ];
+  let changed = false;
+  for (const d of defs) {
+    const u = db.users.find((x) => x.username === d.username && x.active);
+    if (!u) continue;
+    if (!verifyPw(d.password, u.salt, u.passwordHash)) {
+      const { salt, hash } = hashPw(d.password);
+      u.salt = salt;
+      u.passwordHash = hash;
+      changed = true;
+    }
+  }
   if (changed) saveDB();
 }
 function getFx() {
@@ -352,12 +515,12 @@ function seedDB() {
   db.tenants = [
     {
       id: "platform",
-      name: "운영",
+      name: "슈퍼시아",
       type: "platform",
       slug: CFG.platformSlug,
       marginPercent: 35,
       creditBalance: 0,
-      brand: "운영",
+      brand: "슈퍼시아",
       active: true,
       hidden: true,
     },
@@ -437,8 +600,16 @@ function hashPw(pw, salt = crypto.randomBytes(16).toString("hex")) {
   return { salt, hash };
 }
 function verifyPw(pw, salt, hash) {
-  const h = crypto.scryptSync(pw, salt, 64).toString("hex");
-  return crypto.timingSafeEqual(Buffer.from(h), Buffer.from(hash));
+  if (!pw || !salt || !hash) return false;
+  try {
+    const h = crypto.scryptSync(pw, salt, 64).toString("hex");
+    const a = Buffer.from(h);
+    const b = Buffer.from(hash);
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 function signToken(payload) {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -550,6 +721,7 @@ async function getServices() {
       });
     }
     if (!arr.length) throw new Error("빈 응답");
+    arr = curateServices(arr);
     svcCache = { at: Date.now(), data: arr };
     return arr;
   } catch (e) {
@@ -611,6 +783,7 @@ async function tenantServices(tenant, isAdmin, viewer) {
         description: meta.description,
         linkHint: meta.linkHint,
         kind: meta.kind,
+        kindLabel: KIND_LABELS[meta.kind] || "기타",
         min: parseInt(s.min) || 1,
         max: parseInt(s.max) || 100000,
         rate: p.sell,
@@ -673,9 +846,9 @@ function publicTenant(t) {
 function opsTenantPublic() {
   return {
     id: "ops",
-    name: "관리자",
+    name: "슈퍼시아",
     slug: platformSlug(),
-    brand: "관리자",
+    brand: "슈퍼시아",
     logoUrl: "",
     roleType: "platform",
     type: "main",
@@ -683,7 +856,10 @@ function opsTenantPublic() {
 }
 
 app.get("/api/config", (req, res) => {
-  res.json({ defaultTenant: defaultPublicSlug() });
+  res.json({ defaultTenant: defaultPublicSlug(), ok: true });
+});
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, ts: Date.now() });
 });
 
 app.get("/api/tenant/:slug", (req, res) => {
@@ -737,37 +913,39 @@ app.post("/api/register", (req, res) => {
 });
 
 app.post("/api/login", (req, res) => {
-  const { username, password } = req.body || {};
-  const rawSlug = req.body?.tenant || defaultPublicSlug();
-  if (!username || !password) return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+  try {
+    const { username, password } = req.body || {};
+    const rawSlug = req.body?.tenant || defaultPublicSlug();
+    if (!username || !password) return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
 
-  const onOps = isPlatformSlug(rawSlug);
-  const tenant = onOps ? platformTenant() : tenantBySlug(resolveTenantSlug(rawSlug, false));
-  const user = db.users.find((u) => u.username === username && u.active);
-  if (!user || !verifyPw(password, user.salt, user.passwordHash))
-    return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+    const onOps = isPlatformSlug(rawSlug);
+    const tenant = onOps ? platformTenant() : tenantBySlug(resolveTenantSlug(rawSlug, false));
+    const user = db.users.find((u) => u.username === username && u.active);
+    if (!user || !verifyPw(password, user.salt, user.passwordHash))
+      return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
 
-  if (user.role === "superadmin") {
-    if (!onOps) {
-      return res.status(401).json({
-        error: `운영 계정은 ?tenant=${platformSlug()} 주소에서만 로그인할 수 있습니다.`,
-        needTenant: platformSlug(),
-      });
+    if (user.role === "superadmin") {
+      if (!onOps) {
+        return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+      }
+    } else if (onOps) {
+      return res.status(401).json({ error: "이 주소에서는 해당 계정으로 로그인할 수 없습니다." });
+    } else if (!tenant || user.tenantId !== tenant.id) {
+      const userTenant = db.tenants.find((t) => t.id === user.tenantId);
+      if (userTenant?.slug) {
+        return res.status(401).json({
+          error: `이 계정은 ?tenant=${userTenant.slug} 주소에서 로그인하세요.`,
+          needTenant: userTenant.slug,
+        });
+      }
+      return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
     }
-  } else if (onOps) {
-    return res.status(401).json({ error: "이 주소에서는 해당 계정으로 로그인할 수 없습니다." });
-  } else if (!tenant || user.tenantId !== tenant.id) {
-    const userTenant = db.tenants.find((t) => t.id === user.tenantId);
-    if (userTenant?.slug) {
-      return res.status(401).json({
-        error: `이 계정은 ?tenant=${userTenant.slug} 주소에서 로그인하세요.`,
-        needTenant: userTenant.slug,
-      });
-    }
-    return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+
+    res.json({ token: signToken({ uid: user.id }), user: meDTO(user) });
+  } catch (e) {
+    console.error("login error:", e);
+    res.status(500).json({ error: "로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도하세요." });
   }
-
-  res.json({ token: signToken({ uid: user.id }), user: meDTO(user) });
 });
 
 function meDTO(u) {
@@ -822,12 +1000,12 @@ app.post("/api/order", auth, async (req, res) => {
         return res.status(402).json({ error: "공급 크레딧이 부족합니다. 본사에 문의하세요." });
     }
 
-    const fundErr = await checkProviderFunds(svc, qty);
+    const fundErr = await checkProviderFunds(svc, qty, req.user.role === "superadmin");
     if (fundErr) return res.status(402).json({ error: fundErr });
 
     // 공급사에 실제 주문
     const resp = await moreThan({ action: "add", service, link, quantity: qty });
-    if (!resp.order) return res.status(502).json({ error: providerErrorKo(resp) });
+    if (!resp.order) return res.status(502).json({ error: providerErrorKo(resp, req.user.role === "superadmin") });
 
     // 차감
     if (!staff) req.user.balance = round4(req.user.balance - charge);
@@ -898,7 +1076,7 @@ app.get("/api/orders", auth, async (req, res) => {
   saveDB();
   res.json(mine.map(orderDTO));
 });
-function orderDTO(o, admin) {
+function orderDTO(o, admin, viewer) {
   const d = {
     id: o.id,
     service: o.service,
@@ -913,9 +1091,11 @@ function orderDTO(o, admin) {
     remains: o.remains ?? o.quantity,
   };
   if (admin) {
-    d.cost = o.cost;
-    d.profit = round4(o.charge - o.cost);
     d.providerOrderId = o.providerOrderId;
+    if (viewer?.role === "superadmin") {
+      d.cost = o.cost;
+      d.profit = round4(o.charge - o.cost);
+    }
   }
   return d;
 }
@@ -1030,7 +1210,7 @@ app.get("/api/admin/orders", auth, adminOnly, (req, res) => {
   const scope = adminOrderScope(req.user);
   res.json(
     [...scope].sort((a, b) => b.id - a.id).map((o) => ({
-      ...orderDTO(o, true),
+      ...orderDTO(o, true, req.user),
       tenant: db.tenants.find((t) => t.id === o.tenantId)?.name,
       user: db.users.find((u) => u.id === o.userId)?.username,
     }))
@@ -1091,7 +1271,7 @@ app.post("/api/admin/credit-request/:id/:decision", auth, adminOnly, (req, res) 
   if (!canManageTenant(req.user, tenant.id) && req.user.role !== "superadmin")
     return res.status(403).json({ error: "권한 없음" });
   if (isMasterType(tenant) && req.user.role !== "superadmin")
-    return res.status(403).json({ error: "총판 크레딧은 운영 관리자만" });
+    return res.status(403).json({ error: "권한이 없습니다." });
   if (req.params.decision === "approve") {
     tenant.creditBalance = round4((tenant.creditBalance || 0) + r.amount);
     r.status = "approved";
@@ -1126,10 +1306,22 @@ app.get("/api/admin/services", auth, adminOnly, async (req, res) => {
         ? tenant
         : tenant;
   const list = await tenantServices(viewTenant, true, req.user);
-  res.json(list.map((s) => ({ ...s, ...(db.serviceOverrides[s.service] || {}) })));
+  res.json(
+    list.map((s) => {
+      const ov = db.serviceOverrides[s.service] || {};
+      if (req.user.role !== "superadmin") {
+        const slim = { ...s };
+        if (ov.hidden != null) slim.hidden = ov.hidden;
+        if (isAgencyType(viewTenant) && (ov.agencyMargin != null || ov.customMargin != null))
+          slim.agencyMargin = ov.agencyMargin ?? ov.customMargin;
+        return slim;
+      }
+      return { ...s, ...ov };
+    })
+  );
 });
 app.post("/api/admin/service/:id", auth, adminOnly, (req, res) => {
-  if (req.user.role !== "superadmin") return res.status(403).json({ error: "본사 관리자만 가능" });
+  if (req.user.role !== "superadmin") return res.status(403).json({ error: "권한이 없습니다." });
   const id = req.params.id;
   const cur = { ...(db.serviceOverrides[id] || {}) };
   if (req.body.hidden != null) cur.hidden = !!req.body.hidden;
@@ -1198,6 +1390,7 @@ app.post("/api/admin/settings", auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 app.get("/api/admin/explore", auth, adminOnly, async (req, res) => {
+  if (req.user.role !== "superadmin") return res.status(403).json({ error: "권한이 없습니다." });
   try {
     const kws = (req.query.keywords != null ? String(req.query.keywords) : db.settings?.koreaKeywords || "")
       .split(",")
@@ -1220,6 +1413,23 @@ app.get("/api/admin/explore", auth, adminOnly, async (req, res) => {
   }
 });
 
+function tenantAdminDTO(t) {
+  const d = {
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    brand: t.brand || t.name,
+    type: tenantRoleType(t),
+    marginPercent: t.marginPercent,
+    creditBalance: t.creditBalance,
+    defaultAgencySupply: t.defaultAgencySupply,
+    supplyMargin: t.supplyMargin,
+    active: t.active !== false,
+    admins: db.users.filter((u) => u.tenantId === t.id && u.role === "admin").map((u) => u.username),
+  };
+  return d;
+}
+
 // 테넌트 관리
 app.get("/api/admin/tenants", auth, adminOnly, (req, res) => {
   const ut = userTenant(req.user);
@@ -1227,13 +1437,7 @@ app.get("/api/admin/tenants", auth, adminOnly, (req, res) => {
   if (req.user.role === "superadmin") list = db.tenants.filter((t) => !isPlatformType(t));
   else if (isMasterType(ut)) list = agenciesOfMaster(ut.id);
   else return res.status(403).json({ error: "권한 없음" });
-  res.json(
-    list.map((t) => ({
-      ...t,
-      type: tenantRoleType(t),
-      admins: db.users.filter((u) => u.tenantId === t.id && u.role === "admin").map((u) => u.username),
-    }))
-  );
+  res.json(list.map((t) => tenantAdminDTO(t)));
 });
 app.post("/api/admin/tenant", auth, adminOnly, (req, res) => {
   const ut = userTenant(req.user);
@@ -1258,11 +1462,16 @@ app.post("/api/admin/tenant", auth, adminOnly, (req, res) => {
       }
     } else {
       if (!name || !slug) return res.status(400).json({ error: "사이트 이름과 주소(slug)를 입력하세요." });
+      const { adminUsername, adminPassword } = req.body || {};
+      if (!adminUsername || !adminPassword)
+        return res.status(400).json({ error: "본사 관리자 아이디와 비밀번호를 입력하세요." });
+      if (db.users.find((u) => u.username === adminUsername))
+        return res.status(409).json({ error: "이미 사용 중인 아이디입니다." });
       if (db.tenants.find((x) => x.slug === slug)) return res.status(409).json({ error: "이미 사용 중인 slug입니다." });
       const plat = platformTenant();
       t = {
         id: slug,
-        name: name || "새 총판",
+        name: name || "새 본사",
         slug,
         type: "master",
         parentId: plat?.id || "platform",
@@ -1273,6 +1482,20 @@ app.post("/api/admin/tenant", auth, adminOnly, (req, res) => {
         active: true,
       };
       db.tenants.push(t);
+      const { salt, hash } = hashPw(adminPassword);
+      db.users.push({
+        id: db.seq.user++,
+        tenantId: t.id,
+        username: adminUsername,
+        email: "",
+        phone: "",
+        salt,
+        passwordHash: hash,
+        balance: 0,
+        role: "admin",
+        active: true,
+        createdAt: Date.now(),
+      });
     }
   } else if (isMaster) {
     if (t) {
@@ -1301,7 +1524,9 @@ app.post("/api/admin/tenant", auth, adminOnly, (req, res) => {
     }
   }
   saveDB();
-  res.json({ ok: true, tenant: t });
+  const out = tenantAdminDTO(t);
+  if (req.body?.adminUsername) out.createdAdmin = req.body.adminUsername;
+  res.json({ ok: true, tenant: out, loginUrl: `/?tenant=${t.slug}` });
 });
 app.post("/api/admin/tenant/:id/admin", auth, adminOnly, (req, res) => {
   if (!canManageTenant(req.user, req.params.id) && req.user.role !== "superadmin")
@@ -1309,7 +1534,7 @@ app.post("/api/admin/tenant/:id/admin", auth, adminOnly, (req, res) => {
   const t = db.tenants.find((x) => x.id === req.params.id);
   if (!t || isPlatformType(t)) return res.status(404).json({ error: "사이트 없음" });
   if (isMasterType(t) && req.user.role !== "superadmin")
-    return res.status(403).json({ error: "총판 관리자 계정은 슈퍼관리자만 발급할 수 있습니다." });
+    return res.status(403).json({ error: "권한이 없습니다." });
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: "아이디/비밀번호를 입력하세요." });
   if (db.users.find((u) => u.tenantId === t.id && u.username === username))
@@ -1374,6 +1599,18 @@ app.post("/api/tg/webhook", async (req, res) => {
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 loadDB();
+process.on("uncaughtException", (err) => console.error("uncaughtException:", err));
+process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err));
+process.on("SIGTERM", () => {
+  console.log("SIGTERM — graceful shutdown");
+  saveDB();
+  process.exit(0);
+});
+process.on("SIGINT", () => {
+  saveDB();
+  process.exit(0);
+});
 app.listen(CFG.port, "0.0.0.0", () => {
   console.log(`리스톤즈 server on :${CFG.port} ${DEMO ? "(preview)" : "(live)"}`);
+  getServices().catch((e) => console.warn("⚠ 상품 캐시 예열 실패:", e.message));
 });
