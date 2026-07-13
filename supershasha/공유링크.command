@@ -53,7 +53,7 @@ sleep 3
   echo "■ 공개 링크 (IP 확인창 없음 · 창 닫으면 끊김)"
   echo "  ${PUBLIC}"
   echo ""
-  echo "  슈퍼시아: ${PUBLIC}/?tenant=sh4-op-internal"
+  echo "  슈퍼샤샤: ${PUBLIC}/?tenant=sh4-op-internal"
   echo "  본사:     ${PUBLIC}/?tenant=master"
   echo "  나인스토리: ${PUBLIC}/?tenant=nine"
   echo ""

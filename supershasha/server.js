@@ -257,7 +257,7 @@ function providerErrorKo(resp, forSuper = false) {
   const e = String(resp?.error || resp?.message || "").toLowerCase();
   if (e.includes("not enough funds") || e.includes("insufficient"))
     return forSuper
-      ? "공급사 USD 잔액이 부족합니다. 슈퍼시아에서 공급 계정을 충전해야 실제 주문이 접수됩니다."
+      ? "공급사 USD 잔액이 부족합니다. 슈퍼샤샤에서 공급 계정을 충전해야 실제 주문이 접수됩니다."
       : "공급이 일시적으로 중단되었습니다. 잠시 후 다시 시도하거나 관리자에게 문의하세요.";
   if (e.includes("invalid") && e.includes("service"))
     return "선택한 상품이 공급사에서 지원되지 않습니다. 페이지를 새로고침 후 다시 선택하세요.";
@@ -442,13 +442,22 @@ function migrateDB() {
   const plat = platformTenant();
   if (plat && plat.slug !== platformSlug()) {
     plat.slug = platformSlug();
-    plat.name = "슈퍼시아";
-    plat.brand = "슈퍼시아";
+    plat.name = "슈퍼샤샤";
+    plat.brand = "슈퍼샤샤";
     changed = true;
   }
-  if (plat && (plat.name === "SUPERSHASHA" || plat.brand === "플랫폼" || plat.name === "운영" || plat.brand === "운영" || plat.name === "관리자")) {
-    plat.name = "슈퍼시아";
-    plat.brand = "슈퍼시아";
+  if (
+    plat &&
+    (plat.name === "SUPERSHASHA" ||
+      plat.name === "슈퍼시아" ||
+      plat.brand === "슈퍼시아" ||
+      plat.brand === "플랫폼" ||
+      plat.name === "운영" ||
+      plat.brand === "운영" ||
+      plat.name === "관리자")
+  ) {
+    plat.name = "슈퍼샤샤";
+    plat.brand = "슈퍼샤샤";
     changed = true;
   }
   for (const t of db.tenants) {
@@ -456,7 +465,7 @@ function migrateDB() {
       t.parentId = masterTenant()?.id || "master";
       changed = true;
     }
-    if (isMasterType(t) && /슈퍼시아|supershasha|supersia|supersha/i.test(`${t.name || ""} ${t.brand || ""}`)) {
+    if (isMasterType(t) && /슈퍼시아|슈퍼샤샤|supershasha|supersia|supersha/i.test(`${t.name || ""} ${t.brand || ""}`)) {
       t.name = "본사";
       t.brand = "본사";
       changed = true;
@@ -520,12 +529,12 @@ function seedDB() {
   db.tenants = [
     {
       id: "platform",
-      name: "슈퍼시아",
+      name: "슈퍼샤샤",
       type: "platform",
       slug: CFG.platformSlug,
       marginPercent: 35,
       creditBalance: 0,
-      brand: "슈퍼시아",
+      brand: "슈퍼샤샤",
       active: true,
       hidden: true,
     },
@@ -809,19 +818,89 @@ async function tenantServices(tenant, isAdmin, viewer) {
 // ─────────────────────────────────────────────────────────────
 //  텔레그램
 // ─────────────────────────────────────────────────────────────
-async function tg(text, keyboard) {
-  if (!CFG.tgToken || !CFG.tgChat) return;
+function ensureTelegramSettings() {
+  if (!db.settings) db.settings = {};
+  if (!db.settings.telegram) {
+    db.settings.telegram = {
+      botToken: "",
+      chatId: "",
+      notifySignups: true,
+      notifyOrders: true,
+      notifyTopups: true,
+      notifyCreditReq: true,
+      webhookRegistered: false,
+    };
+  }
+  return db.settings.telegram;
+}
+function getTelegramConfig() {
+  const s = ensureTelegramSettings();
+  const token = String(s.botToken || CFG.tgToken || "").trim();
+  const chatId = String(s.chatId || CFG.tgChat || "").trim();
+  return {
+    token,
+    chatId,
+    notifySignups: s.notifySignups !== false,
+    notifyOrders: s.notifyOrders !== false,
+    notifyTopups: s.notifyTopups !== false,
+    notifyCreditReq: s.notifyCreditReq !== false,
+    webhookRegistered: !!s.webhookRegistered,
+  };
+}
+function publicBaseUrl(req) {
+  const fromEnv = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  if (!req) return "";
+  const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
+  const host = req.headers["x-forwarded-host"] || req.get("host");
+  return host ? `${proto}://${host}` : "";
+}
+function telegramSettingsDTO(req) {
+  const cfg = getTelegramConfig();
+  const token = cfg.token;
+  return {
+    configured: !!(token && cfg.chatId),
+    botTokenPreview: token ? `${token.slice(0, 8)}…` : "",
+    botTokenSet: !!token,
+    chatId: cfg.chatId,
+    notifySignups: cfg.notifySignups,
+    notifyOrders: cfg.notifyOrders,
+    notifyTopups: cfg.notifyTopups,
+    notifyCreditReq: cfg.notifyCreditReq,
+    webhookUrl: publicBaseUrl(req) ? `${publicBaseUrl(req)}/api/tg/webhook` : "",
+    webhookRegistered: cfg.webhookRegistered,
+  };
+}
+async function tgApi(method, body, token) {
+  const t = token || getTelegramConfig().token;
+  if (!t) throw new Error("텔레그램 봇 토큰이 없습니다.");
+  const r = await fetch(`https://api.telegram.org/bot${t}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!d.ok) throw new Error(d.description || "텔레그램 API 오류");
+  return d;
+}
+async function tg(text, keyboard, kind) {
+  const cfg = getTelegramConfig();
+  if (!cfg.token || !cfg.chatId) return;
+  if (kind === "signup" && !cfg.notifySignups) return;
+  if (kind === "order" && !cfg.notifyOrders) return;
+  if (kind === "topup" && !cfg.notifyTopups) return;
+  if (kind === "credit" && !cfg.notifyCreditReq) return;
   try {
-    await fetch(`https://api.telegram.org/bot${CFG.tgToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: CFG.tgChat,
+    await tgApi(
+      "sendMessage",
+      {
+        chat_id: cfg.chatId,
         text,
         parse_mode: "HTML",
         reply_markup: keyboard ? { inline_keyboard: keyboard } : undefined,
-      }),
-    });
+      },
+      cfg.token
+    );
   } catch (e) {
     console.error("TG error", e.message);
   }
@@ -840,7 +919,7 @@ function tenantBySlug(slug, allowPlatform = false) {
   if (allowPlatform && slug === platformSlug()) return platformTenant();
   return null;
 }
-const PLATFORM_BRAND_RE = /슈퍼시아|supershasha|supersia|supersha/i;
+const PLATFORM_BRAND_RE = /슈퍼시아|슈퍼샤샤|supershasha|supersia|supersha/i;
 function sanitizeTenantBrand(t) {
   let name = t.name || "";
   let brand = t.brand || name;
@@ -868,9 +947,9 @@ function publicTenant(t) {
 function opsTenantPublic() {
   return {
     id: "ops",
-    name: "슈퍼시아",
+    name: "슈퍼샤샤",
     slug: platformSlug(),
-    brand: "슈퍼시아",
+    brand: "슈퍼샤샤",
     logoUrl: "",
     roleType: "platform",
     type: "main",
@@ -930,7 +1009,7 @@ app.post("/api/register", (req, res) => {
   };
   db.users.push(user);
   saveDB();
-  tg(`🆕 <b>신규 가입</b>\n사이트: ${tenant.name}\n아이디: ${username}`);
+  tg(`🆕 <b>신규 가입</b>\n사이트: ${tenant.name}\n아이디: ${username}`, null, "signup");
   res.json({ ok: true });
 });
 
@@ -1059,7 +1138,9 @@ app.post("/api/order", auth, async (req, res) => {
     db.orders.push(order);
     saveDB();
     tg(
-      `🛒 <b>신규 주문</b>\n사이트: ${tenant.name}\n회원: ${req.user.username}\n${svc.name}\n수량: ${qty.toLocaleString()} | 결제: ${charge}\n공급주문#: ${resp.order}`
+      `🛒 <b>신규 주문</b>\n사이트: ${tenant.name}\n회원: ${req.user.username}\n${svc.name}\n수량: ${qty.toLocaleString()} | 결제: ${charge}\n공급주문#: ${resp.order}`,
+      null,
+      "order"
     );
     res.json({
       ok: true,
@@ -1175,7 +1256,8 @@ app.post("/api/topup", auth, (req, res) => {
     [[
       { text: "✅ 승인", callback_data: `topup_approve_${t.id}` },
       { text: "❌ 거절", callback_data: `topup_reject_${t.id}` },
-    ]]
+    ]],
+    "topup"
   );
   res.json({ ok: true });
 });
@@ -1274,7 +1356,7 @@ app.post("/api/credit-request", auth, adminOnly, (req, res) => {
   db.creditRequests.push(r);
   saveDB();
   const tenant = userTenant(req.user);
-  tg(`📋 <b>크레딧 요청</b>\n사이트: ${tenant?.name}\n요청: ${req.user.username}\n금액: ${amount}`);
+  tg(`📋 <b>크레딧 요청</b>\n사이트: ${tenant?.name}\n요청: ${req.user.username}\n금액: ${amount}`, null, "credit");
   res.json({ ok: true });
 });
 app.get("/api/admin/credit-requests", auth, adminOnly, (req, res) => {
@@ -1390,6 +1472,7 @@ app.get("/api/admin/settings", auth, adminOnly, (req, res) => {
     mainMargin: platform?.marginPercent ?? 35,
     koreaOnly: koreaFilterOn(),
     koreaKeywords: db.settings?.koreaKeywords || "한국,korea,korean,kr",
+    telegram: telegramSettingsDTO(req),
     masters: masterTenants().map((m) => ({
       id: m.id,
       name: m.name,
@@ -1407,9 +1490,55 @@ app.post("/api/admin/settings", auth, adminOnly, (req, res) => {
   if (pm != null && platform) platform.marginPercent = parseFloat(pm);
   if (req.body?.koreaOnly != null) db.settings.koreaOnly = !!req.body.koreaOnly;
   if (req.body?.koreaKeywords != null) db.settings.koreaKeywords = String(req.body.koreaKeywords);
+  const tgBody = req.body?.telegram;
+  if (tgBody && typeof tgBody === "object") {
+    const tgS = ensureTelegramSettings();
+    const rawToken = tgBody.botToken != null ? String(tgBody.botToken).trim() : null;
+    if (rawToken && !rawToken.includes("…")) tgS.botToken = rawToken;
+    if (tgBody.chatId != null) tgS.chatId = String(tgBody.chatId).trim();
+    if (tgBody.notifySignups != null) tgS.notifySignups = !!tgBody.notifySignups;
+    if (tgBody.notifyOrders != null) tgS.notifyOrders = !!tgBody.notifyOrders;
+    if (tgBody.notifyTopups != null) tgS.notifyTopups = !!tgBody.notifyTopups;
+    if (tgBody.notifyCreditReq != null) tgS.notifyCreditReq = !!tgBody.notifyCreditReq;
+  }
   saveDB();
   svcCache.at = 0;
-  res.json({ ok: true });
+  res.json({ ok: true, telegram: telegramSettingsDTO(req) });
+});
+app.post("/api/admin/telegram/test", auth, adminOnly, async (req, res) => {
+  if (req.user.role !== "superadmin") return res.status(403).json({ error: "권한이 없습니다." });
+  const cfg = getTelegramConfig();
+  if (!cfg.token || !cfg.chatId) return res.status(400).json({ error: "봇 토큰과 채팅 ID를 먼저 저장하세요." });
+  try {
+    await tgApi(
+      "sendMessage",
+      {
+        chat_id: cfg.chatId,
+        text: "✅ <b>슈퍼샤샤</b> 텔레그램 연동 테스트\n알림이 정상적으로 도착했습니다.",
+        parse_mode: "HTML",
+      },
+      cfg.token
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+app.post("/api/admin/telegram/webhook", auth, adminOnly, async (req, res) => {
+  if (req.user.role !== "superadmin") return res.status(403).json({ error: "권한이 없습니다." });
+  const cfg = getTelegramConfig();
+  if (!cfg.token) return res.status(400).json({ error: "봇 토큰을 먼저 저장하세요." });
+  const base = publicBaseUrl(req);
+  if (!base) return res.status(400).json({ error: "공개 URL을 확인할 수 없습니다. Render 배포 후 다시 시도하세요." });
+  const webhookUrl = `${base}/api/tg/webhook`;
+  try {
+    await tgApi("setWebhook", { url: webhookUrl, allowed_updates: ["callback_query"] }, cfg.token);
+    ensureTelegramSettings().webhookRegistered = true;
+    saveDB();
+    res.json({ ok: true, webhookUrl });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
 });
 app.get("/api/admin/explore", auth, adminOnly, async (req, res) => {
   if (req.user.role !== "superadmin") return res.status(403).json({ error: "권한이 없습니다." });
@@ -1591,8 +1720,9 @@ app.post("/api/tg/webhook", async (req, res) => {
       } else t.status = "rejected";
       saveDB();
     }
-    if (CFG.tgToken) {
-      await fetch(`https://api.telegram.org/bot${CFG.tgToken}/answerCallbackQuery`, {
+    const tgToken = getTelegramConfig().token;
+    if (tgToken) {
+      await fetch(`https://api.telegram.org/bot${tgToken}/answerCallbackQuery`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ callback_query_id: cb.id, text: decision === "approve" ? "승인됨" : "거절됨" }),

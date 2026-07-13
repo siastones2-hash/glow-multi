@@ -1,5 +1,5 @@
 #!/bin/bash
-# 슈퍼샤샤 — 서버 켜기 + 슈퍼시아·본사·나인 새 창 3개
+# 슈퍼샤샤 — 서버 켜기 + 슈퍼샤샤·본사·나인 새 창 3개
 cd "$(dirname "$0")"
 DIR="$(pwd)"
 export SUPERSHASHA_DIR="$DIR"
@@ -27,7 +27,7 @@ sleep 0.7
 open_new_window "http://127.0.0.1:${PORT}/?tenant=nine"
 
 echo ""
-echo "  슈퍼시아:   ?tenant=sh4-op-internal  (leestones / 1234)"
+echo "  슈퍼샤샤:   ?tenant=sh4-op-internal  (leestones / 1234)"
 echo "  본사:       ?tenant=master           (master / master1234)"
 echo "  나인스토리: ?tenant=nine             (nineadmin / nine1234)"
 echo ""

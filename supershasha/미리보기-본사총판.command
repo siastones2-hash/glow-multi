@@ -35,7 +35,7 @@ open_new_window "${BASE}?tenant=sh4-op-internal"
 sleep 0.4
 open_new_window "${BASE}?tenant=master"
 echo ""
-echo "  슈퍼시아: ${BASE}?tenant=sh4-op-internal  (leestones / 1234)"
+echo "  슈퍼샤샤: ${BASE}?tenant=sh4-op-internal  (leestones / 1234)"
 echo "  본사:     ${BASE}?tenant=master           (master / master1234)"
 echo ""
 sleep 2

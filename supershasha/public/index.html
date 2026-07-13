@@ -416,10 +416,10 @@ S.tenant = readTenantSlug() || CFG_MASTER;
 S.tenantInfo = null;
 const isOpsTenant=()=>S.tenant===CFG_PLATFORM_SLUG||S.tenant==='main'||S.tenantInfo?.roleType==='platform';
 const serviceTenantSlug=()=>isOpsTenant()?CFG_MASTER:(S.me?.tenant?.slug||S.tenant||CFG_MASTER);
-const PLATFORM_BRAND=/슈퍼시아|supershasha|supersia|supersha/i;
+const PLATFORM_BRAND=/슈퍼시아|슈퍼샤샤|supershasha|supersia|supersha/i;
 function displayBrandName(t){
   if(!t) return '';
-  if(isOpsTenant()||t.roleType==='platform') return t.brand||t.name||'슈퍼시아';
+  if(isOpsTenant()||t.roleType==='platform') return t.brand||t.name||'슈퍼샤샤';
   const raw=String(t.brand||t.name||'').trim();
   if(PLATFORM_BRAND.test(raw)){
     if(t.roleType==='master') return '본사';
@@ -536,7 +536,7 @@ function updateAuthHint(){
   if(tu) tu.textContent=tenantLoginUrl(code);
   if(!h) return;
   if(isOpsTenant()){
-    h.innerHTML='🔒 <b>슈퍼시아</b> (본사·대리점에 공유 금지)<br>leestones / 1234';
+    h.innerHTML='🔒 <b>슈퍼샤샤</b> (본사·대리점에 공유 금지)<br>leestones / 1234';
   }else if(code===CFG_MASTER||S.tenantInfo?.roleType==='master'){
     h.innerHTML='<b>본사</b> 화면<br>master / master1234';
   }else if(S.tenant==='nine'||S.tenantInfo?.slug==='nine'){
@@ -583,7 +583,7 @@ function renderHeader(){
     li.classList.add('hidden'); lo.classList.remove('hidden'); db.classList.remove('hidden');
     bb.classList.remove('hidden'); $('#balVal').textContent=fmt(S.me.balance);
     if(su){ su.classList.remove('hidden'); $('#sideUserName').textContent=S.me.username;
-      const rl=isOpsAdmin()?'슈퍼시아 👑':isMasterAdmin()?'본사':isAdmin()?'대리점 관리자':'회원';
+      const rl=isOpsAdmin()?'슈퍼샤샤 👑':isMasterAdmin()?'본사':isAdmin()?'대리점 관리자':'회원';
       $('#sideUserRole').innerHTML=`<span class="role-tag">${rl}</span>`; }
   }else{
     li.classList.remove('hidden'); lo.classList.add('hidden'); db.classList.add('hidden'); bb.classList.add('hidden');
@@ -767,7 +767,7 @@ const tenantLabel=(t)=>{ if(!t)return'-'; if(t==='master'||t==='main')return'본
 
 function navItems(){
   const base=[['dashboard','대시보드','◧'],['order','서비스 주문','＋'],['orders','주문 내역','▤'],['topup','잔액 충전','＄'],['profile','내 정보','◎']];
-  if(isOpsAdmin()) return [...base,['adminhub','슈퍼시아','👑']];
+  if(isOpsAdmin()) return [...base,['adminhub','슈퍼샤샤','👑']];
   if(isMasterAdmin()) return [...base,['adminhub','관리자','◆']];
   if(isAdmin()) return [...base,['adminhub','관리자','◆']];
   return base;
@@ -851,12 +851,12 @@ function tabProfile(b){
 }
 async function tabAdminHub(b, sub){
   const tabs=[];
-  if(isOpsAdmin()) tabs.push(['sites','대리점 등록'],['settings','슈퍼시아 설정']);
+  if(isOpsAdmin()) tabs.push(['sites','대리점 등록'],['settings','슈퍼샤샤 설정']);
   tabs.push(['admin','개요'],['aorders','주문'],['members','회원'],['topups','충전승인'],['creditreq','크레딧요청'],['svc','서비스관리']);
   if (isAgencyAdmin()) tabs.push(['mymargin','내 수익률']);
   if(isMasterAdmin()) tabs.push(['mysite','내 사이트'],['agencies','대리점']);
   const cur=sub||(isOpsAdmin()?'sites':isMasterAdmin()?'agencies':'admin');
-  b.innerHTML=`<div class="sec-head"><h2>${isOpsAdmin()?'슈퍼시아':'관리자'}</h2><span class="tag">${isOpsAdmin()?'SUPERSIA':isMasterAdmin()?'본사':'대리점'}</span></div>
+  b.innerHTML=`<div class="sec-head"><h2>${isOpsAdmin()?'슈퍼샤샤':'관리자'}</h2><span class="tag">${isOpsAdmin()?'SUPERSHASHA':isMasterAdmin()?'본사':'대리점'}</span></div>
     <div class="admin-subtabs" id="adminSub">${tabs.map(([k,l])=>`<button class="${k===cur?'on':''}" data-sub="${k}">${l}</button>`).join('')}</div>
     <div id="adminSubBody"></div>`;
   $$('#adminSub button').forEach(btn=>btn.onclick=()=>{ S.adminSub=btn.dataset.sub; tabAdminHub(b, S.adminSub); });
@@ -1025,7 +1025,7 @@ function tabTopup(b){
 // admin tabs
 async function tabAdmin(b){
   const o=await api('/admin/overview');
-  const roleTag=isOpsAdmin()?'슈퍼시아':isMasterAdmin()?'본사':'대리점 관리자';
+  const roleTag=isOpsAdmin()?'슈퍼샤샤':isMasterAdmin()?'본사':'대리점 관리자';
   b.innerHTML=`
    ${(isMasterAdmin()||isAgencyAdmin())&&o.masterCredit!=null?`<div class="credit-alert">크레딧 잔액 <b>${fmt(o.masterCredit)}</b> 원 · 부족하면 <a href="#" style="color:var(--cyan)" onclick="openDash('adminhub','creditreq');return false">크레딧 요청</a></div>`:''}
    <div class="kpis">
@@ -1136,8 +1136,9 @@ async function tabMyMargin(b){
 }
 async function tabSettings(b){
   const s=await api('/admin/settings');
-  b.innerHTML=`<div class="sec-head"><h2>슈퍼시아 설정</h2><span class="tag">슈퍼시아</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">전체 공급·환율 설정입니다. 대리점 등록·관리자 계정은 <b style="color:var(--cyan)">대리점 등록</b> 탭에서 하세요.</p>
+  const tg=s.telegram||{};
+  b.innerHTML=`<div class="sec-head"><h2>슈퍼샤샤 설정</h2><span class="tag">슈퍼샤샤</span></div>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">전체 공급·환율·텔레그램 설정입니다. 대리점 등록은 <b style="color:var(--cyan)">대리점 등록</b> 탭에서 하세요.</p>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
     <div class="card neon">
       <div style="color:var(--muted);font-size:13px;margin-bottom:10px">환율 · 1 USD</div>
@@ -1148,7 +1149,7 @@ async function tabSettings(b){
       <div style="display:flex;gap:8px;align-items:baseline"><input class="inp mono" style="font-size:26px;font-weight:700;padding:8px 12px" id="setMargin" value="${s.platformMargin??s.mainMargin}"/><span class="mono" style="color:var(--muted)">%</span></div>
     </div>
    </div>
-   <button class="btn cyan" id="saveSet" style="margin-top:14px;width:100%">저장</button>
+   <button class="btn cyan" id="saveSet" style="margin-top:14px;width:100%">공급·환율 저장</button>
    <div class="card neon" style="margin-top:20px">
      <div class="sec-head" style="margin-bottom:6px"><h2 style="font-size:16px">🇰🇷 한국 상품만 판매</h2>
        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="setKo" ${s.koreaOnly?'checked':''} style="width:20px;height:20px;accent-color:#00f0ff"/> ${s.koreaOnly?'켜짐':'꺼짐'}</label>
@@ -1156,7 +1157,38 @@ async function tabSettings(b){
      <p class="sub" style="color:var(--muted);font-size:12px;margin:0 0 12px">켜면 한국 관련 상품만 손님 화면에 보여요.</p>
      <div style="display:flex;gap:8px"><input class="inp" id="setKw" value="${s.koreaKeywords||''}" placeholder="검색 키워드 (쉼표 구분)"/><button class="btn ghost" id="exploreBtn" style="white-space:nowrap">상품 보기</button></div>
      <div id="exploreOut" style="margin-top:14px"></div>
+   </div>
+   <div class="card neon" style="margin-top:20px">
+     <div class="sec-head" style="margin-bottom:8px"><h2 style="font-size:16px">📱 텔레그램 알림</h2>
+       <span class="tag" style="${tg.configured?'border-color:var(--ok);color:var(--ok)':''}">${tg.configured?'연동됨':'미연동'}</span></div>
+     <p class="sub" style="color:var(--muted);font-size:12px;margin:0 0 14px">주문·충전·가입·크레딧 요청을 텔레그램으로 받습니다. 충전은 버튼으로 바로 승인/거절할 수 있어요.</p>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+       <div class="field" style="margin:0"><label>봇 토큰</label><input class="inp mono" id="tgToken" type="password" placeholder="${tg.botTokenSet?tg.botTokenPreview:'BotFather에서 발급'}" autocomplete="off"/></div>
+       <div class="field" style="margin:0"><label>채팅 ID</label><input class="inp mono" id="tgChat" value="${tg.chatId||''}" placeholder="-1001234567890"/></div>
+     </div>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgOrder" ${tg.notifyOrders!==false?'checked':''}/> 신규 주문</label>
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgTopup" ${tg.notifyTopups!==false?'checked':''}/> 충전 요청</label>
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgSignup" ${tg.notifySignups!==false?'checked':''}/> 신규 가입</label>
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgCredit" ${tg.notifyCreditReq!==false?'checked':''}/> 크레딧 요청</label>
+     </div>
+     <div class="field" style="margin-bottom:12px"><label>웹훅 URL (충전 버튼 승인용)</label>
+       <input class="inp mono" readonly value="${tg.webhookUrl||'배포 URL 확인 후 웹훅 등록'}" style="font-size:12px"/></div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap">
+       <button class="btn cyan sm" id="saveTg">텔레그램 저장</button>
+       <button class="btn ghost sm" id="testTg">테스트 발송</button>
+       <button class="btn ghost sm" id="hookTg">웹훅 등록</button>
+       ${tg.webhookRegistered?'<span class="tag" style="border-color:var(--ok);color:var(--ok);align-self:center">웹훅 OK</span>':''}
+     </div>
    </div>`;
+  const tgPayload=()=>({
+    botToken:$('#tgToken').value,
+    chatId:$('#tgChat').value.trim(),
+    notifySignups:$('#tgSignup').checked,
+    notifyOrders:$('#tgOrder').checked,
+    notifyTopups:$('#tgTopup').checked,
+    notifyCreditReq:$('#tgCredit').checked
+  });
   const doExplore=async()=>{
     const out=$('#exploreOut'); out.innerHTML='<div class="empty">불러오는 중…</div>';
     try{
@@ -1172,6 +1204,9 @@ async function tabSettings(b){
   $('#exploreBtn').onclick=doExplore;
   $('#setKo').onchange=e=>{ e.target.parentNode.lastChild.textContent=' '+(e.target.checked?'켜짐':'꺼짐'); };
   $('#saveSet').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({fx:+$('#setFx').value,platformMargin:+$('#setMargin').value,koreaOnly:$('#setKo').checked,koreaKeywords:$('#setKw').value})}); toast('저장 완료 — 가격·상품 즉시 반영'); S.services=await api('/services?tenant='+serviceTenantSlug()); }catch(e){toast(e.message,1);} };
+  $('#saveTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); toast('텔레그램 설정 저장'); tabSettings(b);}catch(e){toast(e.message,1);} };
+  $('#testTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); await api('/admin/telegram/test',{method:'POST'}); toast('테스트 메시지 발송 — 텔레그램 확인'); }catch(e){toast(e.message,1);} };
+  $('#hookTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); const r=await api('/admin/telegram/webhook',{method:'POST'}); toast('웹훅 등록 완료'); tabSettings(b);}catch(e){toast(e.message,1);} };
 }
 async function tabSuperSites(b){
   const all=await api('/admin/tenants');
@@ -1185,8 +1220,8 @@ async function tabSuperSites(b){
      <span class="mono" style="font-size:13px;word-break:break-all">${flash.loginUrl}</span><br><br>
      <span style="color:var(--muted);font-size:12px">대리점 관리자</span> <b>${flash.au}</b><br>
      <span style="font-size:12px;color:var(--muted)">본사는 관리자 → 대리점에서 수익률·크레딧·운영을 관리합니다.</span>
-   </div>`:''}<div class="sec-head"><h2>대리점 등록</h2><span class="tag">슈퍼시아</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">슈퍼시아가 대리점을 <b style="color:var(--gold)">등록</b>하면, 본사는 수익률·크레딧·회원·주문만 <b>관리</b>합니다. (본사는 대리점을 직접 만들 수 없음)</p>
+   </div>`:''}<div class="sec-head"><h2>대리점 등록</h2><span class="tag">슈퍼샤샤</span></div>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">슈퍼샤샤가 대리점을 <b style="color:var(--gold)">등록</b>하면, 본사는 수익률·크레딧·회원·주문만 <b>관리</b>합니다. (본사는 대리점을 직접 만들 수 없음)</p>
    ${master?`<div class="card neon" style="margin-bottom:16px">
      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:10px">
        <div><div style="font-weight:700;font-size:18px">본사 (${master.name})</div>

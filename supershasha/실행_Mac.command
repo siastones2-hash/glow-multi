@@ -41,7 +41,7 @@ fi
 ) &
 
 echo ""
-echo "  슈퍼시아:   http://127.0.0.1:${PORT}/?tenant=sh4-op-internal  (leestones / 1234)"
+echo "  슈퍼샤샤:   http://127.0.0.1:${PORT}/?tenant=sh4-op-internal  (leestones / 1234)"
 echo "  본사:       http://127.0.0.1:${PORT}/?tenant=master  (master / master1234)"
 echo "  나인스토리: http://127.0.0.1:${PORT}/?tenant=nine  (nineadmin / nine1234)"
 echo ""

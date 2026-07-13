@@ -15,7 +15,7 @@ if supershasha_install_launchd; then
   echo "  · 서버 죽으면 자동 재시작"
   echo "  · 터미널/Cursor 창 닫아도 유지"
   echo ""
-  echo "  슈퍼시아: http://127.0.0.1:${PORT}/?tenant=sh4-op-internal"
+  echo "  슈퍼샤샤: http://127.0.0.1:${PORT}/?tenant=sh4-op-internal"
   echo "  본사:     http://127.0.0.1:${PORT}/?tenant=master"
   echo ""
   echo "  끄려면: 서버-끄기.command"
