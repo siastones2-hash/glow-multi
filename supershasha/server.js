@@ -1374,6 +1374,6 @@ app.post("/api/tg/webhook", async (req, res) => {
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 loadDB();
-app.listen(CFG.port, () => {
+app.listen(CFG.port, "0.0.0.0", () => {
   console.log(`리스톤즈 server on :${CFG.port} ${DEMO ? "(preview)" : "(live)"}`);
 });
