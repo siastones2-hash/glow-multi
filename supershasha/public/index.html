@@ -172,18 +172,19 @@ section.blk{padding:46px 0}
 
 /* panel app (9story flow, dark theme) */
 .app-shell{min-height:calc(100vh - 66px)}
-.app-shell .dash{padding:20px 0 40px;grid-template-columns:240px 1fr;gap:20px;max-width:1400px;margin:0 auto}
+.app-shell .dash{padding:20px 0 40px;grid-template-columns:220px 1fr;gap:22px;max-width:min(1680px,96vw);margin:0 auto;width:100%}
+.app-shell .wrap{max-width:min(1680px,96vw);padding:0 24px}
 .side-panel{display:flex;flex-direction:column;min-height:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;backdrop-filter:blur(16px)}
 .side-panel .side{position:static;top:auto}
 .side-user{margin-top:auto;padding:12px 10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .side-user b{display:block;color:var(--txt);font-size:13px;margin-bottom:4px}
 .side-user .role-tag{font-size:10px;color:var(--gold);border:1px solid rgba(255,215,106,.3);padding:2px 7px;border-radius:10px;display:inline-block;margin-top:4px}
-.main-panel{min-width:0}
+.main-panel{min-width:0;width:100%}
 .welcome-banner{padding:22px 24px;margin-bottom:18px;background:linear-gradient(120deg,rgba(157,78,221,.12),rgba(0,240,255,.08));border:1px solid var(--line)}
 .welcome-banner h2{font-family:"Chakra Petch";font-size:22px;margin-bottom:6px}
 .welcome-banner p{color:var(--muted);font-size:13px;line-height:1.55}
 .quick-btns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-.order-split{display:grid;grid-template-columns:1fr minmax(340px,420px);gap:18px;align-items:start}
+.order-split{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,380px);gap:22px;align-items:start;width:100%}
 .order-panel{position:sticky;top:90px;padding:20px;max-height:calc(100vh - 110px);overflow-y:auto}
 .order-panel h3{font-family:"Chakra Petch";font-size:18px;margin-bottom:10px;line-height:1.35}
 .order-panel .svc-desc{font-size:13px;line-height:1.65;color:var(--muted);margin:12px 0;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
@@ -195,14 +196,14 @@ section.blk{padding:46px 0}
 .qty-row .inp{flex:1}
 .qty-row button{min-width:38px;padding:8px;font-size:16px;line-height:1}
 .svc-search{margin-bottom:14px}
-.svc-list{display:flex;flex-direction:column;gap:10px;max-height:62vh;overflow-y:auto;padding-right:4px}
+.svc-list{display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow-y:auto;padding-right:6px}
 .svc-row{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(8,6,20,.45);cursor:pointer;transition:.18s}
 .svc-row:hover,.svc-row.on{border-color:var(--line2);background:rgba(0,240,255,.04)}
 .svc-row .pf{font-size:10px;color:var(--magenta);letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:4px}
-.svc-row h4{font-size:13px;line-height:1.4;font-weight:600;margin-bottom:8px}
+.svc-row h4{font-size:14px;line-height:1.45;font-weight:600;margin-bottom:8px}
 .svc-row .meta{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
 .svc-row .meta .rate{color:var(--gold);font-family:"Chakra Petch"}
-.svc-row .svc-snippet{font-size:11px;color:var(--muted);line-height:1.45;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.svc-row .svc-snippet{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .kind-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .kind-tabs button{padding:6px 12px;border-radius:16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--line)}
 .kind-tabs button.on{color:var(--gold);border-color:rgba(255,215,106,.35);background:rgba(255,215,106,.08);font-weight:600}
@@ -536,7 +537,7 @@ function updateAuthHint(){
   if(tu) tu.textContent=tenantLoginUrl(code);
   if(!h) return;
   if(isOpsTenant()){
-    h.innerHTML='🔒 <b>슈퍼샤샤</b> (본사·대리점에 공유 금지)<br>leestones / 1234';
+    h.innerHTML='🔒 <b>슈퍼샤샤</b> (본사·대리점에 공유 금지)<br>leestones / 1234<br><span style="font-size:11px;color:var(--gold)">텔레그램: 관리자 → 텔레그램 탭</span>';
   }else if(code===CFG_MASTER||S.tenantInfo?.roleType==='master'){
     h.innerHTML='<b>본사</b> 화면<br>master / master1234';
   }else if(S.tenant==='nine'||S.tenantInfo?.slug==='nine'){
@@ -851,7 +852,7 @@ function tabProfile(b){
 }
 async function tabAdminHub(b, sub){
   const tabs=[];
-  if(isOpsAdmin()) tabs.push(['sites','대리점 등록'],['settings','슈퍼샤샤 설정']);
+  if(isOpsAdmin()) tabs.push(['sites','대리점 등록'],['telegram','텔레그램'],['settings','슈퍼샤샤 설정']);
   tabs.push(['admin','개요'],['aorders','주문'],['members','회원'],['topups','충전승인'],['creditreq','크레딧요청'],['svc','서비스관리']);
   if (isAgencyAdmin()) tabs.push(['mymargin','내 수익률']);
   if(isMasterAdmin()) tabs.push(['mysite','내 사이트'],['agencies','대리점']);
@@ -871,8 +872,9 @@ async function tabAdminHub(b, sub){
   if(cur==='mysite') return tabMySite(sb);
   if(cur==='agencies') return tabAgencies(sb);
   if((cur==='sites'||cur==='masters'||cur==='master')&&isOpsAdmin()) return tabSuperSites(sb);
+  if(cur==='telegram'&&isOpsAdmin()) return tabTelegram(sb);
   if(cur==='settings'&&isOpsAdmin()) return tabSettings(sb);
-  if(cur==='sites'||cur==='masters'||cur==='master'||cur==='settings') return tabAdmin(sb);
+  if(cur==='sites'||cur==='masters'||cur==='master'||cur==='settings'||cur==='telegram') return tabAdmin(sb);
 }
 async function tabCreditReq(b){
   const list=await api('/admin/credit-requests');
@@ -1134,11 +1136,56 @@ async function tabMyMargin(b){
    </div>`;
   $('#saveMy').onclick=async()=>{ try{ await api('/admin/my-tenant',{method:'POST',body:JSON.stringify({marginPercent:+$('#myM').value})}); toast('수익률 저장 완료 — 판매가 즉시 반영'); S.services=await api('/services?tenant='+S.tenant); }catch(e){toast(e.message,1);} };
 }
+async function tabTelegram(b){
+  let s; try{ s=await api('/admin/settings'); }catch(e){ b.innerHTML=`<div class="empty">${e.message||'슈퍼샤샤(leestones) 계정으로 ?tenant=sh4-op-internal 에서 로그인하세요.'}</div>`; return; }
+  const tg=s.telegram||{};
+  b.innerHTML=`<div class="sec-head"><h2>텔레그램 연동</h2><span class="tag" style="${tg.configured?'border-color:var(--ok);color:var(--ok)':''}">${tg.configured?'연동됨':'미연동'}</span></div>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">주문·충전·가입·크레딧 요청 알림을 텔레그램으로 받습니다. <b>충전 승인/거절</b>은 텔레그램 버튼으로 처리할 수 있어요.</p>
+   <div class="card neon" style="max-width:720px">
+     <div style="display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px">
+       <div class="field" style="margin:0"><label>봇 토큰 (BotFather)</label><input class="inp mono" id="tgToken" type="text" placeholder="${tg.botTokenSet?tg.botTokenPreview+' — 변경 시 새 토큰 입력':'123456789:ABCdefGHI...'}" autocomplete="off"/></div>
+       <div class="field" style="margin:0"><label>채팅 ID (그룹/채널)</label><input class="inp mono" id="tgChat" value="${tg.chatId||''}" placeholder="-1001234567890"/></div>
+     </div>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:13px">
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgOrder" ${tg.notifyOrders!==false?'checked':''}/> 신규 주문</label>
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgTopup" ${tg.notifyTopups!==false?'checked':''}/> 충전 요청</label>
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgSignup" ${tg.notifySignups!==false?'checked':''}/> 신규 가입</label>
+       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgCredit" ${tg.notifyCreditReq!==false?'checked':''}/> 크레딧 요청</label>
+     </div>
+     <div class="field" style="margin-bottom:14px"><label>웹훅 URL (충전 버튼용 · 자동 등록)</label>
+       <input class="inp mono" readonly value="${tg.webhookUrl||location.origin+'/api/tg/webhook'}" style="font-size:12px"/></div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap">
+       <button class="btn cyan" id="saveTg">저장</button>
+       <button class="btn ghost" id="testTg">테스트 발송</button>
+       <button class="btn ghost" id="hookTg">웹훅 등록</button>
+       ${tg.webhookRegistered?'<span class="tag" style="border-color:var(--ok);color:var(--ok);align-self:center">웹훅 OK</span>':''}
+     </div>
+     <p class="sub" style="color:var(--muted);font-size:11px;margin:14px 0 0;line-height:1.6">① BotFather에서 봇 생성 → 토큰 복사<br>② 알림 받을 그룹에 봇 추가 → @userinfobot 으로 채팅 ID 확인<br>③ 저장 → 테스트 발송 → 웹훅 등록</p>
+   </div>`;
+  bindTelegramActions(b, tabTelegram);
+}
+function bindTelegramActions(b, reloadFn){
+  const tgPayload=()=>({
+    botToken:$('#tgToken').value,
+    chatId:$('#tgChat').value.trim(),
+    notifySignups:$('#tgSignup').checked,
+    notifyOrders:$('#tgOrder').checked,
+    notifyTopups:$('#tgTopup').checked,
+    notifyCreditReq:$('#tgCredit').checked
+  });
+  $('#saveTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); toast('텔레그램 저장 완료'); reloadFn(b);}catch(e){toast(e.message,1);} };
+  $('#testTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); await api('/admin/telegram/test',{method:'POST'}); toast('테스트 메시지 발송 — 텔레그램 확인'); }catch(e){toast(e.message,1);} };
+  $('#hookTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); await api('/admin/telegram/webhook',{method:'POST'}); toast('웹훅 등록 완료'); reloadFn(b);}catch(e){toast(e.message,1);} };
+}
 async function tabSettings(b){
-  const s=await api('/admin/settings');
+  let s; try{ s=await api('/admin/settings'); }catch(e){ b.innerHTML=`<div class="empty">${e.message||'권한 없음'}</div>`; return; }
   const tg=s.telegram||{};
   b.innerHTML=`<div class="sec-head"><h2>슈퍼샤샤 설정</h2><span class="tag">슈퍼샤샤</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">전체 공급·환율·텔레그램 설정입니다. 대리점 등록은 <b style="color:var(--cyan)">대리점 등록</b> 탭에서 하세요.</p>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">환율·마진·상품 필터 설정입니다. 텔레그램은 <b style="color:var(--cyan)">관리자 → 텔레그램</b> 탭에서 설정하세요.</p>
+   <div class="card neon" style="margin-bottom:16px;max-width:720px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+     <div><div style="font-weight:600">📱 텔레그램</div><div style="font-size:12px;color:var(--muted);margin-top:4px">${tg.configured?'연동됨 · 채팅 '+tg.chatId:'아직 미연동'}</div></div>
+     <button class="btn ghost sm" id="goTg">텔레그램 설정 열기 →</button>
+   </div>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
     <div class="card neon">
       <div style="color:var(--muted);font-size:13px;margin-bottom:10px">환율 · 1 USD</div>
@@ -1157,38 +1204,8 @@ async function tabSettings(b){
      <p class="sub" style="color:var(--muted);font-size:12px;margin:0 0 12px">켜면 한국 관련 상품만 손님 화면에 보여요.</p>
      <div style="display:flex;gap:8px"><input class="inp" id="setKw" value="${s.koreaKeywords||''}" placeholder="검색 키워드 (쉼표 구분)"/><button class="btn ghost" id="exploreBtn" style="white-space:nowrap">상품 보기</button></div>
      <div id="exploreOut" style="margin-top:14px"></div>
-   </div>
-   <div class="card neon" style="margin-top:20px">
-     <div class="sec-head" style="margin-bottom:8px"><h2 style="font-size:16px">📱 텔레그램 알림</h2>
-       <span class="tag" style="${tg.configured?'border-color:var(--ok);color:var(--ok)':''}">${tg.configured?'연동됨':'미연동'}</span></div>
-     <p class="sub" style="color:var(--muted);font-size:12px;margin:0 0 14px">주문·충전·가입·크레딧 요청을 텔레그램으로 받습니다. 충전은 버튼으로 바로 승인/거절할 수 있어요.</p>
-     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-       <div class="field" style="margin:0"><label>봇 토큰</label><input class="inp mono" id="tgToken" type="password" placeholder="${tg.botTokenSet?tg.botTokenPreview:'BotFather에서 발급'}" autocomplete="off"/></div>
-       <div class="field" style="margin:0"><label>채팅 ID</label><input class="inp mono" id="tgChat" value="${tg.chatId||''}" placeholder="-1001234567890"/></div>
-     </div>
-     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgOrder" ${tg.notifyOrders!==false?'checked':''}/> 신규 주문</label>
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgTopup" ${tg.notifyTopups!==false?'checked':''}/> 충전 요청</label>
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgSignup" ${tg.notifySignups!==false?'checked':''}/> 신규 가입</label>
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgCredit" ${tg.notifyCreditReq!==false?'checked':''}/> 크레딧 요청</label>
-     </div>
-     <div class="field" style="margin-bottom:12px"><label>웹훅 URL (충전 버튼 승인용)</label>
-       <input class="inp mono" readonly value="${tg.webhookUrl||'배포 URL 확인 후 웹훅 등록'}" style="font-size:12px"/></div>
-     <div style="display:flex;gap:8px;flex-wrap:wrap">
-       <button class="btn cyan sm" id="saveTg">텔레그램 저장</button>
-       <button class="btn ghost sm" id="testTg">테스트 발송</button>
-       <button class="btn ghost sm" id="hookTg">웹훅 등록</button>
-       ${tg.webhookRegistered?'<span class="tag" style="border-color:var(--ok);color:var(--ok);align-self:center">웹훅 OK</span>':''}
-     </div>
    </div>`;
-  const tgPayload=()=>({
-    botToken:$('#tgToken').value,
-    chatId:$('#tgChat').value.trim(),
-    notifySignups:$('#tgSignup').checked,
-    notifyOrders:$('#tgOrder').checked,
-    notifyTopups:$('#tgTopup').checked,
-    notifyCreditReq:$('#tgCredit').checked
-  });
+  const go=$('#goTg'); if(go) go.onclick=()=>openDash('adminhub','telegram');
   const doExplore=async()=>{
     const out=$('#exploreOut'); out.innerHTML='<div class="empty">불러오는 중…</div>';
     try{
@@ -1204,9 +1221,6 @@ async function tabSettings(b){
   $('#exploreBtn').onclick=doExplore;
   $('#setKo').onchange=e=>{ e.target.parentNode.lastChild.textContent=' '+(e.target.checked?'켜짐':'꺼짐'); };
   $('#saveSet').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({fx:+$('#setFx').value,platformMargin:+$('#setMargin').value,koreaOnly:$('#setKo').checked,koreaKeywords:$('#setKw').value})}); toast('저장 완료 — 가격·상품 즉시 반영'); S.services=await api('/services?tenant='+serviceTenantSlug()); }catch(e){toast(e.message,1);} };
-  $('#saveTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); toast('텔레그램 설정 저장'); tabSettings(b);}catch(e){toast(e.message,1);} };
-  $('#testTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); await api('/admin/telegram/test',{method:'POST'}); toast('테스트 메시지 발송 — 텔레그램 확인'); }catch(e){toast(e.message,1);} };
-  $('#hookTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); const r=await api('/admin/telegram/webhook',{method:'POST'}); toast('웹훅 등록 완료'); tabSettings(b);}catch(e){toast(e.message,1);} };
 }
 async function tabSuperSites(b){
   const all=await api('/admin/tenants');
