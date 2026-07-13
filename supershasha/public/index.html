@@ -862,7 +862,7 @@ async function tabAdminHub(b, sub){
   if(isOpsAdmin()) tabs.push(['sites','대리점 등록'],['telegram','텔레그램'],['settings','슈퍼샤샤 설정']);
   tabs.push(['admin','개요'],['aorders','주문'],['members','회원'],['topups','충전승인'],['creditreq','크레딧요청'],['svc','서비스관리']);
   if (isAgencyAdmin()) tabs.push(['mymargin','내 수익률']);
-  if(isMasterAdmin()) tabs.push(['mysite','내 사이트'],['agencies','대리점']);
+  if(isMasterAdmin()) tabs.push(['mysite','내 사이트'],['agencies','대리점'],['telegram','텔레그램']);
   const cur=sub||(isOpsAdmin()?'sites':isMasterAdmin()?'agencies':'admin');
   b.innerHTML=`<div class="sec-head"><h2>${isOpsAdmin()?'슈퍼샤샤':'관리자'}</h2><span class="tag">${isOpsAdmin()?'SUPERSHASHA':isMasterAdmin()?'본사':'대리점'}</span></div>
     <div class="admin-subtabs" id="adminSub">${tabs.map(([k,l])=>`<button class="${k===cur?'on':''}" data-sub="${k}">${l}</button>`).join('')}</div>
@@ -879,7 +879,8 @@ async function tabAdminHub(b, sub){
   if(cur==='mysite') return tabMySite(sb);
   if(cur==='agencies') return tabAgencies(sb);
   if((cur==='sites'||cur==='masters'||cur==='master')&&isOpsAdmin()) return tabSuperSites(sb);
-  if(cur==='telegram'&&isOpsAdmin()) return tabTelegram(sb);
+  if(cur==='telegram'&&isOpsAdmin()) return tabTelegram(sb,'platform');
+  if(cur==='telegram'&&isMasterAdmin()) return tabTelegram(sb,'tenant');
   if(cur==='settings'&&isOpsAdmin()) return tabSettings(sb);
   if(cur==='sites'||cur==='masters'||cur==='master'||cur==='settings'||cur==='telegram') return tabAdmin(sb);
 }
@@ -1143,11 +1144,28 @@ async function tabMyMargin(b){
    </div>`;
   $('#saveMy').onclick=async()=>{ try{ await api('/admin/my-tenant',{method:'POST',body:JSON.stringify({marginPercent:+$('#myM').value})}); toast('수익률 저장 완료 — 판매가 즉시 반영'); S.services=await api('/services?tenant='+S.tenant); }catch(e){toast(e.message,1);} };
 }
-async function tabTelegram(b){
-  let s; try{ s=await api('/admin/settings'); }catch(e){ b.innerHTML=`<div class="empty">${e.message||'슈퍼샤샤(leestones) 계정으로 ?tenant=sh4-op-internal 에서 로그인하세요.'}</div>`; return; }
-  const tg=s.telegram||{};
-  b.innerHTML=`<div class="sec-head"><h2>텔레그램 연동</h2><span class="tag" style="${tg.configured?'border-color:var(--ok);color:var(--ok)':''}">${tg.configured?'연동됨':'미연동'}</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">주문·충전·가입·크레딧 요청 알림을 텔레그램으로 받습니다. <b>충전 승인/거절</b>은 텔레그램 버튼으로 처리할 수 있어요.</p>
+async function tabTelegram(b, scope){
+  scope=scope||(isOpsAdmin()?'platform':'tenant');
+  const isPlatform=scope==='platform';
+  let tg={};
+  try{
+    if(isPlatform){
+      const s=await api('/admin/settings');
+      tg=s.telegram||{};
+    }else{
+      const s=await api('/admin/my-tenant/telegram');
+      tg=s.telegram||{};
+    }
+  }catch(e){
+    b.innerHTML=`<div class="empty">${e.message||(isPlatform?'슈퍼샤샤(leestones) 계정으로 ?tenant=sh4-op-internal 에서 로그인하세요.':'본사(master) 계정으로 ?tenant=master 에서 로그인하세요.')}</div>`;
+    return;
+  }
+  const title=isPlatform?'슈퍼샤샤 텔레그램':'텔레그램 알림';
+  const hint=isPlatform
+    ? '플랫폼 전체 알림입니다. 주문·충전·가입·크레딧 요청을 받습니다.'
+    : '본사·소속 대리점의 주문·충전·가입·크레딧 요청 알림을 받습니다.';
+  b.innerHTML=`<div class="sec-head"><h2>${title}</h2><span class="tag" style="${tg.configured?'border-color:var(--ok);color:var(--ok)':''}">${tg.configured?'연동됨':'미연동'}</span></div>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">${hint} <b>충전 승인/거절</b>은 텔레그램 버튼으로 처리할 수 있어요.</p>
    <div class="card neon" style="max-width:720px">
      <div style="display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px">
        <div class="field" style="margin:0"><label>봇 토큰 (BotFather)</label><input class="inp mono" id="tgToken" type="text" placeholder="${tg.botTokenSet?tg.botTokenPreview+' — 변경 시 새 토큰 입력':'123456789:ABCdefGHI...'}" autocomplete="off"/></div>
@@ -1160,7 +1178,7 @@ async function tabTelegram(b){
        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgCredit" ${tg.notifyCreditReq!==false?'checked':''}/> 크레딧 요청</label>
      </div>
      <div class="field" style="margin-bottom:14px"><label>웹훅 URL (충전 버튼용 · 자동 등록)</label>
-       <input class="inp mono" readonly value="${tg.webhookUrl||location.origin+'/api/tg/webhook'}" style="font-size:12px"/></div>
+       <input class="inp mono" readonly id="tgWebhookUrl" value="${tg.webhookUrl||(isPlatform?location.origin+'/api/tg/webhook':location.origin+'/api/tg/webhook/tenant/master')}" style="font-size:12px"/></div>
      <div style="display:flex;gap:8px;flex-wrap:wrap">
        <button class="btn cyan" id="saveTg">저장</button>
        <button class="btn ghost" id="testTg">테스트 발송</button>
@@ -1169,9 +1187,10 @@ async function tabTelegram(b){
      </div>
      <p class="sub" style="color:var(--muted);font-size:11px;margin:14px 0 0;line-height:1.6">① BotFather에서 봇 생성 → 토큰 복사<br>② 알림 받을 그룹에 봇 추가 → @userinfobot 으로 채팅 ID 확인<br>③ 저장 → 테스트 발송 → 웹훅 등록</p>
    </div>`;
-  bindTelegramActions(b, tabTelegram);
+  bindTelegramActions(b, ()=>tabTelegram(b, scope), scope);
 }
-function bindTelegramActions(b, reloadFn){
+function bindTelegramActions(b, reloadFn, scope){
+  const isPlatform=scope==='platform';
   const tgPayload=()=>({
     botToken:$('#tgToken').value,
     chatId:$('#tgChat').value.trim(),
@@ -1180,9 +1199,37 @@ function bindTelegramActions(b, reloadFn){
     notifyTopups:$('#tgTopup').checked,
     notifyCreditReq:$('#tgCredit').checked
   });
-  $('#saveTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); toast('텔레그램 저장 완료'); reloadFn(b);}catch(e){toast(e.message,1);} };
-  $('#testTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); await api('/admin/telegram/test',{method:'POST'}); toast('테스트 메시지 발송 — 텔레그램 확인'); }catch(e){toast(e.message,1);} };
-  $('#hookTg').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})}); await api('/admin/telegram/webhook',{method:'POST'}); toast('웹훅 등록 완료'); reloadFn(b);}catch(e){toast(e.message,1);} };
+  $('#saveTg').onclick=async()=>{
+    try{
+      if(isPlatform) await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
+      else await api('/admin/my-tenant/telegram',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
+      toast('텔레그램 저장 완료'); reloadFn();
+    }catch(e){toast(e.message,1);}
+  };
+  $('#testTg').onclick=async()=>{
+    try{
+      if(isPlatform){
+        await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
+        await api('/admin/telegram/test',{method:'POST'});
+      }else{
+        await api('/admin/my-tenant/telegram',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
+        await api('/admin/my-tenant/telegram/test',{method:'POST'});
+      }
+      toast('테스트 메시지 발송 — 텔레그램 확인');
+    }catch(e){toast(e.message,1);}
+  };
+  $('#hookTg').onclick=async()=>{
+    try{
+      if(isPlatform){
+        await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
+        await api('/admin/telegram/webhook',{method:'POST'});
+      }else{
+        await api('/admin/my-tenant/telegram',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
+        await api('/admin/my-tenant/telegram/webhook',{method:'POST'});
+      }
+      toast('웹훅 등록 완료'); reloadFn();
+    }catch(e){toast(e.message,1);}
+  };
 }
 async function tabSettings(b){
   let s; try{ s=await api('/admin/settings'); }catch(e){ b.innerHTML=`<div class="empty">${e.message||'권한 없음'}</div>`; return; }

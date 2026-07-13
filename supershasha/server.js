@@ -833,7 +833,22 @@ function ensureTelegramSettings() {
   }
   return db.settings.telegram;
 }
-function getTelegramConfig() {
+function ensureTenantTelegram(t) {
+  if (!t) return null;
+  if (!t.telegram) {
+    t.telegram = {
+      botToken: "",
+      chatId: "",
+      notifySignups: true,
+      notifyOrders: true,
+      notifyTopups: true,
+      notifyCreditReq: true,
+      webhookRegistered: false,
+    };
+  }
+  return t.telegram;
+}
+function getPlatformTelegramConfig() {
   const s = ensureTelegramSettings();
   const token = String(s.botToken || CFG.tgToken || "").trim();
   const chatId = String(s.chatId || CFG.tgChat || "").trim();
@@ -847,6 +862,30 @@ function getTelegramConfig() {
     webhookRegistered: !!s.webhookRegistered,
   };
 }
+function getTenantTelegramConfig(t) {
+  if (!t) return null;
+  const s = ensureTenantTelegram(t);
+  const token = String(s.botToken || "").trim();
+  const chatId = String(s.chatId || "").trim();
+  if (!token || !chatId) return null;
+  return {
+    token,
+    chatId,
+    notifySignups: s.notifySignups !== false,
+    notifyOrders: s.notifyOrders !== false,
+    notifyTopups: s.notifyTopups !== false,
+    notifyCreditReq: s.notifyCreditReq !== false,
+    webhookRegistered: !!s.webhookRegistered,
+  };
+}
+function getTelegramConfig() {
+  return getPlatformTelegramConfig();
+}
+function notifyMasterForTenant(tenant) {
+  if (!tenant) return null;
+  if (isMasterType(tenant)) return tenant;
+  return parentMaster(tenant);
+}
 function publicBaseUrl(req) {
   const fromEnv = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
   if (fromEnv) return fromEnv;
@@ -856,7 +895,7 @@ function publicBaseUrl(req) {
   return host ? `${proto}://${host}` : "";
 }
 function telegramSettingsDTO(req) {
-  const cfg = getTelegramConfig();
+  const cfg = getPlatformTelegramConfig();
   const token = cfg.token;
   return {
     configured: !!(token && cfg.chatId),
@@ -871,6 +910,41 @@ function telegramSettingsDTO(req) {
     webhookRegistered: cfg.webhookRegistered,
   };
 }
+function tenantTelegramDTO(t, req) {
+  ensureTenantTelegram(t);
+  const cfg = getTenantTelegramConfig(t) || {
+    token: "",
+    chatId: t.telegram?.chatId || "",
+    notifySignups: t.telegram?.notifySignups !== false,
+    notifyOrders: t.telegram?.notifyOrders !== false,
+    notifyTopups: t.telegram?.notifyTopups !== false,
+    notifyCreditReq: t.telegram?.notifyCreditReq !== false,
+    webhookRegistered: !!t.telegram?.webhookRegistered,
+  };
+  const token = cfg.token || String(t.telegram?.botToken || "").trim();
+  return {
+    configured: !!(token && cfg.chatId),
+    botTokenPreview: token ? `${token.slice(0, 8)}…` : "",
+    botTokenSet: !!token,
+    chatId: cfg.chatId || t.telegram?.chatId || "",
+    notifySignups: cfg.notifySignups,
+    notifyOrders: cfg.notifyOrders,
+    notifyTopups: cfg.notifyTopups,
+    notifyCreditReq: cfg.notifyCreditReq,
+    webhookUrl: publicBaseUrl(req) ? `${publicBaseUrl(req)}/api/tg/webhook/tenant/${t.id}` : "",
+    webhookRegistered: cfg.webhookRegistered,
+  };
+}
+function applyTelegramBody(target, body) {
+  if (!body || typeof body !== "object") return;
+  const rawToken = body.botToken != null ? String(body.botToken).trim() : null;
+  if (rawToken && !rawToken.includes("…")) target.botToken = rawToken;
+  if (body.chatId != null) target.chatId = String(body.chatId).trim();
+  if (body.notifySignups != null) target.notifySignups = !!body.notifySignups;
+  if (body.notifyOrders != null) target.notifyOrders = !!body.notifyOrders;
+  if (body.notifyTopups != null) target.notifyTopups = !!body.notifyTopups;
+  if (body.notifyCreditReq != null) target.notifyCreditReq = !!body.notifyCreditReq;
+}
 async function tgApi(method, body, token) {
   const t = token || getTelegramConfig().token;
   if (!t) throw new Error("텔레그램 봇 토큰이 없습니다.");
@@ -883,9 +957,8 @@ async function tgApi(method, body, token) {
   if (!d.ok) throw new Error(d.description || "텔레그램 API 오류");
   return d;
 }
-async function tg(text, keyboard, kind) {
-  const cfg = getTelegramConfig();
-  if (!cfg.token || !cfg.chatId) return;
+async function tgSend(cfg, text, keyboard, kind) {
+  if (!cfg?.token || !cfg?.chatId) return;
   if (kind === "signup" && !cfg.notifySignups) return;
   if (kind === "order" && !cfg.notifyOrders) return;
   if (kind === "topup" && !cfg.notifyTopups) return;
@@ -903,6 +976,41 @@ async function tg(text, keyboard, kind) {
     );
   } catch (e) {
     console.error("TG error", e.message);
+  }
+}
+async function tgPlatform(text, keyboard, kind) {
+  await tgSend(getPlatformTelegramConfig(), text, keyboard, kind);
+}
+async function tgTenant(tenant, text, keyboard, kind) {
+  const cfg = getTenantTelegramConfig(tenant);
+  await tgSend(cfg, text, keyboard, kind);
+}
+async function tgNotifyScope(tenant, text, keyboard, kind) {
+  await tgPlatform(text, keyboard, kind);
+  const master = notifyMasterForTenant(tenant);
+  if (master) await tgTenant(master, text, keyboard, kind);
+}
+async function tg(text, keyboard, kind) {
+  await tgPlatform(text, keyboard, kind);
+}
+async function handleTopupCallback(cb, botToken) {
+  if (!cb?.data?.startsWith("topup_")) return;
+  const [, decision, idStr] = cb.data.split("_");
+  const t = db.topups.find((x) => x.id === +idStr);
+  if (t && t.status === "pending") {
+    if (decision === "approve") {
+      const u = db.users.find((x) => x.id === t.userId);
+      if (u) u.balance = round4(u.balance + t.amount);
+      t.status = "approved";
+    } else t.status = "rejected";
+    saveDB();
+  }
+  if (botToken) {
+    await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ callback_query_id: cb.id, text: decision === "approve" ? "승인됨" : "거절됨" }),
+    });
   }
 }
 
@@ -1009,7 +1117,7 @@ app.post("/api/register", (req, res) => {
   };
   db.users.push(user);
   saveDB();
-  tg(`🆕 <b>신규 가입</b>\n사이트: ${tenant.name}\n아이디: ${username}`, null, "signup");
+  tgNotifyScope(tenant, `🆕 <b>신규 가입</b>\n사이트: ${tenant.name}\n아이디: ${username}`, null, "signup");
   res.json({ ok: true });
 });
 
@@ -1137,7 +1245,8 @@ app.post("/api/order", auth, async (req, res) => {
     };
     db.orders.push(order);
     saveDB();
-    tg(
+    tgNotifyScope(
+      tenant,
       `🛒 <b>신규 주문</b>\n사이트: ${tenant.name}\n회원: ${req.user.username}\n${svc.name}\n수량: ${qty.toLocaleString()} | 결제: ${charge}\n공급주문#: ${resp.order}`,
       null,
       "order"
@@ -1251,12 +1360,14 @@ app.post("/api/topup", auth, (req, res) => {
   db.topups.push(t);
   saveDB();
   const tenant = db.tenants.find((x) => x.id === req.user.tenantId);
-  tg(
+  const topupKeyboard = [[
+    { text: "✅ 승인", callback_data: `topup_approve_${t.id}` },
+    { text: "❌ 거절", callback_data: `topup_reject_${t.id}` },
+  ]];
+  tgNotifyScope(
+    tenant,
     `💰 <b>충전 요청</b>\n사이트: ${tenant?.name}\n회원: ${req.user.username}\n금액: ${amount} (${method})`,
-    [[
-      { text: "✅ 승인", callback_data: `topup_approve_${t.id}` },
-      { text: "❌ 거절", callback_data: `topup_reject_${t.id}` },
-    ]],
+    topupKeyboard,
     "topup"
   );
   res.json({ ok: true });
@@ -1356,7 +1467,7 @@ app.post("/api/credit-request", auth, adminOnly, (req, res) => {
   db.creditRequests.push(r);
   saveDB();
   const tenant = userTenant(req.user);
-  tg(`📋 <b>크레딧 요청</b>\n사이트: ${tenant?.name}\n요청: ${req.user.username}\n금액: ${amount}`, null, "credit");
+  tgNotifyScope(tenant, `📋 <b>크레딧 요청</b>\n사이트: ${tenant?.name}\n요청: ${req.user.username}\n금액: ${amount}`, null, "credit");
   res.json({ ok: true });
 });
 app.get("/api/admin/credit-requests", auth, adminOnly, (req, res) => {
@@ -1492,22 +1603,68 @@ app.post("/api/admin/settings", auth, adminOnly, (req, res) => {
   if (req.body?.koreaKeywords != null) db.settings.koreaKeywords = String(req.body.koreaKeywords);
   const tgBody = req.body?.telegram;
   if (tgBody && typeof tgBody === "object") {
-    const tgS = ensureTelegramSettings();
-    const rawToken = tgBody.botToken != null ? String(tgBody.botToken).trim() : null;
-    if (rawToken && !rawToken.includes("…")) tgS.botToken = rawToken;
-    if (tgBody.chatId != null) tgS.chatId = String(tgBody.chatId).trim();
-    if (tgBody.notifySignups != null) tgS.notifySignups = !!tgBody.notifySignups;
-    if (tgBody.notifyOrders != null) tgS.notifyOrders = !!tgBody.notifyOrders;
-    if (tgBody.notifyTopups != null) tgS.notifyTopups = !!tgBody.notifyTopups;
-    if (tgBody.notifyCreditReq != null) tgS.notifyCreditReq = !!tgBody.notifyCreditReq;
+    applyTelegramBody(ensureTelegramSettings(), tgBody);
   }
   saveDB();
   svcCache.at = 0;
   res.json({ ok: true, telegram: telegramSettingsDTO(req) });
 });
+app.get("/api/admin/my-tenant/telegram", auth, adminOnly, (req, res) => {
+  if (!isMasterAdmin(req.user)) return res.status(403).json({ error: "본사 관리자만 이용할 수 있습니다." });
+  const t = db.tenants.find((x) => x.id === req.user.tenantId);
+  if (!t || !isMasterType(t)) return res.status(404).json({ error: "사이트 없음" });
+  res.json({ telegram: tenantTelegramDTO(t, req) });
+});
+app.post("/api/admin/my-tenant/telegram", auth, adminOnly, (req, res) => {
+  if (!isMasterAdmin(req.user)) return res.status(403).json({ error: "본사 관리자만 이용할 수 있습니다." });
+  const t = db.tenants.find((x) => x.id === req.user.tenantId);
+  if (!t || !isMasterType(t)) return res.status(404).json({ error: "사이트 없음" });
+  applyTelegramBody(ensureTenantTelegram(t), req.body?.telegram || req.body || {});
+  saveDB();
+  res.json({ ok: true, telegram: tenantTelegramDTO(t, req) });
+});
+app.post("/api/admin/my-tenant/telegram/test", auth, adminOnly, async (req, res) => {
+  if (!isMasterAdmin(req.user)) return res.status(403).json({ error: "본사 관리자만 이용할 수 있습니다." });
+  const t = db.tenants.find((x) => x.id === req.user.tenantId);
+  if (!t || !isMasterType(t)) return res.status(404).json({ error: "사이트 없음" });
+  const cfg = getTenantTelegramConfig(t);
+  if (!cfg?.token || !cfg?.chatId) return res.status(400).json({ error: "봇 토큰과 채팅 ID를 먼저 저장하세요." });
+  try {
+    await tgApi(
+      "sendMessage",
+      {
+        chat_id: cfg.chatId,
+        text: `✅ <b>${t.name}</b> 텔레그램 연동 테스트\n본사·대리점 알림이 정상적으로 도착합니다.`,
+        parse_mode: "HTML",
+      },
+      cfg.token
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+app.post("/api/admin/my-tenant/telegram/webhook", auth, adminOnly, async (req, res) => {
+  if (!isMasterAdmin(req.user)) return res.status(403).json({ error: "본사 관리자만 이용할 수 있습니다." });
+  const t = db.tenants.find((x) => x.id === req.user.tenantId);
+  if (!t || !isMasterType(t)) return res.status(404).json({ error: "사이트 없음" });
+  const cfg = getTenantTelegramConfig(t);
+  if (!cfg?.token) return res.status(400).json({ error: "봇 토큰을 먼저 저장하세요." });
+  const base = publicBaseUrl(req);
+  if (!base) return res.status(400).json({ error: "공개 URL을 확인할 수 없습니다." });
+  const webhookUrl = `${base}/api/tg/webhook/tenant/${t.id}`;
+  try {
+    await tgApi("setWebhook", { url: webhookUrl, allowed_updates: ["callback_query"] }, cfg.token);
+    ensureTenantTelegram(t).webhookRegistered = true;
+    saveDB();
+    res.json({ ok: true, webhookUrl });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
 app.post("/api/admin/telegram/test", auth, adminOnly, async (req, res) => {
   if (req.user.role !== "superadmin") return res.status(403).json({ error: "권한이 없습니다." });
-  const cfg = getTelegramConfig();
+  const cfg = getPlatformTelegramConfig();
   if (!cfg.token || !cfg.chatId) return res.status(400).json({ error: "봇 토큰과 채팅 ID를 먼저 저장하세요." });
   try {
     await tgApi(
@@ -1526,7 +1683,7 @@ app.post("/api/admin/telegram/test", auth, adminOnly, async (req, res) => {
 });
 app.post("/api/admin/telegram/webhook", auth, adminOnly, async (req, res) => {
   if (req.user.role !== "superadmin") return res.status(403).json({ error: "권한이 없습니다." });
-  const cfg = getTelegramConfig();
+  const cfg = getPlatformTelegramConfig();
   if (!cfg.token) return res.status(400).json({ error: "봇 토큰을 먼저 저장하세요." });
   const base = publicBaseUrl(req);
   if (!base) return res.status(400).json({ error: "공개 URL을 확인할 수 없습니다. Render 배포 후 다시 시도하세요." });
@@ -1709,26 +1866,14 @@ app.post("/api/admin/tenant/:id/credit", auth, adminOnly, (req, res) => {
 // ─────────────────────────────────────────────────────────────
 app.post("/api/tg/webhook", async (req, res) => {
   const cb = req.body?.callback_query;
-  if (cb?.data?.startsWith("topup_")) {
-    const [, decision, idStr] = cb.data.split("_");
-    const t = db.topups.find((x) => x.id === +idStr);
-    if (t && t.status === "pending") {
-      if (decision === "approve") {
-        const u = db.users.find((x) => x.id === t.userId);
-        if (u) u.balance = round4(u.balance + t.amount);
-        t.status = "approved";
-      } else t.status = "rejected";
-      saveDB();
-    }
-    const tgToken = getTelegramConfig().token;
-    if (tgToken) {
-      await fetch(`https://api.telegram.org/bot${tgToken}/answerCallbackQuery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callback_query_id: cb.id, text: decision === "approve" ? "승인됨" : "거절됨" }),
-      });
-    }
-  }
+  if (cb) await handleTopupCallback(cb, getPlatformTelegramConfig().token);
+  res.json({ ok: true });
+});
+app.post("/api/tg/webhook/tenant/:id", async (req, res) => {
+  const t = db.tenants.find((x) => x.id === req.params.id);
+  const cfg = t ? getTenantTelegramConfig(t) : null;
+  const cb = req.body?.callback_query;
+  if (cb) await handleTopupCallback(cb, cfg?.token);
   res.json({ ok: true });
 });
 
