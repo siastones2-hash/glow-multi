@@ -171,10 +171,10 @@ section.blk{padding:46px 0}
 .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
 
 /* panel app (9story flow, dark theme) */
-.app-shell{min-height:calc(100vh - 66px)}
-.app-shell .dash{padding:20px 0 40px;grid-template-columns:220px 1fr;gap:22px;max-width:min(1680px,96vw);margin:0 auto;width:100%}
-.app-shell .wrap{max-width:min(1680px,96vw);padding:0 24px}
-.side-panel{display:flex;flex-direction:column;min-height:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;backdrop-filter:blur(16px)}
+.app-shell{min-height:calc(100vh - 66px);width:100%}
+.app-shell .wrap{max-width:100%;width:100%;padding:0 clamp(14px,2.2vw,36px);box-sizing:border-box}
+.app-shell .dash{display:grid;padding:16px 0 40px;grid-template-columns:minmax(188px,210px) minmax(0,1fr);gap:clamp(16px,1.8vw,28px);max-width:none;margin:0;width:100%;box-sizing:border-box}
+.side-panel{display:flex;flex-direction:column;min-height:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px;backdrop-filter:blur(16px)}
 .side-panel .side{position:static;top:auto}
 .side-user{margin-top:auto;padding:12px 10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .side-user b{display:block;color:var(--txt);font-size:13px;margin-bottom:4px}
@@ -184,8 +184,15 @@ section.blk{padding:46px 0}
 .welcome-banner h2{font-family:"Chakra Petch";font-size:22px;margin-bottom:6px}
 .welcome-banner p{color:var(--muted);font-size:13px;line-height:1.55}
 .quick-btns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-.order-split{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,380px);gap:22px;align-items:start;width:100%}
-.order-panel{position:sticky;top:90px;padding:20px;max-height:calc(100vh - 110px);overflow-y:auto}
+.order-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:clamp(18px,2vw,28px);align-items:start;width:100%}
+@media(min-width:1100px){
+  .order-split{grid-template-columns:minmax(0,2.1fr) minmax(300px,360px)}
+}
+@media(min-width:1500px){
+  .order-split{grid-template-columns:minmax(0,2.4fr) minmax(320px,380px)}
+}
+.order-panel{position:sticky;top:90px;padding:18px;max-height:calc(100vh - 110px);overflow-y:auto}
+.order-catalog.card{padding:20px 22px}
 .order-panel h3{font-family:"Chakra Petch";font-size:18px;margin-bottom:10px;line-height:1.35}
 .order-panel .svc-desc{font-size:13px;line-height:1.65;color:var(--muted);margin:12px 0;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
 .order-panel .svc-link-hint{font-size:12px;line-height:1.5;color:var(--cyan);margin-bottom:14px;padding:10px 12px;border-radius:8px;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.15)}
@@ -907,7 +914,7 @@ async function tabOrder(b){
   }catch{}
   if(!S.panelSvc||!S.services.find(x=>String(x.service)===String(S.panelSvc.service))) S.panelSvc=null;
   b.innerHTML=`<div class="order-split">
-    <div class="card neon"><div class="sec-head" style="flex-wrap:wrap;gap:8px"><h2 style="font-size:20px">서비스 주문</h2><span class="order-count" id="svcCount"></span></div>
+    <div class="card neon order-catalog"><div class="sec-head" style="flex-wrap:wrap;gap:8px"><h2 style="font-size:20px">서비스 주문</h2><span class="order-count" id="svcCount"></span></div>
       <p class="sub" style="font-size:12px;color:var(--muted);margin:-8px 0 12px">플랫폼·종류 필터 → 상품 클릭 → 우측 설명·수량·주문</p>
       <input class="inp svc-search" id="svcSearch" placeholder="🔍 상품명·설명 검색…" value="${S.orderSearch||''}"/>
       <div class="cat-tabs" id="dCat"></div>
