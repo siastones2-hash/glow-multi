@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>SUPERSHASHA</title>
+<title>서비스</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -239,8 +239,8 @@ section.blk{padding:46px 0}
 <div class="bg"></div><div class="grid"></div><div class="glow-cursor" id="gc"></div>
 
 <header class="nav"><div class="wrap">
-  <div class="logo"><span class="dot"></span><img id="brandLogo" class="logo-img hidden" alt="" /><span class="logo-mark" id="brandName">SUPERSHASHA</span></div>
-  <div class="tag" id="brandTag">DIGITAL GROWTH</div>
+  <div class="logo"><span class="dot"></span><img id="brandLogo" class="logo-img hidden" alt="" /><span class="logo-mark" id="brandName"></span></div>
+  <div class="tag hidden" id="brandTag">DIGITAL GROWTH</div>
   <div class="sp"></div>
   <div class="bal hidden" id="balBox">잔액 <b id="balVal">0</b></div>
   <button class="btn ghost sm hidden" id="dashBtn">대시보드</button>
@@ -286,7 +286,7 @@ section.blk{padding:46px 0}
     <div class="svc-grid" id="svcGrid"></div>
   </div></section>
 
-  <div class="foot wrap">© 2026 <b id="footBrand">SUPERSHASHA</b> · Digital Marketing Solutions</div>
+  <div class="foot wrap">© 2026 <b id="footBrand"></b></div>
 </main>
 
 <!-- ░░ PANEL APP ░░ -->
@@ -302,7 +302,7 @@ section.blk{padding:46px 0}
 <div class="ov" id="authOv"><div class="card neon modal" style="position:relative">
   <button class="x" onclick="closeAuth()">×</button>
   <h3 id="authTitle">로그인</h3>
-  <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:8px" id="authBrand">SUPERSHASHA</p>
+  <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:8px" id="authBrand"></p>
   <p class="sub" style="color:var(--cyan);font-size:12px;margin-bottom:8px;line-height:1.5" id="authHint"></p>
   <p class="sub mono" style="color:var(--gold);font-size:11px;margin-bottom:14px;word-break:break-all" id="authTenantUrl"></p>
   <div class="seg"><button class="on" id="segLogin" onclick="setAuth('login')">로그인</button>
@@ -416,6 +416,22 @@ S.tenant = readTenantSlug() || CFG_MASTER;
 S.tenantInfo = null;
 const isOpsTenant=()=>S.tenant===CFG_PLATFORM_SLUG||S.tenant==='main'||S.tenantInfo?.roleType==='platform';
 const serviceTenantSlug=()=>isOpsTenant()?CFG_MASTER:(S.me?.tenant?.slug||S.tenant||CFG_MASTER);
+const PLATFORM_BRAND=/슈퍼시아|supershasha|supersia|supersha/i;
+function displayBrandName(t){
+  if(!t) return '';
+  if(isOpsTenant()||t.roleType==='platform') return t.brand||t.name||'슈퍼시아';
+  const raw=String(t.brand||t.name||'').trim();
+  if(PLATFORM_BRAND.test(raw)){
+    if(t.roleType==='master') return '본사';
+    if(t.roleType==='agency') return t.name&& !PLATFORM_BRAND.test(t.name)?t.name:'대리점';
+    return '본사';
+  }
+  return raw||(t.roleType==='master'?'본사':t.roleType==='agency'?'대리점':'서비스');
+}
+function refreshPublicBrand(){
+  const t=S.tenantInfo||(S.me?.tenant?{...S.me.tenant}:null);
+  if(t) applyBrand(t);
+}
 
 async function api(path, opts={}){
   let r;
@@ -544,17 +560,21 @@ async function init(){
   buildCalc(); buildCatalog();
   if(S.token){ try{ S.me=await api('/me'); }catch{ S.token=''; localStorage.removeItem('mt_token'); } }
   await ensureSuperOnOpsTenant();
+  refreshPublicBrand();
   renderHeader();
   if(S.me){ openDash(isOpsAdmin()?'adminhub':isMasterAdmin()?'adminhub':isAdmin()?'adminhub':'dashboard', isOpsAdmin()?'sites':isMasterAdmin()?'agencies':undefined); return; }
   if(!S.me&&isOpsTenant()) openAuth('login');
   startServerWatch();
 }
 function applyBrand(t){
-  $('#brandName').textContent=t.name; $('#footBrand').textContent=t.name; $('#authBrand').textContent=t.name;
-  $('#brandTag').textContent = 'DIGITAL GROWTH';
-  document.title = t.name;
+  const name=displayBrandName(t);
+  $('#brandName').textContent=name; $('#footBrand').textContent=name; $('#authBrand').textContent=name;
+  const tag=$('#brandTag');
+  if(isOpsTenant()){ tag.textContent='DIGITAL GROWTH'; tag.classList.remove('hidden'); }
+  else tag.classList.add('hidden');
+  document.title=name||'서비스';
   const lg=$('#brandLogo');
-  if(t.logoUrl){ lg.src=t.logoUrl; lg.alt=t.name; lg.classList.remove('hidden'); $('#brandName').classList.add('hidden'); }
+  if(t.logoUrl){ lg.src=t.logoUrl; lg.alt=name; lg.classList.remove('hidden'); $('#brandName').classList.add('hidden'); }
   else { lg.classList.add('hidden'); $('#brandName').classList.remove('hidden'); }
 }
 function renderHeader(){
@@ -712,7 +732,7 @@ async function submitAuth(retried=false){
     const r=await api('/login',{method:'POST',body:JSON.stringify({tenant,username,password})});
     hideServerBanner();
     S.token=r.token; localStorage.setItem('mt_token',r.token); S.me=r.user;
-    hide('authOv'); renderHeader(); toast('환영합니다, '+r.user.username+'님');
+    hide('authOv'); refreshPublicBrand(); renderHeader(); toast('환영합니다, '+r.user.username+'님');
     const isMstAdm=r.user.role==='admin'&&r.user.tenant?.roleType==='master';
     const isAgAdm=r.user.role==='admin'&&r.user.tenant?.roleType==='agency';
     if(r.user.role==='superadmin'){

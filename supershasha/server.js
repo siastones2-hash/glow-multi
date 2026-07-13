@@ -456,6 +456,11 @@ function migrateDB() {
       t.parentId = masterTenant()?.id || "master";
       changed = true;
     }
+    if (isMasterType(t) && /슈퍼시아|supershasha|supersia|supersha/i.test(`${t.name || ""} ${t.brand || ""}`)) {
+      t.name = "본사";
+      t.brand = "본사";
+      changed = true;
+    }
     if (t.slug === "nine" && t.name === "NINE STORY") {
       t.name = "나인스토리";
       t.brand = "나인스토리";
@@ -835,10 +840,27 @@ function tenantBySlug(slug, allowPlatform = false) {
   if (allowPlatform && slug === platformSlug()) return platformTenant();
   return null;
 }
+const PLATFORM_BRAND_RE = /슈퍼시아|supershasha|supersia|supersha/i;
+function sanitizeTenantBrand(t) {
+  let name = t.name || "";
+  let brand = t.brand || name;
+  if (isPlatformType(t)) return { name, brand };
+  if (PLATFORM_BRAND_RE.test(name) || PLATFORM_BRAND_RE.test(brand)) {
+    if (isMasterType(t)) {
+      name = "본사";
+      brand = "본사";
+    } else if (isAgencyType(t)) {
+      if (PLATFORM_BRAND_RE.test(name)) name = t.slug || "대리점";
+      if (PLATFORM_BRAND_RE.test(brand)) brand = name;
+    }
+  }
+  return { name, brand };
+}
 function publicTenant(t) {
   if (!t || isPlatformType(t)) return null;
   const roleType = tenantRoleType(t);
-  const pub = { id: t.id, name: t.name, slug: t.slug, brand: t.brand || t.name, logoUrl: t.logoUrl || "", roleType };
+  const { name, brand } = sanitizeTenantBrand(t);
+  const pub = { id: t.id, name, slug: t.slug, brand, logoUrl: t.logoUrl || "", roleType };
   if (isMasterType(t)) pub.type = "main";
   else pub.type = "agency";
   return pub;
