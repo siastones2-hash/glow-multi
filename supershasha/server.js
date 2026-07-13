@@ -1461,23 +1461,25 @@ app.post("/api/admin/tenant", auth, adminOnly, (req, res) => {
         if (supplyMargin !== undefined) t.supplyMargin = supplyMargin === null ? null : parseFloat(supplyMargin);
       }
     } else {
-      if (!name || !slug) return res.status(400).json({ error: "사이트 이름과 주소(slug)를 입력하세요." });
+      if (!name || !slug) return res.status(400).json({ error: "대리점 이름과 주소(slug)를 입력하세요." });
       const { adminUsername, adminPassword } = req.body || {};
       if (!adminUsername || !adminPassword)
-        return res.status(400).json({ error: "본사 관리자 아이디와 비밀번호를 입력하세요." });
+        return res.status(400).json({ error: "대리점 관리자 아이디와 비밀번호를 입력하세요." });
       if (db.users.find((u) => u.username === adminUsername))
         return res.status(409).json({ error: "이미 사용 중인 아이디입니다." });
       if (db.tenants.find((x) => x.slug === slug)) return res.status(409).json({ error: "이미 사용 중인 slug입니다." });
-      const plat = platformTenant();
+      const mst = masterTenant();
+      if (!mst) return res.status(500).json({ error: "본사가 설정되지 않았습니다." });
+      const parentId = body.parentId && db.tenants.find((x) => x.id === body.parentId && isMasterType(x)) ? body.parentId : mst.id;
       t = {
         id: slug,
-        name: name || "새 본사",
+        name: name || "새 대리점",
         slug,
-        type: "master",
-        parentId: plat?.id || "platform",
+        type: "agency",
+        parentId,
         brand: brand || name,
         marginPercent: parseFloat(marginPercent) || 20,
-        defaultAgencySupply: supplyMargin != null ? parseFloat(supplyMargin) : 50,
+        supplyMargin: supplyMargin != null ? parseFloat(supplyMargin) : mst.defaultAgencySupply ?? 50,
         creditBalance: 0,
         active: true,
       };
@@ -1498,30 +1500,13 @@ app.post("/api/admin/tenant", auth, adminOnly, (req, res) => {
       });
     }
   } else if (isMaster) {
-    if (t) {
-      if (!isAgencyType(t) || t.parentId !== ut.id) return res.status(403).json({ error: "권한 없음" });
-      if (name != null) t.name = name;
-      if (slug != null) t.slug = slug;
-      if (brand != null) t.brand = brand;
-      if (marginPercent != null) t.marginPercent = parseFloat(marginPercent);
-      if (supplyMargin !== undefined) t.supplyMargin = supplyMargin === null ? null : parseFloat(supplyMargin);
-    } else {
-      if (!name || !slug) return res.status(400).json({ error: "이름과 slug를 입력하세요." });
-      if (db.tenants.find((x) => x.slug === slug)) return res.status(409).json({ error: "이미 사용 중인 slug입니다." });
-      t = {
-        id: slug,
-        name: name || "새 대리점",
-        slug,
-        type: "agency",
-        parentId: ut.id,
-        brand: brand || name,
-        marginPercent: parseFloat(marginPercent) || 20,
-        supplyMargin: supplyMargin != null ? parseFloat(supplyMargin) : 50,
-        creditBalance: 0,
-        active: true,
-      };
-      db.tenants.push(t);
-    }
+    if (!t) return res.status(403).json({ error: "대리점 등록 권한이 없습니다." });
+    if (!isAgencyType(t) || t.parentId !== ut.id) return res.status(403).json({ error: "권한 없음" });
+    if (name != null) t.name = name;
+    if (slug != null) t.slug = slug;
+    if (brand != null) t.brand = brand;
+    if (marginPercent != null) t.marginPercent = parseFloat(marginPercent);
+    if (supplyMargin !== undefined) t.supplyMargin = supplyMargin === null ? null : parseFloat(supplyMargin);
   }
   saveDB();
   const out = tenantAdminDTO(t);

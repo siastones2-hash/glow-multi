@@ -415,6 +415,7 @@ function syncTenantFromUrl(){
 S.tenant = readTenantSlug() || CFG_MASTER;
 S.tenantInfo = null;
 const isOpsTenant=()=>S.tenant===CFG_PLATFORM_SLUG||S.tenant==='main'||S.tenantInfo?.roleType==='platform';
+const serviceTenantSlug=()=>isOpsTenant()?CFG_MASTER:(S.me?.tenant?.slug||S.tenant||CFG_MASTER);
 
 async function api(path, opts={}){
   let r;
@@ -523,13 +524,12 @@ async function init(){
     if(String(e.message||'').includes('서버에 연결')) showServerBanner('⚠️ '+e.message);
   }
   updateAuthHint();
-  const svcSlug=isOpsTenant()?CFG_MASTER:S.tenant;
-  try{ S.services=await api('/services?tenant='+svcSlug); }catch(e){ S.services=[]; }
+  try{ S.services=await api('/services?tenant='+serviceTenantSlug()); }catch(e){ S.services=[]; }
   if(!S.services||!S.services.length){ S.services=FALLBACK_SVC; }
   buildCalc(); buildCatalog();
   if(S.token){ try{ S.me=await api('/me'); }catch{ S.token=''; localStorage.removeItem('mt_token'); } }
   renderHeader();
-  if(S.me){ openDash(isSuper()?'adminhub':isMasterAdmin()?'adminhub':isAdmin()?'adminhub':'dashboard', isSuper()?'masters':isMasterAdmin()?'mysite':undefined); return; }
+  if(S.me){ openDash(isSuper()?'adminhub':isMasterAdmin()?'adminhub':isAdmin()?'adminhub':'dashboard', isSuper()?'sites':isMasterAdmin()?'agencies':undefined); return; }
   if(!S.me&&isOpsTenant()) openAuth('login');
   startServerWatch();
 }
@@ -699,8 +699,8 @@ async function submitAuth(retried=false){
     hide('authOv'); renderHeader(); toast('환영합니다, '+r.user.username+'님');
     const isMstAdm=r.user.role==='admin'&&r.user.tenant?.roleType==='master';
     const isAgAdm=r.user.role==='admin'&&r.user.tenant?.roleType==='agency';
-    if(r.user.role==='superadmin') openDash('adminhub','masters');
-    else if(isMstAdm) openDash('adminhub','mysite');
+    if(r.user.role==='superadmin') openDash('adminhub','sites');
+    else if(isMstAdm) openDash('adminhub','agencies');
     else if(isAgAdm||r.user.role==='admin') openDash('adminhub','admin');
     else openDash('dashboard');
   }catch(e){
@@ -784,7 +784,7 @@ async function tabDashboard(b){
   b.innerHTML=`
    <div class="welcome-banner card neon">
      <h2>안녕하세요, ${S.me.username}님</h2>
-     <p>${isAdmin()?'관리자 작업은 크레딧으로 처리됩니다. 부족하면 <b style="color:var(--cyan)">관리자 → 크레딧 요청</b>을 이용하세요.':isSuper()?'본사 사이트를 만들어 심어주면, 본사는 자기 사이트·대리점만 관리합니다.':'원하는 서비스를 선택하고 바로 주문하세요.'}</p>
+     <p>${isAdmin()?'관리자 작업은 크레딧으로 처리됩니다. 부족하면 <b style="color:var(--cyan)">관리자 → 크레딧 요청</b>을 이용하세요.':isSuper()?'대리점을 등록하면 본사가 수익률·크레딧·운영을 관리합니다.':'원하는 서비스를 선택하고 바로 주문하세요.'}</p>
      <div class="quick-btns">
        <button class="btn cyan sm" onclick="openDash('order')">주문하기</button>
        <button class="btn ghost sm" onclick="openDash('orders')">주문내역</button>
@@ -810,11 +810,11 @@ function tabProfile(b){
 }
 async function tabAdminHub(b, sub){
   const tabs=[];
-  if(isSuper()) tabs.push(['masters','본사 사이트'],['settings','슈퍼시아 설정']);
+  if(isSuper()) tabs.push(['sites','대리점 등록'],['settings','슈퍼시아 설정']);
   tabs.push(['admin','개요'],['aorders','주문'],['members','회원'],['topups','충전승인'],['creditreq','크레딧요청'],['svc','서비스관리']);
   if (isAgencyAdmin()) tabs.push(['mymargin','내 수익률']);
   if(isMasterAdmin()) tabs.push(['mysite','내 사이트'],['agencies','대리점']);
-  const cur=sub||(isSuper()?'masters':'admin');
+  const cur=sub||(isSuper()?'sites':isMasterAdmin()?'agencies':'admin');
   b.innerHTML=`<div class="sec-head"><h2>${isSuper()?'슈퍼시아':'관리자'}</h2><span class="tag">${isSuper()?'SUPERSIA':isMasterAdmin()?'본사':'대리점'}</span></div>
     <div class="admin-subtabs" id="adminSub">${tabs.map(([k,l])=>`<button class="${k===cur?'on':''}" data-sub="${k}">${l}</button>`).join('')}</div>
     <div id="adminSubBody"></div>`;
@@ -829,8 +829,7 @@ async function tabAdminHub(b, sub){
   if(cur==='mymargin') return tabMyMargin(sb);
   if(cur==='mysite') return tabMySite(sb);
   if(cur==='agencies') return tabAgencies(sb);
-  if(cur==='masters') return tabMasters(sb);
-  if(cur==='master') return tabMasters(sb);
+  if(cur==='sites'||cur==='masters'||cur==='master') return tabSuperSites(sb);
   if(cur==='settings') return tabSettings(sb);
 }
 async function tabCreditReq(b){
@@ -858,7 +857,7 @@ async function tabCreditReq(b){
 // user tabs
 async function tabOrder(b){
   try{
-    const svcSlug=isOpsTenant()?CFG_MASTER:(S.tenant||CFG_MASTER);
+    const svcSlug=serviceTenantSlug();
     const fresh=await api('/services?tenant='+encodeURIComponent(svcSlug));
     if(fresh?.length) S.services=fresh;
   }catch{}
@@ -1056,7 +1055,7 @@ async function tabSvc(b){
    ${isSuper()?'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn cyan sm" id="saveSvc">마진 저장</button></div>':''}</div>`;
   $$('#svcCat button').forEach(btn=>btn.onclick=()=>{ S.svcCat=btn.dataset.c; tabSvc(b); });
   if(isSuper()){
-    $('#saveSvc').onclick=async()=>{ try{ for(const x of s){ const mm=$('#mm'+x.service).value, pm=$('#pm'+x.service).value; const body={}; body.mainMargin = mm===''?null:+mm; body.customMargin = pm===''?null:+pm; await api('/admin/service/'+x.service,{method:'POST',body:JSON.stringify(body)}); } toast('마진 저장 완료'); S.services=await api('/services?tenant='+S.tenant); tabSvc(b); }catch(e){toast(e.message,1);} };
+    $('#saveSvc').onclick=async()=>{ try{ for(const x of s){ const mm=$('#mm'+x.service).value, pm=$('#pm'+x.service).value; const body={}; body.mainMargin = mm===''?null:+mm; body.customMargin = pm===''?null:+pm; await api('/admin/service/'+x.service,{method:'POST',body:JSON.stringify(body)}); } toast('마진 저장 완료'); S.services=await api('/services?tenant='+serviceTenantSlug()); tabSvc(b); }catch(e){toast(e.message,1);} };
     $$('[data-hide]',b).forEach(ch=>ch.onchange=async()=>{ try{ await api('/admin/service/'+ch.dataset.hide,{method:'POST',body:JSON.stringify({hidden:!ch.checked})}); toast(ch.checked?'판매 시작':'판매 중지'); }catch(e){toast(e.message,1); ch.checked=!ch.checked;} });
   }
 }
@@ -1073,7 +1072,7 @@ async function tabMySite(b){
        <div><div style="font-size:11px;color:var(--muted)">공급 크레딧</div><div class="mono go" style="font-size:20px">${fmt(t.creditBalance??0)}</div></div>
        <div><div style="font-size:11px;color:var(--muted)">손님 판매 마진</div><div class="mono" style="font-size:20px">${t.marginPercent??0}%</div></div>
      </div>
-     <p class="sub" style="color:var(--muted);font-size:12px;margin:0">이 주소를 대리점·손님에게 공유하세요. 대리점은 <b style="color:var(--cyan)">관리자 → 대리점</b>에서 만드세요.</p>
+     <p class="sub" style="color:var(--muted);font-size:12px;margin:0">본사 직판 주소입니다. 대리점은 <b style="color:var(--cyan)">관리자 → 대리점</b>에서 수익률·크레딧·운영을 관리하세요.</p>
    </div>
    <div class="card neon" style="max-width:560px">
      <div class="sec-head"><h2 style="font-size:17px">손님 판매 마진</h2></div>
@@ -1096,7 +1095,7 @@ async function tabMyMargin(b){
 async function tabSettings(b){
   const s=await api('/admin/settings');
   b.innerHTML=`<div class="sec-head"><h2>슈퍼시아 설정</h2><span class="tag">슈퍼시아</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">전체 공급·환율 설정입니다. 본사별 크레딧·계정은 <b style="color:var(--cyan)">본사 사이트</b> 탭에서 관리하세요.</p>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">전체 공급·환율 설정입니다. 대리점 등록·관리자 계정은 <b style="color:var(--cyan)">대리점 등록</b> 탭에서 하세요.</p>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
     <div class="card neon">
       <div style="color:var(--muted);font-size:13px;margin-bottom:10px">환율 · 1 USD</div>
@@ -1130,77 +1129,89 @@ async function tabSettings(b){
   };
   $('#exploreBtn').onclick=doExplore;
   $('#setKo').onchange=e=>{ e.target.parentNode.lastChild.textContent=' '+(e.target.checked?'켜짐':'꺼짐'); };
-  $('#saveSet').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({fx:+$('#setFx').value,platformMargin:+$('#setMargin').value,koreaOnly:$('#setKo').checked,koreaKeywords:$('#setKw').value})}); toast('저장 완료 — 가격·상품 즉시 반영'); S.services=await api('/services?tenant='+S.tenant); }catch(e){toast(e.message,1);} };
+  $('#saveSet').onclick=async()=>{ try{ await api('/admin/settings',{method:'POST',body:JSON.stringify({fx:+$('#setFx').value,platformMargin:+$('#setMargin').value,koreaOnly:$('#setKo').checked,koreaKeywords:$('#setKw').value})}); toast('저장 완료 — 가격·상품 즉시 반영'); S.services=await api('/services?tenant='+serviceTenantSlug()); }catch(e){toast(e.message,1);} };
 }
-async function tabMasters(b){
+async function tabSuperSites(b){
   const all=await api('/admin/tenants');
-  const masters=all.filter(x=>x.type==='master');
+  const master=all.find(x=>x.type==='master');
   const agencies=all.filter(x=>x.type==='agency'||x.type==='partner');
-  const flash=S.masterCreateFlash;
-  S.masterCreateFlash=null;
+  const flash=S.siteCreateFlash;
+  S.siteCreateFlash=null;
   b.innerHTML=`${flash?`<div class="card neon" style="margin-bottom:14px;border-color:var(--cyan);background:rgba(0,240,255,.08)">
-     <b style="color:var(--cyan)">✓ 본사 사이트 생성 완료</b><br><br>
-     <span style="color:var(--muted);font-size:12px">본사 접속 주소</span><br>
+     <b style="color:var(--cyan)">✓ 대리점 등록 완료</b><br><br>
+     <span style="color:var(--muted);font-size:12px">대리점 접속 주소</span><br>
      <span class="mono" style="font-size:13px;word-break:break-all">${flash.loginUrl}</span><br><br>
-     <span style="color:var(--muted);font-size:12px">본사 관리자</span> <b>${flash.au}</b><br>
-     <span style="font-size:12px;color:var(--muted)">본사는 위 주소 로그인 → 관리자 메뉴에서 대리점·회원·주문을 관리합니다.</span>
-   </div>`:''}<div class="sec-head"><h2>본사 사이트</h2><span class="tag">슈퍼시아</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">본사에게 <b style="color:var(--gold)">독립 사이트</b>를 만들어 심어주세요. 본사는 자기 <code>/?tenant=slug</code> 주소에서 대리점을 직접 개설합니다. 상위·원가 정보는 본사에게 보이지 않습니다.</p>
+     <span style="color:var(--muted);font-size:12px">대리점 관리자</span> <b>${flash.au}</b><br>
+     <span style="font-size:12px;color:var(--muted)">본사는 관리자 → 대리점에서 수익률·크레딧·운영을 관리합니다.</span>
+   </div>`:''}<div class="sec-head"><h2>대리점 등록</h2><span class="tag">슈퍼시아</span></div>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">슈퍼시아가 대리점을 <b style="color:var(--gold)">등록</b>하면, 본사는 수익률·크레딧·회원·주문만 <b>관리</b>합니다. (본사는 대리점을 직접 만들 수 없음)</p>
+   ${master?`<div class="card neon" style="margin-bottom:16px">
+     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+       <div><div style="font-weight:700;font-size:18px">본사 (${master.name})</div>
+       <div class="mono" style="font-size:12px;color:var(--cyan);margin-top:4px">/?tenant=${master.slug}</div></div>
+       <div style="text-align:right"><div style="font-size:11px;color:var(--muted)">공급 크레딧</div><div class="mono go" style="font-size:18px">${fmt(master.creditBalance)}</div></div>
+     </div>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+       <div class="field" style="margin:0"><label>본사 직판 마진 (%)</label><input class="inp mono" id="mm${master.id}" value="${master.marginPercent??20}"/></div>
+       <div class="field" style="margin:0"><label>대리점 기본 공급 (%)</label><input class="inp mono" id="dm${master.id}" value="${master.defaultAgencySupply??50}"/></div>
+     </div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap">
+       <button class="btn cyan sm" data-msave="${master.id}">본사 설정 저장</button>
+       <input class="inp mono" style="width:110px;padding:7px" id="mc${master.id}" placeholder="크레딧 ±원"/><button class="btn ghost sm" data-mcr="${master.id}">본사 크레딧</button>
+     </div>
+   </div>`:''}
    <div style="display:grid;gap:14px">
-   ${masters.length?masters.map(m=>{
-     const kids=agencies.filter(a=>a.parentId===m.id);
-     return `<div class="card neon">
-       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-         <div><div style="font-weight:700;font-size:18px">${m.name}</div>
-         <div class="mono" style="font-size:12px;color:var(--cyan);margin-top:4px">본사 접속: /?tenant=${m.slug}</div></div>
-         <div style="text-align:right"><div style="font-size:11px;color:var(--muted)">공급 크레딧</div><div class="mono go" style="font-size:18px">${fmt(m.creditBalance)}</div></div>
-       </div>
-       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-         <div class="field" style="margin:0"><label>본사 직판 마진 (%)</label><input class="inp mono" id="mm${m.id}" value="${m.marginPercent??20}"/></div>
-         <div class="field" style="margin:0"><label>대리점 기본 공급 (%)</label><input class="inp mono" id="dm${m.id}" value="${m.defaultAgencySupply??50}"/></div>
-       </div>
-       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-         <button class="btn cyan sm" data-msave="${m.id}">설정 저장</button>
-         <input class="inp mono" style="width:110px;padding:7px" id="mc${m.id}" placeholder="크레딧 ±원"/><button class="btn ghost sm" data-mcr="${m.id}">크레딧 충전</button>
-       </div>
-       <div style="padding:12px 0;border-top:1px solid var(--line);margin-bottom:10px">
-         <div style="font-size:12px;color:var(--muted);margin-bottom:8px">본사 관리자: ${m.admins?.length?'<b style="color:#fff">'+m.admins.join(', ')+'</b>':'<span style="color:var(--magenta)">아직 없음 — 아래에서 발급</span>'}</div>
-         <div style="display:flex;gap:6px;flex-wrap:wrap"><input class="inp" style="width:120px;padding:7px" id="mau${m.id}" placeholder="아이디"/><input class="inp" style="width:120px;padding:7px" id="map${m.id}" placeholder="비밀번호"/><button class="btn ghost sm" data-macc="${m.id}">본사 계정 발급</button></div>
-       </div>
-       <div style="font-size:12px;color:var(--muted);margin-bottom:6px">소속 대리점 ${kids.length}곳</div>
-       ${kids.length?`<table class="tbl"><thead><tr><th>이름</th><th>주소</th><th>크레딧</th></tr></thead>
-       <tbody>${kids.map(x=>`<tr><td>${x.name}</td><td class="mono">/?tenant=${x.slug}</td><td class="mono">${fmt(x.creditBalance)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:12px">아직 대리점 없음 (본사가 직접 개설)</div>'}
-     </div>`; }).join(''):'<div class="empty">아직 본사 사이트가 없습니다. 아래에서 첫 본사를 만드세요.</div>'}
+   ${agencies.length?agencies.map(x=>`<div class="card neon">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div><div style="font-weight:700;font-size:17px">${x.name}</div><div class="mono" style="font-size:12px;color:var(--cyan)">/?tenant=${x.slug}</div></div>
+        <div style="text-align:right"><div style="font-size:11px;color:var(--muted)">공급 크레딧</div><div class="mono go" style="font-size:16px">${fmt(x.creditBalance)}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="field" style="margin:0"><label>본사→대리점 (+%)</label><input class="inp mono" id="sm${x.id}" value="${x.supplyMargin??''}" placeholder="기본"/></div>
+        <div class="field" style="margin:0"><label>대리점→손님 (+%)</label><input class="inp mono" id="tm${x.id}" value="${x.marginPercent}"/></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn cyan sm" data-save="${x.id}">수익률 저장</button>
+        <input class="inp mono" style="width:110px;padding:7px" id="tc${x.id}" placeholder="크레딧 ±원"/><button class="btn ghost sm" data-tc="${x.id}">크레딧 충전</button>
+      </div>
+      <div style="padding-top:12px;border-top:1px solid var(--line)">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">관리자: ${x.admins?.length?'<b style="color:#fff">'+x.admins.join(', ')+'</b>':'<span style="color:var(--magenta)">없음</span>'}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><input class="inp" style="width:120px;padding:7px" id="au${x.id}" placeholder="아이디"/><input class="inp" style="width:120px;padding:7px" id="ap${x.id}" placeholder="비밀번호"/><button class="btn ghost sm" data-acc="${x.id}">관리자 발급</button></div>
+      </div>
+   </div>`).join(''):'<div class="empty">등록된 대리점이 없습니다. 아래에서 첫 대리점을 등록하세요.</div>'}
    </div>
    <div class="card neon" style="margin-top:16px;border:1px dashed var(--gold)">
-     <div class="sec-head"><h2 style="font-size:16px">＋ 새 본사 사이트 만들기</h2></div>
+     <div class="sec-head"><h2 style="font-size:16px">＋ 새 대리점 등록</h2></div>
      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="field" style="margin:0"><label>본사 이름</label><input class="inp" id="nmName" placeholder="OO 본사"/></div>
-      <div class="field" style="margin:0"><label>주소(slug)</label><input class="inp" id="nmSlug" placeholder="partner1"/></div>
-      <div class="field" style="margin:0"><label>직판 마진 (%)</label><input class="inp mono" id="nmMargin" value="20"/></div>
-      <div class="field" style="margin:0"><label>대리점 기본 공급 (%)</label><input class="inp mono" id="nmSupply" value="50"/></div>
-      <div class="field" style="margin:0"><label>본사 관리자 아이디 <span style="color:var(--magenta)">*</span></label><input class="inp" id="nmAdminU" placeholder="본사 로그인" required/></div>
-      <div class="field" style="margin:0"><label>본사 관리자 비번 <span style="color:var(--magenta)">*</span></label><input class="inp" id="nmAdminP" required/></div>
+      <div class="field" style="margin:0"><label>대리점 이름</label><input class="inp" id="nName" placeholder="나인스토리"/></div>
+      <div class="field" style="margin:0"><label>주소(slug)</label><input class="inp" id="nSlug" placeholder="nine"/></div>
+      <div class="field" style="margin:0"><label>본사→대리점 (+%)</label><input class="inp mono" id="nSupply" value="50"/></div>
+      <div class="field" style="margin:0"><label>대리점→손님 (+%)</label><input class="inp mono" id="nMargin" value="20"/></div>
+      <div class="field" style="margin:0"><label>관리자 아이디 <span style="color:var(--magenta)">*</span></label><input class="inp" id="nAdminU" placeholder="대리점 로그인" required/></div>
+      <div class="field" style="margin:0"><label>관리자 비번 <span style="color:var(--magenta)">*</span></label><input class="inp" id="nAdminP" required/></div>
      </div>
-     <button class="btn" id="addMaster" style="margin-top:12px;width:100%">본사 사이트 생성</button>
+     <button class="btn" id="addSite" style="margin-top:12px;width:100%">대리점 등록</button>
    </div>`;
-  $$('[data-msave]',b).forEach(btn=>btn.onclick=async()=>{ const id=btn.dataset.msave; try{ await api('/admin/tenant',{method:'POST',body:JSON.stringify({id,marginPercent:+$('#mm'+id).value,supplyMargin:+$('#dm'+id).value})}); toast('저장 완료'); tabMasters(b);}catch(e){toast(e.message,1);} });
-  $$('[data-mcr]',b).forEach(btn=>btn.onclick=async()=>{ const id=btn.dataset.mcr; const v=$('#mc'+id).value; if(!v){toast('금액',1);return;} try{ await api('/admin/tenant/'+id+'/credit',{method:'POST',body:JSON.stringify({delta:+v})}); toast('크레딧 반영'); tabMasters(b);}catch(e){toast(e.message,1);} });
-  $$('[data-macc]',b).forEach(btn=>btn.onclick=async()=>{ const id=btn.dataset.macc; const u=$('#mau'+id).value,p=$('#map'+id).value; if(!u||!p){toast('아이디/비번',1);return;} try{ await api('/admin/tenant/'+id+'/admin',{method:'POST',body:JSON.stringify({username:u,password:p})}); toast('본사 계정 발급 완료'); tabMasters(b);}catch(e){toast(e.message,1);} });
-  $('#addMaster').onclick=async()=>{
-    const au=$('#nmAdminU').value.trim(), ap=$('#nmAdminP').value;
-    if(!$('#nmName').value.trim()||!$('#nmSlug').value.trim()){ toast('본사 이름·주소(slug)를 입력하세요.',1); return; }
-    if(!au||!ap){ toast('본사 관리자 아이디/비번은 필수입니다.',1); return; }
+  if(master){
+    $$('[data-msave]',b).forEach(btn=>btn.onclick=async()=>{ const id=btn.dataset.msave; try{ await api('/admin/tenant',{method:'POST',body:JSON.stringify({id,marginPercent:+$('#mm'+id).value,supplyMargin:+$('#dm'+id).value})}); toast('본사 설정 저장'); tabSuperSites(b);}catch(e){toast(e.message,1);} });
+    $$('[data-mcr]',b).forEach(btn=>btn.onclick=async()=>{ const id=btn.dataset.mcr; const v=$('#mc'+id).value; if(!v){toast('금액',1);return;} try{ await api('/admin/tenant/'+id+'/credit',{method:'POST',body:JSON.stringify({delta:+v})}); toast('크레딧 반영'); tabSuperSites(b);}catch(e){toast(e.message,1);} });
+  }
+  $$('[data-save]',b).forEach(btn=>btn.onclick=async()=>{ const id=btn.dataset.save; try{ const sv=$('#sm'+id).value; await api('/admin/tenant',{method:'POST',body:JSON.stringify({id,marginPercent:+$('#tm'+id).value,supplyMargin:sv===''?null:+sv})}); toast('수익률 저장'); tabSuperSites(b);}catch(e){toast(e.message,1);} });
+  $$('[data-tc]',b).forEach(btn=>btn.onclick=async()=>{ const v=$('#tc'+btn.dataset.tc).value; if(!v){toast('금액',1);return;} try{ await api('/admin/tenant/'+btn.dataset.tc+'/credit',{method:'POST',body:JSON.stringify({delta:+v})}); toast('크레딧 반영'); tabSuperSites(b);}catch(e){toast(e.message,1);} });
+  $$('[data-acc]',b).forEach(btn=>btn.onclick=async()=>{ const u=$('#au'+btn.dataset.acc).value,p=$('#ap'+btn.dataset.acc).value; if(!u||!p){toast('아이디/비번',1);return;} try{ await api('/admin/tenant/'+btn.dataset.acc+'/admin',{method:'POST',body:JSON.stringify({username:u,password:p})}); toast('관리자 발급'); tabSuperSites(b);}catch(e){toast(e.message,1);} });
+  $('#addSite').onclick=async()=>{
+    const au=$('#nAdminU').value.trim(), ap=$('#nAdminP').value;
+    if(!$('#nName').value.trim()||!$('#nSlug').value.trim()){ toast('대리점 이름·slug를 입력하세요.',1); return; }
+    if(!au||!ap){ toast('관리자 아이디/비번은 필수입니다.',1); return; }
     try{
       const r=await api('/admin/tenant',{method:'POST',body:JSON.stringify({
-        name:$('#nmName').value,slug:$('#nmSlug').value,marginPercent:+$('#nmMargin').value,supplyMargin:+$('#nmSupply').value,
+        name:$('#nName').value,slug:$('#nSlug').value,marginPercent:+$('#nMargin').value,
+        supplyMargin:$('#nSupply').value===''?null:+$('#nSupply').value,
         adminUsername:au,adminPassword:ap
       })});
-      const slug=r.tenant?.slug||$('#nmSlug').value;
-      const loginUrl=location.origin+'/?tenant='+encodeURIComponent(slug);
-      S.masterCreateFlash={loginUrl,au};
-      toast('본사 사이트 생성 완료');
-      tabMasters(b);
+      S.siteCreateFlash={loginUrl:location.origin+'/?tenant='+encodeURIComponent(r.tenant?.slug||$('#nSlug').value),au};
+      toast('대리점 등록 완료');
+      tabSuperSites(b);
     }catch(e){toast(e.message,1);}
   };
 }
@@ -1208,7 +1219,7 @@ async function tabAgencies(b){
   const t=await api('/admin/tenants');
   const ps=t.filter(x=>x.type==='agency'||x.type==='partner');
   b.innerHTML=`<div class="sec-head"><h2>대리점 관리</h2><span class="tag">본사</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">내 사이트(<span class="mono">/?tenant=${S.me.tenant?.slug||S.tenant}</span>) 아래 대리점을 운영합니다. 상위·원가 정보는 보이지 않습니다.</p>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">본사 소속 대리점입니다. <b>수익률·크레딧·관리자 계정</b>과 주문·회원 운영을 관리하세요.</p>
    <div style="display:grid;gap:14px">
    ${ps.length?ps.map(x=>`<div class="card neon">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
@@ -1225,26 +1236,13 @@ async function tabAgencies(b){
       </div>
       <div style="padding-top:12px;border-top:1px solid var(--line)">
         <div style="font-size:12px;color:var(--muted);margin-bottom:8px">관리자 계정: ${x.admins&&x.admins.length?'<b style="color:#fff">'+x.admins.join(', ')+'</b>':'<span style="color:var(--magenta)">아직 없음</span>'}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><input class="inp" style="width:120px;padding:7px" id="au${x.id}" placeholder="아이디"/><input class="inp" style="width:120px;padding:7px" id="ap${x.id}" placeholder="비밀번호"/><button class="btn ghost sm" data-acc="${x.id}">계정 발급</button></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><input class="inp" style="width:120px;padding:7px" id="au${x.id}" placeholder="아이디"/><input class="inp" style="width:120px;padding:7px" id="ap${x.id}" placeholder="비밀번호"/><button class="btn ghost sm" data-acc="${x.id}">계정 재발급</button></div>
       </div>
-   </div>`).join(''):'<div class="empty">아직 만든 대리점이 없어요. 아래에서 첫 대리점을 만들어보세요.</div>'}
-   </div>
-   <div class="card neon" style="margin-top:16px;border:1px dashed var(--line)">
-     <div class="sec-head"><h2 style="font-size:16px">＋ 새 대리점 만들기</h2></div>
-     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="field" style="margin:0"><label>대리점 이름</label><input class="inp" id="nName" placeholder="나인스토리"/></div>
-      <div class="field" style="margin:0"><label>주소(slug)</label><input class="inp" id="nSlug" placeholder="nine"/></div>
-      <div class="field" style="margin:0"><label>내가 대리점에게 (+%)</label><input class="inp mono" id="nSupply" value="50"/></div>
-      <div class="field" style="margin:0"><label>대리점이 손님에게 (+%)</label><input class="inp mono" id="nMargin" value="20"/></div>
-      <div class="field" style="margin:0"><label>관리자 아이디</label><input class="inp" id="nAdminU" placeholder="대리점 로그인"/></div>
-      <div class="field" style="margin:0"><label>관리자 비번</label><input class="inp" id="nAdminP"/></div>
-     </div>
-     <button class="btn" id="addTen" style="margin-top:12px;width:100%">대리점 생성</button>
+   </div>`).join(''):'<div class="empty">등록된 대리점이 없습니다.</div>'}
    </div>`;
   $$('[data-save]',b).forEach(btn=>btn.onclick=async()=>{ const id=btn.dataset.save; try{ const sv=$('#sm'+id).value; await api('/admin/tenant',{method:'POST',body:JSON.stringify({id,marginPercent:+$('#tm'+id).value,supplyMargin:sv===''?null:+sv})}); toast('저장 완료 — 가격 즉시 반영'); }catch(e){toast(e.message,1);} });
   $$('[data-tc]',b).forEach(btn=>btn.onclick=async()=>{ const v=$('#tc'+btn.dataset.tc).value; if(!v){toast('금액을 입력하세요.',1);return;} try{ await api('/admin/tenant/'+btn.dataset.tc+'/credit',{method:'POST',body:JSON.stringify({delta:+v})}); toast('크레딧 반영 완료'); tabAgencies(b);}catch(e){toast(e.message,1);} });
   $$('[data-acc]',b).forEach(btn=>btn.onclick=async()=>{ const u=$('#au'+btn.dataset.acc).value,p=$('#ap'+btn.dataset.acc).value; if(!u||!p){toast('아이디/비번을 입력하세요.',1);return;} try{ await api('/admin/tenant/'+btn.dataset.acc+'/admin',{method:'POST',body:JSON.stringify({username:u,password:p})}); toast('관리자 계정 발급 완료'); tabAgencies(b);}catch(e){toast(e.message,1);} });
-  $('#addTen').onclick=async()=>{ try{ const r=await api('/admin/tenant',{method:'POST',body:JSON.stringify({name:$('#nName').value,slug:$('#nSlug').value,marginPercent:+$('#nMargin').value,supplyMargin:$('#nSupply').value===''?null:+$('#nSupply').value})}); const au=$('#nAdminU').value,ap=$('#nAdminP').value; if(au&&ap&&r.tenant){ await api('/admin/tenant/'+r.tenant.id+'/admin',{method:'POST',body:JSON.stringify({username:au,password:ap})}); } toast('대리점 생성 완료'); tabAgencies(b);}catch(e){toast(e.message,1);} };
 }
 
 init();
