@@ -859,7 +859,7 @@ async function init(){
     showServerBanner('⚠️ 서버가 꺼져 있습니다. <b>실행_Mac.command</b> 또는 <b>서버-항상켜기.command</b> 실행 후 새로고침');
   } else hideServerBanner();
   try{ S.providerConfig=await api('/config'); S.publicBase=S.providerConfig.publicBase||null; if(S.providerConfig.servicesRev!=null) S.servicesRev=S.providerConfig.servicesRev; applyProviderBanner(S.providerConfig); }catch{}
-  try{ const t=await api('/tenant/'+S.tenant); S.tenantInfo=t; applyBrand(t); }catch(e){
+  try{ const tenantInfo=await api('/tenant/'+S.tenant); S.tenantInfo=tenantInfo; applyBrand(tenantInfo); }catch(e){
     if(String(e.message||'').includes('서버에 연결')) showServerBanner('⚠️ '+e.message);
   }
   updateAuthHint();
