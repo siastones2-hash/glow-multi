@@ -17,7 +17,7 @@ while true; do
   npx --yes cloudflared tunnel --url "http://127.0.0.1:${PORT}" 2>&1 | while IFS= read -r line; do
     echo "$line" >>"$LOG"
     if [[ "$line" =~ (https://[a-z0-9-]+\.trycloudflare\.com) ]]; then
-      echo -n "${BASH_REMATCH[1]}" >"$URL_FILE"
+      printf '%s' "${BASH_REMATCH[1]}" >"$URL_FILE"
     fi
   done
   echo "[$(date '+%F %T')] tunnel exit — 5s 후 재시작" >>"$LOG"

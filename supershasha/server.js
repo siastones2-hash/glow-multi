@@ -787,13 +787,16 @@ async function tenantServices(tenant, isAdmin, viewer, lang = "ko") {
         rate: p.sell,
       };
       if (isAdmin) {
-        if (isAgencyType(tenant) || isMasterType(tenant)) row.supply = p.supply;
+        // 슈퍼샤샤: MoreThan 원가·본사공급가 전체 노출
         if (superView) {
           row.base = p.base;
           row.masterSupply = p.masterSupply;
+          row.supply = p.supply;
         } else if (masterView && isMasterType(tenant)) {
+          // 본사: 슈퍼샤샤에서 받은 공급가만 (대리점에는 비공개)
           row.supply = p.supply;
         }
+        // 대리점 관리자·일반 회원: 판매가(rate)만 — upstream 공급가 미포함
       }
       return row;
     });
@@ -1785,20 +1788,17 @@ app.get("/api/admin/site-links", auth, adminOnly, (req, res) => {
   if (req.user.role === "superadmin") {
     const plat = platformTenant();
     const mst = masterTenant();
+    // 슈퍼샤샤 URL은 플랫폼 관리자만 — 본사·대리점 공유 목록에 포함하지 않음
     if (plat) links.push(siteLinkDTO(plat, "platform"));
     if (mst) links.push(siteLinkDTO(mst, "master"));
     if (mst) for (const a of agenciesOfMaster(mst.id)) links.push(siteLinkDTO(a, "agency"));
   } else if (isMasterAdmin(req.user)) {
     if (ut) links.push(siteLinkDTO(ut, "master"));
-    const plat = platformTenant();
-    if (plat) links.push(siteLinkDTO(plat, "platform"));
     for (const a of agenciesOfMaster(ut.id)) links.push(siteLinkDTO(a, "agency"));
   } else {
     if (ut) links.push(siteLinkDTO(ut, "agency"));
     const mst = parentMaster(ut);
     if (mst) links.push(siteLinkDTO(mst, "master"));
-    const plat = platformTenant();
-    if (plat) links.push(siteLinkDTO(plat, "platform"));
   }
   res.json({ links: links.filter(Boolean), publicBase: getPublicBaseUrl() });
 });
@@ -2014,7 +2014,10 @@ async function bootstrapTelegram() {
   }
 }
 
-process.on("uncaughtException", (err) => console.error("uncaughtException:", err));
+process.on("uncaughtException", (err) => {
+  console.error("uncaughtException:", err);
+  if (err?.code === "EADDRINUSE") process.exit(1);
+});
 process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err));
 process.on("SIGTERM", () => {
   console.log("SIGTERM — graceful shutdown");
@@ -2025,8 +2028,12 @@ process.on("SIGINT", () => {
   saveDB();
   process.exit(0);
 });
-app.listen(CFG.port, "0.0.0.0", () => {
+const httpServer = app.listen(CFG.port, "0.0.0.0", () => {
   console.log(`리스톤즈 server on :${CFG.port} ${DEMO ? "(preview)" : "(live)"}`);
   getServices().catch((e) => console.warn("⚠ 상품 캐시 예열 실패:", e.message));
   bootstrapTelegram().catch((e) => console.warn("⚠ 텔레그램 부트스트랩:", e.message));
+});
+httpServer.on("error", (err) => {
+  console.error("listen error:", err.message);
+  process.exit(1);
 });

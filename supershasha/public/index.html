@@ -384,6 +384,26 @@ const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const fmt = n => (Math.round((+n||0)*100)/100).toLocaleString(undefined,{maximumFractionDigits:2});
 const S = { token:localStorage.getItem('mt_token')||'', me:null, tenant:'main', services:[], selSvc:null, catFilter:'전체', panelSvc:null, adminSub:'admin', orderSearch:'', lang:localStorage.getItem('ss_lang')||'ko', curTab:'dashboard' };
+const TOKEN_TENANT_KEY='mt_token_tenant';
+function clearAuthSession(){
+  S.token=''; S.me=null;
+  localStorage.removeItem('mt_token');
+  localStorage.removeItem(TOKEN_TENANT_KEY);
+}
+function saveAuthSession(token, user){
+  S.token=token;
+  localStorage.setItem('mt_token', token);
+  const slug=user?.tenant?.slug||(user?.role==='superadmin'?CFG_PLATFORM_SLUG:(S.tenant||CFG_MASTER));
+  localStorage.setItem(TOKEN_TENANT_KEY, slug);
+}
+function authMatchesTenant(){
+  if(!S.token) return true;
+  const saved=localStorage.getItem(TOKEN_TENANT_KEY);
+  syncTenantFromUrl();
+  if(!saved) return true;
+  if(saved===CFG_PLATFORM_SLUG||saved==='main') return isOpsTenant();
+  return saved===(S.tenant||CFG_MASTER);
+}
 const I18N={
   ko:{all:'전체',balance:'잔액',won:'원',login:'로그인',logout:'로그아웃',dash:'대시보드',heroTitle:'소셜의 속도를',heroEm:'네온처럼 켜다',heroSub:'인스타·틱톡·유튜브 성장을 한 곳에서. 글로벌 공급망과 실시간 자동 처리로, 주문 즉시 시작됩니다.',guestCta:'로그인하면 대시보드 · 서비스주문 · 관리자 메뉴를 이용할 수 있습니다.',loginReg:'로그인 / 회원가입',calcTitle:'⚡ 실시간 가격 계산기',calcSub:'원하는 상품와 수량을 골라보세요',platform:'플랫폼',product:'상품',qty:'수량',estPay:'예상 결제 금액',orderBtn:'주문하기 →',catalog:'인기 상품',per1k:'1,000개당',minMax:'최소/최대',selectOrder:'선택 · 주문',noProducts:'표시할 상품가 없습니다.',orderTitle:'서비스 주문',orderGuide:'플랫폼·종류 필터 → 상품 클릭 → 우측 설명·수량·주문',searchPh:'🔍 상품명·설명 검색…',products:'개 상품',pickLeft:'← 왼쪽에서 상품을 클릭하세요',linkUrl:'링크 (URL)',linkPh:'https://…',quantity:'수량',min:'최소',max:'최대',unitPrice:'단가',estCheckout:'예상 결제',myBalance:'내 잔액',submitOrder:'주문하기',noMatch:'조건에 맞는 상품 없음 — 필터를 바꿔 보세요',per1kRate:'/1K',qtyRange:(a,b)=>`수량은 ${a} ~ ${b} 사이여야 합니다.`,needLink:'링크를 입력하세요.',kinds:{all:'전체',followers:'팔로워·구독',likes:'좋아요·반응',views:'조회·노출',comments:'댓글·참여',live:'라이브',general:'기타'},nav:{dashboard:'대시보드',order:'서비스 주문',orders:'주문 내역',topup:'잔액 충전',profile:'내 정보',admin:'관리자'}},
   zh:{all:'全部',balance:'余额',won:'韩元',login:'登录',logout:'退出',dash:'控制台',heroTitle:'点亮社交增长',heroEm:'如霓虹般迅捷',heroSub:'Instagram·TikTok·YouTube 一站下单。全球供应链，自动处理，下单即开始。',guestCta:'登录后可使用控制台、下单与管理功能。',loginReg:'登录 / 注册',calcTitle:'⚡ 实时价格计算器',calcSub:'选择商品与数量',platform:'平台',product:'商品',qty:'数量',estPay:'预计支付',orderBtn:'下单 →',catalog:'热门商品',per1k:'每1000',minMax:'最小/最大',selectOrder:'选择 · 下单',noProducts:'暂无商品',orderTitle:'服务下单',orderGuide:'筛选平台/类型 → 点击商品 → 右侧填写链接与数量',searchPh:'🔍 搜索商品名/说明…',products:'个商品',pickLeft:'← 请从左侧选择商品',linkUrl:'链接 (URL)',linkPh:'https://…',quantity:'数量',min:'最小',max:'最大',unitPrice:'单价',estCheckout:'预计支付',myBalance:'我的余额',submitOrder:'下单',noMatch:'无匹配商品 — 请更换筛选',per1kRate:'/1K',qtyRange:(a,b)=>`数量须在 ${a} ~ ${b} 之间。`,needLink:'请输入链接。',kinds:{all:'全部',followers:'粉丝/订阅',likes:'点赞',views:'播放/曝光',comments:'评论',live:'直播',general:'其他'},nav:{dashboard:'控制台',order:'服务下单',orders:'订单记录',topup:'充值',profile:'我的信息',admin:'管理'}},
@@ -611,14 +631,22 @@ async function pingServer(){
   }catch{ return false; }
 }
 let srvWatch=null;
+let srvFailStreak=0;
 function startServerWatch(){
   if(location.protocol==='file:'||srvWatch) return;
   srvWatch=setInterval(async()=>{
     const ok=await pingServer();
-    const b=$('#srvBanner');
-    if(ok&&b){ hideServerBanner(); toast('서버 연결됨'); }
-    else if(!ok&&!b) showServerBanner('⚠️ 서버 연결 끊김 — 자동 재연결 중… <b>실행_Mac.command</b> 실행 또는 새로고침');
-  },12000);
+    if(ok){
+      if(srvFailStreak>=2) toast('서버 연결됨');
+      srvFailStreak=0;
+      hideServerBanner();
+      return;
+    }
+    srvFailStreak++;
+    if(srvFailStreak>=2 && !$('#srvBanner')){
+      showServerBanner('⚠️ 서버 재연결 중… 잠시 후 자동 복구됩니다. (Mac 상시운영 또는 <b>Render</b> 사용 권장)');
+    }
+  },8000);
 }
 function toast(msg, err){ const t=$('#toast'); t.textContent=msg; t.className='toast show'+(err?' err':''); setTimeout(()=>t.className='toast',2600); }
 function show(id){ $('#'+id).classList.add('show'); } function hide(id){ $('#'+id).classList.remove('show'); }
@@ -681,7 +709,10 @@ function linkRowHtml(item, publicBase){
 }
 function bindLinkRows(root){
   $$('[data-copy]',root).forEach(btn=>btn.onclick=()=>copyText(decodeURIComponent(btn.dataset.copy)));
-  $$('[data-open]',root).forEach(btn=>btn.onclick=()=>window.open(decodeURIComponent(btn.dataset.open),'_blank','noopener'));
+  $$('[data-open]',root).forEach(btn=>btn.onclick=()=>{
+    const url=decodeURIComponent(btn.dataset.open);
+    window.open(url,'_blank','noopener');
+  });
 }
 function inlineLinkBar(slug){
   const url=tenantSiteUrl(slug);
@@ -758,7 +789,10 @@ async function init(){
   applyLangUI();
   $$('#langFlags .lang-flag').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
   buildCalc(); buildCatalog();
-  if(S.token){ try{ S.me=await api('/me'); }catch{ S.token=''; localStorage.removeItem('mt_token'); } }
+  if(S.token){
+    if(!authMatchesTenant()) clearAuthSession();
+  }
+  if(S.token){ try{ S.me=await api('/me'); if(S.me?.role!=='superadmin'&&S.me?.tenant?.slug&&S.me.tenant.slug!==S.tenant) clearAuthSession(); }catch{ clearAuthSession(); } }
   await ensureSuperOnOpsTenant();
   refreshPublicBrand();
   renderHeader();
@@ -939,7 +973,7 @@ async function submitAuth(retried=false){
     const tenant=resolveLoginTenant(username);
     const r=await api('/login',{method:'POST',body:JSON.stringify({tenant,username,password})});
     hideServerBanner();
-    S.token=r.token; localStorage.setItem('mt_token',r.token); S.me=r.user;
+    S.token=r.token; saveAuthSession(r.token, r.user); S.me=r.user;
     hide('authOv'); refreshPublicBrand(); renderHeader(); toast(t('auth.welcome',r.user.username));
     const isMstAdm=r.user.role==='admin'&&r.user.tenant?.roleType==='master';
     const isAgAdm=r.user.role==='admin'&&r.user.tenant?.roleType==='agency';
@@ -961,7 +995,7 @@ async function submitAuth(retried=false){
   }
 }
 $('#authSubmit').onclick=()=>submitAuth(false);
-$('#logoutBtn').onclick=()=>{ S.token='';S.me=null;localStorage.removeItem('mt_token'); renderHeader(); backToLanding(); toast(t('auth.loggedOut')); };
+$('#logoutBtn').onclick=()=>{ clearAuthSession(); renderHeader(); backToLanding(); toast(t('auth.loggedOut')); };
 
 // ── dashboard ──
 $('#dashBtn').onclick=()=>openDash();
@@ -1095,7 +1129,8 @@ async function tabAdminHub(b, sub){
 async function tabSiteLinks(b){
   const data=await api('/admin/site-links');
   S.publicBase=data.publicBase||null;
-  const sorted=[...data.links].sort((a,b)=>{
+  const visible=data.links.filter(x=>isOpsAdmin()||x.kind!=='platform');
+  const sorted=[...visible].sort((a,b)=>{
     const o={master:0,agency:1,platform:2};
     return (o[a.kind]??9)-(o[b.kind]??9);
   });
@@ -1319,8 +1354,14 @@ async function tabSvc(b){
      const supply=x.supply!=null?fmt(x.supply):'-';
      const sell=fmt(x.rate);
      const base=x.base!=null?fmt(x.base):null;
-     const chain=isOpsAdmin()&&base?`<div class="price-chain">원가 <b>${base}</b> → 본사공급 <b>${x.masterSupply!=null?fmt(x.masterSupply):'-'}</b> → 판매 <b>${sell}</b></div>`
-       :`<div class="price-chain">공급 <b>${supply}</b> → 판매 <b>${sell}</b></div>`;
+     let chain;
+     if(isOpsAdmin()&&base){
+       chain=`<div class="price-chain">원가 <b>${base}</b> → 본사공급 <b>${x.masterSupply!=null?fmt(x.masterSupply):'-'}</b> → 판매 <b>${sell}</b></div>`;
+     }else if(isMasterAdmin()&&x.supply!=null){
+       chain=`<div class="price-chain">내 공급가 <b>${supply}</b> → 판매 <b>${sell}</b></div>`;
+     }else{
+       chain=`<div class="price-chain">판매가 <b>${sell}</b></div>`;
+     }
      return `<div class="svc-row" style="cursor:default">
        <div style="flex:1"><div class="pf">${x.category} · #${x.service}</div><h4>${x.name}</h4>${chain}
        ${isOpsAdmin()?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">

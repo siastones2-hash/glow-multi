@@ -79,8 +79,8 @@ supershasha_install_launchd() {
   <string>${LABEL}</string>
   <key>ProgramArguments</key>
   <array>
-    <string>${NODE}</string>
-    <string>${SUPERSHASHA_DIR}/server.js</string>
+    <string>/bin/bash</string>
+    <string>${SUPERSHASHA_DIR}/scripts/supershasha-server-run.sh</string>
   </array>
   <key>WorkingDirectory</key>
   <string>${SUPERSHASHA_DIR}</string>
@@ -88,13 +88,17 @@ supershasha_install_launchd() {
   <dict>
     <key>PORT</key>
     <string>${PORT}</string>
+    <key>SUPERSHASHA_DIR</key>
+    <string>${SUPERSHASHA_DIR}</string>
+    <key>PATH</key>
+    <string>$(dirname "$NODE"):/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
   </dict>
   <key>KeepAlive</key>
   <true/>
   <key>RunAtLoad</key>
   <true/>
   <key>ThrottleInterval</key>
-  <integer>5</integer>
+  <integer>15</integer>
   <key>StandardOutPath</key>
   <string>${LOG}</string>
   <key>StandardErrorPath</key>
