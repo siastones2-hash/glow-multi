@@ -1,0 +1,51 @@
+---
+description: "【10】 슈퍼샤샤 — 멀티테넌트 SMM 자동화 (SUPERSHASHA)"
+alwaysApply: false
+---
+
+# 【10-슈퍼샤샤】SUPERSHASHA
+
+- **폴더**: `/Users/apple/Projects/07-슈퍼시아/supershasha`
+- **채팅 태그**: `【10-슈퍼샤샤】` 또는 `【슈퍼샤샤】`
+- **구조**: `server.js` + `public/index.html` (네온 글로우 SPA) · `demo/index.html` (오프라인 체험판)
+- **멀티테넌트**: 본사 `?tenant=main` · 지인 `?tenant=nine` 등
+- **관리자**: `leestones` / `.env`의 `ADMIN_PASSWORD`
+- **공급사**: 모어댄 API — `.env`에 `MORETHAN_API_KEY` (Git 금지)
+
+## 마진 라벨 (UI)
+
+| 화면 | 라벨 | 의미 |
+|------|------|------|
+| 본사 설정 | 내가 손님에게 (+%) | 본사 직판 마진 |
+| 사이트 관리 | 내가 지인에게 (+%) | 본사→지인 공급 마진 |
+| 사이트 관리 | 지인이 손님에게 (+%) | 지인→손님 마진 |
+| 지인 관리자 | 내가 손님에게 붙이는 마진 | 지인 자기 마진 |
+
+## 로컬 실행
+
+```bash
+cd /Users/apple/Projects/07-슈퍼시아/supershasha
+cp .env.example .env   # 키 입력
+npm install && npm start
+```
+
+또는 `실행_Mac.command` 더블클릭.
+
+## 배포·오픈
+
+`시작하기.md` · `render.yaml` — Render + GitHub Private.
+- **판매 모델**: 선불 충전 → 관리자 승인 → 주문 (무통장/카드 요청 UI)
+- **본사 직판**: `/` · **지인/리셀러**: `/?tenant=slug`
+- **실연동**: `.env`의 `MORETHAN_API_KEY` 필수 (다운로드 `supershasha-platform/.env` 참고)
+- **오픈 전**: 관리자 비번 변경 · Render 배포 · (선택) 도메인 연결
+- Render 무료: 재배포 시 `data/db.json` 초기화 → 장기 운영은 DB 전환 검토
+
+**GLOW(1번) 코드와 별개.** 슈퍼샤샤 수정 시 이 규칙·폴더만 사용.
+
+## Render 배포 (필수 · 말 안 해도)
+
+- **운영 URL**: https://supershasha.onrender.com — 본사·대리점·외부 사용자는 **Render**가 진실
+- `glow-multi/supershasha/**` 수정 후 **반드시** `main`에 commit + push (사장님 따로 요청 없어도)
+- push → Render `autoDeploy` 또는 `.github/workflows/supershasha-render.yml` deploy hook
+- push 후 `/api/health`·`/api/config`로 배포 확인 · Mac 로컬(`:3000`)만 고치고 끝내지 말 것
+- 로컬 실행 경로(`/Projects/07-슈퍼시아/supershasha`)도 git 변경 시 동기화
