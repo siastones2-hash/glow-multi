@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { buildServiceMeta, normalizeLang, KIND_LABELS as KIND_LABELS_I18N } from "./i18n-service.js";
+import { buildServiceMeta, normalizeLang, KIND_LABELS as KIND_LABELS_I18N, stripPanelBrand } from "./i18n-service.js";
 
 dotenv.config();
 
@@ -32,6 +32,10 @@ const CFG = {
   servicesSyncSec: Math.max(15, parseInt(process.env.SERVICES_SYNC_SEC, 10) || 30),
 };
 const DEMO = !CFG.apiKey; // API 키 없으면 데모(샘플 서비스) 모드
+
+function stripDisplayName(msg) {
+  return stripPanelBrand(msg);
+}
 
 function stripBrandText(msg) {
   if (msg == null || msg === "") return msg;
@@ -843,7 +847,7 @@ async function tenantServices(tenant, isAdmin, viewer, lang = "ko") {
       const meta = serviceMeta(s, L);
       const row = {
         service: s.service,
-        name: stripBrandText(s.name),
+        name: stripDisplayName(s.name),
         category: meta.category,
         categoryLabel: meta.categoryLabel,
         description: meta.description,

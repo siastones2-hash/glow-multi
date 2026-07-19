@@ -201,6 +201,146 @@ function categoryLabel(category, lang) {
   return CAT_LABEL[lang]?.[category] || category;
 }
 
+/** 공급사 브랜드만 제거 — 국기·상세 스펙은 유지 */
+export function stripPanelBrand(msg) {
+  if (msg == null || msg === "") return msg;
+  return String(msg)
+    .replace(/MoreThan\s*Panel/gi, "")
+    .replace(/MoreThan/gi, "")
+    .replace(/morethanpanel\.com/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function truthyFlag(v) {
+  return v === true || v === 1 || v === "1" || v === "true";
+}
+
+const SPEC_LABELS = {
+  ko: {
+    sectionName: "【 상품 상세 】",
+    sectionOrder: "【 주문 조건 】",
+    minMax: (min, max) => `수량: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()} (1,000개 단위 과금)`,
+    category: (c) => `카테고리: ${c}`,
+    type: (t) => `유형: ${t}`,
+    refillYes: "리필(보장): 가능",
+    refillNo: "리필(보장): 없음",
+    cancelYes: "주문 취소: 가능",
+    cancelNo: "주문 취소: 불가",
+    dripfeed: "드립피드(분할 전송): 지원",
+    avgTime: (t) => `평균 완료 시간: ${t}`,
+  },
+  zh: {
+    sectionName: "【 商品详情 】",
+    sectionOrder: "【 下单条件 】",
+    minMax: (min, max) => `数量: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()}（按每1000计费）`,
+    category: (c) => `分类: ${c}`,
+    type: (t) => `类型: ${t}`,
+    refillYes: "补量(Refill): 支持",
+    refillNo: "补量(Refill): 不支持",
+    cancelYes: "取消订单: 可以",
+    cancelNo: "取消订单: 不可以",
+    dripfeed: "Dripfeed: 支持",
+    avgTime: (t) => `平均完成: ${t}`,
+  },
+  vi: {
+    sectionName: "【 Chi tiết dịch vụ 】",
+    sectionOrder: "【 Điều kiện đặt 】",
+    minMax: (min, max) => `Số lượng: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()} (tính theo 1.000)`,
+    category: (c) => `Danh mục: ${c}`,
+    type: (t) => `Loại: ${t}`,
+    refillYes: "Refill: Có",
+    refillNo: "Refill: Không",
+    cancelYes: "Hủy đơn: Có thể",
+    cancelNo: "Hủy đơn: Không",
+    dripfeed: "Dripfeed: Hỗ trợ",
+    avgTime: (t) => `Hoàn thành TB: ${t}`,
+  },
+  th: {
+    sectionName: "【 รายละเอียดบริการ 】",
+    sectionOrder: "【 เงื่อนไขสั่งซื้อ 】",
+    minMax: (min, max) => `จำนวน: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()} (คิดต่อ 1,000)`,
+    category: (c) => `หมวด: ${c}`,
+    type: (t) => `ประเภท: ${t}`,
+    refillYes: "Refill: รองรับ",
+    refillNo: "Refill: ไม่รองรับ",
+    cancelYes: "ยกเลิกคำสั่ง: ได้",
+    cancelNo: "ยกเลิกคำสั่ง: ไม่ได้",
+    dripfeed: "Dripfeed: รองรับ",
+    avgTime: (t) => `เวลาเฉลี่ย: ${t}`,
+  },
+};
+
+function formatDuration(sec, lang) {
+  const n = parseInt(sec, 10);
+  if (!n || n <= 0) return "";
+  const L = normalizeLang(lang);
+  if (n < 60) return L === "ko" ? `${n}초` : `${n}s`;
+  if (n < 3600) {
+    const m = Math.round(n / 60);
+    return L === "ko" ? `약 ${m}분` : L === "zh" ? `约${m}分钟` : L === "vi" ? `~${m} phút` : `~${m} นาที`;
+  }
+  const h = Math.round(n / 3600);
+  return L === "ko" ? `약 ${h}시간` : L === "zh" ? `约${h}小时` : L === "vi" ? `~${h} giờ` : `~${h} ชม.`;
+}
+
+function isGeneratedDescription(text) {
+  return /상품입니다\.|服务。|Dịch vụ .* trên|บริการ.*บน/.test(String(text || ""));
+}
+
+/** 모어댄 원본 상품명·API 스펙 그대로 노출 */
+export function buildProviderDescription(svc, lang = "ko") {
+  const L = normalizeLang(lang);
+  const lab = SPEC_LABELS[L] || SPEC_LABELS.ko;
+  const lines = [];
+
+  for (const key of ["description", "desc", "service_description"]) {
+    const ext = svc?.[key];
+    if (ext && String(ext).trim().length > 12 && !isGeneratedDescription(ext)) {
+      lines.push(String(ext).trim(), "");
+      break;
+    }
+  }
+
+  const name = stripPanelBrand(svc?.name || "");
+  if (name) {
+    if (name.includes("|")) {
+      lines.push(lab.sectionName);
+      name
+        .split("|")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((seg) => lines.push(`· ${seg}`));
+    } else {
+      lines.push(name);
+    }
+  }
+
+  lines.push("", lab.sectionOrder);
+  const min = parseInt(svc?.min, 10) || 0;
+  const max = parseInt(svc?.max, 10) || 0;
+  if (max > 0) lines.push(`· ${lab.minMax(min, max)}`);
+
+  const apiCat = svc?.category || svc?.type;
+  if (apiCat) lines.push(`· ${lab.category(String(apiCat))}`);
+  if (svc?.type && svc?.category && String(svc.type) !== String(svc.category)) {
+    lines.push(`· ${lab.type(String(svc.type))}`);
+  }
+
+  if (truthyFlag(svc?.refill)) lines.push(`· ${lab.refillYes}`);
+  else if (svc?.refill === false || svc?.refill === 0 || svc?.refill === "0") lines.push(`· ${lab.refillNo}`);
+
+  if (truthyFlag(svc?.cancel)) lines.push(`· ${lab.cancelYes}`);
+  else if (svc?.cancel === false || svc?.cancel === 0 || svc?.cancel === "0") lines.push(`· ${lab.cancelNo}`);
+
+  if (truthyFlag(svc?.dripfeed)) lines.push(`· ${lab.dripfeed}`);
+
+  const avg = formatDuration(svc?.avg_time, L);
+  if (avg) lines.push(`· ${lab.avgTime(avg)}`);
+
+  return lines.join("\n").trim();
+}
+
 /**
  * @param {object} svc raw service
  * @param {string} category normalized Korean category key
@@ -213,17 +353,8 @@ function categoryLabel(category, lang) {
  */
 export function buildServiceMeta(svc, category, kind, isKr, isVn, hasRefill, isHq, lang = "ko") {
   const L = normalizeLang(lang);
-  const tpl = DESC_TPL[L] || DESC_TPL.ko;
-  const kindPhrase = KIND_PHRASE[L]?.[kind] || KIND_PHRASE.ko[kind] || kind;
   const catDisplay = categoryLabel(category, L);
-
-  let desc = tpl.intro(catDisplay, kindPhrase);
-  if (isKr) desc += tpl.kr;
-  else if (isVn) desc += tpl.vn;
-  else if (isHq) desc += tpl.hq;
-  else desc += tpl.std;
-  if (hasRefill) desc += tpl.refill;
-  desc += tpl.footer;
+  const desc = buildProviderDescription(svc, L);
 
   const hints = LINK_HINTS[L] || LINK_HINTS.ko;
   const linkHint = `${hints.prefix} ${hints[category] || hints.default}`;

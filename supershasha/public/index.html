@@ -228,7 +228,7 @@ section.blk{padding:46px 0}
 .order-catalog .cat-tabs,.order-catalog .kind-tabs{gap:5px}
 .order-catalog .cat-tabs button,.order-catalog .kind-tabs button{padding:6px 11px;font-size:12px}
 .order-panel h3{font-family:"Chakra Petch";font-size:18px;margin-bottom:10px;line-height:1.35}
-.order-panel .svc-desc{font-size:13px;line-height:1.65;color:var(--muted);margin:12px 0;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.order-panel .svc-desc{font-size:13px;line-height:1.65;color:var(--muted);margin:12px 0;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);white-space:pre-wrap;word-break:break-word;max-height:none}
 .order-panel .svc-link-hint{font-size:12px;line-height:1.5;color:var(--cyan);margin-bottom:14px;padding:10px 12px;border-radius:8px;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.15)}
 .order-panel .svc-specs{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .order-panel .svc-specs b{color:var(--gold);font-family:"Chakra Petch"}
@@ -244,7 +244,7 @@ section.blk{padding:46px 0}
 .svc-row h4{font-size:14px;line-height:1.45;font-weight:600;margin-bottom:8px}
 .svc-row .meta{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
 .svc-row .meta .rate{color:var(--gold);font-family:"Chakra Petch"}
-.svc-row .svc-snippet{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.svc-row .svc-snippet{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
 .kind-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .kind-tabs button{padding:6px 12px;border-radius:16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--line)}
 .kind-tabs button.on{color:var(--gold);border-color:rgba(255,215,106,.35);background:rgba(255,215,106,.08);font-weight:600}
@@ -387,6 +387,7 @@ section.blk{padding:46px 0}
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const fmt = n => (Math.round((+n||0)*100)/100).toLocaleString(undefined,{maximumFractionDigits:2});
+const escHtml = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const S = { token:localStorage.getItem('mt_token')||'', me:null, tenant:'main', services:[], selSvc:null, catFilter:'전체', panelSvc:null, adminSub:'admin', orderSearch:'', lang:localStorage.getItem('ss_lang')||'ko', curTab:'dashboard', servicesRev:0 };
 const TOKEN_TENANT_KEY='mt_token_tenant';
 function clearAuthSession(){
@@ -1283,10 +1284,11 @@ async function tabOrder(b){
     if(S.panelSvc&&!list.find(s=>String(s.service)===String(S.panelSvc.service))) S.panelSvc=list[0]||null;
     if(!S.panelSvc&&list.length) S.panelSvc=list[0];
     $('#dList').innerHTML=list.length?list.map(s=>{
-      const sn=(s.description||svcMeta(s).description||'').replace(/<[^>]+>/g,'').slice(0,72);
+      const desc=s.description||svcMeta(s).description||'';
+      const sn=desc.replace(/<[^>]+>/g,'').slice(0,160);
       return `<div class="svc-row ${S.panelSvc&&String(S.panelSvc.service)===String(s.service)?'on':''}" data-sid="${s.service}">
-        <div style="flex:1"><div class="pf">${catLabel(s)}${s.kindLabel?` · ${s.kindLabel}`:''}</div><h4>${s.name}</h4>
-        <div class="svc-snippet">${sn}${sn.length>=72?'…':''}</div>
+        <div style="flex:1"><div class="pf">${catLabel(s)}${s.kindLabel?` · ${s.kindLabel}`:''}</div><h4>${escHtml(s.name)}</h4>
+        <div class="svc-snippet">${escHtml(sn)}${sn.length>=160?'…':''}</div>
         <div class="meta"><span>${s.min.toLocaleString()} ~ ${s.max.toLocaleString()}</span><span class="rate">${fmt(s.rate)}${t('per1kRate')}</span></div></div>
       </div>`;
     }).join(''):`<div class="empty">${t('noMatch')}</div>`;
@@ -1303,8 +1305,8 @@ async function tabOrder(b){
     const m=svcMeta(s);
     const pay=staffPayNote();
     p.innerHTML=`<div class="pf">${m.category||catLabel(s)}${s.kindLabel?` · ${s.kindLabel}`:''}</div>
-      <h3>${s.name}</h3>
-      <div class="svc-desc">${m.description}</div>
+      <h3>${escHtml(s.name)}</h3>
+      <div class="svc-desc">${escHtml(s.description||m.description||'')}</div>
       <div class="svc-link-hint">📎 ${m.linkHint||s.linkHint||t('linkPh')}</div>
       <div class="svc-specs">
         <span>${t('min')} <b>${s.min.toLocaleString()}</b></span>
