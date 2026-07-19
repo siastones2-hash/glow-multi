@@ -136,15 +136,39 @@ const CORE_PLATFORMS = new Set([
   "인스타그램", "유튜브", "틱톡", "X(트witter)", "X(트위터)", "페이스북", "텔레그램", "스레드", "네이버", "카카오", "스포티파이",
 ]);
 const EXTENDED_PLATFORMS = new Set([
-  "링크드인", "디스코드", "트위치", "숲(Soop)", "라인", "핀터레스트", "구글맵",
+  "링크드인", "디스코드", "트위치", "숲(Soop)", "라인", "핀터레스트", "구글맵", "Shopee",
 ]);
 const KNOWN_PLATFORMS = new Set([...CORE_PLATFORMS, ...EXTENDED_PLATFORMS]);
-const PRIORITY_FLAGS = new Set(["🇰🇷", "🇻🇳", "🇨🇳", "🇹🇭", "🇯🇵", "🇺🇸", "🇬🇧"]);
-const CURATE_CORE_KIND = 12;
-const CURATE_EXT_KIND = 6;
+/** 우선 노출 국가·지역 국기 */
+const PRIORITY_FLAGS = new Set([
+  "🇰🇷", "🇻🇳", "🇨🇳", "🇹🇭", "🇯🇵", "🇺🇸", "🇬🇧", "🇮🇩", "🇵🇭", "🇲🇾", "🇸🇬", "🇹🇼",
+]);
+const CURATE_CORE_KIND = 20;
+const CURATE_EXT_KIND = 12;
+const CURATE_REGION_KIND = 10;
+const CURATE_LOCAL_PLATFORM_KIND = 15;
+const LOCAL_PLATFORM_LIMITS = new Set(["숲(Soop)", "Shopee", "라인", "네이버", "카카오"]);
 const BLOCK_SVC_NAME = /test|테스트|\bfree\b|무료|sample|샘플|disabled|adult|성인|casino|gambling|hack|크랙/i;
+const CATALOG_HEADER_ROW = /👇{2,}|SERVICES 👇|━━━━|^─+|^=+/i;
 const OBSCURE_COUNTRY =
   /\b(italy|uae|emirates|romania|poland|pakistan|egypt|morocco|nigeria|kenya|colombia|peru|chile|argentina|mexico|bangladesh|sri lanka|ukraine|belarus|kazakhstan|iraq|iran|saudi|qatar|lebanon|syria|yemen|afghanistan|nepal|cambodia|myanmar|laos|mongolia|ethiopia|ghana|tunisia|algeria|venezuela|ecuador|bolivia|paraguay|uruguay|guatemala|honduras|luxembourg|slovenia|croatia|serbia|bulgaria|hungary|czech|slovakia|austria|sweden|norway|denmark|finland|portugal|greece|turkey|israel|cyprus|malta|iceland|estonia|latvia|lithuania|moldova|georgia|armenia|azerbaijan)\b/i;
+
+/** MoreThan 미제공 — 로컬 카탈로그(주문 시 별도 연동 안내) */
+const LOCAL_KR_SERVICE_IDS = new Set([9901001, 9901002, 9901003, 9901004, 9902001, 9902002]);
+const LOCAL_KR_SERVICES = [
+  { service: 9901001, name: "🇰🇷 네이버 블로그 이웃·서이웃 | 한국 | 30일 유지", category: "네이버", min: 50, max: 5000, rate: "0.85", refill: true },
+  { service: 9901002, name: "🇰🇷 네이버 블로그 공감·댓글 | 한국 | 커스텀", category: "네이버", min: 10, max: 500, rate: "1.65" },
+  { service: 9901003, name: "🇰🇷 네이버 플레이스 저장·알림받기 | 한국", category: "네이버", min: 20, max: 2000, rate: "1.20" },
+  { service: 9901004, name: "🇰🇷 네이버 스마트스토어 찜·알림 | 한국 | 30일 리필", category: "네이버", min: 50, max: 10000, rate: "0.55", refill: true },
+  { service: 9902001, name: "🇰🇷 카카오톡 채널 친구 추가 | 한국 | 30일 리필", category: "카카오", min: 100, max: 20000, rate: "0.98", refill: true },
+  { service: 9902002, name: "🇰🇷 카카오톡 채널 게시물 조회·반응 | 한국", category: "카카오", min: 100, max: 50000, rate: "0.22" },
+];
+
+function isCatalogHeaderRow(svc) {
+  const name = stripBrandText(svc.name || "");
+  if (!name || name.length < 5) return true;
+  return CATALOG_HEADER_ROW.test(name);
+}
 
 function hasObscureCountryFlag(name) {
   const flags = String(name).match(/[\u{1F1E6}-\u{1F1FF}]{2}/gu) || [];
@@ -154,11 +178,48 @@ function hasObscureCountryFlag(name) {
 
 function isChineseService(svc) {
   const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
-  return /china|chinese|中文|台湾|🇨🇳|\bcn\b/.test(t);
+  return /china|chinese|中文|台湾|taiwan|🇨🇳|\bcn\b/.test(t);
 }
 function isThaiService(svc) {
   const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
   return /thailand|\bthai\b|ไทย|🇹🇭/.test(t);
+}
+function isJapaneseService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /japan|japanese|🇯🇵|\bjp\b/.test(t);
+}
+function isIndonesianService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /indonesia|indonesian|🇮🇩|\bid\b/.test(t);
+}
+function isPhilippineService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /philippine|filipino|🇵🇭|\bph\b/.test(t);
+}
+function isMalaysiaService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /malaysia|malaysian|🇲🇾|\bmy\b/.test(t);
+}
+function isSingaporeService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /singapore|singaporean|🇸🇬|\bsg\b/.test(t);
+}
+
+function detectRegionFlag(svc) {
+  const flags = String(svc.name || "").match(/[\u{1F1E6}-\u{1F1FF}]{2}/gu) || [];
+  for (const f of flags) {
+    if (PRIORITY_FLAGS.has(f)) return f;
+  }
+  if (isKoreanService(svc)) return "🇰🇷";
+  if (isVietnameseService(svc)) return "🇻🇳";
+  if (isChineseService(svc)) return "🇨🇳";
+  if (isThaiService(svc)) return "🇹🇭";
+  if (isJapaneseService(svc)) return "🇯🇵";
+  if (isIndonesianService(svc)) return "🇮🇩";
+  if (isPhilippineService(svc)) return "🇵🇭";
+  if (isMalaysiaService(svc)) return "🇲🇾";
+  if (isSingaporeService(svc)) return "🇸🇬";
+  return "global";
 }
 
 function scorePopularService(svc) {
@@ -168,21 +229,46 @@ function scorePopularService(svc) {
   if (isVietnameseService(svc)) score += 40;
   if (isChineseService(svc)) score += 40;
   if (isThaiService(svc)) score += 38;
+  if (isJapaneseService(svc)) score += 36;
+  if (isIndonesianService(svc)) score += 34;
+  if (isPhilippineService(svc)) score += 34;
+  if (isMalaysiaService(svc)) score += 32;
+  if (isSingaporeService(svc)) score += 32;
   if (!hasObscureCountryFlag(svc.name || "") && !OBSCURE_COUNTRY.test(name)) score += 18;
   if (/uhq|hq|premium|프리미엄|real|리얼|organic|오가닉|고품질|vip/.test(name)) score += 16;
   if (/refill|리필|guarantee|lifetime|평생|365|30 day|7 day|30일|7일/.test(name)) score += 12;
-  if (/instant|fast|빠른|speed/.test(name)) score += 6;
+  if (/instant|fast|빠른|speed|seo|country targeted|타겟/.test(name)) score += 6;
   if (/slow|느린|low quality|저질|bot only|봇만|no refill|nrf/.test(name)) score -= 28;
   if (name.length > 120) score -= 10;
   return score;
 }
 
-/** 인기·핵심 플랫폼 위주 큐레이션 (한/베/중/태 + 글로벌) */
+function pickTopFromGroup(items, limit, picked, seen) {
+  items.sort((a, b) => b.score - a.score);
+  for (let i = 0; i < Math.min(limit, items.length); i++) {
+    const svc = items[i].s;
+    if (!seen.has(svc.service)) {
+      picked.push(svc);
+      seen.add(svc.service);
+    }
+  }
+}
+
+function mergeLocalKrServices(arr) {
+  const seen = new Set(arr.map((s) => s.service));
+  const out = [...arr];
+  for (const s of LOCAL_KR_SERVICES) {
+    if (!seen.has(s.service)) out.push(s);
+  }
+  return out;
+}
+
+/** 인기·핵심 + 국가별 SKU + 로컬(네이버·카카오) */
 function curatePopularServices(arr) {
-  if (!Array.isArray(arr) || !arr.length) return arr;
+  if (!Array.isArray(arr) || !arr.length) return mergeLocalKrServices(arr || []);
   const filtered = arr.filter((s) => {
     const name = stripBrandText(s.name || "");
-    if (!name || BLOCK_SVC_NAME.test(name)) return false;
+    if (!name || BLOCK_SVC_NAME.test(name) || isCatalogHeaderRow(s)) return false;
     if (hasObscureCountryFlag(s.name || "")) return false;
     if (OBSCURE_COUNTRY.test(String(s.name || "").toLowerCase())) return false;
     const cat = normalizeCategory(s.category || s.type || "", s.name || "");
@@ -192,28 +278,49 @@ function curatePopularServices(arr) {
     return max >= min && max > 0;
   });
 
-  const groups = new Map();
+  const globalGroups = new Map();
+  const regionGroups = new Map();
+  const localGroups = new Map();
+
   for (const s of filtered) {
     const cat = normalizeCategory(s.category || s.type || "", s.name || "");
     const meta = serviceMetaKo(s);
-    const key = `${cat}|${meta.kind}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ s, score: scorePopularService(s) });
+    const scored = { s, score: scorePopularService(s) };
+    const gKey = `${cat}|${meta.kind}`;
+    if (!globalGroups.has(gKey)) globalGroups.set(gKey, []);
+    globalGroups.get(gKey).push(scored);
+
+    const region = detectRegionFlag(s);
+    if (region !== "global") {
+      const rKey = `${cat}|${meta.kind}|${region}`;
+      if (!regionGroups.has(rKey)) regionGroups.set(rKey, []);
+      regionGroups.get(rKey).push(scored);
+    }
+
+    if (LOCAL_PLATFORM_LIMITS.has(cat)) {
+      const lKey = `${cat}|${meta.kind}`;
+      if (!localGroups.has(lKey)) localGroups.set(lKey, []);
+      localGroups.get(lKey).push(scored);
+    }
   }
 
   const picked = [];
   const seen = new Set();
-  for (const [key, items] of groups) {
+
+  for (const [key, items] of globalGroups) {
     const cat = key.split("|")[0];
     const limit = CORE_PLATFORMS.has(cat) ? CURATE_CORE_KIND : EXTENDED_PLATFORMS.has(cat) ? CURATE_EXT_KIND : 4;
-    items.sort((a, b) => b.score - a.score);
-    for (let i = 0; i < Math.min(limit, items.length); i++) {
-      const svc = items[i].s;
-      if (!seen.has(svc.service)) {
-        picked.push(svc);
-        seen.add(svc.service);
-      }
-    }
+    pickTopFromGroup(items, limit, picked, seen);
+  }
+
+  for (const [, items] of regionGroups) {
+    pickTopFromGroup(items, CURATE_REGION_KIND, picked, seen);
+  }
+
+  for (const [key, items] of localGroups) {
+    const cat = key.split("|")[0];
+    if (cat === "네이버" || cat === "카카오") continue;
+    pickTopFromGroup(items, CURATE_LOCAL_PLATFORM_KIND, picked, seen);
   }
 
   const catOrder = PLATFORM_ORDER;
@@ -226,7 +333,7 @@ function curatePopularServices(arr) {
     return scorePopularService(b) - scorePopularService(a);
   });
 
-  return picked.length ? picked : filtered.slice(0, 120);
+  return mergeLocalKrServices(picked.length ? picked : filtered.slice(0, 200));
 }
 
 function providerErrorKo(resp, forSuper = false) {
@@ -1222,6 +1329,8 @@ app.get("/api/config", (req, res) => {
     ...ps,
     demo: DEMO,
     curated: true,
+    localKrCatalog: LOCAL_KR_SERVICES.length,
+    priorityRegions: [...PRIORITY_FLAGS],
     publicBase: getPublicBaseUrl(),
   });
 });
@@ -1371,6 +1480,12 @@ app.post("/api/order", auth, async (req, res) => {
     const svcs = await getServices();
     const svc = svcs.find((s) => String(s.service) === String(service));
     if (!svc) return res.status(404).json({ error: "서비스를 찾을 수 없습니다." });
+    if (LOCAL_KR_SERVICE_IDS.has(Number(service))) {
+      return res.status(503).json({
+        error:
+          "네이버·카카오 상품은 별도 공급 연동 준비 중입니다. 관리자·텔레그램으로 문의하거나 숲(Soop)·인스타/유튜브 한국 상품을 이용해 주세요.",
+      });
+    }
     if (qty < (parseInt(svc.min) || 1) || qty > (parseInt(svc.max) || 1e9))
       return res.status(400).json({ error: `수량 범위: ${svc.min} ~ ${svc.max}` });
 

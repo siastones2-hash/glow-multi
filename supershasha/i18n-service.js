@@ -121,6 +121,7 @@ const LINK_HINTS = {
     스레드: "게시물·프로필 URL",
     네이버: "블로그·스마트스토어·플레이스 URL",
     카카오: "채널·스토어 URL",
+    Shopee: "상점·상품 URL",
     default: "해당 플랫폼의 공개 URL을 붙여넣으세요",
     prefix: "링크 입력:",
   },
