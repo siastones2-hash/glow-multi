@@ -43,15 +43,16 @@ input,select{font-family:inherit}
 
 /* layout */
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
-header.nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);
+header.nav{position:sticky;top:var(--top-banner-h,0);z-index:50;backdrop-filter:blur(14px);
   background:linear-gradient(180deg,rgba(8,6,18,.9),rgba(8,6,18,.55));border-bottom:1px solid var(--line)}
 header.nav .wrap.nav-wide{max-width:100%;padding:0 clamp(14px,2.2vw,36px)}
-.lang-flags{display:flex;align-items:center;gap:3px;padding:4px 5px;background:rgba(8,6,20,.82);border:1px solid var(--line2);border-radius:10px;flex-shrink:0;box-shadow:0 4px 18px rgba(0,0,0,.35);pointer-events:none}
-.lang-flag{pointer-events:auto;width:34px;height:30px;border:none;border-radius:7px;background:transparent;font-size:18px;line-height:1;cursor:pointer;opacity:.78;transition:opacity .18s,background .18s,box-shadow .18s;padding:0;display:flex;align-items:center;justify-content:center;font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif;touch-action:manipulation}
+.lang-flags{display:flex;align-items:center;gap:3px;padding:4px 5px;background:rgba(8,6,20,.82);border:1px solid var(--line2);border-radius:10px;flex-shrink:0;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.lang-flag{width:34px;height:30px;border:none;border-radius:7px;background:transparent;font-size:18px;line-height:1;cursor:pointer;opacity:.78;transition:opacity .18s,background .18s,box-shadow .18s;padding:0;display:flex;align-items:center;justify-content:center;font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif;touch-action:manipulation}
 .lang-flag:hover{opacity:1;background:rgba(255,255,255,.08)}
 .lang-flag.on{opacity:1;background:rgba(0,240,255,.14);box-shadow:0 0 0 1px rgba(0,240,255,.45)}
 .lang-flag .lf-txt{display:none;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--txt);font-family:"Chakra Petch",monospace}
 .nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;position:relative;z-index:2}
+.nav-actions .btn{position:relative;z-index:3;touch-action:manipulation}
 .nav .wrap{padding-right:20px}
 .nav .wrap{display:flex;align-items:center;gap:18px;height:66px;min-width:0}
 .logo{font-family:"Cormorant Garamond","Noto Serif KR",serif;font-weight:600;font-size:25px;letter-spacing:.15em;display:flex;align-items:center;gap:11px}
@@ -159,15 +160,19 @@ section.blk{padding:46px 0}
 .kpi .v.cy{color:var(--cyan)} .kpi .v.go{color:var(--gold)} .kpi .v.mg{color:var(--magenta)} .kpi .v.ok{color:var(--ok)}
 
 /* modal */
-.ov{position:fixed;inset:0;z-index:60;background:rgba(4,3,12,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+.ov{position:fixed;inset:0;z-index:70;background:rgba(4,3,12,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
 .ov.show{display:flex}
-.modal{width:100%;max-width:420px;animation:pop .22s ease}
+.modal{width:100%;max-width:420px;animation:pop .22s ease;position:relative;z-index:2;max-height:90vh;overflow-y:auto;touch-action:manipulation}
 @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
 .modal h3{font-family:"Chakra Petch";font-size:20px;margin-bottom:4px}
-.modal .x{position:absolute;top:14px;right:16px;color:var(--muted);font-size:22px;background:none;line-height:1}
+.modal .x{position:absolute;top:14px;right:16px;color:var(--muted);font-size:22px;background:none;line-height:1;z-index:3;touch-action:manipulation}
 .seg{display:flex;background:rgba(8,6,20,.7);border:1px solid var(--line);border-radius:11px;padding:4px;margin-bottom:18px}
-.seg button{flex:1;padding:9px;border-radius:8px;font-size:13px;color:var(--muted);background:none;font-weight:600}
+.seg button{flex:1;padding:9px;border-radius:8px;font-size:13px;color:var(--muted);background:none;font-weight:600;touch-action:manipulation}
 .seg button.on{background:linear-gradient(120deg,var(--cyan),#3a8dff);color:#04121a}
+
+.top-banner{position:fixed;left:0;right:0;z-index:45;padding:8px 16px;font-size:12px;text-align:center;line-height:1.5;pointer-events:auto}
+#srvBanner.top-banner{background:#ff4466;color:#fff;font-size:13px;padding:10px 16px}
+#providerBanner.top-banner{background:#553300;color:#ffd080}
 
 .foot{padding:40px 0;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);z-index:80;
@@ -218,7 +223,7 @@ section.blk{padding:46px 0}
 .app-shell.master-app.order-page .order-panel{padding:14px;font-size:13px}
 .app-shell.master-app.order-page .order-catalog{padding:16px 18px}
 .app-shell.master-app.order-page .svc-list{max-height:calc(100vh - 210px)}
-.order-panel{position:sticky;top:78px;padding:16px;max-height:calc(100vh - 96px);overflow-y:auto;font-size:14px}
+.order-panel{position:sticky;top:calc(66px + var(--top-banner-h, 0px) + 12px);padding:16px;max-height:calc(100vh - 96px - var(--top-banner-h, 0px));overflow-y:auto;font-size:14px}
 .order-catalog.card{padding:18px 20px;min-width:0}
 .order-catalog .cat-tabs,.order-catalog .kind-tabs{gap:5px}
 .order-catalog .cat-tabs button,.order-catalog .kind-tabs button{padding:6px 11px;font-size:12px}
@@ -269,12 +274,10 @@ section.blk{padding:46px 0}
   .side-panel .side{position:static;display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
   .side .item{white-space:nowrap;margin:0}
   .nav .tag{display:none}
-  header.nav .wrap{padding-right:152px;gap:10px}
   .logo{font-size:20px}
   .lang-flag{width:30px;height:28px;font-size:16px}
 }
 @media(max-width:520px){
-  header.nav .wrap{padding-right:138px}
   .lang-flag .lf-emoji{display:none}
   .lang-flag .lf-txt{display:block}
   .lang-flag{width:28px;height:26px}
@@ -289,16 +292,16 @@ section.blk{padding:46px 0}
   <div class="tag hidden" id="brandTag">DIGITAL GROWTH</div>
   <div class="sp"></div>
   <div class="nav-actions">
-  <div class="bal hidden" id="balBox"><span id="balLabel">잔액</span> <b id="balVal">0</b></div>
-  <button class="btn ghost sm hidden" id="dashBtn">대시보드</button>
-  <button class="btn cyan sm hidden" id="loginBtn">로그인</button>
-  <button class="btn ghost sm hidden" id="logoutBtn">로그아웃</button>
   <div class="lang-flags" id="langFlags" role="group" aria-label="Language">
     <button type="button" class="lang-flag" data-lang="ko" title="한국어" aria-label="한국어"><span class="lf-emoji">🇰🇷</span><span class="lf-txt">KR</span></button>
     <button type="button" class="lang-flag" data-lang="zh" title="中文" aria-label="中文"><span class="lf-emoji">🇨🇳</span><span class="lf-txt">CN</span></button>
     <button type="button" class="lang-flag" data-lang="vi" title="Tiếng Việt" aria-label="Tiếng Việt"><span class="lf-emoji">🇻🇳</span><span class="lf-txt">VN</span></button>
     <button type="button" class="lang-flag" data-lang="th" title="ไทย" aria-label="ไทย"><span class="lf-emoji">🇹🇭</span><span class="lf-txt">TH</span></button>
   </div>
+  <div class="bal hidden" id="balBox"><span id="balLabel">잔액</span> <b id="balVal">0</b></div>
+  <button type="button" class="btn ghost sm hidden" id="dashBtn">대시보드</button>
+  <button type="button" class="btn cyan sm hidden" id="loginBtn">로그인</button>
+  <button type="button" class="btn ghost sm hidden" id="logoutBtn">로그아웃</button>
   </div>
 </div></header>
 
@@ -358,13 +361,13 @@ section.blk{padding:46px 0}
   <h3 id="authTitle">로그인</h3>
   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:8px" id="authBrand"></p>
   <p class="sub" style="color:var(--cyan);font-size:12px;margin-bottom:14px;line-height:1.5" id="authHint"></p>
-  <div class="seg"><button class="on" id="segLogin" onclick="setAuth('login')">로그인</button>
-    <button id="segReg" onclick="setAuth('register')">회원가입</button></div>
+  <div class="seg"><button type="button" class="on" id="segLogin" onclick="setAuth('login')">로그인</button>
+    <button type="button" id="segReg" onclick="setAuth('register')">회원가입</button></div>
   <div class="field"><label id="authLblUser">아이디</label><input class="inp" id="aUser" autocomplete="username" /></div>
   <div class="field hidden" id="aEmailF"><label id="authLblEmail">이메일</label><input class="inp" id="aEmail" autocomplete="email" /></div>
   <div class="field hidden" id="aPhoneF"><label id="authLblPhone">휴대폰 번호 (선택)</label><input class="inp" id="aPhone" type="tel" placeholder="010-0000-0000" autocomplete="tel" /></div>
   <div class="field"><label id="authLblPass">비밀번호</label><input class="inp" id="aPass" type="password" autocomplete="current-password" /></div>
-  <button class="btn cyan" style="width:100%;margin-top:6px" id="authSubmit">로그인</button>
+  <button type="button" class="btn cyan" style="width:100%;margin-top:6px" id="authSubmit">로그인</button>
 </div></div>
 
 <!-- ░░ ORDER MODAL ░░ -->
@@ -473,24 +476,31 @@ function applyProviderBanner(c){
   const msg=c.mode==='preview'?t('banner.preview'):t('banner.degraded');
   showProviderBanner(msg);
 }
+function syncTopBannerOffset(){
+  const sb=$('#srvBanner'), pb=$('#providerBanner');
+  let top=0, total=0;
+  if(sb){ sb.style.top=top+'px'; total+=sb.offsetHeight; top=total; }
+  if(pb){ pb.style.top=top+'px'; total+=pb.offsetHeight; }
+  document.documentElement.style.setProperty('--top-banner-h', total?total+'px':'0px');
+}
 function showProviderBanner(msg){
   let b=$('#providerBanner');
   if(!b){
     b=document.createElement('div');
     b.id='providerBanner';
-    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9997;background:#553300;color:#ffd080;padding:8px 16px;font-size:12px;text-align:center;line-height:1.5';
+    b.className='top-banner';
     document.body.prepend(b);
   }
   b.textContent=msg;
-  const sb=$('#srvBanner'); if(sb) b.style.top=sb.offsetHeight+'px';
+  syncTopBannerOffset();
 }
-function hideProviderBanner(){ const b=$('#providerBanner'); if(b) b.remove(); }
+function hideProviderBanner(){ const b=$('#providerBanner'); if(b) b.remove(); syncTopBannerOffset(); }
 async function setLang(lang){
   S.lang=lang||'ko';
   try{ localStorage.setItem('ss_lang',S.lang); }catch{}
   applyLangUI();
   applyProviderBanner(S.providerConfig);
-  if(!$('#authOv').classList.contains('hidden')){ updateAuthHint(); applyAuthUI(); }
+  if($('#authOv').classList.contains('show')){ updateAuthHint(); applyAuthUI(); }
   try{ S.services=await api(servicesQuery()); if(!S.services?.length) S.services=FALLBACK_SVC; buildCalc(); buildCatalog(); }catch{}
   if(S.me&&!$('#dashboard').classList.contains('hidden')) openDash(S.curTab||'dashboard', S.adminSub);
   else renderHeader();
@@ -619,12 +629,13 @@ function showServerBanner(msg){
   if(!b){
     b=document.createElement('div');
     b.id='srvBanner';
-    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9998;background:#ff4466;color:#fff;padding:10px 16px;font-size:13px;text-align:center;line-height:1.5';
+    b.className='top-banner';
     document.body.prepend(b);
   }
   b.innerHTML=msg;
+  syncTopBannerOffset();
 }
-function hideServerBanner(){ const b=$('#srvBanner'); if(b) b.remove(); }
+function hideServerBanner(){ const b=$('#srvBanner'); if(b) b.remove(); syncTopBannerOffset(); }
 async function pingServer(){
   try{
     const r=await fetch('/api/health',{cache:'no-store'});
@@ -649,11 +660,6 @@ async function pullServicesUpdate(silent=true){
     S.services=fresh;
     buildCalc();
     buildCatalog();
-    if(S.me&&!$('#dashboard').classList.contains('hidden')){
-      const body=$('#dashBody');
-      if(S.curTab==='order'&&body) await tabOrder(body);
-      else if(S.curTab==='adminhub'&&S.adminSub==='svc'&&body) await tabSvc(body);
-    }
     if(!silent) toast('상품 목록이 업데이트되었습니다.');
   }catch{} finally{ svcPulling=false; }
 }
@@ -1022,6 +1028,7 @@ function openAuth(m){
   $('#aEmail').value='';
   if($('#aPhone')) $('#aPhone').value='';
   show('authOv');
+  setTimeout(()=>$('#aUser')?.focus(), 50);
 }
 window.closeAuth=()=>hide('authOv');
 window.setAuth=(m)=>{
@@ -1069,6 +1076,10 @@ async function submitAuth(retried=false){
   }
 }
 $('#authSubmit').onclick=()=>submitAuth(false);
+$('#authOv').addEventListener('keydown', e=>{
+  if(e.key!=='Enter') return;
+  if(e.target.matches('#aUser,#aPass,#aEmail,#aPhone')){ e.preventDefault(); submitAuth(false); }
+});
 $('#logoutBtn').onclick=()=>{ clearAuthSession(); renderHeader(); backToLanding(); toast(t('auth.loggedOut')); };
 
 // ── dashboard ──
