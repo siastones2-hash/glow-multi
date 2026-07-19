@@ -316,7 +316,7 @@ function isGeneratedDescription(text) {
   return /상품입니다\.|服务。|Dịch vụ .* trên|บริการ.*บน/.test(String(text || ""));
 }
 
-/** 상품 타깃 국가 → 설명 언어 (한국=한글, 베트남=베트남어 …) */
+/** 상품 타깃 국가 (설명 「왜 쓰나요」 지역 문구용 — 표시 언어와 별개) */
 export function detectProductRegion(svc) {
   const t = `${svc?.name || ""} ${svc?.category || ""}`.toLowerCase();
   if (/🇰🇷|\bkorea\b|korean|south korea|한국|국내|\bkr\b/.test(t)) return "ko";
@@ -326,10 +326,8 @@ export function detectProductRegion(svc) {
   return "global";
 }
 
-/** 지역 상품은 해당 국어, 글로벌 상품은 UI 언어 */
-export function descriptionLangFor(svc, uiLang = "ko") {
-  const region = detectProductRegion(svc);
-  if (region !== "global") return region;
+/** 설명·상품명 표시 언어 = UI/국가 선택 언어 (상품 타깃 국가와 무관) */
+export function descriptionLangFor(_svc, uiLang = "ko") {
   return normalizeLang(uiLang);
 }
 
@@ -384,6 +382,29 @@ const GLOSSARY = {
     [/Min\.?\s*/gi, "최소 "],
     [/Per Day|\/Day/gi, "/일"],
     [/Day(s)?/gi, "일"],
+    [/Guaranteed?/gi, "보장"],
+    [/All Links/gi, "모든 링크"],
+    [/Country Targeted/gi, "국가 타겟"],
+    [/South\b/gi, ""],
+    [/Answer Poll on Post/gi, "게시물 투표 참여"],
+    [/Emoji/gi, "이모지"],
+    [/Story/gi, "스토리"],
+    [/Post/gi, "게시물"],
+    [/Note to/gi, "메모"],
+    [/Add English Note to/gi, "영문 메모 추가"],
+    [/点赞/g, "좋아요"],
+    [/粉丝/g, "팔로워"],
+    [/播放/g, "재생"],
+    [/评论/g, "댓글"],
+    [/分享/g, "공유"],
+    [/订阅/g, "구독"],
+    [/中国/g, "중국"],
+    [/韩国/g, "한국"],
+    [/越南/g, "베트남"],
+    [/泰国/g, "태국"],
+    [/速度/g, "속도"],
+    [/最多/g, "최대"],
+    [/最少/g, "최소"],
   ],
   zh: [
     [/Instagram/gi, "Instagram"],
@@ -450,6 +471,12 @@ export function localizeSegment(text, lang) {
     out = out.replace(re, rep);
   }
   return out.replace(/\s{2,}/g, " ").trim();
+}
+
+function localizeApiCategory(raw, lang) {
+  const s = stripPanelBrand(String(raw || "").trim());
+  if (!s) return s;
+  return localizeSegment(s.replace(/\s*\|\s*/g, " · "), lang);
 }
 
 export function localizeServiceName(rawName, lang) {
@@ -671,7 +698,7 @@ export function buildProviderDescription(svc, uiLang = "ko", ctx = {}) {
   lines.push(lab.sectionOrder);
   if (max > 0) lines.push(`· ${lab.minMax(min, max)}`);
   const apiCat = svc?.category || svc?.type;
-  if (apiCat) lines.push(`· ${lab.category(String(apiCat))}`);
+  if (apiCat) lines.push(`· ${lab.category(localizeApiCategory(apiCat, L))}`);
   if (truthyFlag(svc?.refill)) lines.push(`· ${lab.refillYes}`);
   else if (svc?.refill === false || svc?.refill === 0 || svc?.refill === "0") lines.push(`· ${lab.refillNo}`);
   if (truthyFlag(svc?.cancel)) lines.push(`· ${lab.cancelYes}`);
@@ -695,7 +722,7 @@ export function buildProviderDescription(svc, uiLang = "ko", ctx = {}) {
  */
 export function buildServiceMeta(svc, category, kind, isKr, isVn, hasRefill, isHq, lang = "ko") {
   const uiLang = normalizeLang(lang);
-  const descLang = descriptionLangFor(svc, uiLang);
+  const descLang = uiLang;
   const catDisplay = categoryLabel(category, uiLang);
 
   const hints = LINK_HINTS[uiLang] || LINK_HINTS.ko;
@@ -723,7 +750,7 @@ export function buildServiceMeta(svc, category, kind, isKr, isVn, hasRefill, isH
     category,
     categoryLabel: catDisplay,
     description: desc,
-    displayName: localizeServiceName(svc?.name, descLang),
+    displayName: localizeServiceName(svc?.name, uiLang),
     descLang,
     linkHint,
     kind,
