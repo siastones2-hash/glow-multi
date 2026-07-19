@@ -863,8 +863,11 @@ async function init(){
     if(String(e.message||'').includes('서버에 연결')) showServerBanner('⚠️ '+e.message);
   }
   updateAuthHint();
+  renderHeader();
+  const grid=$('#svcGrid'); if(grid) grid.innerHTML=`<div class="empty">${t('common.loading')||'상품 불러오는 중…'}</div>`;
   try{ S.services=await api(servicesQuery()); }catch(e){ S.services=[]; }
   if(!S.services||!S.services.length){ S.services=FALLBACK_SVC; }
+  const hs=$('#hStat1'); if(hs&&S.services.length) hs.textContent=S.services.length.toLocaleString()+'+';
   applyLangUI();
   $$('#langFlags .lang-flag').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
   buildCalc(); buildCatalog();
@@ -1609,7 +1612,8 @@ function bindTelegramActions(b, reloadFn, scope){
       toast('테스트 메시지 발송 — 텔레그램 확인');
     }catch(e){toast(e.message,1);}
   };
-  $('#hookTg')?.onclick=async()=>{
+  const hookTg=$('#hookTg');
+  if(hookTg) hookTg.onclick=async()=>{
     try{
       if(isPlatform){
         await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
