@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import { buildServiceMeta, normalizeLang, KIND_LABELS as KIND_LABELS_I18N } from "./i18n-service.js";
 
 dotenv.config();
 
@@ -106,7 +107,7 @@ function detectServiceKind(name = "") {
   if (/live|라이브|stream/.test(n)) return "live";
   return "general";
 }
-function serviceMetaKo(svc) {
+function serviceMeta(svc, lang = "ko") {
   const name = stripBrandText(svc.name || "");
   const category = normalizeCategory(svc.category || svc.type || "", name);
   const kind = detectServiceKind(name);
@@ -114,62 +115,11 @@ function serviceMetaKo(svc) {
   const isVn = isVietnameseService(svc);
   const hasRefill = /refill|리필|refill|보장|guarantee|lifetime|평생|365|30일|7일/.test(name.toLowerCase());
   const isHq = /uhq|hq|premium|프리미엄|real|리얼|organic|오가닉|고품질/.test(name.toLowerCase());
-
-  const kindKo = {
-    followers: "팔로워·구독자 증가",
-    likes: "좋아요·반응 증가",
-    views: "조회수·노출 증가",
-    comments: "댓글·참여 증가",
-    shares: "공유·확산",
-    saves: "저장·관심 지표 강화",
-    live: "라이브·실시간 시청",
-    general: "계정·콘텐츠 성장",
-  }[kind];
-
-  let desc = `${category} ${kindKo} 상품입니다. `;
-  if (isKr) desc += "한국 타겟·국내 알고리즘에 유리한 고품질 옵션으로, 국내 도달·탐색 노출 강화에 적합합니다. ";
-  else if (isVn) desc += "베트남 타겟·현지 사용자 기반 옵션으로, 동남아 시장·현지 도달 캠페인에 적합합니다. ";
-  else if (isHq) desc += "고품질(HQ) 옵션으로 자연스러운 증가 속도와 안정적인 처리에 초점을 맞췄습니다. ";
-  else desc += "빠른 처리와 합리적인 가격으로 캠페인·테스트 주문에 적합합니다. ";
-  if (hasRefill) desc += "일정 기간 드롭(감소) 발생 시 보상(리필)이 포함된 안정형 상품입니다. ";
-  desc += "주문 후 공급망에서 자동 처리되며, 주문 내역에서 진행률을 확인할 수 있습니다.";
-
-  const linkHints = {
-    인스타그램: "게시물·릴스·프로필 URL (예: instagram.com/p/… 또는 /reel/…)",
-    유튜브: "동영상·쇼츠·채널 URL (예: youtube.com/watch?v=…)",
-    틱톡: "틱톡 동영상 또는 프로필 URL",
-    "X(트위터)": "트윗·프로필 URL",
-    페이스북: "페이지·게시물·프로필 URL",
-    텔레그램: "채널·게시물 URL",
-    스레드: "게시물·프로필 URL",
-    네이버: "블로그·스마트스토어·플레이스 URL",
-    카카오: "채널·스토어 URL",
-    링크드인: "프로필·게시물·회사 페이지 URL",
-    핀터레스트: "핀·보드·프로필 URL",
-    스냅챗: "프로필·스토리·스냅 URL",
-    디스코드: "서버 초대·채널·메시지 URL",
-    레딧: "서브레딧·게시물 URL",
-    트위치: "채널·VOD·클립 URL",
-    구글맵: "구글 비즈니스·지도 리뷰 URL",
-    Steam: "게임·프로필·워크샵 URL",
-    Kick: "채널·VOD URL",
-    "숲(Soop)": "VOD·라이브 방송 URL",
-  };
-  const linkHint = `링크 입력: ${linkHints[category] || "해당 플랫폼의 공개 URL을 붙여넣으세요"}`;
-
-  return { category, description: desc, linkHint, kind };
+  return buildServiceMeta(svc, category, kind, isKr, isVn, hasRefill, isHq, lang);
 }
-
-const KIND_LABELS = {
-  followers: "팔로워·구독",
-  likes: "좋아요·반응",
-  views: "조회·노출",
-  comments: "댓글·참여",
-  shares: "공유·확산",
-  saves: "저장",
-  live: "라이브",
-  general: "기타",
-};
+function serviceMetaKo(svc) {
+  return serviceMeta(svc, "ko");
+}
 const CORE_PLATFORMS = new Set([
   "인스타그램", "유튜브", "틱톡", "X(트위터)", "페이스북", "텔레그램", "스레드", "스포티파이",
 ]);
@@ -506,6 +456,15 @@ function ensureSeedPasswords() {
 function getFx() {
   return db.settings?.fx != null ? parseFloat(db.settings.fx) : CFG.fx;
 }
+function fxForTenant(tenant) {
+  if (!tenant) return getFx();
+  const master = isMasterType(tenant) ? tenant : parentMaster(tenant);
+  if (master?.fx != null) {
+    const v = parseFloat(master.fx);
+    if (v > 0) return v;
+  }
+  return getFx();
+}
 function koreaFilterOn() {
   return db.settings?.koreaOnly != null ? !!db.settings.koreaOnly : CFG.koreaOnly;
 }
@@ -721,9 +680,23 @@ const DEMO_SERVICES = [
 ];
 
 // 서비스 캐시 (5분)
-let svcCache = { at: 0, data: [] };
+let svcCache = { at: 0, data: [], mode: DEMO ? "preview" : "live", error: null };
+
+function providerStatus() {
+  return {
+    mode: DEMO ? "preview" : svcCache.mode || "live",
+    connected: !DEMO && svcCache.mode === "live",
+    serviceCount: svcCache.data?.length || 0,
+    error: svcCache.error || null,
+  };
+}
+
 async function getServices() {
   if (Date.now() - svcCache.at < 5 * 60 * 1000 && svcCache.data.length) return svcCache.data;
+  if (DEMO) {
+    svcCache = { at: Date.now(), data: DEMO_SERVICES, mode: "preview", error: null };
+    return DEMO_SERVICES;
+  }
   try {
     const raw = await moreThan({ action: "services" });
     let arr = Array.isArray(raw) ? raw : [];
@@ -736,12 +709,19 @@ async function getServices() {
     }
     if (!arr.length) throw new Error("빈 응답");
     arr = curateServices(arr);
-    svcCache = { at: Date.now(), data: arr };
+    svcCache = { at: Date.now(), data: arr, mode: "live", error: null };
     return arr;
   } catch (e) {
-    console.warn("⚠ 공급사 서비스 수신 실패 → 데모 데이터로 폴백:", e.message);
-    svcCache = { at: Date.now() - 4.5 * 60 * 1000, data: DEMO_SERVICES }; // 짧게 재시도
-    return DEMO_SERVICES;
+    console.warn("⚠ 공급사 서비스 수신 실패:", e.message);
+    const stale = svcCache.data?.length ? svcCache.data : null;
+    svcCache = {
+      at: Date.now() - 4.5 * 60 * 1000,
+      data: stale || [],
+      mode: "degraded",
+      error: e.message,
+    };
+    if (stale) return stale;
+    throw new Error("공급사 상품 목록을 불러오지 못했습니다. API 키·네트워크를 확인하세요.");
   }
 }
 
@@ -753,7 +733,7 @@ function priceFor(tenant, svc) {
   const platform = platformTenant();
   const ov = db.serviceOverrides[svc.service] || {};
   const platformMargin = ov.platformMargin ?? ov.mainMargin ?? platform?.marginPercent ?? 35;
-  const baseKrw = round4(baseUsd * getFx());
+  const baseKrw = round4(baseUsd * fxForTenant(tenant));
   const masterSupply = round4(baseKrw * (1 + platformMargin / 100));
 
   if (isPlatformType(tenant)) {
@@ -781,23 +761,27 @@ function tenantRoleType(t) {
 }
 
 // 테넌트별 가공된 서비스 목록
-async function tenantServices(tenant, isAdmin, viewer) {
+async function tenantServices(tenant, isAdmin, viewer, lang = "ko") {
+  const L = normalizeLang(lang);
   const svcs = await getServices();
   const superView = viewer?.role === "superadmin";
   const masterView = isMasterAdmin(viewer);
+  const kindLabels = KIND_LABELS_I18N[L] || KIND_LABELS_I18N.ko;
   return svcs
     .filter((s) => !(db.serviceOverrides[s.service]?.hidden))
     .map((s) => {
       const p = priceFor(tenant, s);
-      const meta = serviceMetaKo(s);
+      const meta = serviceMeta(s, L);
       const row = {
         service: s.service,
         name: stripBrandText(s.name),
         category: meta.category,
+        categoryLabel: meta.categoryLabel,
         description: meta.description,
         linkHint: meta.linkHint,
         kind: meta.kind,
-        kindLabel: KIND_LABELS[meta.kind] || "기타",
+        kindLabel: kindLabels[meta.kind] || kindLabels.general || "기타",
+        lang: L,
         min: parseInt(s.min) || 1,
         max: parseInt(s.max) || 100000,
         rate: p.sell,
@@ -1065,7 +1049,15 @@ function opsTenantPublic() {
 }
 
 app.get("/api/config", (req, res) => {
-  res.json({ defaultTenant: defaultPublicSlug(), ok: true });
+  const ps = providerStatus();
+  res.json({
+    defaultTenant: defaultPublicSlug(),
+    ok: true,
+    ...ps,
+    demo: DEMO,
+    curated: true,
+    publicBase: getPublicBaseUrl(),
+  });
 });
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, ts: Date.now() });
@@ -1084,7 +1076,8 @@ app.get("/api/services", async (req, res) => {
     const slug = resolveTenantSlug(req.query.tenant || defaultPublicSlug(), false);
     const tenant = tenantBySlug(slug);
     if (!tenant) return res.status(404).json({ error: "사이트를 찾을 수 없습니다." });
-    res.json(await tenantServices(tenant, false, null));
+    const lang = normalizeLang(req.query.lang);
+    res.json(await tenantServices(tenant, false, null, lang));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -1520,7 +1513,7 @@ app.get("/api/admin/services", auth, adminOnly, async (req, res) => {
       : isMasterType(tenant)
         ? tenant
         : tenant;
-  const list = await tenantServices(viewTenant, true, req.user);
+  const list = await tenantServices(viewTenant, true, req.user, normalizeLang(req.query.lang));
   res.json(
     list.map((s) => {
       const ov = db.serviceOverrides[s.service] || {};
@@ -1557,20 +1550,38 @@ app.post("/api/admin/service/:id", auth, adminOnly, (req, res) => {
 app.get("/api/admin/my-tenant", auth, adminOnly, (req, res) => {
   const t = db.tenants.find((x) => x.id === req.user.tenantId);
   if (!t) return res.status(404).json({ error: "사이트 없음" });
-  res.json({
+  const body = {
     id: t.id,
     name: t.name,
     type: tenantRoleType(t),
     marginPercent: t.marginPercent,
     creditBalance: t.creditBalance,
-  });
+  };
+  if (isMasterType(t)) {
+    body.fx = fxForTenant(t);
+    body.fxDefault = getFx();
+    body.fxCustom = t.fx != null && parseFloat(t.fx) > 0;
+  }
+  res.json(body);
 });
 app.post("/api/admin/my-tenant", auth, adminOnly, (req, res) => {
   const t = db.tenants.find((x) => x.id === req.user.tenantId);
   if (!t) return res.status(404).json({ error: "사이트 없음" });
   if (req.body?.marginPercent != null) t.marginPercent = parseFloat(req.body.marginPercent);
+  if (req.body?.fx != null) {
+    if (!isMasterType(t)) return res.status(403).json({ error: "본사만 환율을 설정할 수 있습니다." });
+    const v = parseFloat(req.body.fx);
+    if (v > 0) t.fx = v;
+    else delete t.fx;
+  }
   saveDB();
-  res.json({ ok: true, marginPercent: t.marginPercent });
+  svcCache.at = 0;
+  res.json({
+    ok: true,
+    marginPercent: t.marginPercent,
+    fx: isMasterType(t) ? fxForTenant(t) : undefined,
+    fxCustom: isMasterType(t) ? t.fx != null && parseFloat(t.fx) > 0 : undefined,
+  });
 });
 
 // 본사 수익·환율·한국상품 설정
@@ -1738,6 +1749,60 @@ function tenantAdminDTO(t) {
   return d;
 }
 
+function siteLinkDTO(t, kind) {
+  if (!t) return null;
+  const slug = isPlatformType(t) ? platformSlug() : t.slug;
+  const pub = getPublicBaseUrl();
+  const path = `/?tenant=${encodeURIComponent(slug)}`;
+  return {
+    kind,
+    id: t.id,
+    name: isPlatformType(t) ? "슈퍼샤샤" : t.name,
+    slug,
+    path,
+    publicUrl: pub ? `${pub}${path}` : null,
+    admins: isPlatformType(t)
+      ? [CFG.adminUser]
+      : db.users.filter((u) => u.tenantId === t.id && u.role === "admin" && u.active !== false).map((u) => u.username),
+  };
+}
+
+function getPublicBaseUrl() {
+  if (process.env.PUBLIC_BASE_URL) return String(process.env.PUBLIC_BASE_URL).trim().replace(/\/$/, "");
+  try {
+    const p = path.join(__dirname, "data", "public-base.txt");
+    if (fs.existsSync(p)) {
+      const v = fs.readFileSync(p, "utf8").trim().replace(/\/$/, "");
+      if (v) return v;
+    }
+  } catch {}
+  return null;
+}
+
+app.get("/api/admin/site-links", auth, adminOnly, (req, res) => {
+  const links = [];
+  const ut = userTenant(req.user);
+  if (req.user.role === "superadmin") {
+    const plat = platformTenant();
+    const mst = masterTenant();
+    if (plat) links.push(siteLinkDTO(plat, "platform"));
+    if (mst) links.push(siteLinkDTO(mst, "master"));
+    if (mst) for (const a of agenciesOfMaster(mst.id)) links.push(siteLinkDTO(a, "agency"));
+  } else if (isMasterAdmin(req.user)) {
+    if (ut) links.push(siteLinkDTO(ut, "master"));
+    const plat = platformTenant();
+    if (plat) links.push(siteLinkDTO(plat, "platform"));
+    for (const a of agenciesOfMaster(ut.id)) links.push(siteLinkDTO(a, "agency"));
+  } else {
+    if (ut) links.push(siteLinkDTO(ut, "agency"));
+    const mst = parentMaster(ut);
+    if (mst) links.push(siteLinkDTO(mst, "master"));
+    const plat = platformTenant();
+    if (plat) links.push(siteLinkDTO(plat, "platform"));
+  }
+  res.json({ links: links.filter(Boolean), publicBase: getPublicBaseUrl() });
+});
+
 // 테넌트 관리
 app.get("/api/admin/tenants", auth, adminOnly, (req, res) => {
   const ut = userTenant(req.user);
@@ -1778,7 +1843,10 @@ app.post("/api/admin/tenant", auth, adminOnly, (req, res) => {
       if (db.tenants.find((x) => x.slug === slug)) return res.status(409).json({ error: "이미 사용 중인 slug입니다." });
       const mst = masterTenant();
       if (!mst) return res.status(500).json({ error: "본사가 설정되지 않았습니다." });
-      const parentId = body.parentId && db.tenants.find((x) => x.id === body.parentId && isMasterType(x)) ? body.parentId : mst.id;
+      const parentId =
+        req.body.parentId && db.tenants.find((x) => x.id === req.body.parentId && isMasterType(x))
+          ? req.body.parentId
+          : mst.id;
       t = {
         id: slug,
         name: name || "새 대리점",

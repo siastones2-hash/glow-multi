@@ -1,0 +1,241 @@
+/** @typedef {'ko'|'zh'|'vi'|'th'} Lang */
+
+export const SUPPORTED_LANGS = ["ko", "zh", "vi", "th"];
+
+export function normalizeLang(raw) {
+  const q = String(raw || "ko").toLowerCase().slice(0, 2);
+  if (q === "zh" || q === "cn") return "zh";
+  if (q === "vi" || q === "vn") return "vi";
+  if (q === "th") return "th";
+  return "ko";
+}
+
+const KIND_PHRASE = {
+  ko: {
+    followers: "팔로워·구독자 증가",
+    likes: "좋아요·반응 증가",
+    views: "조회수·노출 증가",
+    comments: "댓글·참여 증가",
+    shares: "공유·확산",
+    saves: "저장·관심 지표 강화",
+    live: "라이브·실시간 시청",
+    general: "계정·콘텐츠 성장",
+  },
+  zh: {
+    followers: "粉丝/订阅增长",
+    likes: "点赞/互动增长",
+    views: "播放量/曝光增长",
+    comments: "评论/互动增长",
+    shares: "分享/传播",
+    saves: "收藏/兴趣指标",
+    live: "直播/实时观看",
+    general: "账号/内容增长",
+  },
+  vi: {
+    followers: "Tăng follower/đăng ký",
+    likes: "Tăng thích/tương tác",
+    views: "Tăng lượt xem/hiển thị",
+    comments: "Tăng bình luận/tương tác",
+    shares: "Chia sẻ/lan truyền",
+    saves: "Lưu/chỉ số quan tâm",
+    live: "Live/xem trực tiếp",
+    general: "Tăng trưởng tài khoản/nội dung",
+  },
+  th: {
+    followers: "เพิ่มผู้ติดตาม/สมาชิก",
+    likes: "เพิ่มไลก์/การมีส่วนร่วม",
+    views: "เพิ่มยอดวิว/การมองเห็น",
+    comments: "เพิ่มคอมเมนต์/การมีส่วนร่วม",
+    shares: "แชร์/การเผยแพร่",
+    saves: "บันทึก/ตัวชี้วัดความสนใจ",
+    live: "ไลฟ์/การรับชมแบบเรียลไทม์",
+    general: "การเติบโตของบัญชี/คอน텐츠",
+  },
+};
+
+export const KIND_LABELS = {
+  ko: {
+    followers: "팔로워·구독",
+    likes: "좋아요·반응",
+    views: "조회·노출",
+    comments: "댓글·참여",
+    shares: "공유·확산",
+    saves: "저장",
+    live: "라이브",
+    general: "기타",
+  },
+  zh: { followers: "粉丝/订阅", likes: "点赞", views: "播放/曝光", comments: "评论", shares: "分享", saves: "收藏", live: "直播", general: "其他" },
+  vi: { followers: "Follower", likes: "Thích", views: "Lượt xem", comments: "Bình luận", shares: "Chia sẻ", saves: "Lưu", live: "Live", general: "Khác" },
+  th: { followers: "ผู้ติดตาม", likes: "ไลก์", views: "ยอดวิว", comments: "คอมเมนต์", shares: "แชร์", saves: "บันทึก", live: "ไลฟ์", general: "อื่นๆ" },
+};
+
+const CAT_LABEL = {
+  ko: {},
+  zh: {
+    인스타그램: "Instagram",
+    유튜브: "YouTube",
+    틱톡: "TikTok",
+    "X(트위터)": "X (Twitter)",
+    페이스북: "Facebook",
+    텔레그램: "Telegram",
+    스레드: "Threads",
+    네이버: "Naver",
+    카카오: "Kakao",
+    기타: "其他",
+  },
+  vi: {
+    인스타그램: "Instagram",
+    유튜브: "YouTube",
+    틱톡: "TikTok",
+    "X(트위터)": "X (Twitter)",
+    페이스북: "Facebook",
+    텔레그램: "Telegram",
+    스레드: "Threads",
+    네이버: "Naver",
+    카카오: "Kakao",
+    기타: "Khác",
+  },
+  th: {
+    인스타그램: "Instagram",
+    유튜브: "YouTube",
+    틱톡: "TikTok",
+    "X(트witter)": "X (Twitter)",
+    "X(트위터)": "X (Twitter)",
+    페이스북: "Facebook",
+    텔레그램: "Telegram",
+    스레드: "Threads",
+    네이버: "Naver",
+    카카오: "Kakao",
+    기타: "อื่นๆ",
+  },
+};
+
+const LINK_HINTS = {
+  ko: {
+    인스타그램: "게시물·릴스·프로필 URL (예: instagram.com/p/… 또는 /reel/…)",
+    유튜브: "동영상·쇼츠·채널 URL (예: youtube.com/watch?v=…)",
+    틱톡: "틱톡 동영상 또는 프로필 URL",
+    "X(트위터)": "트윗·프로필 URL",
+    페이스북: "페이지·게시물·프로필 URL",
+    텔레그램: "채널·게시물 URL",
+    스레드: "게시물·프로필 URL",
+    네이버: "블로그·스마트스토어·플레이스 URL",
+    카카오: "채널·스토어 URL",
+    default: "해당 플랫폼의 공개 URL을 붙여넣으세요",
+    prefix: "링크 입력:",
+  },
+  zh: {
+    인스타그램: "帖子/Reels/主页 URL（如 instagram.com/p/…）",
+    유튜브: "视频/Shorts/频道 URL（如 youtube.com/watch?v=…）",
+    틱톡: "TikTok 视频或主页 URL",
+    "X(트위터)": "推文/主页 URL",
+    페이스북: "主页/帖子 URL",
+    텔레그램: "频道/帖子 URL",
+    default: "请粘贴该平台的公开 URL",
+    prefix: "链接:",
+  },
+  vi: {
+    인스타그램: "URL bài/Reels/hồ sơ (vd: instagram.com/p/…)",
+    유튜브: "URL video/Shorts/kênh (vd: youtube.com/watch?v=…)",
+    틱톡: "URL video hoặc hồ sơ TikTok",
+    "X(트위터)": "URL tweet/hồ sơ",
+    페이스북: "URL trang/bài viết",
+    텔레그램: "URL kênh/bài viết",
+    default: "Dán URL công khai của nền tảng",
+    prefix: "Liên kết:",
+  },
+  th: {
+    인스타그램: "URL โพสต์/Reels/โปรไฟล์ (เช่น instagram.com/p/…)",
+    유튜브: "URL วิดีโอ/Shorts/ช่อง (เช่น youtube.com/watch?v=…)",
+    틱톡: "URL วิดีโอหรือโปรไฟล์ TikTok",
+    "X(트witter)": "URL ทวีต/โปรไฟล์",
+    "X(트위터)": "URL ทวีต/โปรไฟล์",
+    페이스북: "URL เพจ/โพสต์",
+    텔레그램: "URL ช่อง/โพสต์",
+    default: "วาง URL สาธารณะของแพลตฟอร์ม",
+    prefix: "ลิงก์:",
+  },
+};
+
+const DESC_TPL = {
+  ko: {
+    intro: (cat, kind) => `${cat} ${kind} 상품입니다. `,
+    kr: "한국 타겟·국내 알고리즘에 유리한 고품질 옵션으로, 국내 도달·탐색 노출 강화에 적합합니다. ",
+    vn: "베트남 타겟·현지 사용자 기반 옵션으로, 동남아 시장·현지 도달 캠페인에 적합합니다. ",
+    hq: "고품질(HQ) 옵션으로 자연스러운 증가 속도와 안정적인 처리에 초점을 맞췄습니다. ",
+    std: "빠른 처리와 합리적인 가격으로 캠페인·테스트 주문에 적합합니다. ",
+    refill: "일정 기간 드롭(감소) 발생 시 보상(리필)이 포함된 안정형 상품입니다. ",
+    footer: "주문 후 공급망에서 자동 처리되며, 주문 내역에서 진행률을 확인할 수 있습니다.",
+  },
+  zh: {
+    intro: (cat, kind) => `${cat} ${kind}服务。`,
+    kr: "面向韩国用户，适合本地算法与曝光提升。",
+    vn: "面向越南用户，适合东南亚本地推广。",
+    hq: "高品质(HQ)选项，增长更自然、处理更稳定。",
+    std: "处理快速、价格合理，适合活动与测试订单。",
+    refill: "含补量(refill)保障，掉粉时可补偿。",
+    footer: "下单后自动处理，可在订单记录中查看进度。",
+  },
+  vi: {
+    intro: (cat, kind) => `Dịch vụ ${kind} trên ${cat}. `,
+    kr: "Nhắm người dùng Hàn Quốc, phù hợp thuật toán và hiển thị nội địa. ",
+    vn: "Nhắm người dùng Việt Nam, phù hợp chiến dịch địa phương Đông Nam Á. ",
+    hq: "Tùy chọn HQ chất lượng cao, tăng trưởng tự nhiên và ổn định. ",
+    std: "Xử lý nhanh, giá hợp lý, phù hợp chiến dịch và đơn thử. ",
+    refill: "Có bảo hành refill khi số lượng giảm trong thời hạn. ",
+    footer: "Tự động xử lý sau khi đặt; theo dõi tiến độ trong lịch sử đơn.",
+  },
+  th: {
+    intro: (cat, kind) => `บริการ${kind}บน${cat} `,
+    kr: "กลุ่มเป้าหมายเกาหลี เหมาะกับอัลกอริทึมและการมองเห็นในประเทศ ",
+    vn: "กลุ่มเป้าหมายเวียดนาม เหมาะกับแคมเปญในภูมิภาค ",
+    hq: "ตัวเลือก HQ คุณภาพสูง เติบโตเป็นธรรมชาติและเสถียร ",
+    std: "ประมวลผลเร็ว ราคาเหมาะสม เหมาะกับแคมเปญและทดสอบ ",
+    refill: "มี refill ชดเชยหากยอดลดลงภายในระยะเวลาที่กำหนด ",
+    footer: "ระบบประมวลผลอัตโนมัติหลังสั่งซื้อ ตรวจความคืบหน้าในประวัติคำสั่งซื้อ",
+  },
+};
+
+function categoryLabel(category, lang) {
+  if (lang === "ko") return category;
+  return CAT_LABEL[lang]?.[category] || category;
+}
+
+/**
+ * @param {object} svc raw service
+ * @param {string} category normalized Korean category key
+ * @param {string} kind service kind key
+ * @param {boolean} isKr
+ * @param {boolean} isVn
+ * @param {boolean} hasRefill
+ * @param {boolean} isHq
+ * @param {Lang} lang
+ */
+export function buildServiceMeta(svc, category, kind, isKr, isVn, hasRefill, isHq, lang = "ko") {
+  const L = normalizeLang(lang);
+  const tpl = DESC_TPL[L] || DESC_TPL.ko;
+  const kindPhrase = KIND_PHRASE[L]?.[kind] || KIND_PHRASE.ko[kind] || kind;
+  const catDisplay = categoryLabel(category, L);
+
+  let desc = tpl.intro(catDisplay, kindPhrase);
+  if (isKr) desc += tpl.kr;
+  else if (isVn) desc += tpl.vn;
+  else if (isHq) desc += tpl.hq;
+  else desc += tpl.std;
+  if (hasRefill) desc += tpl.refill;
+  desc += tpl.footer;
+
+  const hints = LINK_HINTS[L] || LINK_HINTS.ko;
+  const linkHint = `${hints.prefix} ${hints[category] || hints.default}`;
+  const kindLabel = KIND_LABELS[L]?.[kind] || KIND_LABELS.ko[kind] || kind;
+
+  return {
+    category,
+    categoryLabel: catDisplay,
+    description: desc,
+    linkHint,
+    kind,
+    kindLabel,
+    lang: L,
+  };
+}

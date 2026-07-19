@@ -62,6 +62,10 @@ sleep 3
   echo "■ 영구 주소: 배포-Render.command"
 } | tee "$URL_FILE"
 
+mkdir -p "$DIR/data"
+echo -n "$PUBLIC" > "$DIR/data/public-base.txt"
+echo "공개 주소 저장: data/public-base.txt"
+
 echo ""
 echo "공유 링크 (새 창 3개)…"
 open_new_window "${PUBLIC}/?tenant=sh4-op-internal"

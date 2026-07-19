@@ -1,8 +1,12 @@
-갱신: 2026-07-13
+갱신: 2026-07-19
 
-■ 로컬 (실행_Mac.command)
-  슈퍼샤샤: http://127.0.0.1:3000/?tenant=sh4-op-internal  (leestones/1234)
+■ 로컬 (실행_Mac.command) — 같은 Mac·Wi‑Fi만
   본사:     http://127.0.0.1:3000/?tenant=master  (master/master1234)
-  나인스토리: http://127.0.0.1:3000/?tenant=nine  (nineadmin/nine1234)
 
-■ 공개 링크 → 공유링크.command 로 새 주소 생성
+■ 인터넷 공유 (팀·외부 테스트)
+  supershasha 폴더에서 「공유링크.command」 더블클릭
+  → trycloudflare 주소 생성
+  → 관리자 → 접속 링크 탭에서 「본사」 복사 후 공유
+
+■ Render 영구 주소
+  https://supershasha.onrender.com/?tenant=master
