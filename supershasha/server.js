@@ -120,87 +120,33 @@ function serviceMeta(svc, lang = "ko") {
 function serviceMetaKo(svc) {
   return serviceMeta(svc, "ko");
 }
-const CORE_PLATFORMS = new Set([
-  "인스타그램", "유튜브", "틱톡", "X(트위터)", "페이스북", "텔레그램", "스레드", "스포티파이",
-]);
-const EXTENDED_PLATFORMS = new Set([
-  "링크드인", "핀터레스트", "스냅챗", "디스코드", "레딧", "트위치", "사운드클라우드", "왓츠앱", "라인",
-  "Kick", "Rumble", "Quora", "구글맵", "Steam", "Shopee", "Vimeo", "Medium", "Clubhouse", "Tumblr", "VK",
-  "숲(Soop)", "네이버", "카카오",
-]);
-const KNOWN_PLATFORMS = new Set([...CORE_PLATFORMS, ...EXTENDED_PLATFORMS]);
-const CURATE_CORE_PER_GROUP = 5;
 const PLATFORM_ORDER = [
   "인스타그램", "유튜브", "틱톡", "X(트위터)", "페이스북", "텔레그램", "스레드", "스포티파이",
   "링크드인", "핀터레스트", "스냅챗", "디스코드", "레딧", "트위치", "구글맵", "Kick", "Steam",
   "사운드클라우드", "왓츠앱", "라인", "Rumble", "Quora", "Shopee", "VK", "Tumblr", "Medium", "Vimeo", "Clubhouse",
   "숲(Soop)", "네이버", "카카오",
 ];
-const BLOCK_SVC_NAME = /test|테스트|\bfree\b|무료|sample|샘플|disabled|adult|성인|casino|gambling|hack|크랙/i;
 
-function scoreService(svc) {
-  const name = String(svc.name || "").toLowerCase();
-  let score = 0;
-  if (isPriorityRegionService({ name: svc.name, category: svc.category })) score += 35;
-  if (/uhq|hq|premium|프리미엄|organic|오가닉|고품질|real|리얼|quality/.test(name)) score += 22;
-  if (/refill|리필|보장|guarantee|lifetime|평생|365|30일|7일/.test(name)) score += 12;
-  if (/저가|cheap|bulk|대량|fast|빠른/.test(name)) score += 6;
-  if (/slow|느린|low quality|저질|bot only|봇만/.test(name)) score -= 25;
-  if (name.length > 90) score -= 8;
-  return score;
-}
-
-function curateServices(arr) {
+/** 모어댄 API 전체 상품 — min/max만 검증, 플랫폼·개수 제한 없음 */
+function allProviderServices(arr) {
   if (!Array.isArray(arr) || !arr.length) return arr;
-  const filtered = arr.filter((s) => {
+  const out = arr.filter((s) => {
     const name = stripBrandText(s.name || "");
-    if (!name || BLOCK_SVC_NAME.test(name)) return false;
-    const cat = normalizeCategory(s.category || s.type || "", name);
-    if (!KNOWN_PLATFORMS.has(cat)) return false;
+    if (!name) return false;
     const min = parseInt(s.min, 10) || 0;
     const max = parseInt(s.max, 10) || 0;
-    if (max < min || max <= 0) return false;
-    return true;
+    return max >= min && max > 0;
   });
-  const picked = [];
-  const coreGroups = new Map();
-  const seen = new Set();
-  for (const s of filtered) {
-    const id = s.service;
-    const cat = normalizeCategory(s.category || s.type || "", s.name || "");
-    if (isPriorityRegionService(s) || EXTENDED_PLATFORMS.has(cat)) {
-      if (!seen.has(id)) {
-        picked.push(s);
-        seen.add(id);
-      }
-      continue;
-    }
-    const meta = serviceMetaKo(s);
-    const key = `${meta.category}|${meta.kind}`;
-    if (!coreGroups.has(key)) coreGroups.set(key, []);
-    coreGroups.get(key).push({ s, score: scoreService(s) });
-  }
-  for (const items of coreGroups.values()) {
-    items.sort((a, b) => b.score - a.score);
-    const take = Math.min(CURATE_CORE_PER_GROUP, items.length);
-    for (let i = 0; i < take; i++) {
-      const svc = items[i].s;
-      if (!seen.has(svc.service)) {
-        picked.push(svc);
-        seen.add(svc.service);
-      }
-    }
-  }
   const catOrder = PLATFORM_ORDER;
-  picked.sort((a, b) => {
-    const ca = normalizeCategory(a.category || "", a.name || "");
-    const cb = normalizeCategory(b.category || "", b.name || "");
+  out.sort((a, b) => {
+    const ca = normalizeCategory(a.category || a.type || "", a.name || "");
+    const cb = normalizeCategory(b.category || b.type || "", b.name || "");
     const ia = catOrder.indexOf(ca);
     const ib = catOrder.indexOf(cb);
     if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-    return scoreService(b) - scoreService(a);
+    return stripBrandText(a.name || "").localeCompare(stripBrandText(b.name || ""), "ko");
   });
-  return picked.length ? picked : filtered.slice(0, 60);
+  return out;
 }
 
 function providerErrorKo(resp, forSuper = false) {
@@ -716,7 +662,7 @@ async function getServices() {
       });
     }
     if (!arr.length) throw new Error("빈 응답");
-    arr = curateServices(arr);
+    arr = allProviderServices(arr);
     svcCache = { at: Date.now(), data: arr, mode: "live", error: null };
     return arr;
   } catch (e) {
@@ -1080,7 +1026,7 @@ app.get("/api/config", (req, res) => {
     ok: true,
     ...ps,
     demo: DEMO,
-    curated: true,
+    curated: false,
     publicBase: getPublicBaseUrl(),
   });
 });
