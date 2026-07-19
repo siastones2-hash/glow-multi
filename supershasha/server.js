@@ -1949,6 +1949,71 @@ app.post("/api/tg/webhook/tenant/:id", async (req, res) => {
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 loadDB();
+syncTelegramFromEnv();
+
+function syncTelegramFromEnv() {
+  if (!CFG.tgToken && !CFG.tgChat) return;
+  const s = ensureTelegramSettings();
+  if (CFG.tgToken) s.botToken = CFG.tgToken;
+  if (CFG.tgChat) s.chatId = CFG.tgChat;
+  saveDB();
+}
+
+function resolvePublicBase() {
+  return (process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || getPublicBaseUrl() || "").replace(/\/$/, "");
+}
+
+async function bootstrapTelegram() {
+  syncTelegramFromEnv();
+  const base = resolvePublicBase();
+  const cfg = getPlatformTelegramConfig();
+  if (!cfg.token) {
+    console.log("ℹ 텔레그램: .env에 TELEGRAM_BOT_TOKEN · TELEGRAM_CHAT_ID 설정 후 재시작");
+    return;
+  }
+  if (base && cfg.token) {
+    try {
+      const url = `${base}/api/tg/webhook`;
+      await tgApi("setWebhook", { url, allowed_updates: ["callback_query"] }, cfg.token);
+      const wasReg = !!ensureTelegramSettings().webhookRegistered;
+      ensureTelegramSettings().webhookRegistered = true;
+      saveDB();
+      console.log(`✅ 텔레그램 webhook → ${url}`);
+      if (!wasReg && cfg.chatId) {
+        await tgApi(
+          "sendMessage",
+          {
+            chat_id: cfg.chatId,
+            text: "✅ <b>슈퍼샤샤</b> 알림 연결됨\n주문·충전·크레딧 요청 알림을 받습니다.",
+            parse_mode: "HTML",
+          },
+          cfg.token
+        );
+      }
+    } catch (e) {
+      console.warn("⚠ 텔레그램 webhook:", e.message);
+    }
+  } else if (cfg.token && cfg.chatId) {
+    console.log("ℹ 텔레그램 알림(발송)만 활성 — webhook은 Render/터널 HTTPS 필요");
+  }
+  const master = masterTenant();
+  if (master && base) {
+    const tc = getTenantTelegramConfig(master);
+    const tok = String(master.telegram?.botToken || "").trim();
+    if (tok && tc?.chatId) {
+      try {
+        const url = `${base}/api/tg/webhook/tenant/${master.id}`;
+        await tgApi("setWebhook", { url, allowed_updates: ["callback_query"] }, tok);
+        ensureTenantTelegram(master).webhookRegistered = true;
+        saveDB();
+        console.log(`✅ 본사 텔레그램 webhook → ${url}`);
+      } catch (e) {
+        console.warn("⚠ 본사 텔레그램 webhook:", e.message);
+      }
+    }
+  }
+}
+
 process.on("uncaughtException", (err) => console.error("uncaughtException:", err));
 process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err));
 process.on("SIGTERM", () => {
@@ -1963,4 +2028,5 @@ process.on("SIGINT", () => {
 app.listen(CFG.port, "0.0.0.0", () => {
   console.log(`리스톤즈 server on :${CFG.port} ${DEMO ? "(preview)" : "(live)"}`);
   getServices().catch((e) => console.warn("⚠ 상품 캐시 예열 실패:", e.message));
+  bootstrapTelegram().catch((e) => console.warn("⚠ 텔레그램 부트스트랩:", e.message));
 });

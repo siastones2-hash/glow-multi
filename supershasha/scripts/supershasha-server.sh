@@ -6,7 +6,10 @@ PORT="${PORT:-3000}"
 PID_FILE="/tmp/supershasha-${PORT}.pid"
 LOG="/tmp/supershasha-srv.log"
 LABEL="com.supershasha.server"
+TUNNEL_LABEL="com.supershasha.tunnel"
 PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
+TUNNEL_PLIST="$HOME/Library/LaunchAgents/${TUNNEL_LABEL}.plist"
+TUNNEL_LOG="/tmp/supershasha-tunnel.log"
 
 supershasha_node() {
   local n="$SUPERSHASHA_DIR/.node-runtime/bin/node"
@@ -114,4 +117,69 @@ supershasha_uninstall_launchd() {
   rm -f "$PLIST"
   supershasha_stop_port
   rm -f "$PID_FILE"
+}
+
+supershasha_install_tunnel_launchd() {
+  local NODE
+  NODE="$(supershasha_node)"
+  if [[ -z "$NODE" ]]; then echo "[!] Node.js 없음"; return 1; fi
+  chmod +x "$SUPERSHASHA_DIR/scripts/supershasha-tunnel.sh"
+  mkdir -p "$HOME/Library/LaunchAgents" "$SUPERSHASHA_DIR/data"
+  cat >"$TUNNEL_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>${TUNNEL_LABEL}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>${SUPERSHASHA_DIR}/scripts/supershasha-tunnel.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PORT</key>
+    <string>${PORT}</string>
+    <key>SUPERSHASHA_DIR</key>
+    <string>${SUPERSHASHA_DIR}</string>
+    <key>PATH</key>
+    <string>$(dirname "$NODE"):/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>KeepAlive</key>
+  <true/>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>${TUNNEL_LOG}</string>
+  <key>StandardErrorPath</key>
+  <string>${TUNNEL_LOG}</string>
+</dict>
+</plist>
+EOF
+  launchctl bootout "gui/$(id -u)/${TUNNEL_LABEL}" 2>/dev/null || launchctl unload "$TUNNEL_PLIST" 2>/dev/null || true
+  launchctl bootstrap "gui/$(id -u)" "$TUNNEL_PLIST" 2>/dev/null || launchctl load "$TUNNEL_PLIST"
+  for _ in $(seq 1 45); do
+    [[ -s "$SUPERSHASHA_DIR/data/public-base.txt" ]] && return 0
+    sleep 1
+  done
+  echo "[!] 터널 URL 대기 시간 초과. 로그: $TUNNEL_LOG"
+  return 1
+}
+
+supershasha_uninstall_tunnel_launchd() {
+  launchctl bootout "gui/$(id -u)/${TUNNEL_LABEL}" 2>/dev/null || launchctl unload "$TUNNEL_PLIST" 2>/dev/null || true
+  rm -f "$TUNNEL_PLIST"
+  pkill -f "cloudflared tunnel" 2>/dev/null || true
+}
+
+supershasha_install_all_launchd() {
+  supershasha_install_launchd && supershasha_install_tunnel_launchd
+}
+
+supershasha_uninstall_all_launchd() {
+  supershasha_uninstall_tunnel_launchd
+  supershasha_uninstall_launchd
 }
