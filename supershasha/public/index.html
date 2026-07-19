@@ -502,10 +502,18 @@ async function setLang(lang){
   applyLangUI();
   applyProviderBanner(S.providerConfig);
   if($('#authOv').classList.contains('show')){ updateAuthHint(); applyAuthUI(); }
-  try{ S.services=await api(servicesQuery()); if(!S.services?.length) S.services=FALLBACK_SVC; buildCalc(); buildCatalog(); }catch{}
+  const prevSvc=S.panelSvc?.service;
+  try{
+    S.services=await api(servicesQuery());
+    if(!S.services?.length) S.services=FALLBACK_SVC;
+    if(prevSvc) S.panelSvc=S.services.find(x=>String(x.service)===String(prevSvc))||null;
+    buildCalc();
+    buildCatalog();
+  }catch{}
   if(S.me&&!$('#dashboard').classList.contains('hidden')) openDash(S.curTab||'dashboard', S.adminSub);
   else renderHeader();
 }
+function adminServicesQuery(){ return '/admin/services?lang='+encodeURIComponent(S.lang||'ko'); }
 // 서버 미연결 시 미리보기용 내장 상품 (실제 운영은 서버에서 실시간 수신)
 const FALLBACK_SVC=[
   {service:2101,name:"인스타그램 한국인 팔로워 [한국 타겟]",category:"인스타그램",min:50,max:50000,rate:8500},
@@ -970,7 +978,7 @@ function calcPrice(){
   const s=S.services.find(x=>x.service==$('#cService').value); if(!s){$('#cPrice').textContent='—';return;}
   $('#cRange').textContent=`(${s.min.toLocaleString()} ~ ${s.max.toLocaleString()})`;
   const q=+$('#cQty').value||0;
-  $('#cPrice').innerHTML = fmt(s.rate*q/1000)+' <small>원</small>';
+  $('#cPrice').innerHTML = fmt(s.rate*q/1000)+' <small>'+t('won')+'</small>';
 }
 function buildCatalog(){
   const cats=platforms();
@@ -1000,7 +1008,7 @@ window.orderFromCard=(id)=>pickService(id);
 function openOrder(svc, qty){
   if(!S.me){ openAuth('login'); toast(t('auth.loginToOrder'),1); return; }
   S.selSvc=svc;
-  $('#oSvcName').textContent=`${svc.category} · ${svc.name}`;
+  $('#oSvcName').textContent=`${catLabel(svc)} · ${svc.name}`;
   $('#oRange').textContent=`(${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()})`;
   $('#oQty').value=qty||svc.min; $('#oLink').value='';
   oCalc(); show('orderOv');
@@ -1434,7 +1442,7 @@ async function tabMembers(b){
   $$('[data-mb]',b).forEach(x=>x.onclick=async()=>{ try{ const delta=+$('#d'+x.dataset.mb).value; await api('/admin/member/'+x.dataset.mb+'/balance',{method:'POST',body:JSON.stringify({delta})}); toast(t('admin.members.adjOk')); tabMembers(b);}catch(e){toast(e.message,1);} });
 }
 async function tabSvc(b){
-  const s=await api('/admin/services');
+  const s=await api(adminServicesQuery());
   const catFilter=S.svcCat||'전체';
   const cats=['전체',...new Set(s.map(x=>x.category))];
   const filtered=s.filter(x=>catFilter==='전체'||x.category===catFilter);

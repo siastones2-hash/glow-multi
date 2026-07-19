@@ -930,6 +930,7 @@ async function tenantServices(tenant, isAdmin, viewer, lang = "ko") {
         kind: meta.kind,
         kindLabel: kindLabels[meta.kind] || kindLabels.general || "기타",
         lang: L,
+        uiLang: L,
         min: parseInt(s.min) || 1,
         max: parseInt(s.max) || 100000,
         rate: p.sell,
@@ -1270,6 +1271,7 @@ app.get("/api/services", async (req, res) => {
     const tenant = tenantBySlug(slug);
     if (!tenant) return res.status(404).json({ error: "사이트를 찾을 수 없습니다." });
     const lang = normalizeLang(req.query.lang);
+    res.set("Cache-Control", "no-store");
     res.json(await tenantServices(tenant, false, null, lang));
   } catch (e) {
     res.status(500).json({ error: e.message });
