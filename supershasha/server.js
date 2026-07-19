@@ -1648,7 +1648,7 @@ app.post("/api/admin/my-tenant/telegram/test", auth, adminOnly, async (req, res)
       "sendMessage",
       {
         chat_id: cfg.chatId,
-        text: `✅ <b>${t.name}</b> 텔레그램 연동 테스트\n본사·대리점 알림이 정상적으로 도착합니다.`,
+        text: `✅ <b>${t.name}</b> 팀 그룹 연동 테스트\n이 방에 주문·충전·가입 알림이 옵니다. (그룹 멤버 전원 수신)`,
         parse_mode: "HTML",
       },
       cfg.token
@@ -1685,7 +1685,7 @@ app.post("/api/admin/telegram/test", auth, adminOnly, async (req, res) => {
       "sendMessage",
       {
         chat_id: cfg.chatId,
-        text: "✅ <b>슈퍼샤샤</b> 텔레그램 연동 테스트\n알림이 정상적으로 도착했습니다.",
+        text: "✅ <b>슈퍼샤샤</b> 팀 그룹 연동 테스트\n이 방에 주문·충전·가입 알림이 옵니다. (그룹 멤버 전원 수신)",
         parse_mode: "HTML",
       },
       cfg.token

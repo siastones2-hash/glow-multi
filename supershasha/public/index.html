@@ -1448,10 +1448,20 @@ async function tabTelegram(b, scope){
     : '본사·소속 대리점의 주문·충전·가입·크레딧 요청 알림을 받습니다.';
   b.innerHTML=`<div class="sec-head"><h2>${title}</h2><span class="tag" style="${tg.configured?'border-color:var(--ok);color:var(--ok)':''}">${tg.configured?'연동됨':'미연동'}</span></div>
    <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">${hint} <b>충전 승인/거절</b>은 텔레그램 버튼으로 처리할 수 있어요.</p>
+   <div class="card neon" style="max-width:720px;margin-bottom:14px;border-color:var(--cyan);background:rgba(0,255,255,.04);padding:14px">
+     <div style="font-weight:700;margin-bottom:8px">👥 팀 3명이 한곳에서 같이 보기</div>
+     <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.75;color:var(--muted)">
+       <li>텔레그램에서 <b style="color:var(--text)">그룹</b> 만들기 (예: 「슈퍼샤샤 알림」)</li>
+       <li>알림 받을 <b style="color:var(--text)">3명 + 봇</b>을 그룹에 초대</li>
+       <li>그룹에서 아무 메시지 또는 <code>/start</code> 입력</li>
+       <li>아래에 <b style="color:var(--text)">그룹 채팅 ID</b> 입력 (보통 <code>-100…</code> 로 시작)</li>
+     </ol>
+     <p style="font-size:12px;color:var(--muted);margin:10px 0 0">→ 알림이 <b style="color:var(--cyan)">그룹방 1곳</b>에 오면 3명 모두 동시에 봅니다. 개인톡 ID는 넣지 마세요.</p>
+   </div>
    <div class="card neon" style="max-width:720px">
      <div style="display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px">
        <div class="field" style="margin:0"><label>봇 토큰 (BotFather)</label><input class="inp mono" id="tgToken" type="text" placeholder="${tg.botTokenSet?tg.botTokenPreview+' — 변경 시 새 토큰 입력':'123456789:ABCdefGHI...'}" autocomplete="off"/></div>
-       <div class="field" style="margin:0"><label>채팅 ID (그룹/채널)</label><input class="inp mono" id="tgChat" value="${tg.chatId||''}" placeholder="-1001234567890"/></div>
+       <div class="field" style="margin:0"><label>팀 그룹 채팅 ID (3명 + 봇)</label><input class="inp mono" id="tgChat" value="${tg.chatId||''}" placeholder="-1001234567890"/></div>
      </div>
      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:13px">
        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgOrder" ${tg.notifyOrders!==false?'checked':''}/> 신규 주문</label>
@@ -1467,7 +1477,7 @@ async function tabTelegram(b, scope){
        <button class="btn ghost" id="hookTg">웹훅 등록</button>
        ${tg.webhookRegistered?'<span class="tag" style="border-color:var(--ok);color:var(--ok);align-self:center">웹훅 OK</span>':''}
      </div>
-     <p class="sub" style="color:var(--muted);font-size:11px;margin:14px 0 0;line-height:1.6">① BotFather에서 봇 생성 → 토큰 복사<br>② 알림 받을 그룹에 봇 추가 → @userinfobot 으로 채팅 ID 확인<br>③ 저장 → 테스트 발송 → 웹훅 등록</p>
+     <p class="sub" style="color:var(--muted);font-size:11px;margin:14px 0 0;line-height:1.6">① BotFather에서 봇 생성 → 토큰 복사<br>② <b>팀 그룹</b>에 3명 + 봇 초대 → @userinfobot 또는 @RawDataBot 으로 <b>그룹</b> ID 확인<br>③ 저장 → 테스트 발송(그룹에 3명 모두 수신) → 웹훅 등록<br>④ Mac: <code>텔레그램-세팅.command</code> 더블클릭으로 자동 설정 가능</p>
    </div>`;
   bindTelegramActions(b, ()=>tabTelegram(b, scope), scope);
 }
