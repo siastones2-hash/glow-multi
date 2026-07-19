@@ -431,6 +431,14 @@ function migrateDB() {
     changed = true;
   }
   if (!db.seq.creditReq) db.seq.creditReq = 1;
+  const ptg = ensureTelegramSettings();
+  if (ptg.notifySignups !== false || ptg.notifyOrders !== false || ptg.notifyTopups !== false) {
+    ptg.notifySignups = false;
+    ptg.notifyOrders = false;
+    ptg.notifyTopups = false;
+    if (ptg.notifyCreditReq == null) ptg.notifyCreditReq = true;
+    changed = true;
+  }
   ensureSeedPasswords();
   if (changed) saveDB();
 }
@@ -811,9 +819,9 @@ function ensureTelegramSettings() {
     db.settings.telegram = {
       botToken: "",
       chatId: "",
-      notifySignups: true,
-      notifyOrders: true,
-      notifyTopups: true,
+      notifySignups: false,
+      notifyOrders: false,
+      notifyTopups: false,
       notifyCreditReq: true,
       webhookRegistered: false,
     };
@@ -932,6 +940,15 @@ function applyTelegramBody(target, body) {
   if (body.notifyTopups != null) target.notifyTopups = !!body.notifyTopups;
   if (body.notifyCreditReq != null) target.notifyCreditReq = !!body.notifyCreditReq;
 }
+function applyPlatformTelegramBody(target, body) {
+  applyTelegramBody(target, body);
+  // 플랫폼 알림은 본사 크레딧 요청만
+  target.notifySignups = false;
+  target.notifyOrders = false;
+  target.notifyTopups = false;
+  if (body?.notifyCreditReq != null) target.notifyCreditReq = !!body.notifyCreditReq;
+  else if (target.notifyCreditReq == null) target.notifyCreditReq = true;
+}
 async function tgApi(method, body, token) {
   const t = token || getTelegramConfig().token;
   if (!t) throw new Error("텔레그램 봇 토큰이 없습니다.");
@@ -973,9 +990,14 @@ async function tgTenant(tenant, text, keyboard, kind) {
   await tgSend(cfg, text, keyboard, kind);
 }
 async function tgNotifyScope(tenant, text, keyboard, kind) {
-  await tgPlatform(text, keyboard, kind);
+  // 슈퍼샤샤: 본사→플랫폼 크레딧(공급) 요청만 — 주문·가입·손님충전은 본사 텔레그램으로
+  if (tenant && isMasterType(tenant) && kind === "credit") {
+    await tgPlatform(text, keyboard, kind);
+  }
   const master = notifyMasterForTenant(tenant);
-  if (master) await tgTenant(master, text, keyboard, kind);
+  if (!master) return;
+  if (isMasterType(tenant) && kind === "credit") return;
+  await tgTenant(master, text, keyboard, kind);
 }
 async function tg(text, keyboard, kind) {
   await tgPlatform(text, keyboard, kind);
@@ -1617,7 +1639,7 @@ app.post("/api/admin/settings", auth, adminOnly, (req, res) => {
   if (req.body?.koreaKeywords != null) db.settings.koreaKeywords = String(req.body.koreaKeywords);
   const tgBody = req.body?.telegram;
   if (tgBody && typeof tgBody === "object") {
-    applyTelegramBody(ensureTelegramSettings(), tgBody);
+    applyPlatformTelegramBody(ensureTelegramSettings(), tgBody);
   }
   saveDB();
   svcCache.at = 0;
@@ -1685,7 +1707,7 @@ app.post("/api/admin/telegram/test", auth, adminOnly, async (req, res) => {
       "sendMessage",
       {
         chat_id: cfg.chatId,
-        text: "✅ <b>슈퍼샤샤</b> 팀 그룹 연동 테스트\n이 방에 주문·충전·가입 알림이 옵니다. (그룹 멤버 전원 수신)",
+        text: "✅ <b>슈퍼샤샤</b> 팀 그룹 연동 테스트\n<b>본사 크레딧 요청</b> 알림이 이 방으로 옵니다.",
         parse_mode: "HTML",
       },
       cfg.token
@@ -1984,7 +2006,7 @@ async function bootstrapTelegram() {
           "sendMessage",
           {
             chat_id: cfg.chatId,
-            text: "✅ <b>슈퍼샤샤</b> 알림 연결됨\n주문·충전·크레딧 요청 알림을 받습니다.",
+            text: "✅ <b>슈퍼샤샤</b> 알림 연결됨\n<b>본사 크레딧(공급) 요청</b>만 이 방으로 옵니다.",
             parse_mode: "HTML",
           },
           cfg.token

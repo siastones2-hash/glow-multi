@@ -1444,10 +1444,23 @@ async function tabTelegram(b, scope){
   }
   const title=isPlatform?'슈퍼샤샤 텔레그램':'텔레그램 알림';
   const hint=isPlatform
-    ? '플랫폼 전체 알림입니다. 주문·충전·가입·크레딧 요청을 받습니다.'
+    ? '<b>본사가 공급 크레딧 충전을 요청할 때만</b> 이 그룹으로 알림이 옵니다. (주문·손님 충전·가입은 본사 텔레그램에서 처리)'
     : '본사·소속 대리점의 주문·충전·가입·크레딧 요청 알림을 받습니다.';
+  const notifyBlock=isPlatform
+    ? `<div style="margin-bottom:16px;padding:12px 14px;border-radius:8px;border:1px solid var(--line);font-size:13px">
+         <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgCredit" ${tg.notifyCreditReq!==false?'checked':''}/> <b>본사 크레딧(공급) 요청</b></label>
+         <p style="font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.5">슈퍼샤샤 알림은 이 항목만 사용합니다. 주문·충전·가입 알림은 본사 계정 → 텔레그램에서 설정하세요.</p>
+       </div>`
+    : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:13px">
+         <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgOrder" ${tg.notifyOrders!==false?'checked':''}/> 신규 주문</label>
+         <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgTopup" ${tg.notifyTopups!==false?'checked':''}/> 충전 요청</label>
+         <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgSignup" ${tg.notifySignups!==false?'checked':''}/> 신규 가입</label>
+         <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgCredit" ${tg.notifyCreditReq!==false?'checked':''}/> 크레딧 요청</label>
+       </div>`;
+  const webhookBlock=isPlatform?'':`<div class="field" style="margin-bottom:14px"><label>웹훅 URL (충전 버튼용 · 자동 등록)</label>
+       <input class="inp mono" readonly id="tgWebhookUrl" value="${tg.webhookUrl||location.origin+'/api/tg/webhook/tenant/master'}" style="font-size:12px"/></div>`;
   b.innerHTML=`<div class="sec-head"><h2>${title}</h2><span class="tag" style="${tg.configured?'border-color:var(--ok);color:var(--ok)':''}">${tg.configured?'연동됨':'미연동'}</span></div>
-   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">${hint} <b>충전 승인/거절</b>은 텔레그램 버튼으로 처리할 수 있어요.</p>
+   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:16px">${hint}${isPlatform?'':' <b>충전 승인/거절</b>은 텔레그램 버튼으로 처리할 수 있어요.'}</p>
    <div class="card neon" style="max-width:720px;margin-bottom:14px;border-color:var(--cyan);background:rgba(0,255,255,.04);padding:14px">
      <div style="font-weight:700;margin-bottom:8px">👥 팀 3명이 한곳에서 같이 보기</div>
      <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.75;color:var(--muted)">
@@ -1463,34 +1476,35 @@ async function tabTelegram(b, scope){
        <div class="field" style="margin:0"><label>봇 토큰 (BotFather)</label><input class="inp mono" id="tgToken" type="text" placeholder="${tg.botTokenSet?tg.botTokenPreview+' — 변경 시 새 토큰 입력':'123456789:ABCdefGHI...'}" autocomplete="off"/></div>
        <div class="field" style="margin:0"><label>팀 그룹 채팅 ID (3명 + 봇)</label><input class="inp mono" id="tgChat" value="${tg.chatId||''}" placeholder="-1001234567890"/></div>
      </div>
-     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:13px">
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgOrder" ${tg.notifyOrders!==false?'checked':''}/> 신규 주문</label>
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgTopup" ${tg.notifyTopups!==false?'checked':''}/> 충전 요청</label>
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgSignup" ${tg.notifySignups!==false?'checked':''}/> 신규 가입</label>
-       <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tgCredit" ${tg.notifyCreditReq!==false?'checked':''}/> 크레딧 요청</label>
-     </div>
-     <div class="field" style="margin-bottom:14px"><label>웹훅 URL (충전 버튼용 · 자동 등록)</label>
-       <input class="inp mono" readonly id="tgWebhookUrl" value="${tg.webhookUrl||(isPlatform?location.origin+'/api/tg/webhook':location.origin+'/api/tg/webhook/tenant/master')}" style="font-size:12px"/></div>
+     ${notifyBlock}
+     ${webhookBlock}
      <div style="display:flex;gap:8px;flex-wrap:wrap">
        <button class="btn cyan" id="saveTg">저장</button>
        <button class="btn ghost" id="testTg">테스트 발송</button>
-       <button class="btn ghost" id="hookTg">웹훅 등록</button>
-       ${tg.webhookRegistered?'<span class="tag" style="border-color:var(--ok);color:var(--ok);align-self:center">웹훅 OK</span>':''}
+       ${isPlatform?'':`<button class="btn ghost" id="hookTg">웹훅 등록</button>`}
+       ${tg.webhookRegistered&&!isPlatform?'<span class="tag" style="border-color:var(--ok);color:var(--ok);align-self:center">웹훅 OK</span>':''}
      </div>
-     <p class="sub" style="color:var(--muted);font-size:11px;margin:14px 0 0;line-height:1.6">① BotFather에서 봇 생성 → 토큰 복사<br>② <b>팀 그룹</b>에 3명 + 봇 초대 → @userinfobot 또는 @RawDataBot 으로 <b>그룹</b> ID 확인<br>③ 저장 → 테스트 발송(그룹에 3명 모두 수신) → 웹훅 등록<br>④ Mac: <code>텔레그램-세팅.command</code> 더블클릭으로 자동 설정 가능</p>
+     <p class="sub" style="color:var(--muted);font-size:11px;margin:14px 0 0;line-height:1.6">${isPlatform
+       ? '① BotFather 봇 토큰 → ② 팀 그룹(3명+봇) → ③ 저장 → 테스트<br>본사가 관리자 → 크레딧 요청을 올리면 이 그룹으로 알림'
+       : '① BotFather에서 봇 생성 → 토큰 복사<br>② <b>팀 그룹</b>에 3명 + 봇 초대 → @userinfobot 또는 @RawDataBot 으로 <b>그룹</b> ID 확인<br>③ 저장 → 테스트 발송 → 웹훅 등록<br>④ Mac: <code>텔레그램-세팅.command</code> 더블클릭으로 자동 설정 가능'}</p>
    </div>`;
   bindTelegramActions(b, ()=>tabTelegram(b, scope), scope);
 }
 function bindTelegramActions(b, reloadFn, scope){
   const isPlatform=scope==='platform';
-  const tgPayload=()=>({
-    botToken:$('#tgToken').value,
-    chatId:$('#tgChat').value.trim(),
-    notifySignups:$('#tgSignup').checked,
-    notifyOrders:$('#tgOrder').checked,
-    notifyTopups:$('#tgTopup').checked,
-    notifyCreditReq:$('#tgCredit').checked
-  });
+  const tgPayload=()=>{
+    const p={
+      botToken:$('#tgToken').value,
+      chatId:$('#tgChat').value.trim(),
+      notifyCreditReq:$('#tgCredit').checked
+    };
+    if(!isPlatform){
+      p.notifySignups=$('#tgSignup').checked;
+      p.notifyOrders=$('#tgOrder').checked;
+      p.notifyTopups=$('#tgTopup').checked;
+    }
+    return p;
+  };
   $('#saveTg').onclick=async()=>{
     try{
       if(isPlatform) await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});
@@ -1510,7 +1524,7 @@ function bindTelegramActions(b, reloadFn, scope){
       toast('테스트 메시지 발송 — 텔레그램 확인');
     }catch(e){toast(e.message,1);}
   };
-  $('#hookTg').onclick=async()=>{
+  $('#hookTg')?.onclick=async()=>{
     try{
       if(isPlatform){
         await api('/admin/settings',{method:'POST',body:JSON.stringify({telegram:tgPayload()})});

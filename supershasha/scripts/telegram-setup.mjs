@@ -99,7 +99,7 @@ console.log("✅ .env 저장 완료");
 
 await tg("sendMessage", {
   chat_id: chatId,
-  text: "✅ <b>슈퍼샤샤</b> 팀 그룹 연동 테스트\n이 방에 주문·충전·가입 알림이 옵니다. (멤버 전원 수신)",
+  text: "✅ <b>슈퍼샤샤</b> 팀 그룹 연동 테스트\n<b>본사 크레딧 요청</b> 알림이 이 방으로 옵니다.",
   parse_mode: "HTML",
 });
 console.log("✅ 테스트 메시지 전송 — 그룹에서 3명 모두 확인하세요");
