@@ -132,26 +132,101 @@ const PLATFORM_ORDER = [
   "숲(Soop)", "네이버", "카카오",
 ];
 
-/** 모어댄 API 전체 상품 — min/max만 검증, 플랫폼·개수 제한 없음 */
-function allProviderServices(arr) {
+const CORE_PLATFORMS = new Set([
+  "인스타그램", "유튜브", "틱톡", "X(트witter)", "X(트위터)", "페이스북", "텔레그램", "스레드", "네이버", "카카오", "스포티파이",
+]);
+const EXTENDED_PLATFORMS = new Set([
+  "링크드인", "디스코드", "트위치", "숲(Soop)", "라인", "핀터레스트", "구글맵",
+]);
+const KNOWN_PLATFORMS = new Set([...CORE_PLATFORMS, ...EXTENDED_PLATFORMS]);
+const PRIORITY_FLAGS = new Set(["🇰🇷", "🇻🇳", "🇨🇳", "🇹🇭", "🇯🇵", "🇺🇸", "🇬🇧"]);
+const CURATE_CORE_KIND = 12;
+const CURATE_EXT_KIND = 6;
+const BLOCK_SVC_NAME = /test|테스트|\bfree\b|무료|sample|샘플|disabled|adult|성인|casino|gambling|hack|크랙/i;
+const OBSCURE_COUNTRY =
+  /\b(italy|uae|emirates|romania|poland|pakistan|egypt|morocco|nigeria|kenya|colombia|peru|chile|argentina|mexico|bangladesh|sri lanka|ukraine|belarus|kazakhstan|iraq|iran|saudi|qatar|lebanon|syria|yemen|afghanistan|nepal|cambodia|myanmar|laos|mongolia|ethiopia|ghana|tunisia|algeria|venezuela|ecuador|bolivia|paraguay|uruguay|guatemala|honduras|luxembourg|slovenia|croatia|serbia|bulgaria|hungary|czech|slovakia|austria|sweden|norway|denmark|finland|portugal|greece|turkey|israel|cyprus|malta|iceland|estonia|latvia|lithuania|moldova|georgia|armenia|azerbaijan)\b/i;
+
+function hasObscureCountryFlag(name) {
+  const flags = String(name).match(/[\u{1F1E6}-\u{1F1FF}]{2}/gu) || [];
+  if (!flags.length) return false;
+  return flags.some((f) => !PRIORITY_FLAGS.has(f));
+}
+
+function isChineseService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /china|chinese|中文|台湾|🇨🇳|\bcn\b/.test(t);
+}
+function isThaiService(svc) {
+  const t = `${stripBrandText(svc.name || "")} ${svc.category || ""}`.toLowerCase();
+  return /thailand|\bthai\b|ไทย|🇹🇭/.test(t);
+}
+
+function scorePopularService(svc) {
+  const name = String(svc.name || "").toLowerCase();
+  let score = 0;
+  if (isKoreanService(svc)) score += 45;
+  if (isVietnameseService(svc)) score += 40;
+  if (isChineseService(svc)) score += 40;
+  if (isThaiService(svc)) score += 38;
+  if (!hasObscureCountryFlag(svc.name || "") && !OBSCURE_COUNTRY.test(name)) score += 18;
+  if (/uhq|hq|premium|프리미엄|real|리얼|organic|오가닉|고품질|vip/.test(name)) score += 16;
+  if (/refill|리필|guarantee|lifetime|평생|365|30 day|7 day|30일|7일/.test(name)) score += 12;
+  if (/instant|fast|빠른|speed/.test(name)) score += 6;
+  if (/slow|느린|low quality|저질|bot only|봇만|no refill|nrf/.test(name)) score -= 28;
+  if (name.length > 120) score -= 10;
+  return score;
+}
+
+/** 인기·핵심 플랫폼 위주 큐레이션 (한/베/중/태 + 글로벌) */
+function curatePopularServices(arr) {
   if (!Array.isArray(arr) || !arr.length) return arr;
-  const out = arr.filter((s) => {
+  const filtered = arr.filter((s) => {
     const name = stripBrandText(s.name || "");
-    if (!name) return false;
+    if (!name || BLOCK_SVC_NAME.test(name)) return false;
+    if (hasObscureCountryFlag(s.name || "")) return false;
+    if (OBSCURE_COUNTRY.test(String(s.name || "").toLowerCase())) return false;
+    const cat = normalizeCategory(s.category || s.type || "", s.name || "");
+    if (!KNOWN_PLATFORMS.has(cat)) return false;
     const min = parseInt(s.min, 10) || 0;
     const max = parseInt(s.max, 10) || 0;
     return max >= min && max > 0;
   });
+
+  const groups = new Map();
+  for (const s of filtered) {
+    const cat = normalizeCategory(s.category || s.type || "", s.name || "");
+    const meta = serviceMetaKo(s);
+    const key = `${cat}|${meta.kind}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ s, score: scorePopularService(s) });
+  }
+
+  const picked = [];
+  const seen = new Set();
+  for (const [key, items] of groups) {
+    const cat = key.split("|")[0];
+    const limit = CORE_PLATFORMS.has(cat) ? CURATE_CORE_KIND : EXTENDED_PLATFORMS.has(cat) ? CURATE_EXT_KIND : 4;
+    items.sort((a, b) => b.score - a.score);
+    for (let i = 0; i < Math.min(limit, items.length); i++) {
+      const svc = items[i].s;
+      if (!seen.has(svc.service)) {
+        picked.push(svc);
+        seen.add(svc.service);
+      }
+    }
+  }
+
   const catOrder = PLATFORM_ORDER;
-  out.sort((a, b) => {
+  picked.sort((a, b) => {
     const ca = normalizeCategory(a.category || a.type || "", a.name || "");
     const cb = normalizeCategory(b.category || b.type || "", b.name || "");
     const ia = catOrder.indexOf(ca);
     const ib = catOrder.indexOf(cb);
     if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-    return stripBrandText(a.name || "").localeCompare(stripBrandText(b.name || ""), "ko");
+    return scorePopularService(b) - scorePopularService(a);
   });
-  return out;
+
+  return picked.length ? picked : filtered.slice(0, 120);
 }
 
 function providerErrorKo(resp, forSuper = false) {
@@ -672,7 +747,7 @@ function processProviderServices(raw) {
     });
   }
   if (!arr.length) throw new Error("빈 응답");
-  return allProviderServices(arr);
+  return curatePopularServices(arr);
 }
 
 function broadcastServicesUpdate() {
@@ -847,7 +922,7 @@ async function tenantServices(tenant, isAdmin, viewer, lang = "ko") {
       const meta = serviceMeta(s, L);
       const row = {
         service: s.service,
-        name: stripDisplayName(s.name),
+        name: meta.displayName || stripDisplayName(s.name),
         category: meta.category,
         categoryLabel: meta.categoryLabel,
         description: meta.description,
@@ -1145,7 +1220,7 @@ app.get("/api/config", (req, res) => {
     ok: true,
     ...ps,
     demo: DEMO,
-    curated: false,
+    curated: true,
     publicBase: getPublicBaseUrl(),
   });
 });

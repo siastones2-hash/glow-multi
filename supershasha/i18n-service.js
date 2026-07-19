@@ -288,16 +288,166 @@ function isGeneratedDescription(text) {
   return /상품입니다\.|服务。|Dịch vụ .* trên|บริการ.*บน/.test(String(text || ""));
 }
 
-/** 모어댄 원본 상품명·API 스펙 그대로 노출 */
-export function buildProviderDescription(svc, lang = "ko") {
+/** 상품 타깃 국가 → 설명 언어 (한국=한글, 베트남=베트남어 …) */
+export function detectProductRegion(svc) {
+  const t = `${svc?.name || ""} ${svc?.category || ""}`.toLowerCase();
+  if (/🇰🇷|\bkorea\b|korean|south korea|한국|국내|\bkr\b/.test(t)) return "ko";
+  if (/🇻🇳|vietnam|vietnamese|베트남|\bvn\b/.test(t)) return "vi";
+  if (/🇨🇳|china|chinese|中文|台湾|taiwan|\bcn\b/.test(t)) return "zh";
+  if (/🇹🇭|thailand|\bthai\b|ไทย/.test(t)) return "th";
+  return "global";
+}
+
+/** 지역 상품은 해당 국어, 글로벌 상품은 UI 언어 */
+export function descriptionLangFor(svc, uiLang = "ko") {
+  const region = detectProductRegion(svc);
+  if (region !== "global") return region;
+  return normalizeLang(uiLang);
+}
+
+const GLOSSARY = {
+  ko: [
+    [/Instagram/gi, "인스타그램"],
+    [/Youtube|YouTube/gi, "유튜브"],
+    [/TikTok|Tik Tok/gi, "틱톡"],
+    [/Facebook/gi, "페이스북"],
+    [/Telegram/gi, "텔레그램"],
+    [/Threads/gi, "스레드"],
+    [/Twitter|X\s*\(/gi, "X(트위터) "],
+    [/Spotify/gi, "스포티파이"],
+    [/Naver/gi, "네이버"],
+    [/Kakao/gi, "카카오"],
+    [/Followers?/gi, "팔로워"],
+    [/Subscribers?/gi, "구독자"],
+    [/Likes?/gi, "좋아요"],
+    [/Comments?/gi, "댓글"],
+    [/Views?/gi, "조회수"],
+    [/Shares?/gi, "공유"],
+    [/Saves?/gi, "저장"],
+    [/Reels?/gi, "릴스"],
+    [/Live Stream|Live Views|Live/gi, "라이브"],
+    [/Watch Hours?/gi, "시청시간"],
+    [/Impressions?/gi, "노출"],
+    [/Reach/gi, "도달"],
+    [/Members?/gi, "멤버"],
+    [/Korea(n)?/gi, "한국"],
+    [/South Korea/gi, "한국"],
+    [/Vietnam(ese)?/gi, "베트남"],
+    [/Thailand|Thai/gi, "태국"],
+    [/China|Chinese/gi, "중국"],
+    [/Japan(ese)?/gi, "일본"],
+    [/United States|USA|US\b/gi, "미국"],
+    [/United Kingdom|UK\b/gi, "영국"],
+    [/Worldwide|Global/gi, "글로벌"],
+    [/High Quality|UHQ|HQ/gi, "고품질"],
+    [/Premium/gi, "프리미엄"],
+    [/Real\b/gi, "리얼"],
+    [/Organic/gi, "오가닉"],
+    [/Custom/gi, "커스텀"],
+    [/Random/gi, "랜덤"],
+    [/Female/gi, "여성"],
+    [/Male/gi, "남성"],
+    [/30 Day Refill|30 Days Refill/gi, "30일 리필"],
+    [/365 Day Refill|Lifetime Refill|Lifetime/gi, "평생 리필"],
+    [/No Refill|Non Refill/gi, "리필 없음"],
+    [/Refill/gi, "리필"],
+    [/Speed:?\s*/gi, "속도: "],
+    [/Max\.?\s*/gi, "최대 "],
+    [/Min\.?\s*/gi, "최소 "],
+    [/Per Day|\/Day/gi, "/일"],
+    [/Day(s)?/gi, "일"],
+  ],
+  zh: [
+    [/Instagram/gi, "Instagram"],
+    [/Followers?/gi, "粉丝"],
+    [/Subscribers?/gi, "订阅"],
+    [/Likes?/gi, "点赞"],
+    [/Comments?/gi, "评论"],
+    [/Views?/gi, "播放量"],
+    [/Korea(n)?/gi, "韩国"],
+    [/Vietnam(ese)?/gi, "越南"],
+    [/Thailand|Thai/gi, "泰国"],
+    [/China|Chinese/gi, "中国"],
+    [/High Quality|UHQ|HQ/gi, "高质量"],
+    [/Premium/gi, "优质"],
+    [/30 Day Refill/gi, "30天补量"],
+    [/Lifetime Refill|Lifetime/gi, "终身补量"],
+    [/Refill/gi, "补量"],
+    [/Speed:?\s*/gi, "速度: "],
+    [/Max\.?\s*/gi, "最多 "],
+  ],
+  vi: [
+    [/Instagram/gi, "Instagram"],
+    [/Followers?/gi, "Follower"],
+    [/Subscribers?/gi, "Người đăng ký"],
+    [/Likes?/gi, "Lượt thích"],
+    [/Comments?/gi, "Bình luận"],
+    [/Views?/gi, "Lượt xem"],
+    [/Korea(n)?/gi, "Hàn Quốc"],
+    [/Vietnam(ese)?/gi, "Việt Nam"],
+    [/Thailand|Thai/gi, "Thái Lan"],
+    [/China|Chinese/gi, "Trung Quốc"],
+    [/High Quality|UHQ|HQ/gi, "Chất lượng cao"],
+    [/30 Day Refill/gi, "Bảo hành 30 ngày"],
+    [/Lifetime Refill|Lifetime/gi, "Bảo hành trọn đời"],
+    [/Refill/gi, "Bảo hành (refill)"],
+    [/Speed:?\s*/gi, "Tốc độ: "],
+    [/Max\.?\s*/gi, "Tối đa "],
+  ],
+  th: [
+    [/Instagram/gi, "Instagram"],
+    [/Followers?/gi, "ผู้ติดตาม"],
+    [/Subscribers?/gi, "ผู้ติดตาม"],
+    [/Likes?/gi, "ไลก์"],
+    [/Comments?/gi, "คอมเมนต์"],
+    [/Views?/gi, "ยอดวิว"],
+    [/Korea(n)?/gi, "เกาหลี"],
+    [/Vietnam(ese)?/gi, "เวียดนาม"],
+    [/Thailand|Thai/gi, "ไทย"],
+    [/China|Chinese/gi, "จีน"],
+    [/High Quality|UHQ|HQ/gi, "คุณภาพสูง"],
+    [/30 Day Refill/gi, "เติม 30 วัน"],
+    [/Lifetime Refill|Lifetime/gi, "เติมตลอดชีพ"],
+    [/Refill/gi, "เติม (refill)"],
+    [/Speed:?\s*/gi, "ความเร็ว: "],
+    [/Max\.?\s*/gi, "สูงสุด "],
+  ],
+};
+
+export function localizeSegment(text, lang) {
   const L = normalizeLang(lang);
+  let out = String(text || "").trim();
+  if (!out) return out;
+  for (const [re, rep] of GLOSSARY[L] || []) {
+    out = out.replace(re, rep);
+  }
+  return out.replace(/\s{2,}/g, " ").trim();
+}
+
+export function localizeServiceName(rawName, lang) {
+  const name = stripPanelBrand(rawName || "");
+  if (!name) return name;
+  const L = normalizeLang(lang);
+  if (name.includes("|")) {
+    return name
+      .split("|")
+      .map((s) => localizeSegment(s.trim(), L))
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return localizeSegment(name, L);
+}
+
+/** 모어댄 상품명·스펙 — 타깃 국가 언어로 설명 */
+export function buildProviderDescription(svc, uiLang = "ko") {
+  const L = descriptionLangFor(svc, uiLang);
   const lab = SPEC_LABELS[L] || SPEC_LABELS.ko;
   const lines = [];
 
   for (const key of ["description", "desc", "service_description"]) {
     const ext = svc?.[key];
     if (ext && String(ext).trim().length > 12 && !isGeneratedDescription(ext)) {
-      lines.push(String(ext).trim(), "");
+      lines.push(localizeSegment(String(ext).trim(), L), "");
       break;
     }
   }
@@ -310,9 +460,9 @@ export function buildProviderDescription(svc, lang = "ko") {
         .split("|")
         .map((s) => s.trim())
         .filter(Boolean)
-        .forEach((seg) => lines.push(`· ${seg}`));
+        .forEach((seg) => lines.push(`· ${localizeSegment(seg, L)}`));
     } else {
-      lines.push(name);
+      lines.push(localizeSegment(name, L));
     }
   }
 
@@ -323,9 +473,6 @@ export function buildProviderDescription(svc, lang = "ko") {
 
   const apiCat = svc?.category || svc?.type;
   if (apiCat) lines.push(`· ${lab.category(String(apiCat))}`);
-  if (svc?.type && svc?.category && String(svc.type) !== String(svc.category)) {
-    lines.push(`· ${lab.type(String(svc.type))}`);
-  }
 
   if (truthyFlag(svc?.refill)) lines.push(`· ${lab.refillYes}`);
   else if (svc?.refill === false || svc?.refill === 0 || svc?.refill === "0") lines.push(`· ${lab.refillNo}`);
@@ -352,21 +499,24 @@ export function buildProviderDescription(svc, lang = "ko") {
  * @param {Lang} lang
  */
 export function buildServiceMeta(svc, category, kind, isKr, isVn, hasRefill, isHq, lang = "ko") {
-  const L = normalizeLang(lang);
-  const catDisplay = categoryLabel(category, L);
-  const desc = buildProviderDescription(svc, L);
+  const uiLang = normalizeLang(lang);
+  const descLang = descriptionLangFor(svc, uiLang);
+  const catDisplay = categoryLabel(category, uiLang);
+  const desc = buildProviderDescription(svc, uiLang);
 
-  const hints = LINK_HINTS[L] || LINK_HINTS.ko;
+  const hints = LINK_HINTS[uiLang] || LINK_HINTS.ko;
   const linkHint = `${hints.prefix} ${hints[category] || hints.default}`;
-  const kindLabel = KIND_LABELS[L]?.[kind] || KIND_LABELS.ko[kind] || kind;
+  const kindLabel = KIND_LABELS[uiLang]?.[kind] || KIND_LABELS.ko[kind] || kind;
 
   return {
     category,
     categoryLabel: catDisplay,
     description: desc,
+    displayName: localizeServiceName(svc?.name, descLang),
+    descLang,
     linkHint,
     kind,
     kindLabel,
-    lang: L,
+    lang: uiLang,
   };
 }
