@@ -26,6 +26,8 @@ services:
         value: "1527"
       - key: KOREA_ONLY
         value: "false"
+      - key: SERVICES_SYNC_SEC
+        value: "30"
       - key: PUBLIC_URL
         value: https://supershasha.onrender.com
       - key: TELEGRAM_BOT_TOKEN

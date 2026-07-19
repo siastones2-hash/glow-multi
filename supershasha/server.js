@@ -29,6 +29,7 @@ const CFG = {
   koreaOnly: process.env.KOREA_ONLY === "true", // 실제 공급사 응답을 한국 상품만 필터
   platformSlug: process.env.PLATFORM_SLUG || "sh4-op-internal", // 사장님 전용 (총판에게 절대 공유 금지)
   masterSlug: process.env.MASTER_SLUG || "master",
+  servicesSyncSec: Math.max(15, parseInt(process.env.SERVICES_SYNC_SEC, 10) || 30),
 };
 const DEMO = !CFG.apiKey; // API 키 없으면 데모(샘플 서비스) 모드
 
@@ -633,8 +634,134 @@ const DEMO_SERVICES = [
   { service:8510, name:"텔레그램 반응 + 조회수", category:"텔레그램", min:10, max:300000, rate:"0.03" }
 ];
 
-// 서비스 캐시 (5분)
-let svcCache = { at: 0, data: [], mode: DEMO ? "preview" : "live", error: null };
+// 서비스 캐시 + 모어댄 실시간 동기화
+let svcCache = {
+  at: 0,
+  syncAt: 0,
+  data: [],
+  mode: DEMO ? "preview" : "live",
+  error: null,
+  rev: 0,
+  fingerprint: "",
+};
+let svcSyncPromise = null;
+let svcSyncTimer = null;
+const svcSseClients = new Set();
+
+function servicesFingerprint(arr) {
+  const sig = arr
+    .map((s) =>
+      [s.service, s.rate, s.min, s.max, stripBrandText(s.name || ""), s.category || s.type || ""].join("|")
+    )
+    .sort((a, b) => String(a).localeCompare(String(b)))
+    .join("\n");
+  return crypto.createHash("sha256").update(sig).digest("hex").slice(0, 16);
+}
+
+function processProviderServices(raw) {
+  let arr = Array.isArray(raw) ? raw : [];
+  if (koreaFilterOn()) {
+    const kws = koreaKeywords();
+    arr = arr.filter((s) => {
+      const t = ((s.name || "") + " " + (s.category || "")).toLowerCase();
+      return kws.some((k) => t.includes(k));
+    });
+  }
+  if (!arr.length) throw new Error("빈 응답");
+  return allProviderServices(arr);
+}
+
+function broadcastServicesUpdate() {
+  const payload = JSON.stringify({
+    rev: svcCache.rev,
+    count: svcCache.data.length,
+    syncAt: svcCache.syncAt,
+    mode: svcCache.mode,
+  });
+  for (const client of svcSseClients) {
+    try {
+      client.res.write(`event: services\ndata: ${payload}\n\n`);
+    } catch {
+      svcSseClients.delete(client);
+    }
+  }
+}
+
+async function refreshServicesFromProvider(force = false) {
+  if (DEMO) {
+    svcCache = {
+      at: Date.now(),
+      syncAt: Date.now(),
+      data: DEMO_SERVICES,
+      mode: "preview",
+      error: null,
+      rev: svcCache.rev || 1,
+      fingerprint: servicesFingerprint(DEMO_SERVICES),
+    };
+    return svcCache.data;
+  }
+  if (svcSyncPromise) return svcSyncPromise;
+  svcSyncPromise = (async () => {
+    try {
+      const raw = await moreThan({ action: "services" });
+      const arr = processProviderServices(raw);
+      const fp = servicesFingerprint(arr);
+      const changed = force || fp !== svcCache.fingerprint || !svcCache.data.length;
+      const now = Date.now();
+      if (changed) {
+        svcCache = {
+          at: now,
+          syncAt: now,
+          data: arr,
+          mode: "live",
+          error: null,
+          rev: (svcCache.rev || 0) + 1,
+          fingerprint: fp,
+        };
+        console.log(`↻ 모어댄 상품 동기화: ${arr.length}개 (rev ${svcCache.rev})`);
+        broadcastServicesUpdate();
+      } else {
+        svcCache.at = now;
+        svcCache.syncAt = now;
+        svcCache.mode = "live";
+        svcCache.error = null;
+      }
+      return svcCache.data;
+    } catch (e) {
+      console.warn("⚠ 공급사 서비스 수신 실패:", e.message);
+      if (svcCache.data?.length) {
+        svcCache.mode = "degraded";
+        svcCache.error = e.message;
+        return svcCache.data;
+      }
+      svcCache = {
+        at: Date.now(),
+        syncAt: Date.now(),
+        data: [],
+        mode: "degraded",
+        error: e.message,
+        rev: svcCache.rev || 0,
+        fingerprint: svcCache.fingerprint || "",
+      };
+      throw new Error("공급사 상품 목록을 불러오지 못했습니다. API 키·네트워크를 확인하세요.");
+    } finally {
+      svcSyncPromise = null;
+    }
+  })();
+  return svcSyncPromise;
+}
+
+function invalidateServicesCache() {
+  svcCache.at = 0;
+  refreshServicesFromProvider(true).catch((e) => console.warn("⚠ 상품 강제 동기화 실패:", e.message));
+}
+
+function startServicesSyncLoop() {
+  if (svcSyncTimer || DEMO) return;
+  const tick = () => refreshServicesFromProvider(false).catch(() => {});
+  tick();
+  svcSyncTimer = setInterval(tick, CFG.servicesSyncSec * 1000);
+}
 
 function providerStatus() {
   return {
@@ -642,41 +769,29 @@ function providerStatus() {
     connected: !DEMO && svcCache.mode === "live",
     serviceCount: svcCache.data?.length || 0,
     error: svcCache.error || null,
+    servicesRev: svcCache.rev || 0,
+    servicesSyncAt: svcCache.syncAt || 0,
+    servicesSyncSec: CFG.servicesSyncSec,
   };
 }
 
-async function getServices() {
-  if (Date.now() - svcCache.at < 5 * 60 * 1000 && svcCache.data.length) return svcCache.data;
+async function getServices(force = false) {
   if (DEMO) {
-    svcCache = { at: Date.now(), data: DEMO_SERVICES, mode: "preview", error: null };
-    return DEMO_SERVICES;
-  }
-  try {
-    const raw = await moreThan({ action: "services" });
-    let arr = Array.isArray(raw) ? raw : [];
-    if (koreaFilterOn()) {
-      const kws = koreaKeywords();
-      arr = arr.filter((s) => {
-        const t = ((s.name || "") + " " + (s.category || "")).toLowerCase();
-        return kws.some((k) => t.includes(k));
-      });
+    if (!svcCache.data.length) {
+      svcCache = {
+        at: Date.now(),
+        syncAt: Date.now(),
+        data: DEMO_SERVICES,
+        mode: "preview",
+        error: null,
+        rev: 1,
+        fingerprint: servicesFingerprint(DEMO_SERVICES),
+      };
     }
-    if (!arr.length) throw new Error("빈 응답");
-    arr = allProviderServices(arr);
-    svcCache = { at: Date.now(), data: arr, mode: "live", error: null };
-    return arr;
-  } catch (e) {
-    console.warn("⚠ 공급사 서비스 수신 실패:", e.message);
-    const stale = svcCache.data?.length ? svcCache.data : null;
-    svcCache = {
-      at: Date.now() - 4.5 * 60 * 1000,
-      data: stale || [],
-      mode: "degraded",
-      error: e.message,
-    };
-    if (stale) return stale;
-    throw new Error("공급사 상품 목록을 불러오지 못했습니다. API 키·네트워크를 확인하세요.");
+    return svcCache.data;
   }
+  if (force || !svcCache.data.length) await refreshServicesFromProvider(force);
+  return svcCache.data;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1040,6 +1155,34 @@ app.get("/api/tenant/:slug", (req, res) => {
   const t = tenantBySlug(slug);
   if (!t) return res.status(404).json({ error: "사이트를 찾을 수 없습니다." });
   res.json(publicTenant(t));
+});
+
+app.get("/api/services/revision", (req, res) => {
+  res.json({
+    rev: svcCache.rev || 0,
+    count: svcCache.data?.length || 0,
+    syncAt: svcCache.syncAt || 0,
+    mode: svcCache.mode,
+    error: svcCache.error || null,
+  });
+});
+
+app.get("/api/services/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  if (res.flushHeaders) res.flushHeaders();
+  const client = { res };
+  svcSseClients.add(client);
+  res.write(
+    `event: hello\ndata: ${JSON.stringify({
+      rev: svcCache.rev || 0,
+      count: svcCache.data?.length || 0,
+      syncAt: svcCache.syncAt || 0,
+    })}\n\n`
+  );
+  req.on("close", () => svcSseClients.delete(client));
 });
 
 app.get("/api/services", async (req, res) => {
@@ -1546,7 +1689,7 @@ app.post("/api/admin/my-tenant", auth, adminOnly, (req, res) => {
     else delete t.fx;
   }
   saveDB();
-  svcCache.at = 0;
+  invalidateServicesCache();
   res.json({
     ok: true,
     marginPercent: t.marginPercent,
@@ -1588,7 +1731,7 @@ app.post("/api/admin/settings", auth, adminOnly, (req, res) => {
     applyPlatformTelegramBody(ensureTelegramSettings(), tgBody);
   }
   saveDB();
-  svcCache.at = 0;
+  invalidateServicesCache();
   res.json({ ok: true, telegram: telegramSettingsDTO(req) });
 });
 app.get("/api/admin/my-tenant/telegram", auth, adminOnly, (req, res) => {
@@ -1999,6 +2142,7 @@ process.on("SIGINT", () => {
 const httpServer = app.listen(CFG.port, "0.0.0.0", () => {
   console.log(`리스톤즈 server on :${CFG.port} ${DEMO ? "(preview)" : "(live)"}`);
   getServices().catch((e) => console.warn("⚠ 상품 캐시 예열 실패:", e.message));
+  startServicesSyncLoop();
   bootstrapTelegram().catch((e) => console.warn("⚠ 텔레그램 부트스트랩:", e.message));
 });
 httpServer.on("error", (err) => {

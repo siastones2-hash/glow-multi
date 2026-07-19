@@ -45,14 +45,14 @@ input,select{font-family:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
 header.nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);
   background:linear-gradient(180deg,rgba(8,6,18,.9),rgba(8,6,18,.55));border-bottom:1px solid var(--line)}
-header.nav .wrap.nav-wide{max-width:100%;padding:0 clamp(14px,2.2vw,36px);padding-right:max(168px,calc(clamp(14px,2.2vw,36px) + 152px))}
-.lang-flags{display:flex;align-items:center;gap:3px;padding:4px 5px;background:rgba(8,6,20,.82);border:1px solid var(--line2);border-radius:10px;flex-shrink:0;box-shadow:0 4px 18px rgba(0,0,0,.35)}
-.lang-flag{width:34px;height:30px;border:none;border-radius:7px;background:transparent;font-size:18px;line-height:1;cursor:pointer;opacity:.78;transition:opacity .18s,background .18s,box-shadow .18s;padding:0;display:flex;align-items:center;justify-content:center;font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif}
+header.nav .wrap.nav-wide{max-width:100%;padding:0 clamp(14px,2.2vw,36px)}
+.lang-flags{display:flex;align-items:center;gap:3px;padding:4px 5px;background:rgba(8,6,20,.82);border:1px solid var(--line2);border-radius:10px;flex-shrink:0;box-shadow:0 4px 18px rgba(0,0,0,.35);pointer-events:none}
+.lang-flag{pointer-events:auto;width:34px;height:30px;border:none;border-radius:7px;background:transparent;font-size:18px;line-height:1;cursor:pointer;opacity:.78;transition:opacity .18s,background .18s,box-shadow .18s;padding:0;display:flex;align-items:center;justify-content:center;font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif;touch-action:manipulation}
 .lang-flag:hover{opacity:1;background:rgba(255,255,255,.08)}
 .lang-flag.on{opacity:1;background:rgba(0,240,255,.14);box-shadow:0 0 0 1px rgba(0,240,255,.45)}
 .lang-flag .lf-txt{display:none;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--txt);font-family:"Chakra Petch",monospace}
-header.nav .lang-flags{position:fixed;top:33px;right:max(14px,env(safe-area-inset-right));transform:translateY(-50%);z-index:50}
-header.nav .wrap{padding-right:168px}
+.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;position:relative;z-index:2}
+.nav .wrap{padding-right:20px}
 .nav .wrap{display:flex;align-items:center;gap:18px;height:66px;min-width:0}
 .logo{font-family:"Cormorant Garamond","Noto Serif KR",serif;font-weight:600;font-size:25px;letter-spacing:.15em;display:flex;align-items:center;gap:11px}
 .logo .dot{width:9px;height:9px;border-radius:2px;transform:rotate(45deg);
@@ -71,7 +71,7 @@ header.nav .wrap{padding-right:168px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
   padding:11px 18px;border-radius:11px;font-weight:600;font-size:14px;color:#fff;
   background:linear-gradient(120deg,var(--magenta),var(--violet));position:relative;
-  box-shadow:0 6px 24px rgba(157,78,221,.35);transition:transform .15s,box-shadow .25s}
+  box-shadow:0 6px 24px rgba(157,78,221,.35);transition:transform .15s,box-shadow .25s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .btn:hover{transform:translateY(-1px);box-shadow:0 10px 32px rgba(157,78,221,.55)}
 .btn:active{transform:translateY(0)}
 .btn.cyan{background:linear-gradient(120deg,var(--cyan),#3a8dff);color:#04121a;box-shadow:0 6px 24px rgba(0,240,255,.3)}
@@ -288,16 +288,18 @@ section.blk{padding:46px 0}
   <div class="logo"><span class="dot"></span><img id="brandLogo" class="logo-img hidden" alt="" /><span class="logo-mark" id="brandName"></span></div>
   <div class="tag hidden" id="brandTag">DIGITAL GROWTH</div>
   <div class="sp"></div>
+  <div class="nav-actions">
+  <div class="bal hidden" id="balBox"><span id="balLabel">잔액</span> <b id="balVal">0</b></div>
+  <button class="btn ghost sm hidden" id="dashBtn">대시보드</button>
+  <button class="btn cyan sm hidden" id="loginBtn">로그인</button>
+  <button class="btn ghost sm hidden" id="logoutBtn">로그아웃</button>
   <div class="lang-flags" id="langFlags" role="group" aria-label="Language">
     <button type="button" class="lang-flag" data-lang="ko" title="한국어" aria-label="한국어"><span class="lf-emoji">🇰🇷</span><span class="lf-txt">KR</span></button>
     <button type="button" class="lang-flag" data-lang="zh" title="中文" aria-label="中文"><span class="lf-emoji">🇨🇳</span><span class="lf-txt">CN</span></button>
     <button type="button" class="lang-flag" data-lang="vi" title="Tiếng Việt" aria-label="Tiếng Việt"><span class="lf-emoji">🇻🇳</span><span class="lf-txt">VN</span></button>
     <button type="button" class="lang-flag" data-lang="th" title="ไทย" aria-label="ไทย"><span class="lf-emoji">🇹🇭</span><span class="lf-txt">TH</span></button>
   </div>
-  <div class="bal hidden" id="balBox"><span id="balLabel">잔액</span> <b id="balVal">0</b></div>
-  <button class="btn ghost sm hidden" id="dashBtn">대시보드</button>
-  <button class="btn cyan sm hidden" id="loginBtn">로그인</button>
-  <button class="btn ghost sm hidden" id="logoutBtn">로그아웃</button>
+  </div>
 </div></header>
 
 <!-- ░░ LANDING ░░ -->
@@ -355,8 +357,7 @@ section.blk{padding:46px 0}
   <button class="x" onclick="closeAuth()">×</button>
   <h3 id="authTitle">로그인</h3>
   <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:8px" id="authBrand"></p>
-  <p class="sub" style="color:var(--cyan);font-size:12px;margin-bottom:8px;line-height:1.5" id="authHint"></p>
-  <p class="sub mono" style="color:var(--gold);font-size:11px;margin-bottom:14px;word-break:break-all" id="authTenantUrl"></p>
+  <p class="sub" style="color:var(--cyan);font-size:12px;margin-bottom:14px;line-height:1.5" id="authHint"></p>
   <div class="seg"><button class="on" id="segLogin" onclick="setAuth('login')">로그인</button>
     <button id="segReg" onclick="setAuth('register')">회원가입</button></div>
   <div class="field"><label id="authLblUser">아이디</label><input class="inp" id="aUser" autocomplete="username" /></div>
@@ -383,7 +384,7 @@ section.blk{padding:46px 0}
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const fmt = n => (Math.round((+n||0)*100)/100).toLocaleString(undefined,{maximumFractionDigits:2});
-const S = { token:localStorage.getItem('mt_token')||'', me:null, tenant:'main', services:[], selSvc:null, catFilter:'전체', panelSvc:null, adminSub:'admin', orderSearch:'', lang:localStorage.getItem('ss_lang')||'ko', curTab:'dashboard' };
+const S = { token:localStorage.getItem('mt_token')||'', me:null, tenant:'main', services:[], selSvc:null, catFilter:'전체', panelSvc:null, adminSub:'admin', orderSearch:'', lang:localStorage.getItem('ss_lang')||'ko', curTab:'dashboard', servicesRev:0 };
 const TOKEN_TENANT_KEY='mt_token_tenant';
 function clearAuthSession(){
   S.token=''; S.me=null;
@@ -411,7 +412,7 @@ const I18N={
   th:{all:'ทั้งหมด',balance:'ยอดคงเหลือ',won:'วอน',login:'เข้าสู่ระบบ',logout:'ออกจากระบบ',dash:'แดชบอร์ด',heroTitle:'เร่งการเติบโตโซเชียล',heroEm:'เร็วเหมือนนีออน',heroSub:'Instagram·TikTok·YouTube ในที่เดียว ซัพพลายเชนโลก ประมวลผลอัตโนมัติ สั่งแล้วเริ่มทันที',guestCta:'เข้าสู่ระบบเพื่อใช้แดชบอร์ด สั่งบริการ และจัดการ',loginReg:'เข้าสู่ระบบ / สมัคร',calcTitle:'⚡ คำนวณราคาเรียลไทม์',calcSub:'เลือกบริการและจำนวน',platform:'แพลตฟอร์ม',product:'บริการ',qty:'จำนวน',estPay:'ยอดชำระโดยประมาณ',orderBtn:'สั่งซื้อ →',catalog:'บริการยอดนิยม',per1k:'/1,000',minMax:'ต่ำสุด/สูงสุด',selectOrder:'เลือก · สั่ง',noProducts:'ไม่มีบริการ',orderTitle:'สั่งบริการ',orderGuide:'กรองแพลตฟอร์ม/ประเภท → คลิกบริการ → กรอกลิงก์ด้านขวา',searchPh:'🔍 ค้นหาชื่อ/คำอธิบาย…',products:' รายการ',pickLeft:'← เลือกบริการทางซ้าย',linkUrl:'ลิงก์ (URL)',linkPh:'https://…',quantity:'จำนวน',min:'ต่ำสุด',max:'สูงสุด',unitPrice:'ราคาต่อหน่วย',estCheckout:'ยอดชำระโดยประมาณ',myBalance:'ยอดของฉัน',submitOrder:'สั่งซื้อ',noMatch:'ไม่พบรายการ — เปลี่ยนตัวกรอง',per1kRate:'/1K',qtyRange:(a,b)=>`จำนวนต้องอยู่ระหว่าง ${a} ~ ${b}`,needLink:'กรุณากรอกลิงก์',kinds:{all:'ทั้งหมด',followers:'ผู้ติดตาม',likes:'ไลก์',views:'ยอดวิว',comments:'คอมเมนต์',live:'ไลฟ์',general:'อื่นๆ'},nav:{dashboard:'แดชบอร์ด',order:'สั่งบริการ',orders:'ประวัติ',topup:'เติมเงิน',profile:'ข้อมูล',admin:'ผู้ดูแล'}}
 };
 const USER_I18N={
-  ko:{auth:{loginTitle:'로그인',registerTitle:'회원가입',loginTab:'로그인',registerTab:'회원가입',loginSubmit:'로그인',registerSubmit:'가입하기',username:'아이디',email:'이메일',phone:'휴대폰 번호 (선택)',phonePh:'010-0000-0000',password:'비밀번호',needCredentials:'아이디/비밀번호를 입력하세요.',registerOk:'가입 완료! 로그인하세요.',welcome:(n)=>`환영합니다, ${n}님`,loginFail:'로그인 실패',loggedOut:'로그아웃 되었습니다.',loginFirst:'로그인 후 주문하세요.',loginToOrder:'주문하려면 먼저 로그인하세요.',hintDefault:'회원가입 또는 관리자 계정으로 로그인',hintMaster:'본사 관리자 계정으로 로그인하세요.',hintAgency:'대리점 관리자 계정으로 로그인하세요.',hintOps:'플랫폼 관리자 전용 — 외부 공유 금지'},dash:{hello:(n)=>`안녕하세요, ${n}님`,userHint:'원하는 서비스를 선택하고 바로 주문하세요.',adminHint:'관리자 작업은 크레딧으로 처리됩니다. 부족하면 <b style="color:var(--cyan)">관리자 → 크레딧 요청</b>을 이용하세요.',opsHint:'대리점을 등록하면 본사가 수익률·크레딧·운영을 관리합니다.',orderNow:'주문하기',viewOrders:'주문내역',creditReq:'크레딧 요청',credit:'크레딧',supplyCredit:'공급 크레딧',processing:'처리 중',completed:'완료',totalOrders:'총 주문',revenue:'매출'},orders:{title:'주문 내역',refresh:'새로고침',noOrders:'아직 주문이 없습니다.',product:'상품',link:'링크',progress:'진행',amount:'금액',status:'상태',credit:'크레딧',statusMsg:(s)=>`상태: ${s}`},topup:{title:'잔액 충전',currentBalance:'현재 잔액',amount:'충전 금액 (원)',method:'입금 방법',bank:'무통장입금',card:'카드',virtual:'가상계좌',request:'충전 요청',hint:'요청 후 관리자 승인 시 잔액에 반영됩니다.',requestOk:'충전 요청 완료. 승인 대기중입니다.'},profile:{title:'내 정보',username:'아이디',email:'이메일',balance:'잔액',site:'사이트'},orderModal:{title:'새 주문',link:'링크 (게시물/프로필 URL)',qty:'수량',payAmount:'결제 금액',confirm:'주문 확정',orderOk:(id)=>`주문 완료! #${id}`},common:{loading:'불러오는 중…',refresh:'새로고침'},status:{'완료':'완료','처리중':'처리중','대기':'대기','부분완료':'부분완료','취소':'취소',pending:'대기',approved:'승인',rejected:'거절'}},
+  ko:{auth:{loginTitle:'로그인',registerTitle:'회원가입',loginTab:'로그인',registerTab:'회원가입',loginSubmit:'로그인',registerSubmit:'가입하기',username:'아이디',email:'이메일',phone:'휴대폰 번호 (선택)',phonePh:'010-0000-0000',password:'비밀번호',needCredentials:'아이디/비밀번호를 입력하세요.',registerOk:'가입 완료! 로그인하세요.',welcome:(n)=>`환영합니다, ${n}님`,loginFail:'로그인 실패',loggedOut:'로그아웃 되었습니다.',loginFirst:'로그인 후 주문하세요.',loginToOrder:'주문하려면 먼저 로그인하세요.',hintDefault:'회원가입 또는 관리자 계정으로 로그인',hintMaster:'본사 관리자 계정으로 로그인하세요.',hintAgency:'대리점 관리자 계정으로 로그인하세요.',hintOps:'플랫폼 관리자 전용 로그인'},dash:{hello:(n)=>`안녕하세요, ${n}님`,userHint:'원하는 서비스를 선택하고 바로 주문하세요.',adminHint:'관리자 작업은 크레딧으로 처리됩니다. 부족하면 <b style="color:var(--cyan)">관리자 → 크레딧 요청</b>을 이용하세요.',opsHint:'대리점을 등록하면 본사가 수익률·크레딧·운영을 관리합니다.',orderNow:'주문하기',viewOrders:'주문내역',creditReq:'크레딧 요청',credit:'크레딧',supplyCredit:'공급 크레딧',processing:'처리 중',completed:'완료',totalOrders:'총 주문',revenue:'매출'},orders:{title:'주문 내역',refresh:'새로고침',noOrders:'아직 주문이 없습니다.',product:'상품',link:'링크',progress:'진행',amount:'금액',status:'상태',credit:'크레딧',statusMsg:(s)=>`상태: ${s}`},topup:{title:'잔액 충전',currentBalance:'현재 잔액',amount:'충전 금액 (원)',method:'입금 방법',bank:'무통장입금',card:'카드',virtual:'가상계좌',request:'충전 요청',hint:'요청 후 관리자 승인 시 잔액에 반영됩니다.',requestOk:'충전 요청 완료. 승인 대기중입니다.'},profile:{title:'내 정보',username:'아이디',email:'이메일',balance:'잔액',site:'사이트'},orderModal:{title:'새 주문',link:'링크 (게시물/프로필 URL)',qty:'수량',payAmount:'결제 금액',confirm:'주문 확정',orderOk:(id)=>`주문 완료! #${id}`},common:{loading:'불러오는 중…',refresh:'새로고침'},status:{'완료':'완료','처리중':'처리중','대기':'대기','부분완료':'부분완료','취소':'취소',pending:'대기',approved:'승인',rejected:'거절'}},
   zh:{auth:{loginTitle:'登录',registerTitle:'注册',loginTab:'登录',registerTab:'注册',loginSubmit:'登录',registerSubmit:'注册',username:'用户名',email:'邮箱',phone:'手机号 (选填)',phonePh:'138-0000-0000',password:'密码',needCredentials:'请输入用户名和密码。',registerOk:'注册成功！请登录。',welcome:(n)=>`欢迎，${n}`,loginFail:'登录失败',loggedOut:'已退出登录。',loginFirst:'请先登录后再下单。',loginToOrder:'下单前请先登录。',hintDefault:'注册或管理员账号登录',hintMaster:'请使用本社管理员账号登录',hintAgency:'请使用代理店管理员账号登录',hintOps:'平台管理员专用 — 请勿外传'},dash:{hello:(n)=>`您好，${n}`,userHint:'选择服务并立即下单。',adminHint:'管理员操作使用余额。不足请前往 <b style="color:var(--cyan)">管理 → 余额申请</b>。',opsHint:'注册代理店后，本社管理利润率、余额与运营。',orderNow:'下单',viewOrders:'订单记录',creditReq:'余额申请',credit:'余额',supplyCredit:'供应余额',processing:'处理中',completed:'已完成',totalOrders:'总订单',revenue:'营收'},orders:{title:'订单记录',refresh:'刷新',noOrders:'暂无订单。',product:'商品',link:'链接',progress:'进度',amount:'金额',status:'状态',credit:'余额',statusMsg:(s)=>`状态: ${s}`},topup:{title:'余额充值',currentBalance:'当前余额',amount:'充值金额 (韩元)',method:'支付方式',bank:'银行转账',card:'银行卡',virtual:'虚拟账户',request:'提交充值',hint:'提交后管理员批准即到账。',requestOk:'充值请求已提交，等待批准。'},profile:{title:'我的信息',username:'用户名',email:'邮箱',balance:'余额',site:'站点'},orderModal:{title:'新订单',link:'链接 (帖子/主页 URL)',qty:'数量',payAmount:'支付金额',confirm:'确认下单',orderOk:(id)=>`下单成功! #${id}`},common:{loading:'加载中…',refresh:'刷新'},status:{'완료':'已完成','처리중':'处理中','대기':'等待','부분완료':'部分完成','취소':'已取消',pending:'等待',approved:'已批准',rejected:'已拒绝'}},
   vi:{auth:{loginTitle:'Đăng nhập',registerTitle:'Đăng ký',loginTab:'Đăng nhập',registerTab:'Đăng ký',loginSubmit:'Đăng nhập',registerSubmit:'Đăng ký',username:'Tên đăng nhập',email:'Email',phone:'Số điện thoại (tùy chọn)',phonePh:'090-0000-0000',password:'Mật khẩu',needCredentials:'Vui lòng nhập tên và mật khẩu.',registerOk:'Đăng ký thành công! Hãy đăng nhập.',welcome:(n)=>`Chào mừng, ${n}`,loginFail:'Đăng nhập thất bại',loggedOut:'Đã đăng xuất.',loginFirst:'Vui lòng đăng nhập để đặt hàng.',loginToOrder:'Đăng nhập trước khi đặt hàng.',hintDefault:'Đăng ký hoặc đăng nhập tài khoản quản trị',hintMaster:'Đăng nhập tài khoản quản trị trụ sở',hintAgency:'Đăng nhập tài khoản quản trị đại lý',hintOps:'Chỉ quản trị nền tảng — không chia sẻ URL'},dash:{hello:(n)=>`Xin chào, ${n}`,userHint:'Chọn dịch vụ và đặt hàng ngay.',adminHint:'Quản trị dùng số dư. Thiếu thì vào <b style="color:var(--cyan)">Quản trị → Yêu cầu nạp</b>.',opsHint:'Đăng ký đại lý để trụ sở quản lý lợi nhuận, số dư và vận hành.',orderNow:'Đặt hàng',viewOrders:'Lịch sử',creditReq:'Yêu cầu nạp',credit:'Số dư',supplyCredit:'Số dư cung ứng',processing:'Đang xử lý',completed:'Hoàn thành',totalOrders:'Tổng đơn',revenue:'Doanh thu'},orders:{title:'Lịch sử đơn',refresh:'Làm mới',noOrders:'Chưa có đơn hàng.',product:'Dịch vụ',link:'Liên kết',progress:'Tiến độ',amount:'Số tiền',status:'Trạng thái',credit:'Số dư',statusMsg:(s)=>`Trạng thái: ${s}`},topup:{title:'Nạp tiền',currentBalance:'Số dư hiện tại',amount:'Số tiền nạp (KRW)',method:'Phương thức',bank:'Chuyển khoản',card:'Thẻ',virtual:'Tài khoản ảo',request:'Yêu cầu nạp',hint:'Sau khi quản trị duyệt, số dư sẽ được cộng.',requestOk:'Yêu cầu nạp đã gửi. Đang chờ duyệt.'},profile:{title:'Thông tin',username:'Tên đăng nhập',email:'Email',balance:'Số dư',site:'Trang web'},orderModal:{title:'Đơn mới',link:'Liên kết (URL bài/hồ sơ)',qty:'Số lượng',payAmount:'Thanh toán',confirm:'Xác nhận đặt',orderOk:(id)=>`Đặt thành công! #${id}`},common:{loading:'Đang tải…',refresh:'Làm mới'},status:{'완료':'Hoàn thành','처리중':'Đang xử lý','대기':'Chờ','부분완료':'Một phần','취소':'Đã hủy',pending:'Chờ',approved:'Đã duyệt',rejected:'Từ chối'}},
   th:{auth:{loginTitle:'เข้าสู่ระบบ',registerTitle:'สมัครสมาชิก',loginTab:'เข้าสู่ระบบ',registerTab:'สมัคร',loginSubmit:'เข้าสู่ระบบ',registerSubmit:'สมัคร',username:'ชื่อผู้ใช้',email:'อีเมล',phone:'เบอร์โทร (ไม่บังคับ)',phonePh:'080-000-0000',password:'รหัสผ่าน',needCredentials:'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน',registerOk:'สมัครสำเร็จ! กรุณาเข้าสู่ระบบ',welcome:(n)=>`ยินดีต้อนรับ ${n}`,loginFail:'เข้าสู่ระบบไม่สำเร็จ',loggedOut:'ออกจากระบบแล้ว',loginFirst:'กรุณาเข้าสู่ระบบก่อนสั่งซื้อ',loginToOrder:'เข้าสู่ระบบก่อนสั่งซื้อ',hintDefault:'สมัครหรือเข้าสู่ระบบด้วยบัญชีผู้ดูแล',hintMaster:'เข้าสู่ระบบด้วยบัญชีผู้ดูแลสำนักงานใหญ่',hintAgency:'เข้าสู่ระบบด้วยบัญชีผู้ดูแลตัวแทน',hintOps:'เฉพาะผู้ดูแลแพลตฟอร์ม — ห้ามแชร์ URL'},dash:{hello:(n)=>`สวัสดี ${n}`,userHint:'เลือกบริการและสั่งซื้อได้ทันที',adminHint:'ผู้ดูแลใช้ยอดคงเหลือ หากไม่พอไปที่ <b style="color:var(--cyan)">ผู้ดูแล → ขอเติมยอด</b>',opsHint:'ลงทะเบียนตัวแทน สำนักงานใหญ่จัดการกำไร ยอด และการดำเนินงาน',orderNow:'สั่งซื้อ',viewOrders:'ประวัติ',creditReq:'ขอเติมยอด',credit:'ยอดคงเหลือ',supplyCredit:'ยอดจัดหา',processing:'กำลังดำเนินการ',completed:'เสร็จสิ้น',totalOrders:'คำสั่งซื้อทั้งหมด',revenue:'รายได้'},orders:{title:'ประวัติคำสั่งซื้อ',refresh:'รีเฟรช',noOrders:'ยังไม่มีคำสั่งซื้อ',product:'บริการ',link:'ลิงก์',progress:'ความคืบหน้า',amount:'จำนวนเงิน',status:'สถานะ',credit:'ยอด',statusMsg:(s)=>`สถานะ: ${s}`},topup:{title:'เติมเงิน',currentBalance:'ยอดปัจจุบัน',amount:'จำนวนเติม (วอน)',method:'วิธีชำระ',bank:'โอนเงิน',card:'บัตร',virtual:'บัญชีเสมือน',request:'ขอเติมเงิน',hint:'หลังผู้ดูแลอนุมัติ ยอดจะถูกเพิ่ม',requestOk:'ส่งคำขอเติมเงินแล้ว รออนุมัติ'},profile:{title:'ข้อมูลของฉัน',username:'ชื่อผู้ใช้',email:'อีเมล',balance:'ยอดคงเหลือ',site:'เว็บไซต์'},orderModal:{title:'คำสั่งซื้อใหม่',link:'ลิงก์ (URL โพสต์/โปรไฟล์)',qty:'จำนวน',payAmount:'ยอดชำระ',confirm:'ยืนยันสั่งซื้อ',orderOk:(id)=>`สั่งซื้อสำเร็จ! #${id}`},common:{loading:'กำลังโหลด…',refresh:'รีเฟรช'},status:{'완료':'เสร็จสิ้น','처리중':'กำลังดำเนินการ','대기':'รอ','부분완료':'บางส่วน','취소':'ยกเลิก',pending:'รอ',approved:'อนุมัติ',rejected:'ปฏิเสธ'}}
@@ -632,6 +633,58 @@ async function pingServer(){
 }
 let srvWatch=null;
 let srvFailStreak=0;
+let svcStream=null;
+let svcPoll=null;
+let svcPulling=false;
+function stopServicesSync(){
+  if(svcStream){ svcStream.close(); svcStream=null; }
+  if(svcPoll){ clearInterval(svcPoll); svcPoll=null; }
+}
+async function pullServicesUpdate(silent=true){
+  if(svcPulling) return;
+  svcPulling=true;
+  try{
+    const fresh=await api(servicesQuery());
+    if(!fresh?.length) return;
+    S.services=fresh;
+    buildCalc();
+    buildCatalog();
+    if(S.me&&!$('#dashboard').classList.contains('hidden')){
+      const body=$('#dashBody');
+      if(S.curTab==='order'&&body) await tabOrder(body);
+      else if(S.curTab==='adminhub'&&S.adminSub==='svc'&&body) await tabSvc(body);
+    }
+    if(!silent) toast('상품 목록이 업데이트되었습니다.');
+  }catch{} finally{ svcPulling=false; }
+}
+function startServicesSync(){
+  if(location.protocol==='file:') return;
+  stopServicesSync();
+  try{
+    svcStream=new EventSource('/api/services/stream');
+    svcStream.addEventListener('hello',e=>{ try{ const d=JSON.parse(e.data); if(d.rev!=null) S.servicesRev=d.rev; }catch{} });
+    svcStream.addEventListener('services',e=>{
+      try{
+        const d=JSON.parse(e.data);
+        if(d.rev!=null&&d.rev!==S.servicesRev){
+          S.servicesRev=d.rev;
+          pullServicesUpdate(true);
+        }
+      }catch{}
+    });
+  }catch{}
+  svcPoll=setInterval(async()=>{
+    try{
+      const r=await fetch('/api/services/revision',{cache:'no-store'});
+      if(!r.ok) return;
+      const d=await r.json();
+      if(d.rev!=null&&d.rev!==S.servicesRev){
+        S.servicesRev=d.rev;
+        pullServicesUpdate(true);
+      }
+    }catch{}
+  },45000);
+}
 function startServerWatch(){
   if(location.protocol==='file:'||srvWatch) return;
   srvWatch=setInterval(async()=>{
@@ -755,23 +808,43 @@ async function ensureSuperOnOpsTenant(){
   }catch{}
   updateAuthHint();
 }
-function updateAuthHint(){
-  const h=$('#authHint'), tu=$('#authTenantUrl');
-  const code=S.tenant||CFG_MASTER;
-  if(tu){
-    tu.textContent=isOpsTenant()?tenantLoginUrl(code):'';
-    tu.style.display=isOpsTenant()?'':'none';
-  }
+function updateAuthHint(username){
+  const h=$('#authHint');
   if(!h) return;
+  syncTenantFromUrl();
+  const u=(username!=null?username:$('#aUser')?.value||'').trim().toLowerCase();
+  const mapped=KNOWN_LOGIN_TENANT[u];
+  if(mapped===CFG_PLATFORM_SLUG){
+    h.textContent=t('auth.hintOps');
+    return;
+  }
+  if(mapped===CFG_MASTER||(mapped&&mapped!==CFG_PLATFORM_SLUG&&S.tenant===CFG_MASTER)){
+    h.textContent=t('auth.hintMaster');
+    return;
+  }
+  if(mapped==='nine'||S.tenantInfo?.roleType==='agency'||S.tenant==='nine'){
+    h.textContent=t('auth.hintAgency');
+    return;
+  }
   if(isOpsTenant()){
     h.textContent=t('auth.hintOps');
-  }else if(code===CFG_MASTER||S.tenantInfo?.roleType==='master'){
-    h.textContent=t('auth.hintMaster');
-  }else if(S.tenantInfo?.roleType==='agency'||S.tenant==='nine'||S.tenantInfo?.slug==='nine'){
-    h.textContent=t('auth.hintAgency');
-  }else{
-    h.textContent=t('auth.hintDefault');
+    return;
   }
+  if(S.tenant===CFG_MASTER||S.tenantInfo?.roleType==='master'){
+    h.textContent=t('auth.hintMaster');
+    return;
+  }
+  h.textContent=t('auth.hintDefault');
+}
+function refreshAuthBrandForLogin(){
+  const el=$('#authBrand');
+  if(!el) return;
+  if(isOpsTenant()){
+    el.textContent=t('admin.super');
+    return;
+  }
+  const name=displayBrandName(S.tenantInfo||(S.me?.tenant?{...S.me.tenant}:null));
+  el.textContent=name||'';
 }
 async function init(){
   showFileWarn();
@@ -779,7 +852,7 @@ async function init(){
   if(location.protocol!=='file:' && !(await pingServer())){
     showServerBanner('⚠️ 서버가 꺼져 있습니다. <b>실행_Mac.command</b> 또는 <b>서버-항상켜기.command</b> 실행 후 새로고침');
   } else hideServerBanner();
-  try{ S.providerConfig=await api('/config'); S.publicBase=S.providerConfig.publicBase||null; applyProviderBanner(S.providerConfig); }catch{}
+  try{ S.providerConfig=await api('/config'); S.publicBase=S.providerConfig.publicBase||null; if(S.providerConfig.servicesRev!=null) S.servicesRev=S.providerConfig.servicesRev; applyProviderBanner(S.providerConfig); }catch{}
   try{ const t=await api('/tenant/'+S.tenant); S.tenantInfo=t; applyBrand(t); }catch(e){
     if(String(e.message||'').includes('서버에 연결')) showServerBanner('⚠️ '+e.message);
   }
@@ -799,6 +872,7 @@ async function init(){
   if(S.me){ openDash(isOpsAdmin()?'adminhub':isMasterAdmin()?'adminhub':isAdmin()?'adminhub':'dashboard', isOpsAdmin()?'sites':isMasterAdmin()?'agencies':undefined); return; }
   if(!S.me&&isOpsTenant()) openAuth('login');
   startServerWatch();
+  startServicesSync();
 }
 function applyBrand(t){
   const name=displayBrandName(t);
