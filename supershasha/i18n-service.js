@@ -216,57 +216,85 @@ function truthyFlag(v) {
   return v === true || v === 1 || v === "1" || v === "true";
 }
 
+const PROFILE_HINTS = {
+  ko: {
+    인스타그램: "프로필 URL (예: instagram.com/아이디)",
+    유튜브: "채널 URL (예: youtube.com/@채널)",
+    틱톡: "프로필 URL (예: tiktok.com/@아이디)",
+    "X(트위터)": "프로필 URL (예: x.com/아이디)",
+    페이스북: "페이지·프로필 URL",
+    텔레그램: "채널 URL",
+    스레드: "프로필 URL",
+    default: "공개 프로필·채널 URL",
+  },
+  zh: { default: "公开主页/频道 URL" },
+  vi: { default: "URL hồ sơ/kênh công khai" },
+  th: { default: "URL โปรไฟล์/ช่องสาธารณะ" },
+};
+
 const SPEC_LABELS = {
   ko: {
-    sectionName: "【 상품 상세 】",
+    sectionWhat: "【 이 상품은 】",
+    sectionWhy: "【 왜 쓰나요 】",
+    sectionHow: "【 주문하면 】",
+    sectionUse: "【 사용 방법 】",
+    sectionDetail: "【 상품 옵션 】",
     sectionOrder: "【 주문 조건 】",
     minMax: (min, max) => `수량: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()} (1,000개 단위 과금)`,
     category: (c) => `카테고리: ${c}`,
-    type: (t) => `유형: ${t}`,
-    refillYes: "리필(보장): 가능",
-    refillNo: "리필(보장): 없음",
-    cancelYes: "주문 취소: 가능",
+    refillYes: "리필(보장): 가능 — 기간 내 줄어들면 재보충",
+    refillNo: "리필(보장): 없음 — 저가·단기용",
+    cancelYes: "주문 취소: 가능 (처리 전)",
     cancelNo: "주문 취소: 불가",
-    dripfeed: "드립피드(분할 전송): 지원",
-    avgTime: (t) => `평균 완료 시간: ${t}`,
+    dripfeed: "드립피드: 가능 — 나눠서 천천히 전송",
+    avgTime: (t) => `평균 완료: ${t}`,
   },
   zh: {
-    sectionName: "【 商品详情 】",
+    sectionWhat: "【 这是什么 】",
+    sectionWhy: "【 为什么用 】",
+    sectionHow: "【 下单后 】",
+    sectionUse: "【 使用方法 】",
+    sectionDetail: "【 商品选项 】",
     sectionOrder: "【 下单条件 】",
     minMax: (min, max) => `数量: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()}（按每1000计费）`,
     category: (c) => `分类: ${c}`,
-    type: (t) => `类型: ${t}`,
-    refillYes: "补量(Refill): 支持",
-    refillNo: "补量(Refill): 不支持",
-    cancelYes: "取消订单: 可以",
+    refillYes: "补量: 支持 — 掉量可补偿",
+    refillNo: "补量: 不支持",
+    cancelYes: "取消订单: 可以（未开始）",
     cancelNo: "取消订单: 不可以",
-    dripfeed: "Dripfeed: 支持",
+    dripfeed: "Dripfeed: 支持 — 分批投放",
     avgTime: (t) => `平均完成: ${t}`,
   },
   vi: {
-    sectionName: "【 Chi tiết dịch vụ 】",
-    sectionOrder: "【 Điều kiện đặt 】",
+    sectionWhat: "【 Sản phẩm này 】",
+    sectionWhy: "【 Vì sao dùng 】",
+    sectionHow: "【 Sau khi đặt 】",
+    sectionUse: "【 Cách dùng 】",
+    sectionDetail: "【 Tùy chọn 】",
+    sectionOrder: "【 Điều kiện 】",
     minMax: (min, max) => `Số lượng: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()} (tính theo 1.000)`,
     category: (c) => `Danh mục: ${c}`,
-    type: (t) => `Loại: ${t}`,
-    refillYes: "Refill: Có",
+    refillYes: "Refill: Có — drop sẽ bù lại",
     refillNo: "Refill: Không",
-    cancelYes: "Hủy đơn: Có thể",
+    cancelYes: "Hủy đơn: Có thể (chưa chạy)",
     cancelNo: "Hủy đơn: Không",
-    dripfeed: "Dripfeed: Hỗ trợ",
+    dripfeed: "Dripfeed: Có — gửi từ từ",
     avgTime: (t) => `Hoàn thành TB: ${t}`,
   },
   th: {
-    sectionName: "【 รายละเอียดบริการ 】",
-    sectionOrder: "【 เงื่อนไขสั่งซื้อ 】",
+    sectionWhat: "【 สินค้านี้ 】",
+    sectionWhy: "【 ทำไมต้องใช้ 】",
+    sectionHow: "【 หลังสั่งซื้อ 】",
+    sectionUse: "【 วิธีใช้ 】",
+    sectionDetail: "【 ตัวเลือก 】",
+    sectionOrder: "【 เงื่อนไข 】",
     minMax: (min, max) => `จำนวน: ${Number(min).toLocaleString()} ~ ${Number(max).toLocaleString()} (คิดต่อ 1,000)`,
     category: (c) => `หมวด: ${c}`,
-    type: (t) => `ประเภท: ${t}`,
-    refillYes: "Refill: รองรับ",
+    refillYes: "Refill: รองรับ — หลุดแล้วเติมให้",
     refillNo: "Refill: ไม่รองรับ",
-    cancelYes: "ยกเลิกคำสั่ง: ได้",
-    cancelNo: "ยกเลิกคำสั่ง: ไม่ได้",
-    dripfeed: "Dripfeed: รองรับ",
+    cancelYes: "ยกเลิก: ได้ (ก่อนเริ่ม)",
+    cancelNo: "ยกเลิก: ไม่ได้",
+    dripfeed: "Dripfeed: รองรับ — ส่งทีละน้อย",
     avgTime: (t) => `เวลาเฉลี่ย: ${t}`,
   },
 };
@@ -438,50 +466,217 @@ export function localizeServiceName(rawName, lang) {
   return localizeSegment(name, L);
 }
 
-/** 모어댄 상품명·스펙 — 타깃 국가 언어로 설명 */
-export function buildProviderDescription(svc, uiLang = "ko") {
+const REGION_NOTE = {
+  ko: {
+    ko: "한국 IP·한국어 사용자 비중이 높아 국내 마케팅·로컬 신뢰도에 적합합니다.",
+    vi: "베트남 현지 사용자 기반으로 동남아 타겟 캠페인에 적합합니다.",
+    zh: "중국어권 사용자 타겟에 적합합니다.",
+    th: "태국 현지 사용자 타겟에 적합합니다.",
+    global: "전 세계/혼합 트래픽으로 빠른 수치 성장·테스트에 적합합니다.",
+  },
+  zh: {
+    ko: "面向韩国用户，适合本地曝光与信任度提升。",
+    vi: "面向越南用户，适合东南亚本地推广。",
+    zh: "面向中文用户，适合华语市场。",
+    th: "面向泰国用户。",
+    global: "全球混合流量，适合快速测试与放量。",
+  },
+  vi: {
+    ko: "Nhắm người dùng Hàn Quốc, phù hợp marketing nội địa.",
+    vi: "Nhắm người dùng Việt Nam, phù hợp chiến dịch địa phương.",
+    zh: "Nhắm người dùng Trung Quốc.",
+    th: "Nhắm người dùng Thái Lan.",
+    global: "Traffic toàn cầu, phù hợp thử nghiệm nhanh.",
+  },
+  th: {
+    ko: "กลุ่มเป้าหมายเกาหลี เหมาะกับการตลาดในประเทศ",
+    vi: "กลุ่มเป้าหมายเวียดนาม",
+    zh: "กลุ่มเป้าหมายจีน",
+    th: "กลุ่มเป้าหมายไทย เหมาะกับตลาดในประเทศ",
+    global: "ทรaffic ทั่วโลก เหมาะทดสอบและขยายยอด",
+  },
+};
+
+/** kind별 — 무엇 / 왜 / 주문 후 / 사용법 */
+const KIND_GUIDE = {
+  ko: {
+    followers: {
+      what: (c) => `${c} 프로필·채널의 팔로워(구독자) 수를 늘려주는 상품입니다.`,
+      why: "팔로워·구독자가 많으면 첫 방문자에게 신뢰감을 주고, 팔로우·구독 전환에 유리합니다.",
+      how: "주문 접수 → 자동 처리 → 프로필·채널 숫자가 오릅니다. 속도 제한 상품은 며칠에 나눠 자연스럽게 증가할 수 있습니다. 진행률은 「주문 내역」에서 확인하세요.",
+      use: (hint) => `계정을 「공개」로 두고 프로필·채널 URL을 입력하세요. (${hint})`,
+    },
+    likes: {
+      what: (c) => `${c} 게시물·영상의 좋아요(하트·반응) 수를 올려주는 상품입니다.`,
+      why: "좋아요가 많으면 게시물 신뢰도가 올라가고, 추천·탐색 노출에 도움이 될 수 있습니다.",
+      how: "지정한 게시물 URL에 좋아요가 순차 반영됩니다. 처리 중에는 게시물을 삭제·비공개로 바꾸지 마세요.",
+      use: (hint) => `좋아요를 올릴 게시물·릴스·쇼츠 URL을 넣으세요. (${hint})`,
+    },
+    views: {
+      what: (c) => `${c} 영상·릴스·게시물의 조회수(재생·노출)를 늘려주는 상품입니다.`,
+      why: "조회·노출이 늘면 콘텐츠가 활성화된 것처럼 보이고, 알고리즘·도달 개선에 쓰입니다.",
+      how: "URL에 조회가 쌓입니다. 대량·저가형은 빠르게, 고품질형은 천천히 반영될 수 있습니다.",
+      use: (hint) => `동영상·릴스·쇼츠·게시물 URL을 입력하세요. (${hint})`,
+    },
+    comments: {
+      what: (c) => `${c} 게시물에 댓글을 달아 참여도를 높이는 상품입니다.`,
+      why: "댓글이 있으면 대화가 있는 게시물처럼 보여 신뢰·참여 지표 개선에 적합합니다.",
+      how: "커스텀: 원하는 문구 / 랜덤: 자동 문구가 달립니다. 처리 후 댓글 확인·관리는 직접 하세요.",
+      use: (hint) => `댓글을 달 게시물 URL + (커스텀 시) 원하는 문구를 주문 메모에 적으세요. (${hint})`,
+    },
+    shares: {
+      what: (c) => `${c} 게시물 공유·리트윗·확산 수를 늘리는 상품입니다.`,
+      why: "공유·리트윗은 콘텐츠 확산 신호로, 도달 넓히기·이벤트 홍보에 씁니다.",
+      how: "지정 URL에 공유·리트윗이 반영됩니다.",
+      use: (hint) => `공유할 게시물·트윗 URL을 입력하세요. (${hint})`,
+    },
+    saves: {
+      what: (c) => `${c} 게시물 저장(북마크) 수를 올리는 상품입니다.`,
+      why: "저장 수는 「나중에 다시 보고 싶은 콘텐츠」 신호로, 인스타·틱톡에서 긍정 지표입니다.",
+      how: "게시물 URL에 저장 수가 반영됩니다.",
+      use: (hint) => `저장을 올릴 게시물 URL을 입력하세요. (${hint})`,
+    },
+    live: {
+      what: (c) => `${c} 라이브·방송 시청자·동접을 늘리는 상품입니다.`,
+      why: "라이브 동접·시청이 많으면 방송이 인기 있다는 인상을 줍니다.",
+      how: "라이브 시작 전·중 URL로 주문하세요. 방송 시간·유지 시간은 상품명의 분(min) 옵션을 확인하세요.",
+      use: (hint) => `라이브 방송 URL을 넣고, 상품별 최소 시청 시간을 확인하세요. (${hint})`,
+    },
+    general: {
+      what: (c) => `${c} 계정·콘텐츠 성장을 돕는 마케팅 상품입니다.`,
+      why: "SNS 지표(숫자)를 빠르게 올려 캠페인·런칭·테스트에 활용할 수 있습니다.",
+      how: "주문 후 자동 처리되며, 완료·진행률은 주문 내역에서 확인합니다.",
+      use: (hint) => `상품에 맞는 공개 URL을 입력하세요. (${hint})`,
+    },
+  },
+  zh: {
+    followers: { what: (c) => `提升${c}粉丝/订阅数的商品。`, why: "粉丝多可提升账号可信度与关注转化。", how: "下单后自动处理，数字会显示在主页。可在订单记录查看进度。", use: (h) => `输入公开的主页/频道 URL。（${h}）` },
+    likes: { what: (c) => `提升${c}帖子/视频点赞数。`, why: "点赞多有助于信任与推荐曝光。", how: "点赞会逐步加到指定帖子，处理中请勿删帖或设私密。", use: (h) => `输入帖子/Reels/Shorts URL。（${h}）` },
+    views: { what: (c) => `提升${c}播放/阅读量。`, why: "播放高有助于内容活跃与算法曝光。", how: "播放量会累计到指定 URL。", use: (h) => `输入视频/帖子 URL。（${h}）` },
+    comments: { what: (c) => `为${c}帖子增加评论。`, why: "评论提升互动与真实感。", how: "自定义或随机评论会出现在帖子下。", use: (h) => `输入帖子 URL。（${h}）` },
+    shares: { what: (c) => `提升${c}分享/转发。`, why: "扩大传播与触达。", how: "分享数会加到指定内容。", use: (h) => `输入帖子 URL。（${h}）` },
+    saves: { what: (c) => `提升${c}收藏/保存数。`, why: "收藏是正向互动信号。", how: "保存数会反映到帖子。", use: (h) => `输入帖子 URL。（${h}）` },
+    live: { what: (c) => `提升${c}直播观看/在线人数。`, why: "直播人气更直观。", how: "直播前或直播中下单，注意时长选项。", use: (h) => `输入直播 URL。（${h}）` },
+    general: { what: (c) => `${c}增长类服务。`, why: "快速拉升指标用于活动与测试。", how: "自动处理，订单记录可查进度。", use: (h) => `输入对应公开 URL。（${h}）` },
+  },
+  vi: {
+    followers: { what: (c) => `Tăng follower/đăng ký ${c}.`, why: "Nhiều follower tạo uy tín, dễ chuyển đổi theo dõi.", how: "Tự động xử lý sau đặt hàng; xem tiến độ trong lịch sử đơn.", use: (h) => `Dán URL hồ sơ/kênh công khai. (${h})` },
+    likes: { what: (c) => `Tăng lượt thích bài/video ${c}.`, why: "Nhiều like giúp tăng độ tin cậy và hiển thị.", how: "Like cộng dồn vào URL; đừng xóa/ẩn bài khi đang chạy.", use: (h) => `URL bài/Reels/Shorts. (${h})` },
+    views: { what: (c) => `Tăng lượt xem ${c}.`, why: "View cao hỗ trợ lan truyền nội dung.", how: "View cộng vào URL chỉ định.", use: (h) => `URL video/bài viết. (${h})` },
+    comments: { what: (c) => `Tăng bình luận ${c}.`, why: "Comment tăng tương tác.", how: "Custom hoặc random comment sẽ hiện dưới bài.", use: (h) => `URL bài viết. (${h})` },
+    shares: { what: (c) => `Tăng chia sẻ ${c}.`, why: "Mở rộng phạm vi tiếp cận.", how: "Chia sẻ cộng vào URL.", use: (h) => `URL bài/ tweet. (${h})` },
+    saves: { what: (c) => `Tăng lượt lưu ${c}.`, why: "Lưu là tín hiệu tích cực.", how: "Lượt lưu phản ánh trên bài.", use: (h) => `URL bài viết. (${h})` },
+    live: { what: (c) => `Tăng người xem live ${c}.`, why: "Live đông tạo cảm giác hot.", how: "Đặt trước/trong live; xem option phút.", use: (h) => `URL live. (${h})` },
+    general: { what: (c) => `Dịch vụ tăng trưởng ${c}.`, why: "Tăng chỉ số nhanh cho chiến dịch.", how: "Tự động; theo dõi trong lịch sử.", use: (h) => `URL công khai phù hợp. (${h})` },
+  },
+  th: {
+    followers: { what: (c) => `เพิ่มผู้ติดตาม/สมาชิก ${c}`, why: "ยอดติดตามสูงสร้างความน่าเชื่อถือ", how: "ประมวลผลอัตโนมัติ ดูความคืบหน้าในประวัติคำสั่ง", use: (h) => `วาง URL โปรไฟล์/ช่องสาธารณะ (${h})` },
+    likes: { what: (c) => `เพิ่มไลก์ ${c}`, why: "ไลก์มากช่วยความน่าเชื่อถือและการมองเห็น", how: "ไลก์จะเพิ่มที่ URL ที่ระบุ", use: (h) => `URL โพสต์/Reels (${h})` },
+    views: { what: (c) => `เพิ่มยอดวิว ${c}`, why: "ยอดวิวสูงช่วยการเผยแพร่", how: "ยอดวิวสะสมที่ URL", use: (h) => `URL วิดีโอ/โพสต์ (${h})` },
+    comments: { what: (c) => `เพิ่มคอมเมนต์ ${c}`, why: "คอมเมนต์เพิ่มการมีส่วนร่วม", how: "คอมเมนต์จะปรากฏใต้โพสต์", use: (h) => `URL โพสต์ (${h})` },
+    shares: { what: (c) => `เพิ่มแชร์ ${c}`, why: "ขยายการเข้าถึง", how: "แชร์เพิ่มที่ URL", use: (h) => `URL โพสต์ (${h})` },
+    saves: { what: (c) => `เพิ่มการบันทึก ${c}`, why: "การบันทึกเป็นสัญญาณเชิงบวก", how: "ยอดบันทึกแสดงบนโพสต์", use: (h) => `URL โพสต์ (${h})` },
+    live: { what: (c) => `เพิ่มผู้ชมไลฟ์ ${c}`, why: "ไลฟ์คนดูเยอะดูน่าสนใจ", how: "สั่งก่อน/ระหว่างไลฟ์ ดู option เวลา", use: (h) => `URL ไลฟ์ (${h})` },
+    general: { what: (c) => `บริการเติบโต ${c}`, why: "เพิ่มตัวเลขเร็วสำหรับแคมเปญ", how: "อัตโนมัติ ตรวจในประวัติคำสั่ง", use: (h) => `URL สาธารณะที่เหมาะสม (${h})` },
+  },
+};
+
+function qualityNotes(L, hasRefill, isHq, svc) {
+  const n = String(svc?.name || "").toLowerCase();
+  const notes = [];
+  const lang = normalizeLang(L);
+  if (lang === "ko") {
+    if (isHq) notes.push("고품질(HQ) 옵션 — 속도·유지율 균형.");
+    if (hasRefill || truthyFlag(svc?.refill)) notes.push("리필(보장) 포함 — 기간 내 줄어들면 재보충.");
+    else if (/no refill|non refill|nrf|리필 없/.test(n)) notes.push("리필 없음 — 저가·단기·테스트용.");
+    if (/custom/.test(n)) notes.push("커스텀 — 원하는 문구·내용 지정 가능.");
+    if (/random/.test(n)) notes.push("랜덤 — 시스템이 자동 문구/계정 사용.");
+  } else if (lang === "zh") {
+    if (isHq) notes.push("高质量(HQ)选项。");
+    if (hasRefill || truthyFlag(svc?.refill)) notes.push("含补量保障。");
+    else if (/no refill|nrf/.test(n)) notes.push("无补量，适合测试。");
+  } else if (lang === "vi") {
+    if (isHq) notes.push("Tùy chọn HQ.");
+    if (hasRefill || truthyFlag(svc?.refill)) notes.push("Có bảo hành refill.");
+  } else if (lang === "th") {
+    if (isHq) notes.push("ตัวเลือก HQ");
+    if (hasRefill || truthyFlag(svc?.refill)) notes.push("มี refill");
+  }
+  return notes;
+}
+
+/** 상품 가이드 설명 — 무엇/왜/주문 후/사용법 + 옵션 + 조건 */
+export function buildProviderDescription(svc, uiLang = "ko", ctx = {}) {
   const L = descriptionLangFor(svc, uiLang);
   const lab = SPEC_LABELS[L] || SPEC_LABELS.ko;
+  const region = detectProductRegion(svc);
+  const regionKey = region === "global" ? "global" : region;
+  const {
+    category = "기타",
+    kind = "general",
+    isKr = false,
+    isVn = false,
+    hasRefill = false,
+    isHq = false,
+    catDisplay = category,
+    linkHint = "",
+  } = ctx;
+
+  const guides = KIND_GUIDE[L] || KIND_GUIDE.ko;
+  const g = guides[kind] || guides.general;
+  const rNotes = REGION_NOTE[L] || REGION_NOTE.ko;
   const lines = [];
 
-  for (const key of ["description", "desc", "service_description"]) {
-    const ext = svc?.[key];
-    if (ext && String(ext).trim().length > 12 && !isGeneratedDescription(ext)) {
-      lines.push(localizeSegment(String(ext).trim(), L), "");
-      break;
-    }
+  lines.push(lab.sectionWhat, g.what(catDisplay), "");
+
+  lines.push(lab.sectionWhy, g.why);
+  const rn = rNotes[regionKey] || rNotes.global;
+  if (rn) lines.push(rn);
+  for (const q of qualityNotes(L, hasRefill, isHq, svc)) lines.push(q);
+  lines.push("");
+
+  lines.push(lab.sectionHow, g.how, "");
+
+  lines.push(lab.sectionUse, g.use(linkHint));
+  const min = parseInt(svc?.min, 10) || 0;
+  const max = parseInt(svc?.max, 10) || 0;
+  if (max > 0) {
+    const qtyTip =
+      L === "ko"
+        ? `수량은 ${min.toLocaleString()}~${max.toLocaleString()} 사이, 1,000개 단위로 과금됩니다.`
+        : L === "zh"
+          ? `数量范围 ${min}~${max}，按每1000计费。`
+          : L === "vi"
+            ? `Số lượng ${min}~${max}, tính theo 1.000.`
+            : `จำนวน ${min}~${max}, คิดต่อ 1,000`;
+    lines.push(qtyTip);
   }
+  lines.push("");
 
   const name = stripPanelBrand(svc?.name || "");
   if (name) {
+    lines.push(lab.sectionDetail);
     if (name.includes("|")) {
-      lines.push(lab.sectionName);
       name
         .split("|")
         .map((s) => s.trim())
         .filter(Boolean)
         .forEach((seg) => lines.push(`· ${localizeSegment(seg, L)}`));
     } else {
-      lines.push(localizeSegment(name, L));
+      lines.push(`· ${localizeSegment(name, L)}`);
     }
+    lines.push("");
   }
 
-  lines.push("", lab.sectionOrder);
-  const min = parseInt(svc?.min, 10) || 0;
-  const max = parseInt(svc?.max, 10) || 0;
+  lines.push(lab.sectionOrder);
   if (max > 0) lines.push(`· ${lab.minMax(min, max)}`);
-
   const apiCat = svc?.category || svc?.type;
   if (apiCat) lines.push(`· ${lab.category(String(apiCat))}`);
-
   if (truthyFlag(svc?.refill)) lines.push(`· ${lab.refillYes}`);
   else if (svc?.refill === false || svc?.refill === 0 || svc?.refill === "0") lines.push(`· ${lab.refillNo}`);
-
   if (truthyFlag(svc?.cancel)) lines.push(`· ${lab.cancelYes}`);
   else if (svc?.cancel === false || svc?.cancel === 0 || svc?.cancel === "0") lines.push(`· ${lab.cancelNo}`);
-
   if (truthyFlag(svc?.dripfeed)) lines.push(`· ${lab.dripfeed}`);
-
   const avg = formatDuration(svc?.avg_time, L);
   if (avg) lines.push(`· ${lab.avgTime(avg)}`);
 
@@ -502,10 +697,26 @@ export function buildServiceMeta(svc, category, kind, isKr, isVn, hasRefill, isH
   const uiLang = normalizeLang(lang);
   const descLang = descriptionLangFor(svc, uiLang);
   const catDisplay = categoryLabel(category, uiLang);
-  const desc = buildProviderDescription(svc, uiLang);
 
   const hints = LINK_HINTS[uiLang] || LINK_HINTS.ko;
-  const linkHint = `${hints.prefix} ${hints[category] || hints.default}`;
+  const profileKinds = new Set(["followers", "subscribers", "members", "general"]);
+  const profileHints = PROFILE_HINTS[uiLang] || PROFILE_HINTS.ko;
+  const linkHint =
+    profileKinds.has(kind) && profileHints[category]
+      ? `${hints.prefix} ${profileHints[category]}`
+      : profileKinds.has(kind)
+        ? `${hints.prefix} ${profileHints.default}`
+        : `${hints.prefix} ${hints[category] || hints.default}`;
+  const desc = buildProviderDescription(svc, uiLang, {
+    category,
+    kind,
+    isKr,
+    isVn,
+    hasRefill,
+    isHq,
+    catDisplay,
+    linkHint,
+  });
   const kindLabel = KIND_LABELS[uiLang]?.[kind] || KIND_LABELS.ko[kind] || kind;
 
   return {
