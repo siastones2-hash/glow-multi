@@ -133,7 +133,7 @@ const PLATFORM_ORDER = [
 ];
 
 const CORE_PLATFORMS = new Set([
-  "인스타그램", "유튜브", "틱톡", "X(트witter)", "X(트위터)", "페이스북", "텔레그램", "스레드", "네이버", "카카오", "스포티파이",
+  "인스타그램", "유튜브", "틱톡", "X(트witter)", "X(트위터)", "페이스북", "텔레그램", "스레드", "스포티파이",
 ]);
 const EXTENDED_PLATFORMS = new Set([
   "링크드인", "디스코드", "트위치", "숲(Soop)", "라인", "핀터레스트", "구글맵", "Shopee",
@@ -147,22 +147,11 @@ const CURATE_CORE_KIND = 20;
 const CURATE_EXT_KIND = 12;
 const CURATE_REGION_KIND = 10;
 const CURATE_LOCAL_PLATFORM_KIND = 15;
-const LOCAL_PLATFORM_LIMITS = new Set(["숲(Soop)", "Shopee", "라인", "네이버", "카카오"]);
+const LOCAL_PLATFORM_LIMITS = new Set(["숲(Soop)", "Shopee", "라인"]);
 const BLOCK_SVC_NAME = /test|테스트|\bfree\b|무료|sample|샘플|disabled|adult|성인|casino|gambling|hack|크랙/i;
 const CATALOG_HEADER_ROW = /👇{2,}|SERVICES 👇|━━━━|^─+|^=+/i;
 const OBSCURE_COUNTRY =
   /\b(italy|uae|emirates|romania|poland|pakistan|egypt|morocco|nigeria|kenya|colombia|peru|chile|argentina|mexico|bangladesh|sri lanka|ukraine|belarus|kazakhstan|iraq|iran|saudi|qatar|lebanon|syria|yemen|afghanistan|nepal|cambodia|myanmar|laos|mongolia|ethiopia|ghana|tunisia|algeria|venezuela|ecuador|bolivia|paraguay|uruguay|guatemala|honduras|luxembourg|slovenia|croatia|serbia|bulgaria|hungary|czech|slovakia|austria|sweden|norway|denmark|finland|portugal|greece|turkey|israel|cyprus|malta|iceland|estonia|latvia|lithuania|moldova|georgia|armenia|azerbaijan)\b/i;
-
-/** MoreThan 미제공 — 로컬 카탈로그(주문 시 별도 연동 안내) */
-const LOCAL_KR_SERVICE_IDS = new Set([9901001, 9901002, 9901003, 9901004, 9902001, 9902002]);
-const LOCAL_KR_SERVICES = [
-  { service: 9901001, name: "🇰🇷 네이버 블로그 이웃·서이웃 | 한국 | 30일 유지", category: "네이버", min: 50, max: 5000, rate: "0.85", refill: true },
-  { service: 9901002, name: "🇰🇷 네이버 블로그 공감·댓글 | 한국 | 커스텀", category: "네이버", min: 10, max: 500, rate: "1.65" },
-  { service: 9901003, name: "🇰🇷 네이버 플레이스 저장·알림받기 | 한국", category: "네이버", min: 20, max: 2000, rate: "1.20" },
-  { service: 9901004, name: "🇰🇷 네이버 스마트스토어 찜·알림 | 한국 | 30일 리필", category: "네이버", min: 50, max: 10000, rate: "0.55", refill: true },
-  { service: 9902001, name: "🇰🇷 카카오톡 채널 친구 추가 | 한국 | 30일 리필", category: "카카오", min: 100, max: 20000, rate: "0.98", refill: true },
-  { service: 9902002, name: "🇰🇷 카카오톡 채널 게시물 조회·반응 | 한국", category: "카카오", min: 100, max: 50000, rate: "0.22" },
-];
 
 function isCatalogHeaderRow(svc) {
   const name = stripBrandText(svc.name || "");
@@ -254,18 +243,9 @@ function pickTopFromGroup(items, limit, picked, seen) {
   }
 }
 
-function mergeLocalKrServices(arr) {
-  const seen = new Set(arr.map((s) => s.service));
-  const out = [...arr];
-  for (const s of LOCAL_KR_SERVICES) {
-    if (!seen.has(s.service)) out.push(s);
-  }
-  return out;
-}
-
-/** 인기·핵심 + 국가별 SKU + 로컬(네이버·카카오) */
+/** 인기·핵심 + 국가별 SKU (MoreThan 실SKU만) */
 function curatePopularServices(arr) {
-  if (!Array.isArray(arr) || !arr.length) return mergeLocalKrServices(arr || []);
+  if (!Array.isArray(arr) || !arr.length) return arr || [];
   const filtered = arr.filter((s) => {
     const name = stripBrandText(s.name || "");
     if (!name || BLOCK_SVC_NAME.test(name) || isCatalogHeaderRow(s)) return false;
@@ -318,8 +298,6 @@ function curatePopularServices(arr) {
   }
 
   for (const [key, items] of localGroups) {
-    const cat = key.split("|")[0];
-    if (cat === "네이버" || cat === "카카오") continue;
     pickTopFromGroup(items, CURATE_LOCAL_PLATFORM_KIND, picked, seen);
   }
 
@@ -333,7 +311,7 @@ function curatePopularServices(arr) {
     return scorePopularService(b) - scorePopularService(a);
   });
 
-  return mergeLocalKrServices(picked.length ? picked : filtered.slice(0, 200));
+  return picked.length ? picked : filtered.slice(0, 200);
 }
 
 function providerErrorKo(resp, forSuper = false) {
@@ -1015,47 +993,61 @@ function tenantRoleType(t) {
   return "agency";
 }
 
-// 테넌트별 가공된 서비스 목록
-async function tenantServices(tenant, isAdmin, viewer, lang = "ko") {
-  const L = normalizeLang(lang);
-  const svcs = await getServices();
+function mapTenantServiceRow(s, tenant, isAdmin, viewer, L, kindLabels, { compact = false } = {}) {
+  const p = priceFor(tenant, s);
+  const meta = serviceMeta(s, L);
   const superView = viewer?.role === "superadmin";
   const masterView = isMasterAdmin(viewer);
+  const row = {
+    service: s.service,
+    name: meta.displayName || stripDisplayName(s.name),
+    category: meta.category,
+    categoryLabel: meta.categoryLabel,
+    linkHint: meta.linkHint,
+    kind: meta.kind,
+    kindLabel: kindLabels[meta.kind] || kindLabels.general || "기타",
+    lang: L,
+    uiLang: L,
+    min: parseInt(s.min) || 1,
+    max: parseInt(s.max) || 100000,
+    rate: p.sell,
+  };
+  if (compact) {
+    const plain = String(meta.description || "").replace(/\s+/g, " ").trim();
+    if (plain) row.descPreview = plain.slice(0, 120);
+  } else {
+    row.description = meta.description;
+  }
+  if (isAdmin) {
+    if (superView) {
+      row.base = p.base;
+      row.masterSupply = p.masterSupply;
+      row.supply = p.supply;
+    } else if (masterView && isMasterType(tenant)) {
+      row.supply = p.supply;
+    }
+  }
+  return row;
+}
+
+// 테넌트별 가공된 서비스 목록 (compact=true → 목록용 경량)
+async function tenantServices(tenant, isAdmin, viewer, lang = "ko", opts = {}) {
+  const L = normalizeLang(lang);
+  const compact = opts.compact !== false;
+  const svcs = await getServices();
   const kindLabels = KIND_LABELS_I18N[L] || KIND_LABELS_I18N.ko;
   return svcs
     .filter((s) => !(db.serviceOverrides[s.service]?.hidden))
-    .map((s) => {
-      const p = priceFor(tenant, s);
-      const meta = serviceMeta(s, L);
-      const row = {
-        service: s.service,
-        name: meta.displayName || stripDisplayName(s.name),
-        category: meta.category,
-        categoryLabel: meta.categoryLabel,
-        description: meta.description,
-        linkHint: meta.linkHint,
-        kind: meta.kind,
-        kindLabel: kindLabels[meta.kind] || kindLabels.general || "기타",
-        lang: L,
-        uiLang: L,
-        min: parseInt(s.min) || 1,
-        max: parseInt(s.max) || 100000,
-        rate: p.sell,
-      };
-      if (isAdmin) {
-        // 슈퍼샤샤: MoreThan 원가·본사공급가 전체 노출
-        if (superView) {
-          row.base = p.base;
-          row.masterSupply = p.masterSupply;
-          row.supply = p.supply;
-        } else if (masterView && isMasterType(tenant)) {
-          // 본사: 슈퍼샤샤에서 받은 공급가만 (대리점에는 비공개)
-          row.supply = p.supply;
-        }
-        // 대리점 관리자·일반 회원: 판매가(rate)만 — upstream 공급가 미포함
-      }
-      return row;
-    });
+    .map((s) => mapTenantServiceRow(s, tenant, isAdmin, viewer, L, kindLabels, { compact }));
+}
+
+async function tenantServiceOne(tenant, serviceId, isAdmin, viewer, lang = "ko") {
+  const svcs = await getServices();
+  const raw = svcs.find((s) => String(s.service) === String(serviceId));
+  if (!raw || db.serviceOverrides[raw.service]?.hidden) return null;
+  const L = normalizeLang(lang);
+  const kindLabels = KIND_LABELS_I18N[L] || KIND_LABELS_I18N.ko;
+  return mapTenantServiceRow(raw, tenant, isAdmin, viewer, L, kindLabels, { compact: false });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1329,7 +1321,6 @@ app.get("/api/config", (req, res) => {
     ...ps,
     demo: DEMO,
     curated: true,
-    localKrCatalog: LOCAL_KR_SERVICES.length,
     priorityRegions: [...PRIORITY_FLAGS],
     publicBase: getPublicBaseUrl(),
   });
@@ -1380,8 +1371,24 @@ app.get("/api/services", async (req, res) => {
     const tenant = tenantBySlug(slug);
     if (!tenant) return res.status(404).json({ error: "사이트를 찾을 수 없습니다." });
     const lang = normalizeLang(req.query.lang);
-    res.set("Cache-Control", "no-store");
-    res.json(await tenantServices(tenant, false, null, lang));
+    const compact = req.query.full !== "1";
+    res.set("Cache-Control", "private, max-age=60");
+    res.json(await tenantServices(tenant, false, null, lang, { compact }));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/service/:id", async (req, res) => {
+  try {
+    const slug = resolveTenantSlug(req.query.tenant || defaultPublicSlug(), false);
+    const tenant = tenantBySlug(slug);
+    if (!tenant) return res.status(404).json({ error: "사이트를 찾을 수 없습니다." });
+    const lang = normalizeLang(req.query.lang);
+    const row = await tenantServiceOne(tenant, req.params.id, false, null, lang);
+    if (!row) return res.status(404).json({ error: "상품을 찾을 수 없습니다." });
+    res.set("Cache-Control", "private, max-age=300");
+    res.json(row);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -1480,12 +1487,6 @@ app.post("/api/order", auth, async (req, res) => {
     const svcs = await getServices();
     const svc = svcs.find((s) => String(s.service) === String(service));
     if (!svc) return res.status(404).json({ error: "서비스를 찾을 수 없습니다." });
-    if (LOCAL_KR_SERVICE_IDS.has(Number(service))) {
-      return res.status(503).json({
-        error:
-          "네이버·카카오 상품은 별도 공급 연동 준비 중입니다. 관리자·텔레그램으로 문의하거나 숲(Soop)·인스타/유튜브 한국 상품을 이용해 주세요.",
-      });
-    }
     if (qty < (parseInt(svc.min) || 1) || qty > (parseInt(svc.max) || 1e9))
       return res.status(400).json({ error: `수량 범위: ${svc.min} ~ ${svc.max}` });
 
@@ -1823,7 +1824,9 @@ app.get("/api/admin/services", auth, adminOnly, async (req, res) => {
       : isMasterType(tenant)
         ? tenant
         : tenant;
-  const list = await tenantServices(viewTenant, true, req.user, normalizeLang(req.query.lang));
+  const list = await tenantServices(viewTenant, true, req.user, normalizeLang(req.query.lang), {
+    compact: req.query.full !== "1",
+  });
   res.json(
     list.map((s) => {
       const ov = db.serviceOverrides[s.service] || {};
