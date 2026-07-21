@@ -1,13 +1,13 @@
 {
-  "collected_at": "2026-07-21T09:37:41.190576+09:00",
-  "date": "2026-07-21",
+  "collected_at": "2026-07-22T07:07:37.551554+09:00",
+  "date": "2026-07-22",
   "stores": [
     {
       "store_id": "franchain_s1",
       "store_name": "소림사 마곡점",
       "place_id": "2075084311",
       "franchain_store_id": "s1",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "마곡 맛집",
@@ -21,21 +21,21 @@
           "2084137581",
           "2068804758",
           "1545768679",
-          "1336136306",
           "2085969857",
+          "1336136306",
           "1774474024",
           "2078410762",
-          "2009835554",
-          "2011380885",
-          "2083592937",
-          "1554455620",
           "2021396736",
+          "2073687110",
+          "1621429182",
+          "2011380885",
+          "2009835554",
+          "1554455620",
           "1823531538",
-          "1814508287",
-          "1599014408"
+          "1514971383"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:12:05.223180+09:00"
+        "searched_at": "2026-07-22T06:42:01.752363+09:00"
       },
       "channels": {
         "blog": {
@@ -84,42 +84,42 @@
       "store_name": "소림사 신림점",
       "place_id": "1760695984",
       "franchain_store_id": "s10",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "신림 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 88,
+        "searched_count": 90,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "31197700",
           "2098680745",
-          "1724292218",
           "1762344149",
-          "1306082756",
+          "1724292218",
           "2013358473",
-          "37700379",
+          "1306082756",
           "1683527716",
-          "1891677001",
+          "37700379",
           "38009643",
           "2071802637",
+          "1891677001",
           "1412481927",
           "1530835946",
-          "1786026944",
-          "2018872357"
+          "2056451281",
+          "37534657"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:22:07.269005+09:00"
+        "searched_at": "2026-07-22T06:52:04.053403+09:00"
       },
       "channels": {
         "blog": {
           "label": "블로그 리뷰",
           "url": "https://map.naver.com/p/entry/place/1760695984/review/blog",
           "items": [],
-          "total_visible": 61,
+          "total_visible": 60,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -138,7 +138,7 @@
           "label": "방문자 리뷰",
           "url": "https://map.naver.com/p/entry/place/1760695984/review/visitor",
           "items": [],
-          "total_visible": 57,
+          "total_visible": 58,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -148,21 +148,21 @@
         {
           "type": "baseline",
           "channel": "blog",
-          "reason": "블로그 리뷰 기준선 기록: 총 61건",
-          "at": "2026-07-21T09:04:22.242072+09:00"
+          "reason": "블로그 리뷰 기준선 기록: 총 60건",
+          "at": "2026-07-22T06:34:18.552247+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
-          "reason": "방문자 리뷰 기준선 기록: 총 57건",
-          "at": "2026-07-21T09:04:22.242148+09:00"
+          "reason": "방문자 리뷰 기준선 기록: 총 58건",
+          "at": "2026-07-22T06:34:18.552321+09:00"
         }
       ],
       "summary": {
         "place_rank": null,
-        "blog_total": 61,
+        "blog_total": 60,
         "receipt_total": 0,
-        "visitor_total": 57,
+        "visitor_total": 58,
         "blog_today": 0,
         "receipt_today": 0,
         "blog_delta": null,
@@ -174,7 +174,7 @@
       "store_name": "카페 소림사",
       "place_id": "1935501245",
       "franchain_store_id": "s11",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "원당 맛집",
@@ -192,17 +192,17 @@
           "18230776",
           "19183330",
           "1586766208",
+          "1218094295",
           "2047984769",
           "1627915839",
-          "1218094295",
           "18230823",
-          "20601685",
           "21697587",
-          "1799132973",
-          "1623616597"
+          "1623616597",
+          "20601685",
+          "1799132973"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:23:13.006714+09:00"
+        "searched_at": "2026-07-22T06:53:09.838943+09:00"
       },
       "channels": {
         "blog": {
@@ -239,13 +239,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 55건",
-          "at": "2026-07-21T09:04:50.038427+09:00"
+          "at": "2026-07-22T06:34:46.489005+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 118건",
-          "at": "2026-07-21T09:04:50.038499+09:00"
+          "at": "2026-07-22T06:34:46.489047+09:00"
         }
       ],
       "summary": {
@@ -264,35 +264,35 @@
       "store_name": "소림사 위례",
       "place_id": "2046052601",
       "franchain_store_id": "s12",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "위례 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 86,
+        "searched_count": 91,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
-          "21273784",
-          "1520690977",
-          "1690538184",
           "1396702772",
+          "21273784",
+          "1690538184",
+          "1520690977",
           "2023607111",
-          "1421844829",
           "1800870077",
+          "1421844829",
           "2061845234",
+          "2023820643",
           "2095341379",
-          "2086046004",
           "2040951414",
+          "2086046004",
           "2023807227",
           "54317067",
-          "1632847717",
-          "2023820643"
+          "1600158840"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:24:19.849672+09:00"
+        "searched_at": "2026-07-22T06:54:16.633594+09:00"
       },
       "channels": {
         "blog": {
@@ -329,13 +329,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 22건",
-          "at": "2026-07-21T09:05:17.928450+09:00"
+          "at": "2026-07-22T06:35:14.423079+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 55건",
-          "at": "2026-07-21T09:05:17.928495+09:00"
+          "at": "2026-07-22T06:35:14.423156+09:00"
         }
       ],
       "summary": {
@@ -354,7 +354,7 @@
       "store_name": "소림사 수내역점",
       "place_id": "2015714126",
       "franchain_store_id": "s14",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "수내역 맛집",
@@ -367,22 +367,22 @@
         "top_place_ids": [
           "2067992435",
           "1376974496",
-          "1592526526",
           "2044156290",
+          "1592526526",
           "1046535988",
           "1062837868",
-          "1224167360",
           "32572599",
           "1210983396",
-          "2064157529",
-          "2085795966",
           "11493718",
-          "1255344270",
-          "35307583",
-          "1938780182"
+          "1224167360",
+          "2064157529",
+          "2014535146",
+          "1722384807",
+          "2085795966",
+          "1255344270"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:25:26.628107+09:00"
+        "searched_at": "2026-07-22T06:55:23.407692+09:00"
       },
       "channels": {
         "blog": {
@@ -419,13 +419,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 14건",
-          "at": "2026-07-21T09:05:45.973250+09:00"
+          "at": "2026-07-22T06:35:42.228225+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 35건",
-          "at": "2026-07-21T09:05:45.973355+09:00"
+          "at": "2026-07-22T06:35:42.228303+09:00"
         }
       ],
       "summary": {
@@ -444,42 +444,42 @@
       "store_name": "소림사 용산점",
       "place_id": "1215016250",
       "franchain_store_id": "s15",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "용산 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 91,
+        "searched_count": 95,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
-          "1547290457",
           "2082970955",
+          "1547290457",
           "1888379309",
-          "2048611893",
           "1550229480",
           "1187699977",
+          "2048611893",
           "1088511297",
           "18160853",
-          "1181246835",
           "1281886328",
+          "1315121324",
+          "1006887521",
           "2099464351",
-          "2023266132",
-          "2064659464",
           "37915721",
-          "1315121324"
+          "2023266132",
+          "1181246835"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:26:33.633254+09:00"
+        "searched_at": "2026-07-22T06:56:30.204086+09:00"
       },
       "channels": {
         "blog": {
           "label": "블로그 리뷰",
           "url": "https://map.naver.com/p/entry/place/1215016250/review/blog",
           "items": [],
-          "total_visible": 264,
+          "total_visible": 263,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -498,7 +498,7 @@
           "label": "방문자 리뷰",
           "url": "https://map.naver.com/p/entry/place/1215016250/review/visitor",
           "items": [],
-          "total_visible": 929,
+          "total_visible": 930,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -508,21 +508,21 @@
         {
           "type": "baseline",
           "channel": "blog",
-          "reason": "블로그 리뷰 기준선 기록: 총 264건",
-          "at": "2026-07-21T09:06:13.954967+09:00"
+          "reason": "블로그 리뷰 기준선 기록: 총 263건",
+          "at": "2026-07-22T06:36:10.324613+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
-          "reason": "방문자 리뷰 기준선 기록: 총 929건",
-          "at": "2026-07-21T09:06:13.955017+09:00"
+          "reason": "방문자 리뷰 기준선 기록: 총 930건",
+          "at": "2026-07-22T06:36:10.324688+09:00"
         }
       ],
       "summary": {
         "place_rank": null,
-        "blog_total": 264,
+        "blog_total": 263,
         "receipt_total": 0,
-        "visitor_total": 929,
+        "visitor_total": 930,
         "blog_today": 0,
         "receipt_today": 0,
         "blog_delta": null,
@@ -534,35 +534,35 @@
       "store_name": "소림사 본점(서순라길)",
       "place_id": "2050449918",
       "franchain_store_id": "s16",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": 70,
       "rank_detail": {
         "search_keyword": "서순라길 맛집",
         "place_rank": 70,
         "keyword_rank": 70,
         "rank_in_top": true,
-        "searched_count": 91,
+        "searched_count": 90,
         "not_in_top_n": false,
         "incomplete_search": false,
         "top_place_ids": [
           "1536076658",
           "1754874578",
-          "800663301",
           "1051747215",
+          "800663301",
           "1266673496",
           "2009342811",
           "1323166650",
           "2089385273",
-          "1371715546",
           "1822592111",
           "1311007811",
+          "1371715546",
           "1250488411",
-          "2063526187",
           "1562151181",
-          "2027475538"
+          "2027475538",
+          "2063526187"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:27:40.338173+09:00"
+        "searched_at": "2026-07-22T06:57:36.790880+09:00"
       },
       "channels": {
         "blog": {
@@ -599,19 +599,19 @@
           "type": "rank_first",
           "channel": "place",
           "reason": "맛집 검색 순위 첫 측정: 1위",
-          "at": "2026-07-21T09:06:42.004513+09:00"
+          "at": "2026-07-22T06:36:38.229447+09:00"
         },
         {
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 43건",
-          "at": "2026-07-21T09:06:42.004589+09:00"
+          "at": "2026-07-22T06:36:38.229494+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 119건",
-          "at": "2026-07-21T09:06:42.004667+09:00"
+          "at": "2026-07-22T06:36:38.229505+09:00"
         }
       ],
       "summary": {
@@ -630,35 +630,35 @@
       "store_name": "소림사 서초점",
       "place_id": "2003275850",
       "franchain_store_id": "s18",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "서초 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 90,
+        "searched_count": 89,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "1742138275",
           "1529995762",
-          "1013309145",
-          "2058493358",
           "36860188",
-          "2041444927",
+          "2058493358",
+          "1013309145",
           "1305922373",
+          "1147831299",
+          "2041444927",
           "1419339898",
           "1768646220",
-          "1147831299",
-          "31110991",
-          "1158647110",
-          "1030684001",
           "1299706278",
-          "37221619"
+          "37221619",
+          "2058044342",
+          "1158647110",
+          "2043133054"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:28:47.574334+09:00"
+        "searched_at": "2026-07-22T06:58:44.139081+09:00"
       },
       "channels": {
         "blog": {
@@ -684,7 +684,7 @@
           "label": "방문자 리뷰",
           "url": "https://map.naver.com/p/entry/place/2003275850/review/visitor",
           "items": [],
-          "total_visible": 179,
+          "total_visible": 182,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -695,20 +695,20 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 22건",
-          "at": "2026-07-21T09:07:09.968281+09:00"
+          "at": "2026-07-22T06:37:06.377880+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
-          "reason": "방문자 리뷰 기준선 기록: 총 179건",
-          "at": "2026-07-21T09:07:09.968317+09:00"
+          "reason": "방문자 리뷰 기준선 기록: 총 182건",
+          "at": "2026-07-22T06:37:06.377956+09:00"
         }
       ],
       "summary": {
         "place_rank": null,
         "blog_total": 22,
         "receipt_total": 0,
-        "visitor_total": 179,
+        "visitor_total": 182,
         "blog_today": 0,
         "receipt_today": 0,
         "blog_delta": null,
@@ -720,35 +720,35 @@
       "store_name": "소림사 다산점",
       "place_id": "1965307586",
       "franchain_store_id": "s2",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "다산 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 85,
+        "searched_count": 84,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "1969287716",
           "1203155007",
+          "1208139671",
           "1324591980",
           "1131975353",
           "1630378607",
-          "2095831235",
           "1790466612",
-          "2097948516",
+          "2095831235",
           "1083658545",
           "1193991020",
-          "1455516190",
           "2090774964",
-          "2095036634",
-          "1752725679",
-          "1635288312"
+          "2097948516",
+          "1033776410",
+          "1508202403",
+          "2073492111"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:13:12.104777+09:00"
+        "searched_at": "2026-07-22T06:43:08.771120+09:00"
       },
       "channels": {
         "blog": {
@@ -785,13 +785,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 134건",
-          "at": "2026-07-21T09:01:01.063148+09:00"
+          "at": "2026-07-22T06:30:57.280633+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 332건",
-          "at": "2026-07-21T09:01:01.063184+09:00"
+          "at": "2026-07-22T06:30:57.280708+09:00"
         }
       ],
       "summary": {
@@ -810,7 +810,7 @@
       "store_name": "소림사 구로디지털점",
       "place_id": "2053860093",
       "franchain_store_id": "s20",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "구로디지털 맛집",
@@ -822,23 +822,23 @@
         "incomplete_search": false,
         "top_place_ids": [
           "2057985540",
-          "2098680745",
-          "1813277180",
           "1671769174",
           "1358688538",
-          "1004538341",
+          "1813277180",
+          "2098680745",
           "1886409971",
+          "1004538341",
           "37433126",
-          "1891677001",
-          "1452240607",
-          "1692183199",
-          "1678728552",
           "1368355359",
+          "1452240607",
+          "1891677001",
+          "1692183199",
           "2047039672",
+          "1678728552",
           "1130108091"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:29:54.545632+09:00"
+        "searched_at": "2026-07-22T06:59:51.217769+09:00"
       },
       "channels": {
         "blog": {
@@ -875,13 +875,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 11건",
-          "at": "2026-07-21T09:07:37.946198+09:00"
+          "at": "2026-07-22T06:37:34.355004+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 55건",
-          "at": "2026-07-21T09:07:37.946275+09:00"
+          "at": "2026-07-22T06:37:34.355044+09:00"
         }
       ],
       "summary": {
@@ -900,35 +900,35 @@
       "store_name": "소림사 팔거역점",
       "place_id": "2031470155",
       "franchain_store_id": "s21",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "동천동 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 81,
+        "searched_count": 83,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "2098981697",
+          "1532956837",
           "31186578",
           "38335452",
           "1654672681",
-          "1532956837",
-          "1529010099",
           "1325192615",
+          "1529010099",
           "2065441732",
-          "2048791906",
-          "2016632888",
-          "1691947490",
           "1879240108",
+          "2016632888",
+          "2048791906",
+          "1691947490",
           "1150408407",
-          "1136290464",
-          "1915825580"
+          "1995302375",
+          "2028488843"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:31:01.257338+09:00"
+        "searched_at": "2026-07-22T07:00:57.748242+09:00"
       },
       "channels": {
         "blog": {
@@ -965,13 +965,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 18건",
-          "at": "2026-07-21T09:08:05.886627+09:00"
+          "at": "2026-07-22T06:38:02.425455+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 121건",
-          "at": "2026-07-21T09:08:05.886656+09:00"
+          "at": "2026-07-22T06:38:02.425532+09:00"
         }
       ],
       "summary": {
@@ -990,7 +990,7 @@
       "store_name": "소림사 동남지구점",
       "place_id": "2047626725",
       "franchain_store_id": "s22",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "동남지구 맛집",
@@ -1004,21 +1004,21 @@
           "1313416041",
           "1632435108",
           "2092708386",
-          "2036272549",
           "1098598056",
+          "2036272549",
+          "1880330674",
           "2044855407",
           "1727382615",
           "34712945",
-          "1880330674",
           "1772426283",
-          "1336781117",
-          "1341070011",
+          "1124416345",
           "1198317518",
-          "1681780397",
-          "1056017050"
+          "1341070011",
+          "1336781117",
+          "1681780397"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:32:08.009141+09:00"
+        "searched_at": "2026-07-22T07:02:04.500030+09:00"
       },
       "channels": {
         "blog": {
@@ -1055,13 +1055,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 67건",
-          "at": "2026-07-21T09:08:34.024224+09:00"
+          "at": "2026-07-22T06:38:30.462629+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 129건",
-          "at": "2026-07-21T09:08:34.024297+09:00"
+          "at": "2026-07-22T06:38:30.462674+09:00"
         }
       ],
       "summary": {
@@ -1080,14 +1080,14 @@
       "store_name": "소림사 산본점",
       "place_id": "2036890095",
       "franchain_store_id": "s23",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
-      "keyword_rank": 73,
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
+      "keyword_rank": 75,
       "rank_detail": {
         "search_keyword": "산본 맛집",
-        "place_rank": 73,
-        "keyword_rank": 73,
+        "place_rank": 75,
+        "keyword_rank": 75,
         "rank_in_top": true,
-        "searched_count": 85,
+        "searched_count": 86,
         "not_in_top_n": false,
         "incomplete_search": false,
         "top_place_ids": [
@@ -1095,20 +1095,20 @@
           "1274221553",
           "1780468249",
           "2038536333",
-          "32388106",
           "1537740130",
           "1161718851",
+          "32388106",
+          "1661421571",
+          "2057296333",
+          "2021311313",
           "1323114688",
           "1531349424",
           "11890229",
-          "2021311313",
-          "2057296333",
-          "1204959706",
-          "1661421571",
-          "1428601567"
+          "1461796250",
+          "2095720839"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:33:14.634363+09:00"
+        "searched_at": "2026-07-22T07:03:11.057042+09:00"
       },
       "channels": {
         "blog": {
@@ -1134,7 +1134,7 @@
           "label": "방문자 리뷰",
           "url": "https://map.naver.com/p/entry/place/2036890095/review/visitor",
           "items": [],
-          "total_visible": 33,
+          "total_visible": 34,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -1145,26 +1145,26 @@
           "type": "rank_first",
           "channel": "place",
           "reason": "맛집 검색 순위 첫 측정: 1위",
-          "at": "2026-07-21T09:09:02.088478+09:00"
+          "at": "2026-07-22T06:38:58.474960+09:00"
         },
         {
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 78건",
-          "at": "2026-07-21T09:09:02.088528+09:00"
+          "at": "2026-07-22T06:38:58.475031+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
-          "reason": "방문자 리뷰 기준선 기록: 총 33건",
-          "at": "2026-07-21T09:09:02.088544+09:00"
+          "reason": "방문자 리뷰 기준선 기록: 총 34건",
+          "at": "2026-07-22T06:38:58.475083+09:00"
         }
       ],
       "summary": {
-        "place_rank": 73,
+        "place_rank": 75,
         "blog_total": 78,
         "receipt_total": 0,
-        "visitor_total": 33,
+        "visitor_total": 34,
         "blog_today": 0,
         "receipt_today": 0,
         "blog_delta": null,
@@ -1176,7 +1176,7 @@
       "store_name": "소림사 잠실엘스점",
       "place_id": "1889333438",
       "franchain_store_id": "s24",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "잠실 맛집",
@@ -1189,22 +1189,22 @@
         "top_place_ids": [
           "2061532163",
           "37755810",
+          "1572944657",
           "1845584897",
           "2077281697",
-          "2000711861",
           "2093326058",
+          "2000711861",
+          "36714351",
           "1938060093",
-          "1739251695",
           "1041643501",
           "1289070154",
-          "1290412110",
           "2067782531",
-          "2069074461",
-          "1753238133",
-          "36714351"
+          "1739251695",
+          "2056884688",
+          "1448362929"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:34:21.582955+09:00"
+        "searched_at": "2026-07-22T07:04:18.014482+09:00"
       },
       "channels": {
         "blog": {
@@ -1241,13 +1241,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 18건",
-          "at": "2026-07-21T09:09:30.149610+09:00"
+          "at": "2026-07-22T06:39:26.571461+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 159건",
-          "at": "2026-07-21T09:09:30.149648+09:00"
+          "at": "2026-07-22T06:39:26.571510+09:00"
         }
       ],
       "summary": {
@@ -1266,42 +1266,42 @@
       "store_name": "소림사 원주점",
       "place_id": "2084617483",
       "franchain_store_id": "s25",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "원주 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 93,
+        "searched_count": 94,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "2057018242",
+          "1555089142",
           "1996779059",
           "1572897471",
-          "1555089142",
-          "1028387253",
-          "1360308228",
-          "12021573",
-          "38275902",
-          "15214503",
           "38429924",
-          "1288096343",
+          "1028387253",
           "1131180808",
-          "2017323103",
+          "1360308228",
+          "38275902",
+          "12021573",
+          "1288096343",
+          "1956964844",
           "1780478766",
-          "1364888758"
+          "2017323103",
+          "15214503"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:35:28.341416+09:00"
+        "searched_at": "2026-07-22T07:05:24.710490+09:00"
       },
       "channels": {
         "blog": {
           "label": "블로그 리뷰",
           "url": "https://map.naver.com/p/entry/place/2084617483/review/blog",
           "items": [],
-          "total_visible": 29,
+          "total_visible": 30,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -1320,7 +1320,7 @@
           "label": "방문자 리뷰",
           "url": "https://map.naver.com/p/entry/place/2084617483/review/visitor",
           "items": [],
-          "total_visible": 114,
+          "total_visible": 115,
           "today_on_page": 0,
           "count_source": "place_header",
           "delta_vs_yesterday": null
@@ -1330,21 +1330,21 @@
         {
           "type": "baseline",
           "channel": "blog",
-          "reason": "블로그 리뷰 기준선 기록: 총 29건",
-          "at": "2026-07-21T09:09:58.086345+09:00"
+          "reason": "블로그 리뷰 기준선 기록: 총 30건",
+          "at": "2026-07-22T06:39:54.676018+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
-          "reason": "방문자 리뷰 기준선 기록: 총 114건",
-          "at": "2026-07-21T09:09:58.086469+09:00"
+          "reason": "방문자 리뷰 기준선 기록: 총 115건",
+          "at": "2026-07-22T06:39:54.676083+09:00"
         }
       ],
       "summary": {
         "place_rank": null,
-        "blog_total": 29,
+        "blog_total": 30,
         "receipt_total": 0,
-        "visitor_total": 114,
+        "visitor_total": 115,
         "blog_today": 0,
         "receipt_today": 0,
         "blog_delta": null,
@@ -1356,35 +1356,35 @@
       "store_name": "소림사 대구도서관점",
       "place_id": "2085116121",
       "franchain_store_id": "s26",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
-      "keyword_rank": 44,
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
+      "keyword_rank": 47,
       "rank_detail": {
         "search_keyword": "봉덕동 맛집",
-        "place_rank": 44,
-        "keyword_rank": 44,
+        "place_rank": 47,
+        "keyword_rank": 47,
         "rank_in_top": true,
-        "searched_count": 81,
+        "searched_count": 80,
         "not_in_top_n": false,
         "incomplete_search": false,
         "top_place_ids": [
-          "2010460176",
           "11587861",
+          "2010460176",
           "616738782",
-          "2064314087",
-          "1031816928",
           "1113529366",
+          "1031816928",
+          "2064314087",
           "2025470836",
           "1617836879",
-          "1588130648",
           "2052837256",
-          "15979512",
+          "1588130648",
+          "1772811788",
           "1969724219",
-          "1368549243",
+          "15979512",
           "1621335063",
-          "2008060199"
+          "1368549243"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:36:34.349973+09:00"
+        "searched_at": "2026-07-22T07:06:30.641230+09:00"
       },
       "channels": {
         "blog": {
@@ -1421,23 +1421,23 @@
           "type": "rank_first",
           "channel": "place",
           "reason": "맛집 검색 순위 첫 측정: 1위",
-          "at": "2026-07-21T09:10:26.111599+09:00"
+          "at": "2026-07-22T06:40:22.669423+09:00"
         },
         {
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 16건",
-          "at": "2026-07-21T09:10:26.111642+09:00"
+          "at": "2026-07-22T06:40:22.669466+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 67건",
-          "at": "2026-07-21T09:10:26.111661+09:00"
+          "at": "2026-07-22T06:40:22.669476+09:00"
         }
       ],
       "summary": {
-        "place_rank": 44,
+        "place_rank": 47,
         "blog_total": 16,
         "receipt_total": 0,
         "visitor_total": 67,
@@ -1452,35 +1452,35 @@
       "store_name": "소림사 광주상무점",
       "place_id": "2012766446",
       "franchain_store_id": "s27",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "광주상무 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 91,
+        "searched_count": 88,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "1144247891",
-          "1227543167",
           "2012700221",
+          "1227543167",
           "2068148291",
           "2049084781",
           "37562322",
           "1682530037",
-          "1167762745",
-          "2010327818",
           "1445008706",
-          "1982830487",
+          "2010327818",
           "2057157976",
+          "1167762745",
+          "1982830487",
           "1738192531",
-          "1183975890",
-          "2004530566"
+          "2004530566",
+          "1220019608"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:37:41.145796+09:00"
+        "searched_at": "2026-07-22T07:07:37.508994+09:00"
       },
       "channels": {
         "blog": {
@@ -1517,13 +1517,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 26건",
-          "at": "2026-07-21T09:10:54.242698+09:00"
+          "at": "2026-07-22T06:40:50.609631+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 26건",
-          "at": "2026-07-21T09:10:54.242734+09:00"
+          "at": "2026-07-22T06:40:50.609679+09:00"
         }
       ],
       "summary": {
@@ -1542,35 +1542,35 @@
       "store_name": "소림사 역삼점",
       "place_id": "2063243598",
       "franchain_store_id": "s3",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "역삼 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 91,
+        "searched_count": 88,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "2020647783",
-          "1427134948",
           "38562941",
-          "2065894706",
-          "1008611365",
+          "1427134948",
           "2069799651",
-          "1178830044",
+          "1008611365",
+          "2065894706",
           "2069902252",
           "2085677703",
           "1000404935",
           "1096169504",
-          "2023940364",
           "37021055",
+          "1178830044",
+          "2023940364",
           "1443081237",
-          "2048090882"
+          "2003259752"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:14:19.130156+09:00"
+        "searched_at": "2026-07-22T06:44:15.866172+09:00"
       },
       "channels": {
         "blog": {
@@ -1607,13 +1607,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 54건",
-          "at": "2026-07-21T09:01:29.219803+09:00"
+          "at": "2026-07-22T06:31:25.380128+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 738건",
-          "at": "2026-07-21T09:01:29.219851+09:00"
+          "at": "2026-07-22T06:31:25.380172+09:00"
         }
       ],
       "summary": {
@@ -1632,35 +1632,35 @@
       "store_name": "소림사 강남역점",
       "place_id": "2091043530",
       "franchain_store_id": "s4",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "강남역 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 91,
+        "searched_count": 85,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "2020647783",
-          "1427134948",
           "38562941",
           "36860188",
+          "1427134948",
           "1008611365",
           "2041444927",
-          "1178830044",
-          "31110991",
-          "1158647110",
-          "1030684001",
-          "1299706278",
           "2085677703",
+          "1299706278",
+          "1158647110",
           "1000404935",
+          "2043133054",
+          "31110991",
           "37021055",
+          "1178830044",
           "1443081237"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:15:26.215314+09:00"
+        "searched_at": "2026-07-22T06:45:22.946899+09:00"
       },
       "channels": {
         "blog": {
@@ -1697,13 +1697,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 50건",
-          "at": "2026-07-21T09:01:57.242711+09:00"
+          "at": "2026-07-22T06:31:53.487309+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 190건",
-          "at": "2026-07-21T09:01:57.242753+09:00"
+          "at": "2026-07-22T06:31:53.487382+09:00"
         }
       ],
       "summary": {
@@ -1722,7 +1722,7 @@
       "store_name": "소림사 고투몰점",
       "place_id": "2040615154",
       "franchain_store_id": "s5",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "고투몰 맛집",
@@ -1737,20 +1737,20 @@
           "1216001021",
           "1442377750",
           "36165988",
-          "1306929366",
           "1999058468",
           "1950634551",
+          "1306929366",
           "1658822371",
-          "36995509",
-          "1211249629",
-          "1234168279",
           "2030061603",
+          "1211249629",
           "2019802339",
-          "1512607232",
-          "35396916"
+          "36995509",
+          "1389562845",
+          "1234168279",
+          "1047689987"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:16:33.008402+09:00"
+        "searched_at": "2026-07-22T06:46:29.770396+09:00"
       },
       "channels": {
         "blog": {
@@ -1787,13 +1787,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 382건",
-          "at": "2026-07-21T09:02:25.105946+09:00"
+          "at": "2026-07-22T06:32:21.531688+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 340건",
-          "at": "2026-07-21T09:02:25.105991+09:00"
+          "at": "2026-07-22T06:32:21.531724+09:00"
         }
       ],
       "summary": {
@@ -1821,30 +1821,30 @@
         "place_rank": null,
         "place_id_invalid": true,
         "keyword_rank": null,
-        "searched_count": 87,
+        "searched_count": 92,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "1380173368",
-          "1164099782",
           "1859247923",
+          "1164099782",
           "2072385748",
-          "2081356784",
+          "2091570713",
           "1738404025",
           "2087147252",
-          "2091570713",
+          "2081356784",
           "1204739380",
           "1407612214",
           "1290968781",
           "2039426975",
-          "2060499853",
-          "1683240777",
-          "1503985284"
+          "1873281905",
+          "1503985284",
+          "1307281960"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:17:39.882480+09:00"
+        "searched_at": "2026-07-22T06:47:36.727401+09:00"
       },
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "error": "네이버 플레이스 ID 불일치·삭제 — placeId 갱신 필요",
       "summary": {
         "place_rank": null
@@ -1855,35 +1855,35 @@
       "store_name": "소림사 천호점",
       "place_id": "2044613400",
       "franchain_store_id": "s7",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "천호 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 91,
+        "searched_count": 90,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "1571504136",
-          "1494206985",
           "2056797061",
+          "1494206985",
+          "2037394757",
           "38654169",
           "1755277775",
+          "1452428662",
           "1012913691",
           "2045585328",
-          "1452428662",
           "2014880028",
-          "1644750749",
           "34818249",
-          "2037394757",
+          "1644750749",
           "2010241883",
-          "1874822920",
-          "1329074974"
+          "2049961658",
+          "1874822920"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:18:46.836066+09:00"
+        "searched_at": "2026-07-22T06:48:43.656205+09:00"
       },
       "channels": {
         "blog": {
@@ -1920,13 +1920,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 52건",
-          "at": "2026-07-21T09:02:57.943662+09:00"
+          "at": "2026-07-22T06:32:54.363857+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 191건",
-          "at": "2026-07-21T09:02:57.943697+09:00"
+          "at": "2026-07-22T06:32:54.363896+09:00"
         }
       ],
       "summary": {
@@ -1945,14 +1945,14 @@
       "store_name": "소림사 광명점",
       "place_id": "2058641947",
       "franchain_store_id": "s8",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "광명 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 88,
+        "searched_count": 91,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
@@ -1961,19 +1961,19 @@
           "1223824652",
           "2002587113",
           "1260781341",
-          "1865580163",
           "1640236755",
+          "1865580163",
           "2012649310",
-          "17887854",
-          "2042790317",
+          "13552233",
           "1509303145",
+          "2042790317",
+          "1535388627",
           "13063085",
           "2032566502",
-          "1535388627",
-          "1319771916"
+          "17887854"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:19:53.658378+09:00"
+        "searched_at": "2026-07-22T06:49:50.508415+09:00"
       },
       "channels": {
         "blog": {
@@ -2010,13 +2010,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 26건",
-          "at": "2026-07-21T09:03:26.030889+09:00"
+          "at": "2026-07-22T06:33:22.476435+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 396건",
-          "at": "2026-07-21T09:03:26.030965+09:00"
+          "at": "2026-07-22T06:33:22.476507+09:00"
         }
       ],
       "summary": {
@@ -2035,35 +2035,35 @@
       "store_name": "소림사 문정점",
       "place_id": "2030163460",
       "franchain_store_id": "s9",
-      "collected_at": "2026-07-21T09:37:41.190576+09:00",
+      "collected_at": "2026-07-22T07:07:37.551554+09:00",
       "keyword_rank": null,
       "rank_detail": {
         "search_keyword": "문정 맛집",
         "place_rank": null,
         "keyword_rank": null,
         "rank_in_top": false,
-        "searched_count": 92,
+        "searched_count": 90,
         "not_in_top_n": true,
         "incomplete_search": false,
         "top_place_ids": [
           "21273784",
-          "1966382507",
-          "2066776930",
-          "1690538184",
           "1396702772",
           "1101561233",
-          "1632847717",
+          "1966382507",
+          "1690538184",
+          "2066776930",
           "2091645247",
-          "2044478051",
+          "1632847717",
           "1474447485",
-          "2078920829",
+          "2044478051",
           "2012459349",
-          "2036180107",
+          "2078920829",
           "1100841159",
-          "1298283004"
+          "2036180107",
+          "1514302037"
         ],
         "rank_source": "list_order",
-        "searched_at": "2026-07-21T09:21:00.425550+09:00"
+        "searched_at": "2026-07-22T06:50:57.240563+09:00"
       },
       "channels": {
         "blog": {
@@ -2100,13 +2100,13 @@
           "type": "baseline",
           "channel": "blog",
           "reason": "블로그 리뷰 기준선 기록: 총 21건",
-          "at": "2026-07-21T09:03:54.116961+09:00"
+          "at": "2026-07-22T06:33:50.456671+09:00"
         },
         {
           "type": "baseline",
           "channel": "visitor",
           "reason": "방문자 리뷰 기준선 기록: 총 79건",
-          "at": "2026-07-21T09:03:54.117018+09:00"
+          "at": "2026-07-22T06:33:50.456722+09:00"
         }
       ],
       "summary": {
