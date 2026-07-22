@@ -2041,6 +2041,19 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
               <div style="font-size:11px;color:#64748b;margin-top:8px">🔒 <strong>안전 잠금</strong> — 공급 API 연결 테스트 통과한 키만 저장 · 백업 자동복구 · 잘못된 키는 기존 연동 유지</div>
             </div>
             <div class="card">
+              <div style="font-size:15px;font-weight:800;margin-bottom:12px">📧 비밀번호 찾기 메일 (Resend)</div>
+              <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">
+                전 사이트 공통. <a href="https://resend.com/api-keys" target="_blank" style="color:var(--p2)">resend.com</a>에서 API 키(re_…)를 발급해 저장하면, 고객이 비밀번호 찾기로 메일을 받을 수 있습니다.
+              </div>
+              <div class="fg"><label>Resend API 키</label><input type="password" id="spResendKey" placeholder="re_…" autocomplete="off"/></div>
+              <div class="fg"><label>발신 주소 (선택)</label><input type="text" id="spEmailFrom" placeholder="비우면 GLOW &lt;beth.t@example.com&gt;"/></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalSetting('resend_api_key','spResendKey')">키 저장</button>
+                <button class="bo bsm" onclick="saveGlobalSetting('email_from','spEmailFrom')">발신 저장</button>
+              </div>
+              <div id="spResendHint" style="font-size:12px;color:var(--tm)"></div>
+            </div>
+            <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔄 자동 동기화</div>
               <div style="font-size:12px;color:var(--tm);margin-bottom:12px;line-height:1.6">
                 • 주문 상태는 <strong>30분마다 자동</strong> 동기화됩니다.<br>
@@ -3257,12 +3270,14 @@ function showForgotPassword(){switchAuth('forgot');}
 async function doForgotPassword(){
   var email=ge('fpEmail').value.trim();
   if(!email){toast('이메일을 입력하세요','err');return}
-  var btn=event.target;var originalText=btn.textContent;btn.textContent='전송 중...';btn.disabled=true;
+  var btn=event&&event.target?event.target:null;
+  var originalText=btn?btn.textContent:'';
+  if(btn){btn.textContent='전송 중...';btn.disabled=true;}
   var d=await api('/api/forgot-password','POST',{email:email});
-  btn.textContent=originalText;btn.disabled=false;
+  if(btn){btn.textContent=originalText;btn.disabled=false;}
   if(d.error){toast(d.error,'err');return}
-  toast(d.message||'재설정 링크가 전송되었습니다','ok');
-  setTimeout(function(){switchAuth('login')},2000);
+  toast(d.message||'재설정 링크가 전송되었습니다', d.pendingAdmin?'err':'ok');
+  if(!d.pendingAdmin)setTimeout(function(){switchAuth('login')},2000);
 }
 // 비밀번호 재설정 페이지 처리 (URL에 /reset-password?token=... 접속 시)
 async function handleResetPasswordPage(){
@@ -4102,6 +4117,8 @@ async function openUserDetail(uid){
     +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">비밀번호 초기화</div>'
     +'<div style="display:flex;gap:8px"><input type="text" id="newPwInput" placeholder="새 비밀번호 (6자 이상)" style="flex:1"/>'
     +'<button class="bp bsm" style="white-space:nowrap;padding:10px 14px" onclick="resetPw(\''+u.id+'\')">초기화</button></div>'
+    +'<button class="bo bsm" style="margin-top:10px;width:100%" onclick="createResetLink(\''+u.id+'\')">🔗 재설정 링크 만들기 (카톡 전달용)</button>'
+    +'<div id="resetLinkBox" style="display:none;margin-top:10px;font-size:11px;word-break:break-all;background:#f8f5ff;border:1px solid var(--bd);border-radius:8px;padding:10px;line-height:1.5"></div>'
     +'</div>'
     +'<div class="card" style="margin-bottom:12px">'
     +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">등급 변경</div>'
@@ -4128,6 +4145,22 @@ async function resetPw(uid){
   var d=await api('/api/admin/users/resetpw','POST',{uid:uid,newpw:pw});
   if(d.error){toast(d.error,'err');return}
   toast('비밀번호 초기화 완료','ok');ge('newPwInput').value='';
+}
+async function createResetLink(uid){
+  var d=await api('/api/admin/users/reset-link','POST',{uid:uid});
+  if(d.error){toast(d.error,'err');return}
+  var box=ge('resetLinkBox');
+  if(box){
+    box.style.display='block';
+    box.innerHTML='<div style="font-weight:700;margin-bottom:6px">'+(d.emailed?'✅ 메일 발송됨':'📋 카톡으로 아래 링크를 보내주세요 (30분)')+'</div>'
+      +'<div style="color:var(--p2)">'+d.resetUrl+'</div>';
+  }
+  try{
+    await navigator.clipboard.writeText(d.resetUrl);
+    toast((d.message||'링크 생성')+' · 클립보드에 복사됨','ok');
+  }catch(e){
+    toast(d.message||'재설정 링크 생성 완료','ok');
+  }
 }
 async function changeRole(uid,role){
   if(!confirm(role==='admin'?'관리자로 변경?':'일반회원으로 변경?'))return;
@@ -4453,10 +4486,17 @@ async function saveApiKey(){
 async function saveGlobalSetting(key,inputId){
   var v=ge(inputId).value.trim();
   if(!v||v.includes('설정됨')){toast('값을 입력하세요','err');return}
-  var superKeys=['peakerr_api_key','tg_token','tg_chat','super_margin','global_site_margin','global_exrate'];
+  var superKeys=['peakerr_api_key','tg_token','tg_chat','super_margin','global_site_margin','global_exrate','resend_api_key','email_from'];
   var url=(_isSuperUser()&&superKeys.indexOf(key)>=0)?'/api/super/settings/save':'/api/admin/settings/save';
   var d=await api(url,'POST',{key:key,value:v});
   if(d.error){toast(d.error,'err');return}
+  if(key==='resend_api_key'||key==='email_from'){
+    if(key==='resend_api_key')ge(inputId).value='••••(설정됨)';
+    toast(key==='resend_api_key'?'비밀번호 찾기 메일 키 저장 완료 ✨':'발신 주소 저장 완료 ✨','ok');
+    var hint=ge('spResendHint');
+    if(hint&&key==='resend_api_key')hint.textContent='✅ Resend 연결됨 — 고객 비밀번호 찾기 메일 발송 가능';
+    return;
+  }
   ge(inputId).value='••••(설정됨)';
   if(key==='peakerr_api_key'&&d.peakerrTest){
     if(d.peakerrTest.balance!=null){
@@ -4751,6 +4791,12 @@ async function loadSuperDash(){
       updateExratePreview();
       updateExrateSyncInfo({exrate_sync_at:s.exrate_sync_at,exrate_sync_source:s.exrate_sync_source});
     }
+    var rk=ge('spResendKey'),ef=ge('spEmailFrom'),rh=ge('spResendHint');
+    if(rk&&s.resendConfigured)rk.placeholder='••••(설정됨)';
+    if(ef&&s.email_from)ef.value=s.email_from;
+    if(rh)rh.textContent=s.resendConfigured
+      ?'✅ Resend 연결됨 — 고객 비밀번호 찾기 메일 발송 가능'
+      :'⚠️ 미설정 — 메일이 안 갑니다. resend.com에서 키를 발급해 저장하세요.';
   }
 }
 function goSuperTab(tab,el){

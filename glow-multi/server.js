@@ -5036,60 +5036,78 @@ app.post('/api/logout', (req, res) => { res.json({ ok: true }); });
 // 🔐 비밀번호 재설정 (이메일 기반)
 // ═══════════════════════════════════════
 
-// Resend를 통한 이메일 발송
-async function sendEmail(to, subject, html) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) { console.log('⚠️ RESEND_API_KEY 미설정 - 이메일 발송 스킵'); return false; }
+async function getResendApiKey() {
+  const envKey = String(process.env.RESEND_API_KEY || '').trim();
+  if (envKey) return envKey;
   try {
-    const from = process.env.EMAIL_FROM || 'noreply@glow-multi.onrender.com';
+    return String(await getGlobalSetting('resend_api_key') || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+async function getEmailFromAddress(siteName) {
+  const envFrom = String(process.env.EMAIL_FROM || '').trim();
+  if (envFrom) return envFrom;
+  try {
+    const dbFrom = String(await getGlobalSetting('email_from') || '').trim();
+    if (dbFrom) return dbFrom;
+  } catch (e) {}
+  // Resend 무료 온보딩 발신 (도메인 인증 전에도 발송 가능)
+  const label = String(siteName || 'GLOW').replace(/[<>"]/g, '').slice(0, 40) || 'GLOW';
+  return `${label} <beth.t@example.com>`;
+}
+
+/** Resend 이메일 발송 — env 또는 슈퍼관리자 설정(resend_api_key) */
+async function sendEmail(to, subject, html, opts = {}) {
+  const apiKey = await getResendApiKey();
+  if (!apiKey) {
+    console.log('⚠️ RESEND_API_KEY 미설정 - 이메일 발송 스킵');
+    return { ok: false, error: 'no_api_key' };
+  }
+  try {
+    const from = opts.from || await getEmailFromAddress(opts.siteName);
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from, to, subject, html })
     });
-    const data = await resp.json();
-    if (!resp.ok) { console.log('❌ 이메일 발송 실패:', data); return false; }
-    return true;
-  } catch(e) { console.log('❌ 이메일 오류:', e.message); return false; }
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      console.log('❌ 이메일 발송 실패:', data);
+      return { ok: false, error: data?.message || data?.error || 'send_failed', detail: data };
+    }
+    return { ok: true, id: data?.id };
+  } catch (e) {
+    console.log('❌ 이메일 오류:', e.message);
+    return { ok: false, error: e.message };
+  }
 }
 
-// Step 1: 비밀번호 재설정 요청 (이메일 입력)
-app.post('/api/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.json({ error: '이메일을 입력하세요' });
-    // 현재 사이트 기준 사용자 찾기
-    const siteId = req.siteId || 'default';
-    const userR = await query(`SELECT * FROM users WHERE site_id=$1 AND email=$2`, [siteId, email]);
-    const user = userR.rows[0];
-    
-    // 보안: 사용자 존재 여부와 상관없이 동일한 메시지 반환 (이메일 존재 유출 방지)
-    if (!user) {
-      return res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함을 확인해주세요.' });
-    }
-    
-    // 토큰 생성 (30분 유효)
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 30 * 60 * 1000); // 30분
-    await query(`INSERT INTO password_resets(token, user_id, site_id, email, expires) VALUES($1,$2,$3,$4,$5)`,
-      [token, user.id, siteId, email, expires]);
-    
-    // 사이트 정보 가져오기
-    const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
-    const site = siteR.rows[0];
-    const siteName = site?.name || 'GLOW';
-    const siteDomain = site?.domain || 'glow-multi.onrender.com';
-    const resetUrl = `https://${siteDomain}/reset-password?token=${token}`;
-    
-    // HTML 이메일 템플릿
-    const html = `
+async function createPasswordResetToken(user, siteId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 30 * 60 * 1000);
+  await query(
+    `INSERT INTO password_resets(token, user_id, site_id, email, expires) VALUES($1,$2,$3,$4,$5)`,
+    [token, user.id, siteId, user.email, expires]
+  );
+  return token;
+}
+
+function buildPasswordResetUrl(site, token) {
+  const siteDomain = String(site?.domain || 'glow-0wdh.onrender.com').replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return `https://${siteDomain}/reset-password?token=${token}`;
+}
+
+function buildPasswordResetEmailHtml(siteName, userName, resetUrl) {
+  return `
     <!DOCTYPE html>
     <html>
     <head><meta charset="UTF-8"><title>비밀번호 재설정</title></head>
     <body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;margin:0">
       <div style="max-width:560px;margin:0 auto;background:white;border-radius:12px;padding:40px 30px;box-shadow:0 2px 10px rgba(0,0,0,0.08)">
         <h1 style="color:#7209B7;margin:0 0 24px 0;font-size:24px">🔐 ${siteName} 비밀번호 재설정</h1>
-        <p style="color:#333;font-size:15px;line-height:1.7">안녕하세요 <strong>${user.name || '고객'}</strong>님,</p>
+        <p style="color:#333;font-size:15px;line-height:1.7">안녕하세요 <strong>${userName || '고객'}</strong>님,</p>
         <p style="color:#333;font-size:15px;line-height:1.7">비밀번호 재설정 요청을 받았습니다. 아래 버튼을 클릭하여 새 비밀번호를 설정해주세요.</p>
         <div style="text-align:center;margin:32px 0">
           <a href="${resetUrl}" style="background:linear-gradient(135deg,#7209B7,#F72585);color:white;padding:14px 32px;border-radius:100px;text-decoration:none;font-weight:700;display:inline-block">비밀번호 재설정하기</a>
@@ -5107,13 +5125,66 @@ app.post('/api/forgot-password', async (req, res) => {
       </div>
     </body>
     </html>`;
-    
-    const sent = await sendEmail(email, `[${siteName}] 비밀번호 재설정 안내`, html);
-    if (!sent) {
-      return res.json({ error: '이메일 발송에 실패했습니다. 사이트 관리자에게 문의해주세요.' });
+}
+
+async function notifyPasswordResetFallback(site, user, resetUrl, reason) {
+  const siteName = site?.name || '사이트';
+  const msg =
+    `🔐 <b>비밀번호 재설정 요청</b>\n\n` +
+    `🏷 <b>${siteName}</b>\n` +
+    `👤 ${user?.name || '—'}\n` +
+    `📧 ${user?.email || '—'}\n` +
+    `⚠️ 메일 발송 실패 (${reason || 'unknown'})\n\n` +
+    `아래 링크를 고객 카톡으로 전달해 주세요 (30분 유효):\n` +
+    `<code>${resetUrl}</code>`;
+  try {
+    await tgAlert(msg, site);
+  } catch (e) {
+    console.log('비번재설정 TG 알림 실패:', e.message);
+  }
+}
+
+// Step 1: 비밀번호 재설정 요청 (이메일 입력)
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.json({ error: '이메일을 입력하세요' });
+    const emailNorm = String(email).trim().toLowerCase();
+    const siteId = req.siteId || 'default';
+    const userR = await query(
+      `SELECT * FROM users WHERE site_id=$1 AND LOWER(email)=$2 AND COALESCE(status,'active') NOT IN ('deleted')`,
+      [siteId, emailNorm]
+    );
+    const user = userR.rows[0];
+
+    // 보안: 사용자 없으면 동일 성공 메시지 (존재 여부 유출 방지)
+    if (!user) {
+      return res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함·스팸함을 확인해주세요.' });
     }
-    res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함을 확인해주세요.' });
-  } catch(e) { console.log('forgot-password 오류:', e); res.status(500).json({ error: e.message }); }
+
+    const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+    const site = siteR.rows[0] || req.site;
+    const siteName = site?.name || 'GLOW';
+    const token = await createPasswordResetToken(user, siteId);
+    const resetUrl = buildPasswordResetUrl(site, token);
+    const html = buildPasswordResetEmailHtml(siteName, user.name, resetUrl);
+
+    const sent = await sendEmail(emailNorm, `[${siteName}] 비밀번호 재설정 안내`, html, { siteName });
+    if (sent.ok) {
+      return res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함·스팸함을 확인해주세요.' });
+    }
+
+    // 메일 실패해도 토큰은 유지 → 관리자 TG로 링크 전달 (고객이 카톡으로 받을 수 있게)
+    await notifyPasswordResetFallback(site, user, resetUrl, sent.error);
+    return res.json({
+      ok: true,
+      pendingAdmin: true,
+      message: '메일 발송이 지연되어 관리자에게 재설정 링크를 전달했습니다. 카카오톡 문의로 안내받으시거나, 잠시 후 다시 시도해 주세요.'
+    });
+  } catch (e) {
+    console.log('forgot-password 오류:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Step 2: 토큰 검증 (리셋 페이지 접속 시)
@@ -6100,6 +6171,48 @@ app.post('/api/admin/users/resetpw', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+/** 관리자 — 비번 재설정 링크 생성 (메일 안 될 때 카톡으로 전달용) */
+app.post('/api/admin/users/reset-link', requireAdmin, async (req, res) => {
+  try {
+    const { uid } = req.body;
+    const r = await query(`SELECT * FROM users WHERE id=$1`, [uid]);
+    const user = r.rows[0];
+    const deny = adminUserManageDenied(req, user);
+    if (deny) return res.json({ error: deny });
+    if (!user) return res.json({ error: '회원을 찾을 수 없습니다' });
+    if (user.status === 'deleted') return res.json({ error: '탈퇴한 회원입니다' });
+
+    const site = req.site || (await query(`SELECT * FROM sites WHERE id=$1`, [user.site_id])).rows[0];
+    const token = await createPasswordResetToken(user, user.site_id || req.siteId);
+    const resetUrl = buildPasswordResetUrl(site, token);
+    const siteName = site?.name || '사이트';
+
+    // 가능하면 메일도 재시도
+    let emailed = false;
+    const sent = await sendEmail(
+      user.email,
+      `[${siteName}] 비밀번호 재설정 안내`,
+      buildPasswordResetEmailHtml(siteName, user.name, resetUrl),
+      { siteName }
+    );
+    emailed = !!sent.ok;
+    if (!emailed) {
+      await notifyPasswordResetFallback(site, user, resetUrl, sent.error || 'admin_link');
+    }
+
+    await logActivity(req.siteId, req.session.userId, '', '비밀번호 재설정 링크', 'user', uid, user.email);
+    res.json({
+      ok: true,
+      resetUrl,
+      emailed,
+      expiresMin: 30,
+      message: emailed
+        ? '메일로 재설정 링크를 보냈습니다.'
+        : '재설정 링크를 만들었습니다. 카톡으로 고객에게 전달하세요.'
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/users/role', requireAdmin, async (req, res) => {
   try {
     const { uid, role } = req.body;
@@ -6478,6 +6591,8 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
       global_exrate: isSuperAdmin ? (global_exrate || '1500') : undefined,
       exrate_sync_at: isSuperAdmin ? (await getGlobalSetting('exrate_sync_at')) : undefined,
       exrate_sync_source: isSuperAdmin ? (await getGlobalSetting('exrate_sync_source')) : undefined,
+      resendConfigured: isSuperAdmin ? !!(await getResendApiKey()) : undefined,
+      email_from: isSuperAdmin ? ((await getGlobalSetting('email_from')) || '') : undefined,
       isSuperAdmin,
       supplyExamples  // 관리자용 공급가 샘플
     });
@@ -6489,7 +6604,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
     const { key, value } = req.body;
     const isSuperAdmin = req.session.role === 'superadmin';
     const adminErr = (msg) => res.json({ error: neutralAdminMsg(msg, isSuperAdmin) });
-    const superOnly = ['peakerr_api_key', 'tg_token', 'tg_chat'];
+    const superOnly = ['peakerr_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from'];
     if (superOnly.includes(key)) {
       if (isSuperAdmin) {
         const v = String(value || '').trim();
@@ -6501,6 +6616,9 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
             peakerrTest: { balance: saved.balance },
             locked: true
           });
+        }
+        if (key === 'resend_api_key' && v && !v.startsWith('re_')) {
+          return res.json({ error: 'Resend API 키 형식이 아닙니다 (re_ 로 시작).' });
         }
         await setGlobalSetting(key, v);
         return res.json({ ok: true });
@@ -7477,7 +7595,7 @@ app.post('/api/super/exrate-sync', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
-    const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat'];
+    const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
     const v = String(value || '').trim();
     if (key === 'peakerr_api_key') {
@@ -7488,6 +7606,9 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
         peakerrTest: { balance: saved.balance },
         locked: true
       });
+    }
+    if (key === 'resend_api_key' && v && !v.startsWith('re_')) {
+      return res.json({ error: 'Resend API 키 형식이 아닙니다 (re_ 로 시작).' });
     }
     await setGlobalSetting(key, v);
     if (key === 'global_exrate') {
