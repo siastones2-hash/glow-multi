@@ -761,28 +761,53 @@ function getToken(req) {
 // 도메인 매핑
 app.use(async (req, res, next) => {
   let host = req.headers.host || 'localhost';
-  host = host.split(':')[0];
+  host = host.split(':')[0].toLowerCase();
+  req.siteSuspended = false;
   try {
-    let r = await query(`SELECT * FROM sites WHERE domain=$1 AND active=1`, [host]);
+    // active 여부와 무관하게 도메인으로 먼저 찾음 (비활성=정지 안내, 본사로 넘어가지 않음)
+    let r = await query(`SELECT * FROM sites WHERE LOWER(domain)=$1`, [host]);
     let site = r.rows[0];
     if (!site) {
-      // www 제거 후 재시도 (예: www.no9story.com → no9story.com)
       const bareHost = host.replace(/^www\./, '');
       if (bareHost !== host) {
-        r = await query(`SELECT * FROM sites WHERE domain=$1 AND active=1`, [bareHost]);
+        r = await query(`SELECT * FROM sites WHERE LOWER(domain)=$1`, [bareHost]);
         site = r.rows[0];
       }
     }
-    if (!site) {
-      // 매칭 실패 시 default 사이트 사용 (도메인 덮어쓰기 제거)
+    if (site) {
+      const isActive = Number(site.active) === 1;
+      if (!isActive && site.id !== 'default') {
+        req.site = site;
+        req.siteId = site.id;
+        req.siteSuspended = true;
+      } else {
+        req.site = site;
+        req.siteId = site.id;
+      }
+    } else {
+      // 등록된 도메인 없음 → 본사(default). Render 기본 도메인 등
       r = await query(`SELECT * FROM sites WHERE id='default'`);
-      site = r.rows[0];
+      req.site = r.rows[0] || null;
+      req.siteId = 'default';
     }
-    req.site = site;
-    req.siteId = site ? site.id : 'default';
   } catch(e) {
     req.site = null;
     req.siteId = 'default';
+    req.siteSuspended = false;
+  }
+  next();
+});
+
+// 관리비 미납 등으로 비활성화된 파트너 사이트 — API 차단
+app.use((req, res, next) => {
+  if (!req.siteSuspended) return next();
+  if (req.path.startsWith('/api/')) {
+    return res.status(503).json({
+      ok: false,
+      suspended: true,
+      error: '이 사이트는 현재 이용이 중단되었습니다. 관리자에게 문의해 주세요.',
+      siteName: req.site?.name || ''
+    });
   }
   next();
 });
@@ -7881,6 +7906,43 @@ app.post('/api/admin/services/clean', requireSuperAdmin, async (req, res) => {
 // SPA - 사이트별 브랜딩을 서버사이드에서 삽입 (FOUC 완전 방지)
 app.get('*', async (req, res) => {
   try {
+    // 비활성(관리비 미납 등) 파트너 도메인 → 본사 GLOW로 넘어가지 않고 정지 안내
+    if (req.siteSuspended) {
+      const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
+      const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
+      return res.status(503).type('html').send(`<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex"/>
+<title>${siteName} — 이용 중단</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:#0f0f12;color:#f2f2f5;padding:24px}
+  .box{max-width:420px;width:100%;text-align:center;background:#1a1a22;border:1px solid #2e2e3a;
+    border-radius:20px;padding:40px 28px}
+  .logo{font-size:42px;margin-bottom:12px}
+  h1{font-size:22px;margin:0 0 8px;font-weight:800}
+  p{margin:0;font-size:14px;line-height:1.65;color:#a8a8b8}
+  .badge{display:inline-block;margin-top:20px;padding:8px 14px;border-radius:999px;
+    background:#3a1520;color:#ff8a9a;font-size:12px;font-weight:700}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">${logo}</div>
+    <h1>${siteName}</h1>
+    <p>현재 이 사이트는 <b style="color:#fff">이용이 일시 중단</b>되었습니다.<br>
+    서비스 재개 일정은 사이트 관리자에게 문의해 주세요.</p>
+    <div class="badge">SERVICE SUSPENDED</div>
+  </div>
+</body>
+</html>`);
+    }
+
     // HTML 파일 매번 새로 읽기 (사이트 설정 변경 시 즉시 반영)
     const html_template = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     let html = html_template;
