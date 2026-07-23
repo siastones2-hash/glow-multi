@@ -5174,15 +5174,72 @@ app.post('/api/forgot-password', async (req, res) => {
       return res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함·스팸함을 확인해주세요.' });
     }
 
-    // 메일 실패해도 토큰은 유지 → 관리자 TG로 링크 전달 (고객이 카톡으로 받을 수 있게)
+    // 메일 실패 → 고객 본인확인(닉네임+전화)으로 직접 재설정 + 관리자 TG 백업
     await notifyPasswordResetFallback(site, user, resetUrl, sent.error);
+    const hasPhone = !!(user.phone && normalizePhone(user.phone));
     return res.json({
       ok: true,
-      pendingAdmin: true,
-      message: '메일 발송이 지연되어 관리자에게 재설정 링크를 전달했습니다. 카카오톡 문의로 안내받으시거나, 잠시 후 다시 시도해 주세요.'
+      needIdentity: true,
+      hasPhone: hasPhone,
+      pendingAdmin: !hasPhone,
+      message: hasPhone
+        ? '메일 발송이 안 되어, 가입 시 닉네임·전화번호로 본인 확인 후 바로 재설정할 수 있습니다.'
+        : '메일 발송이 지연되어 관리자에게 안내했습니다. 카카오톡으로 문의해 주세요. (프로필에 전화번호를 등록하면 다음부터 직접 재설정 가능)'
     });
   } catch (e) {
     console.log('forgot-password 오류:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Step 1b: 메일 없이 본인확인(닉네임+전화) → 재설정 토큰 발급
+app.post('/api/forgot-password/identity', async (req, res) => {
+  try {
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+    const rateCheck = await checkRateLimit(`pwreset-id:${ip}`, 5);
+    if (!rateCheck.ok) {
+      return res.json({ error: `시도가 너무 많습니다. ${rateCheck.retry}초 후 다시 시도해주세요.` });
+    }
+
+    const emailNorm = String(req.body.email || '').trim().toLowerCase();
+    const nameNorm = String(req.body.name || '').trim();
+    const phoneNorm = normalizePhone(req.body.phone || '');
+    if (!emailNorm || !nameNorm || !phoneNorm) {
+      return res.json({ error: '이메일·닉네임·전화번호를 모두 입력하세요' });
+    }
+
+    const siteId = req.siteId || 'default';
+    const userR = await query(
+      `SELECT * FROM users WHERE site_id=$1 AND LOWER(email)=$2 AND COALESCE(status,'active') NOT IN ('deleted')`,
+      [siteId, emailNorm]
+    );
+    const user = userR.rows[0];
+    // 존재 여부·불일치 모두 동일 메시지
+    const failMsg = '가입 정보가 일치하지 않습니다. 닉네임·전화번호를 확인하거나 카카오톡으로 문의해 주세요.';
+    if (!user) return res.json({ error: failMsg });
+
+    const userPhone = normalizePhone(user.phone || '');
+    if (!userPhone) {
+      return res.json({ error: '이 계정에는 전화번호가 없습니다. 카카오톡으로 문의해 주세요.' });
+    }
+    if (userPhone !== phoneNorm) return res.json({ error: failMsg });
+    if (String(user.name || '').trim().toLowerCase() !== nameNorm.toLowerCase()) {
+      return res.json({ error: failMsg });
+    }
+
+    const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+    const site = siteR.rows[0] || req.site;
+    const token = await createPasswordResetToken(user, siteId);
+    const resetUrl = buildPasswordResetUrl(site, token);
+    return res.json({
+      ok: true,
+      token,
+      resetUrl,
+      email: user.email,
+      message: '본인 확인되었습니다. 새 비밀번호를 설정해 주세요.'
+    });
+  } catch (e) {
+    console.log('forgot-password/identity 오류:', e);
     res.status(500).json({ error: e.message });
   }
 });
