@@ -1376,19 +1376,20 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
       <div id="fpStepEmail">
         <div style="background:#f5f0ff;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--tm);line-height:1.5">
           <b>방법 1</b> 이메일로 재설정 링크 받기<br>
-          <b>방법 2</b> 가입 닉네임·전화번호로 바로 변경 (메일 불필요)
+          <b>방법 2</b> 가입 이메일·닉네임으로 바로 변경 (전화 없어도 OK)
         </div>
         <div class="fg"><label>이메일</label><input type="email" id="fpEmail" placeholder="가입 이메일" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()"/></div>
         <button class="bp bpf" onclick="doForgotPassword()">① 이메일로 링크 받기</button>
-        <button class="bo bpf" style="margin-top:8px" onclick="showForgotIdentity()">② 닉네임·전화로 바로 재설정</button>
+        <button class="bo bpf" style="margin-top:8px" onclick="showForgotIdentity()">② 닉네임으로 바로 재설정</button>
       </div>
       <div id="fpStepIdentity" style="display:none">
         <div style="background:#f5f0ff;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--tm);line-height:1.5" id="fpIdHint">
-          가입할 때 쓴 <b>이메일·닉네임·전화번호</b>가 모두 일치하면 바로 새 비밀번호를 정할 수 있습니다.
+          가입 <b>이메일·닉네임</b>이 일치하면 바로 새 비밀번호를 정할 수 있습니다.<br>
+          <span style="color:var(--tl)">전화번호는 가입 때 등록한 경우만 입력하세요.</span>
         </div>
         <div class="fg"><label>가입 이메일</label><input type="email" id="fpIdEmail" placeholder="가입 이메일" autocomplete="email"/></div>
         <div class="fg"><label>가입 닉네임</label><input type="text" id="fpName" placeholder="가입 시 닉네임" autocomplete="nickname" onkeydown="if(event.key==='Enter')doForgotIdentity()"/></div>
-        <div class="fg"><label>가입 전화번호</label><input type="tel" id="fpPhone" placeholder="010-0000-0000" autocomplete="tel" onkeydown="if(event.key==='Enter')doForgotIdentity()"/></div>
+        <div class="fg"><label>가입 전화번호 <span style="font-size:11px;color:var(--tl)">(등록한 경우)</span></label><input type="tel" id="fpPhone" placeholder="없으면 비워두세요" autocomplete="tel" onkeydown="if(event.key==='Enter')doForgotIdentity()"/></div>
         <button class="bp bpf" onclick="doForgotIdentity()">본인 확인 후 재설정</button>
         <div style="text-align:center;margin-top:10px">
           <a href="javascript:void(0)" onclick="showForgotEmailStep()" style="color:var(--tl);font-size:12px;text-decoration:none">← 이메일 링크로 받기</a>
@@ -3298,7 +3299,7 @@ function showForgotIdentity(){
   if(si)si.style.display='block';
   var em=ge('fpEmail')&&ge('fpEmail').value.trim();
   if(em&&ge('fpIdEmail')&&!ge('fpIdEmail').value)ge('fpIdEmail').value=em;
-  ge('aSub').textContent='닉네임·전화로 바로 재설정';
+  ge('aSub').textContent='닉네임으로 바로 재설정';
 }
 async function doForgotPassword(){
   var email=ge('fpEmail').value.trim();
@@ -3315,10 +3316,10 @@ async function doForgotPassword(){
     var hint=ge('fpIdHint');
     if(hint){
       hint.innerHTML=d.hasPhone
-        ? '메일 대신 <b>가입 닉네임·전화번호</b>로 본인 확인 후 바로 새 비밀번호를 정하세요.'
-        : (d.message||'카카오톡으로 문의해 주세요. 전화번호가 등록된 계정은 여기서 직접 재설정할 수 있습니다.');
+        ? '메일 대신 <b>이메일·닉네임·전화번호</b>로 본인 확인 후 바로 새 비밀번호를 정하세요.'
+        : '메일 대신 <b>이메일·닉네임</b>으로 본인 확인 후 바로 새 비밀번호를 정하세요. 전화는 비워두세요.';
     }
-    toast(d.message||'본인 확인이 필요합니다', d.hasPhone?'ok':'err');
+    toast(d.message||'본인 확인이 필요합니다','ok');
     return;
   }
   toast(d.message||'재설정 링크가 전송되었습니다','ok');
@@ -3328,8 +3329,10 @@ async function doForgotIdentity(){
   var email=(ge('fpIdEmail')&&ge('fpIdEmail').value.trim())||window._fpEmail||(ge('fpEmail')&&ge('fpEmail').value.trim())||'';
   var name=(ge('fpName')&&ge('fpName').value||'').trim();
   var phone=(ge('fpPhone')&&ge('fpPhone').value||'').trim();
-  if(!email||!name||!phone){toast('이메일·닉네임·전화번호를 모두 입력하세요','err');return}
-  var d=await api('/api/forgot-password/identity','POST',{email:email,name:name,phone:phone});
+  if(!email||!name){toast('이메일과 닉네임을 입력하세요','err');return}
+  var body={email:email,name:name};
+  if(phone)body.phone=phone;
+  var d=await api('/api/forgot-password/identity','POST',body);
   if(d.error){toast(d.error,'err');return}
   if(!d.token){toast('재설정 토큰 발급 실패','err');return}
   window._resetToken=d.token;
