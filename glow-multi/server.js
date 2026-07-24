@@ -5152,24 +5152,8 @@ function buildPasswordResetEmailHtml(siteName, userName, resetUrl) {
     </html>`;
 }
 
-async function notifyPasswordResetFallback(site, user, resetUrl, reason) {
-  const siteName = site?.name || '사이트';
-  const msg =
-    `🔐 <b>비밀번호 재설정 요청</b>\n\n` +
-    `🏷 <b>${siteName}</b>\n` +
-    `👤 ${user?.name || '—'}\n` +
-    `📧 ${user?.email || '—'}\n` +
-    `⚠️ 메일 발송 실패 (${reason || 'unknown'})\n\n` +
-    `아래 링크를 고객 카톡으로 전달해 주세요 (30분 유효):\n` +
-    `<code>${resetUrl}</code>`;
-  try {
-    await tgAlert(msg, site);
-  } catch (e) {
-    console.log('비번재설정 TG 알림 실패:', e.message);
-  }
-}
-
 // Step 1: 비밀번호 재설정 요청 (이메일 입력)
+// 메일 실패 시 관리자 개입(텔레그램/카톡 전달) 없이 고객 본인확인으로만 처리
 app.post('/api/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -5182,35 +5166,42 @@ app.post('/api/forgot-password', async (req, res) => {
     );
     const user = userR.rows[0];
 
-    // 보안: 사용자 없으면 동일 성공 메시지 (존재 여부 유출 방지)
+    const identityFallback = (u) => {
+      const hasPhone = !!(u && u.phone && normalizePhone(u.phone));
+      return {
+        ok: true,
+        needIdentity: true,
+        hasPhone,
+        pendingAdmin: false,
+        message: hasPhone
+          ? '메일 대신 가입 이메일·닉네임·전화번호로 본인 확인 후 바로 재설정하세요.'
+          : '메일 대신 가입 이메일·닉네임으로 본인 확인 후 바로 재설정하세요.'
+      };
+    };
+
+    // 보안: 사용자 없으면 동일 본인확인 안내 (존재 여부 유출 방지)
     if (!user) {
-      return res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함·스팸함을 확인해주세요.' });
+      return res.json(identityFallback(null));
     }
 
     const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
     const site = siteR.rows[0] || req.site;
     const siteName = site?.name || 'GLOW';
+    const apiKey = await getResendApiKey();
+    if (!apiKey) {
+      return res.json(identityFallback(user));
+    }
+
     const token = await createPasswordResetToken(user, siteId);
     const resetUrl = buildPasswordResetUrl(site, token);
     const html = buildPasswordResetEmailHtml(siteName, user.name, resetUrl);
-
     const sent = await sendEmail(emailNorm, `[${siteName}] 비밀번호 재설정 안내`, html, { siteName });
     if (sent.ok) {
       return res.json({ ok: true, message: '해당 이메일로 재설정 링크를 보냈습니다. 메일함·스팸함을 확인해주세요.' });
     }
 
-    // 메일 실패 → 고객 본인확인으로 직접 재설정 + 관리자 TG 백업
-    await notifyPasswordResetFallback(site, user, resetUrl, sent.error);
-    const hasPhone = !!(user.phone && normalizePhone(user.phone));
-    return res.json({
-      ok: true,
-      needIdentity: true,
-      hasPhone: hasPhone,
-      pendingAdmin: false,
-      message: hasPhone
-        ? '메일 대신 가입 이메일·닉네임·전화번호로 본인 확인 후 바로 재설정하세요.'
-        : '메일 대신 가입 이메일·닉네임으로 본인 확인 후 바로 재설정하세요.'
-    });
+    // 메일 실패 → 고객이 화면에서 바로 본인확인 재설정 (관리자 TG 알림 없음)
+    return res.json(identityFallback(user));
   } catch (e) {
     console.log('forgot-password 오류:', e);
     res.status(500).json({ error: e.message });
@@ -6260,7 +6251,7 @@ app.post('/api/admin/users/resetpw', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-/** 관리자 — 비번 재설정 링크 생성 (메일 안 될 때 카톡으로 전달용) */
+/** 관리자 — 비번 재설정 링크 생성 (관리자 화면에서 URL 확인용, TG 알림 없음) */
 app.post('/api/admin/users/reset-link', requireAdmin, async (req, res) => {
   try {
     const { uid } = req.body;
@@ -6276,7 +6267,6 @@ app.post('/api/admin/users/reset-link', requireAdmin, async (req, res) => {
     const resetUrl = buildPasswordResetUrl(site, token);
     const siteName = site?.name || '사이트';
 
-    // 가능하면 메일도 재시도
     let emailed = false;
     const sent = await sendEmail(
       user.email,
@@ -6285,9 +6275,6 @@ app.post('/api/admin/users/reset-link', requireAdmin, async (req, res) => {
       { siteName }
     );
     emailed = !!sent.ok;
-    if (!emailed) {
-      await notifyPasswordResetFallback(site, user, resetUrl, sent.error || 'admin_link');
-    }
 
     await logActivity(req.siteId, req.session.userId, '', '비밀번호 재설정 링크', 'user', uid, user.email);
     res.json({
@@ -6297,7 +6284,7 @@ app.post('/api/admin/users/reset-link', requireAdmin, async (req, res) => {
       expiresMin: 30,
       message: emailed
         ? '메일로 재설정 링크를 보냈습니다.'
-        : '재설정 링크를 만들었습니다. 카톡으로 고객에게 전달하세요.'
+        : '재설정 링크를 만들었습니다. (고객은 로그인 화면에서 닉네임으로도 직접 재설정 가능)'
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
