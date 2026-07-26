@@ -752,6 +752,12 @@ app.use(express.urlencoded({ extended: true }));
 // index.html은 제외하고 정적 파일만 서빙 (index.html은 동적 렌더링용)
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
+// 카카오 광고 전용 랜딩 (파트너·마케팅 안내 — SNS 어뷰징 표현 없음)
+app.get(['/ads', '/ads/'], (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.sendFile(path.join(__dirname, 'public', 'ads.html'));
+});
+
 function getToken(req) {
   const auth = req.headers['authorization'];
   if (auth && auth.startsWith('Bearer ')) return auth.slice(7);

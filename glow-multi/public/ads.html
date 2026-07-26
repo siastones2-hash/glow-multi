@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GLOW — 마케팅 파트너</title>
+  <meta name="description" content="GLOW 마케팅 파트너. 독립 도메인 사이트 운영과 브랜드 홍보를 함께합니다." />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg2: #0c1a2e;
+      --line: rgba(140, 190, 255, 0.18);
+      --text: #eaf3ff;
+      --muted: #8fb0d8;
+      --accent: #3ec6ff;
+      --accent2: #7ef0c3;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      font-family: Pretendard, "Apple SD Gothic Neo", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(62, 198, 255, 0.18), transparent 55%),
+        radial-gradient(900px 500px at 10% 110%, rgba(126, 240, 195, 0.12), transparent 50%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+    body { display: flex; flex-direction: column; }
+    .wrap {
+      width: min(920px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 56px 0 72px;
+      flex: 1;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+    .mark {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: linear-gradient(145deg, #1a4d72, #0d2a44);
+      border: 1px solid var(--line);
+      font-size: 18px;
+    }
+    .brand strong {
+      font-size: 20px; letter-spacing: 0.04em; font-weight: 700;
+    }
+    .brand span {
+      display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px;
+    }
+    h1 {
+      font-size: clamp(28px, 5vw, 44px);
+      line-height: 1.25;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      max-width: 14ch;
+      margin-bottom: 18px;
+    }
+    h1 em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .lead {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--muted);
+      max-width: 36em;
+      margin-bottom: 32px;
+    }
+    .cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 56px;
+    }
+    .btn {
+      appearance: none; border: 0; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 14px 22px; border-radius: 12px; font-size: 15px; font-weight: 650;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      color: #041018;
+      background: linear-gradient(90deg, var(--accent), #5ad8ff);
+    }
+    .btn-ghost {
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--line);
+    }
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 720px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .card {
+      border: 1px solid var(--line);
+      background: rgba(8, 22, 40, 0.55);
+      border-radius: 16px;
+      padding: 22px 20px;
+      min-height: 148px;
+    }
+    .card h2 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .card p {
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+    .note {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #6d8db0;
+      line-height: 1.6;
+    }
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 22px 0 36px;
+      text-align: center;
+      font-size: 12px;
+      color: #6d8db0;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">✦</div>
+      <div>
+        <strong>GLOW</strong>
+        <span>마케팅 파트너</span>
+      </div>
+    </div>
+
+    <h1>브랜드와 함께 성장하는 <em>마케팅 파트너</em></h1>
+    <p class="lead">
+      GLOW는 마케터·대행사·1인 사업자를 위한 파트너 운영 플랫폼입니다.
+      독립 도메인 사이트와 운영 도구로 브랜드 홍보·고객 응대를 한곳에서 진행할 수 있습니다.
+    </p>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="https://open.kakao.com/o/s1jbKuFi" rel="noopener">카카오톡으로 상담하기</a>
+      <a class="btn btn-ghost" href="mailto:leestones@naver.com">이메일 문의</a>
+    </div>
+
+    <section class="grid" aria-label="파트너 혜택">
+      <article class="card">
+        <h2>독립 사이트 운영</h2>
+        <p>파트너 전용 도메인으로 브랜드 페이지를 운영하고, 고객 문의·상담 흐름을 정리합니다.</p>
+      </article>
+      <article class="card">
+        <h2>운영 도구 제공</h2>
+        <p>가입·문의·정산 등 반복 업무를 돕는 관리 화면으로 일상 운영 부담을 줄입니다.</p>
+      </article>
+      <article class="card">
+        <h2>본사 파트너 지원</h2>
+        <p>온보딩부터 운영 가이드까지 GLOW 본사가 파트너와 함께 세팅을 맞춥니다.</p>
+      </article>
+    </section>
+
+    <p class="note">
+      본 페이지는 파트너·마케팅 상담 안내 페이지입니다. 서비스 상세는 상담 후 안내드립니다.
+    </p>
+  </main>
+  <footer>© GLOW · Marketing Partner</footer>
+</body>
+</html>
