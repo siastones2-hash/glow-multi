@@ -1533,6 +1533,9 @@ function normalizeOrderLink(url, platform) {
 }
 
 function serviceOrderBucket(svc) {
+  // 상품명만 사용 — 설명에 "조회수 대비 좋아요" 등이 섞여 종류가 바뀌는 오탐 방지
+  const fromName = detectServiceTypeKo(svc.name || '');
+  if (fromName && fromName !== '서비스') return fromName;
   return detectServiceTypeKo(`${svc.name || ''} ${svc.description || ''}`);
 }
 
@@ -1638,6 +1641,20 @@ const DISABLED_SEED_META = {
   pfb3: { note: 'Peakerr에서 브라질 Facebook 팔로워 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pfb4' },
   pfb6: { note: 'Peakerr에서 브라질 Facebook 좋아요 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pfb8' },
   ptr4: { note: 'Peakerr에서 해당 트래픽 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'ptr1' },
+  // Peakerr "Korean Followers" 실측: 외국인 계정만 유입 (2026-07-31 테스트 O1785464742025)
+  pig6: {
+    note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
+    replaceId: 'pig5',
+    replaceHint: 'Instagram 팔로워 — 프리미엄 글로벌'
+  },
+  pkr1: {
+    note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
+    replaceId: 'pig5',
+  },
+  pkr2: {
+    note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
+    replaceId: 'pig5',
+  },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
@@ -6183,6 +6200,36 @@ app.post('/api/admin/orders/refund', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+/** 슈퍼 — 완료 주문도 품질 이슈 시 강제 환불 (Peakerr 취소 불가·공급 불량) */
+app.post('/api/super/orders/force-refund', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id, reason } = req.body || {};
+    if (!id) return res.json({ error: '주문 ID 필요' });
+    const orderR = await query(`SELECT * FROM orders WHERE id=$1`, [id]);
+    const order = orderR.rows[0];
+    if (!order) return res.json({ error: '주문을 찾을 수 없습니다' });
+    if (['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status)) {
+      return res.json({ error: '이미 환불·취소된 주문입니다' });
+    }
+    const fin = await restoreRefundFinancials(order, 100, {
+      reason: reason || `슈퍼 강제 환불 - ${id}`,
+      adminId: req.session.userId
+    });
+    if (fin.alreadyRefunded) return res.json({ error: '이미 환불된 주문입니다' });
+    await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, id]);
+    await tgOrderNotify('💸 <b>강제 환불</b>', order, {
+      actorId: req.session.userId,
+      extra: `💰 크레딧 $${(fin.creditRefund || 0).toFixed(4)} 복구\n📝 ${reason || '품질 이슈'}`
+    }).catch(() => null);
+    res.json({
+      ok: true,
+      refundAmount: fin.refundAmount,
+      creditRefund: fin.creditRefund,
+      message: '강제 환불 완료 (Peakerr 취소 없이 크레딧·잔액 복구)'
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 주문 내역 삭제 (관리자 전용 · 끝난 주문만 삭제 가능 · 기록 정리용)
 // ⚠️ 처리중(processing)·대기(pending) 주문은 추적이 끊기므로 삭제 불가
 //    삭제는 '기록 정리'이며 이미 처리된 환불·정산에는 영향 없음
@@ -7407,6 +7454,7 @@ async function restoreCuratedSeedApiLocks() {
   await ensurePeakerrCatalogLoaded({ background: false }).catch(() => null);
   let fixed = 0;
   for (const [id, lock] of Object.entries(CURATED_SEED_API_LOCK)) {
+    if (PERMANENTLY_DISABLED_SEEDS.has(id)) continue;
     const r = await query(`SELECT id, api_id, rate FROM services WHERE id=$1`, [id]);
     const row = r.rows[0];
     if (!row) continue;
@@ -7636,9 +7684,10 @@ async function remapGeoMismatchServices() {
     const peakGeo = peakerrMarketGeoKey(peak);
     const glowBucket = serviceOrderBucket(row);
     const peakBucket = detectServiceTypeKo(`${peak.name || ''} ${peak.category || ''} ${peak.type || ''}`);
+    // 국가만 강제 교정. 종류(bucket) 자동 교체는 Peakerr "Likes+Views" 등 복합명 때문에
+    // 좋아요↔조회수·공유↔팔로워로 잘못 바뀌는 사고가 있어 비활성.
     const geoBad = glowGeo !== 'other' && !geoKeysCompatible(glowGeo, peakGeo);
-    const bucketBad = glowBucket && glowBucket !== '서비스' && peakBucket && peakBucket !== '서비스' && glowBucket !== peakBucket;
-    if (!geoBad && !bucketBad) continue;
+    if (!geoBad) continue;
 
     let best = null;
     let bestScore = -1;
@@ -7646,7 +7695,7 @@ async function remapGeoMismatchServices() {
       const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
       if (detectPlat(full) !== row.pl) continue;
       const pb = detectServiceTypeKo(full);
-      if (pb !== glowBucket) continue;
+      if (glowBucket && glowBucket !== '서비스' && pb !== glowBucket) continue;
       if (pb === '서비스') continue;
       const sg = peakerrMarketGeoKey(s);
       if (glowGeo === 'other') {
@@ -7662,9 +7711,7 @@ async function remapGeoMismatchServices() {
       }
     }
     if (!best) {
-      await hideServiceWithNote(row.id, geoBad
-        ? 'Peakerr 국가 타겟이 GLOW 상품명과 달라 판매를 중단했습니다.'
-        : 'Peakerr 상품 종류가 GLOW 상품명과 달라 판매를 중단했습니다.');
+      await hideServiceWithNote(row.id, 'Peakerr 국가 타겟이 GLOW 상품명과 달라 판매를 중단했습니다.');
       hidden++;
       continue;
     }
@@ -7686,14 +7733,14 @@ async function remapGeoMismatchServices() {
       id: row.id,
       from: row.api_id,
       to: String(best.service),
-      reason: geoBad ? 'geo_mismatch' : 'bucket_mismatch',
+      reason: 'geo_mismatch',
       peakName: String(best.name || '').slice(0, 80),
       glowGeo,
       peakGeo,
       glowBucket,
       peakBucket,
     });
-    console.log(`♻️ geo/종류 교정: ${row.id} ${row.api_id} → ${best.service} (${geoBad ? 'geo' : 'bucket'})`);
+    console.log(`♻️ geo 교정: ${row.id} ${row.api_id} → ${best.service}`);
   }
   return { remapped: remapped.length, items: remapped, hidden };
 }
