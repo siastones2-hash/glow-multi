@@ -1812,6 +1812,8 @@ function findBestRefillPeakerrService(pl, bucket, excludeApiIds = new Set(), geo
 async function upgradeEngagementSeedsFromPeakerr() {
   // Peakerr 상품 그대로: 한국→한국 api, 브라질→브라질 api (섞인 매핑 먼저 복구)
   await restoreCuratedSeedApiLocks().catch(e => console.log('시드 api 복구:', e.message));
+  // Peakerr에서 삭제된 국가 시드 → 동종·동국가 살아 있는 SKU로 재연결
+  await remapMissingGeoSeedServices().catch(e => console.log('geo 재연결:', e.message));
 
   await ensurePeakerrCatalogLoaded();
   if (peakerrCatalogCache.size === 0) return { upgraded: 0, disabled: 0 };
@@ -7355,11 +7357,16 @@ const CURATED_SEED_API_LOCK = {
   pig9: { api_id: '22628', rate: 48.91 },  // IG 팔로워 미국
   pkr1: { api_id: '28309', rate: 47.04 },  // IG 팔로워 한국 30일
   pkr2: { api_id: '30227', rate: 51.12 },  // IG 팔로워 한국 슬로우
-  pig13: { api_id: '28283', rate: 0.62 },  // IG 좋아요 아랍
+  pig15: { api_id: '31244', rate: 0.09 },  // IG 좋아요 글로벌
   pig16: { api_id: '29539', rate: 0.21 },  // IG 좋아요 인도
-  pig17: { api_id: '28306', rate: 6.45 },  // IG 좋아요 한국
+  pig17: { api_id: '28306', rate: 6.45 },  // IG 좋아요 한국 (Peakerr 삭제 시 remap)
+  pig18: { api_id: '29759', rate: 1.72 },  // IG 좋아요 나이지리아
+  pig19: { api_id: '30040', rate: 0.7 },   // IG 좋아요 터키
   pig20: { api_id: '22626', rate: 18.77 }, // IG 좋아요 미국
   pkr3: { api_id: '28307', rate: 8.06 },   // IG 좋아요 한국 드롭
+  pkr4: { api_id: '27077', rate: 2.38 },   // IG 좋아요 한국 저가
+  pkr5: { api_id: '30711', rate: 1.4 },    // IG 좋아요 한국 365일
+  pig13: { api_id: '28283', rate: 0.62 },  // IG 좋아요 아랍
   ptt2: { api_id: '26191', rate: 1.82 },   // TT 팔로워 아랍
   ptt3: { api_id: '26182', rate: 1.65 },   // TT 팔로워 브라질
   ptt4: { api_id: '26176', rate: 2.1 },    // TT 팔로워 글로벌
@@ -7373,14 +7380,21 @@ const CURATED_SEED_API_LOCK = {
   pfb8: { api_id: '30865', rate: 1.55 },
 };
 
-/** Peakerr 상품 그대로 — 국가 라벨과 api_id가 어긋난 검증 시드 복구 */
+/** Peakerr 상품 그대로 — 국가 라벨과 api_id가 어긋난 검증 시드 복구.
+ *  단, Peakerr에서 삭제된 api_id는 잠금값으로 되돌리지 않음(죽은 SKU 재적용 방지). */
 async function restoreCuratedSeedApiLocks() {
+  await ensurePeakerrCatalogLoaded({ background: false }).catch(() => null);
   let fixed = 0;
   for (const [id, lock] of Object.entries(CURATED_SEED_API_LOCK)) {
     const r = await query(`SELECT id, api_id, rate FROM services WHERE id=$1`, [id]);
     const row = r.rows[0];
     if (!row) continue;
     if (String(row.api_id) === String(lock.api_id) && Math.abs(parseFloat(row.rate) - lock.rate) < 0.0001) continue;
+    // 잠금 api가 Peakerr에 없으면 스킵 — remap-missing-geo가 살아 있는 동국가 SKU로 연결
+    if (peakerrCatalogCache.size > 0 && !peakerrCatalogCache.has(String(lock.api_id))) {
+      console.log(`🔒 시드 api 스킵(Peakerr 삭제됨): ${id} lock=${lock.api_id}`);
+      continue;
+    }
     await query(`
       UPDATE services SET api_id=$1, rate=$2, active=1, inactive_note='', replace_service_id=NULL
       WHERE id=$3
@@ -7427,6 +7441,118 @@ app.post('/api/super/services/restore-geo-seeds', requireSuperAdmin, async (req,
     const fixed = await restoreCuratedSeedApiLocks();
     await syncServiceDescriptionFooters().catch(() => null);
     res.json({ ok: true, fixed, message: fixed ? `${fixed}개 국가·상품 api 복구` : '이미 Peakerr 시드와 일치' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/** Peakerr에서 삭제된 국가 시드 → 동종·동국가 SKU로 재연결 */
+async function remapMissingGeoSeedServices() {
+  await ensurePeakerrCatalogLoaded();
+  if (peakerrCatalogCache.size === 0) return { remapped: 0, stillMissing: [] };
+
+  const r = await query(`
+    SELECT id, name, pl, api_id, rate, description FROM services
+    WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+  `);
+  const remapped = [];
+  const stillMissing = [];
+  for (const row of r.rows) {
+    const glowGeo = serviceMarketGeoKey(row);
+    if (glowGeo === 'other') continue;
+    if (peakerrCatalogCache.has(String(row.api_id))) continue;
+    const bucket = serviceOrderBucket(row);
+    let best = null;
+    let bestScore = -1;
+    for (const s of peakerrCatalogCache.values()) {
+      const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+      if (detectPlat(full) !== row.pl) continue;
+      if (detectServiceTypeKo(full) !== bucket) continue;
+      if (!geoKeysCompatible(glowGeo, peakerrMarketGeoKey(s))) continue;
+      const sc = scorePeakerrService(s);
+      if (sc > bestScore) {
+        bestScore = sc;
+        best = s;
+      }
+    }
+    if (!best) {
+      stillMissing.push(row.id);
+      continue;
+    }
+    await query(`
+      UPDATE services SET api_id=$1, rate=$2, min=$3, max=$4, active=1,
+        inactive_note='', replace_service_id=NULL
+      WHERE id=$5
+    `, [
+      String(best.service),
+      parseFloat(best.rate || 0),
+      Math.max(1, parseInt(best.min, 10) || 10),
+      parseInt(best.max, 10) || 1000000,
+      row.id
+    ]);
+    if (CURATED_SEED_API_LOCK[row.id]) {
+      CURATED_SEED_API_LOCK[row.id] = { api_id: String(best.service), rate: parseFloat(best.rate || 0) };
+    }
+    remapped.push({
+      id: row.id,
+      from: row.api_id,
+      to: String(best.service),
+      peakName: String(best.name || '').slice(0, 80),
+      rate: parseFloat(best.rate || 0),
+      geo: glowGeo,
+    });
+    console.log(`♻️ geo 재연결: ${row.id} ${row.api_id} → ${best.service} (${(best.name || '').slice(0, 40)})`);
+  }
+  return { remapped: remapped.length, items: remapped, stillMissing };
+}
+
+/** 슈퍼 — Peakerr 카탈로그 검색 (국가·상품 재매핑용) */
+app.get('/api/super/peakerr-search', requireSuperAdmin, async (req, res) => {
+  try {
+    await ensurePeakerrCatalogLoaded();
+    const q = String(req.query.q || '').trim().toLowerCase();
+    const terms = q.split(/[\s,+|]+/).filter(Boolean);
+    const plFilter = String(req.query.pl || '').trim().toLowerCase();
+    const geoFilter = String(req.query.geo || '').trim().toLowerCase();
+    const hits = [];
+    for (const s of peakerrCatalogCache.values()) {
+      const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+      const low = full.toLowerCase();
+      if (plFilter && detectPlat(full) !== plFilter) continue;
+      const geo = peakerrMarketGeoKey(s);
+      if (geoFilter && geo !== geoFilter) continue;
+      if (terms.length && !terms.every(t => {
+        if (t === 'korea' || t === '한국') return isKoreanMarketService(full);
+        if (t === 'like' || t === 'likes' || t === '좋아요') return /like|likes|좋아요/.test(low);
+        if (t === 'follow' || t === 'follower' || t === 'followers' || t === '팔로워') return /follow|follower|팔로워/.test(low);
+        return low.includes(t);
+      })) continue;
+      hits.push({
+        apiId: String(s.service),
+        name: String(s.name || '').slice(0, 120),
+        category: String(s.category || '').slice(0, 80),
+        rate: parseFloat(s.rate || 0),
+        min: parseInt(s.min, 10) || 0,
+        max: parseInt(s.max, 10) || 0,
+        refill: peakerrServiceHasRefill(s),
+        geo,
+        pl: detectPlat(full),
+        bucket: detectServiceTypeKo(full),
+      });
+      if (hits.length >= 80) break;
+    }
+    hits.sort((a, b) => {
+      if (a.refill !== b.refill) return a.refill ? -1 : 1;
+      return a.rate - b.rate;
+    });
+    res.json({ ok: true, count: hits.length, catalog: peakerrCatalogCache.size, hits });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/** 슈퍼 — Peakerr에서 사라진 국가 시드를 카탈로그의 동종·동국가 SKU로 재연결 */
+app.post('/api/super/services/remap-missing-geo', requireSuperAdmin, async (req, res) => {
+  try {
+    const result = await remapMissingGeoSeedServices();
+    await syncServiceDescriptionFooters().catch(() => null);
+    res.json({ ok: true, ...result, missing: (result.stillMissing || []).length + (result.remapped || 0) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
