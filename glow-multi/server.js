@@ -1622,13 +1622,22 @@ function isCuratedServiceId(id) {
   return /^[a-z]{2,3}\d/i.test(String(id || ''));
 }
 
-/** 시드 중 영구 판매 중단 — 사유·대체 상품 메모 포함 */
+/** 시드 중 영구 판매 중단 — 사유·대체 상품 메모 포함.
+ *  Peakerr에 동국가·동종 SKU가 없어 재연결 불가한 상품도 포함(재활성화 방지). */
 const DISABLED_SEED_META = {
   ptt13: {
     note: 'TikTok 조회수 주문이 반복 취소·실패하여 판매를 중단했습니다. 사진(/photo/) 링크로는 조회수 작업이 불가합니다.',
     replaceId: 'ptt12',
     replaceHint: 'TikTok 조회수 — 브라질 타겟 (드롭 보상)'
-  }
+  },
+  pig11: { note: 'Peakerr에서 한국 Instagram 노출 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pig10' },
+  pkr6: { note: 'Peakerr에서 한국 Instagram 댓글 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pig1' },
+  pkr7: { note: 'Peakerr에서 한국 Instagram 댓글 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pig1' },
+  pkr8: { note: 'Peakerr에서 한국 YouTube 좋아요 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pyt4' },
+  pfb1: { note: 'Peakerr에서 브라질 Facebook 댓글 상품이 삭제되어 판매를 중단했습니다.', replaceId: null },
+  pfb3: { note: 'Peakerr에서 브라질 Facebook 팔로워 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pfb4' },
+  pfb6: { note: 'Peakerr에서 브라질 Facebook 좋아요 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pfb8' },
+  ptr4: { note: 'Peakerr에서 해당 트래픽 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'ptr1' },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
@@ -2006,6 +2015,8 @@ async function resolveOrderService(sid) {
   const inactR = await query(`SELECT * FROM services WHERE id=$1`, [sid]);
   const row = inactR.rows[0];
   if (!row) return null;
+  // 영구 중단 시드는 Peakerr에 살아 있어도 절대 재활성화하지 않음
+  if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) return null;
   if (isCuratedServiceId(row.id) && row.api_id) {
     await ensurePeakerrCatalogLoaded();
     if (peakerrCatalogCache.has(String(row.api_id))) {
@@ -7427,17 +7438,33 @@ app.get('/api/super/services/geo-audit', requireSuperAdmin, async (req, res) => 
     const mismatches = [];
     for (const row of r.rows) {
       const glowGeo = serviceMarketGeoKey(row);
+      const glowBucket = serviceOrderBucket(row);
       const peak = peakerrCatalogCache.get(String(row.api_id));
       const peakGeo = peak ? peakerrMarketGeoKey(peak) : null;
       const peakName = peak ? String(peak.name || '') : '';
+      const peakBucket = peak ? detectServiceTypeKo(`${peak.name || ''} ${peak.category || ''} ${peak.type || ''}`) : null;
       if (!peak) {
-        mismatches.push({ id: row.id, name: row.name, api_id: row.api_id, glowGeo, issue: 'peakerr_missing', peakName: '' });
+        mismatches.push({
+          id: row.id, name: row.name, api_id: row.api_id, glowGeo, glowBucket,
+          active: parseInt(row.active, 10), issue: 'peakerr_missing', peakName: ''
+        });
         continue;
       }
       if (!geoKeysCompatible(glowGeo, peakGeo)) {
         mismatches.push({
           id: row.id, name: row.name, api_id: row.api_id, rate: row.rate,
-          glowGeo, peakGeo, peakName: peakName.slice(0, 80), issue: 'geo_mismatch'
+          glowGeo, peakGeo, glowBucket, peakBucket,
+          active: parseInt(row.active, 10),
+          peakName: peakName.slice(0, 80), issue: 'geo_mismatch'
+        });
+        continue;
+      }
+      if (glowBucket && glowBucket !== '서비스' && peakBucket && peakBucket !== '서비스' && glowBucket !== peakBucket) {
+        mismatches.push({
+          id: row.id, name: row.name, api_id: row.api_id, rate: row.rate,
+          glowGeo, peakGeo, glowBucket, peakBucket,
+          active: parseInt(row.active, 10),
+          peakName: peakName.slice(0, 80), issue: 'bucket_mismatch'
         });
       }
     }
@@ -7467,7 +7494,14 @@ async function remapMissingGeoSeedServices() {
   const stillMissing = [];
   let hidden = 0;
   for (const row of r.rows) {
-    if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) continue;
+    if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) {
+      if (parseInt(row.active, 10) === 1) {
+        const meta = DISABLED_SEED_META[row.id];
+        await hideServiceWithNote(row.id, meta.note, meta.replaceId || null);
+        hidden++;
+      }
+      continue;
+    }
     const glowGeo = serviceMarketGeoKey(row);
     if (peakerrCatalogCache.has(String(row.api_id))) continue;
     // 국가 라벨 없는 기타도 Peakerr 삭제분이면 동종(글로벌/other)으로 재연결 시도
@@ -7545,10 +7579,12 @@ app.get('/api/super/peakerr-search', requireSuperAdmin, async (req, res) => {
     for (const s of peakerrCatalogCache.values()) {
       const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
       const low = full.toLowerCase();
+      const apiId = String(s.service);
       if (plFilter && detectPlat(full) !== plFilter) continue;
       const geo = peakerrMarketGeoKey(s);
       if (geoFilter && geo !== geoFilter) continue;
       if (terms.length && !terms.every(t => {
+        if (/^\d+$/.test(t)) return apiId === t;
         if (t === 'korea' || t === '한국') return isKoreanMarketService(full);
         if (t === 'like' || t === 'likes' || t === '좋아요') return /like|likes|좋아요/.test(low);
         if (t === 'follow' || t === 'follower' || t === 'followers' || t === '팔로워') return /follow|follower|팔로워/.test(low);
@@ -7576,6 +7612,92 @@ app.get('/api/super/peakerr-search', requireSuperAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/** Peakerr에 살아 있지만 GLOW 국가 라벨과 어긋난 활성 상품 → 동종·동국가 SKU로 교체 */
+async function remapGeoMismatchServices() {
+  await ensurePeakerrCatalogLoaded();
+  if (peakerrCatalogCache.size === 0) return { remapped: 0, items: [], hidden: 0 };
+
+  const r = await query(`
+    SELECT id, name, pl, api_id, rate, description, active FROM services
+    WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> '' AND active=1
+  `);
+  const remapped = [];
+  let hidden = 0;
+  for (const row of r.rows) {
+    if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) {
+      const meta = DISABLED_SEED_META[row.id];
+      await hideServiceWithNote(row.id, meta.note, meta.replaceId || null);
+      hidden++;
+      continue;
+    }
+    const glowGeo = serviceMarketGeoKey(row);
+    const peak = peakerrCatalogCache.get(String(row.api_id));
+    if (!peak) continue;
+    const peakGeo = peakerrMarketGeoKey(peak);
+    const glowBucket = serviceOrderBucket(row);
+    const peakBucket = detectServiceTypeKo(`${peak.name || ''} ${peak.category || ''} ${peak.type || ''}`);
+    const geoBad = glowGeo !== 'other' && !geoKeysCompatible(glowGeo, peakGeo);
+    const bucketBad = glowBucket && glowBucket !== '서비스' && peakBucket && peakBucket !== '서비스' && glowBucket !== peakBucket;
+    if (!geoBad && !bucketBad) continue;
+
+    let best = null;
+    let bestScore = -1;
+    for (const s of peakerrCatalogCache.values()) {
+      const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+      if (detectPlat(full) !== row.pl) continue;
+      const pb = detectServiceTypeKo(full);
+      if (pb !== glowBucket) continue;
+      if (pb === '서비스') continue;
+      const sg = peakerrMarketGeoKey(s);
+      if (glowGeo === 'other') {
+        if (sg !== 'other' && sg !== 'global') continue;
+      } else if (!geoKeysCompatible(glowGeo, sg)) {
+        continue;
+      }
+      const sc = scorePeakerrService(s);
+      if (sc < 0) continue;
+      if (sc > bestScore) {
+        bestScore = sc;
+        best = s;
+      }
+    }
+    if (!best) {
+      await hideServiceWithNote(row.id, geoBad
+        ? 'Peakerr 국가 타겟이 GLOW 상품명과 달라 판매를 중단했습니다.'
+        : 'Peakerr 상품 종류가 GLOW 상품명과 달라 판매를 중단했습니다.');
+      hidden++;
+      continue;
+    }
+    await query(`
+      UPDATE services SET api_id=$1, rate=$2, min=$3, max=$4, active=1,
+        inactive_note='', replace_service_id=NULL
+      WHERE id=$5
+    `, [
+      String(best.service),
+      parseFloat(best.rate || 0),
+      Math.max(1, parseInt(best.min, 10) || 10),
+      parseInt(best.max, 10) || 1000000,
+      row.id
+    ]);
+    if (CURATED_SEED_API_LOCK[row.id]) {
+      CURATED_SEED_API_LOCK[row.id] = { api_id: String(best.service), rate: parseFloat(best.rate || 0) };
+    }
+    remapped.push({
+      id: row.id,
+      from: row.api_id,
+      to: String(best.service),
+      reason: geoBad ? 'geo_mismatch' : 'bucket_mismatch',
+      peakName: String(best.name || '').slice(0, 80),
+      glowGeo,
+      peakGeo,
+      glowBucket,
+      peakBucket,
+    });
+    console.log(`♻️ geo/종류 교정: ${row.id} ${row.api_id} → ${best.service} (${geoBad ? 'geo' : 'bucket'})`);
+  }
+  return { remapped: remapped.length, items: remapped, hidden };
+}
+
 /** 슈퍼 — Peakerr에서 사라진 국가 시드를 카탈로그의 동종·동국가 SKU로 재연결 */
 app.post('/api/super/services/remap-missing-geo', requireSuperAdmin, async (req, res) => {
   try {
@@ -7585,11 +7707,13 @@ app.post('/api/super/services/remap-missing-geo', requireSuperAdmin, async (req,
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/** 슈퍼 — 전체 국가/종류 Peakerr 정합: 재연결 → 잠금복구 → 감사 */
+/** 슈퍼 — 전체 국가/종류 Peakerr 정합: 재연결 → 미스매치교정 → 잠금복구 → 영구중단 → 감사 */
 app.post('/api/super/services/fix-all-geo', requireSuperAdmin, async (req, res) => {
   try {
     const remap = await remapMissingGeoSeedServices();
+    const mismatchFix = await remapGeoMismatchServices();
     const fixed = await restoreCuratedSeedApiLocks();
+    await applyDisabledSeedMeta();
     await syncServiceDescriptionFooters().catch(() => null);
     await ensurePeakerrCatalogLoaded();
     const r = await query(`
@@ -7599,23 +7723,34 @@ app.post('/api/super/services/fix-all-geo', requireSuperAdmin, async (req, res) 
     const mismatches = [];
     for (const row of r.rows) {
       if (!parseInt(row.active, 10)) continue;
+      if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) continue;
       const glowGeo = serviceMarketGeoKey(row);
+      const glowBucket = serviceOrderBucket(row);
       const peak = peakerrCatalogCache.get(String(row.api_id));
       if (!peak) {
-        mismatches.push({ id: row.id, name: row.name, api_id: row.api_id, glowGeo, issue: 'peakerr_missing' });
+        mismatches.push({ id: row.id, name: row.name, api_id: row.api_id, glowGeo, glowBucket, issue: 'peakerr_missing' });
         continue;
       }
       const peakGeo = peakerrMarketGeoKey(peak);
+      const peakBucket = detectServiceTypeKo(`${peak.name || ''} ${peak.category || ''} ${peak.type || ''}`);
       if (!geoKeysCompatible(glowGeo, peakGeo) && glowGeo !== 'other') {
         mismatches.push({
-          id: row.id, name: row.name, api_id: row.api_id, glowGeo, peakGeo,
+          id: row.id, name: row.name, api_id: row.api_id, glowGeo, peakGeo, glowBucket, peakBucket,
           peakName: String(peak.name || '').slice(0, 60), issue: 'geo_mismatch'
+        });
+        continue;
+      }
+      if (glowBucket && glowBucket !== '서비스' && peakBucket && peakBucket !== '서비스' && glowBucket !== peakBucket) {
+        mismatches.push({
+          id: row.id, name: row.name, api_id: row.api_id, glowGeo, peakGeo, glowBucket, peakBucket,
+          peakName: String(peak.name || '').slice(0, 60), issue: 'bucket_mismatch'
         });
       }
     }
     res.json({
       ok: true,
       remap,
+      mismatchFix,
       lockFixed: fixed,
       activeMismatches: mismatches.length,
       mismatches: mismatches.slice(0, 60),
