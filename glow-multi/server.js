@@ -1522,16 +1522,21 @@ function normalizeOrderLink(url, platform) {
   if (!s) return s;
   if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
   try {
-    // 한글 @핸들 등이 %ED%.. 로 들어오면 Peakerr가 인식 못 하는 경우 있음 → 디코드
-    try { s = decodeURI(s); } catch (_) {}
     const u = new URL(s);
     u.hostname = u.hostname.replace(/^www\./, '').toLowerCase();
-    if (platform === 'tiktok') {
-      u.search = '';
-      u.hash = '';
-    }
-    if (platform === 'youtube' || platform === 'instagram') {
-      // 쿼리 추적 파라미터 제거 (igsh 등)
+    // 한글 @핸들 등 %인코딩 → Peakerr가 못 읽는 경우 방지
+    try {
+      let path = u.pathname || '/';
+      for (let i = 0; i < 3; i++) {
+        try {
+          const d = decodeURIComponent(path);
+          if (d === path) break;
+          path = d;
+        } catch { break; }
+      }
+      u.pathname = path;
+    } catch (_) {}
+    if (platform === 'tiktok' || platform === 'youtube' || platform === 'instagram') {
       u.search = '';
       u.hash = '';
     }
@@ -1669,6 +1674,11 @@ const DISABLED_SEED_META = {
   pkr3: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
   pkr4: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
   pkr5: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
+  // pyt13은 pyt2와 동일 SKU(27905) — 중복 판매 방지
+  pyt13: {
+    note: '동일 공급 SKU 상품과 통합되어 판매를 중단했습니다.',
+    replaceId: 'pyt2',
+  },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
@@ -2226,6 +2236,85 @@ async function refundStuckOrdersWithoutApiId() {
     if (refunded > 0) console.log(`💸 미전송 주문 ${refunded}건 자동 환불`);
     return refunded;
   } catch (e) { console.log('미전송 주문 환불:', e.message); return 0; }
+}
+
+/**
+ * Peakerr에 접수됐지만 장시간 시작숫자 0·잔여=주문수량인 주문
+ * → 공급 미작업으로 보고 자동 환불 + 해당 상품 누적 시 판매 중단
+ * (없는 SKU가 아니라 "받아놓고 안 돌리는" 불량 공급 대응)
+ */
+async function refundZeroProgressStuckOrders(opts = {}) {
+  const hours = opts.hours ?? 12;
+  try {
+    const apiKey = await getPeakerrApiKey();
+    const r = await query(`
+      SELECT * FROM orders
+      WHERE status='processing'
+        AND api_order_id IS NOT NULL AND TRIM(api_order_id) <> ''
+        AND COALESCE(paid,0)=1
+        AND COALESCE(starts_count,0)=0
+        AND COALESCE(remains, qty)=qty
+        AND created < NOW() - ($1 || ' hours')::interval
+        AND created > NOW() - INTERVAL '14 days'
+      ORDER BY created ASC
+      LIMIT 20
+    `, [String(hours)]);
+    let refunded = 0;
+    const hitSids = new Set();
+    for (const o of r.rows) {
+      // Peakerr 최신 상태 재확인 — 이미 돌기 시작했으면 스킵
+      if (apiKey) {
+        const st = await fetchPeakerrOrderStatus(apiKey, o.api_order_id).catch(() => null);
+        if (st && !st.error) {
+          const sc = parsePeakerrStartCount(st);
+          const rem = parseInt(st.remains ?? st.remains_count ?? o.remains ?? o.qty, 10);
+          const pst = String(st.status || '').toLowerCase();
+          if (sc > 0 || (Number.isFinite(rem) && rem < o.qty) || pst === 'completed') {
+            await autoRefundOrder(o, st, { notifyTg: false }).catch(() => null);
+            continue;
+          }
+          // Peakerr 취소 시도 (가능하면)
+          if (['pending', 'in progress', 'processing', 'awaiting'].includes(pst)) {
+            await submitPeakerrCancel(apiKey, o.api_order_id).catch(() => null);
+          }
+        }
+      }
+      const fin = await restoreRefundFinancials(o, 100, {
+        reason: `미진행(시작0) 자동 환불 ${hours}h+ - ${o.id}`,
+        adminId: 'system'
+      });
+      if (fin.alreadyRefunded) continue;
+      await query(`UPDATE orders SET status='refunded', cost=$1 WHERE id=$2`, [fin.newCost, o.id]);
+      await logActivity(o.site_id, 'system', '자동환불', '미진행 주문 환불', 'order', o.id,
+        `시작0 · ${hours}시간+ · 크레딧 $${(fin.creditRefund || 0).toFixed(4)}`);
+      await tgOrderNotify('💸 <b>미진행 자동 환불</b>', o, {
+        actorId: 'system',
+        extra: `⏱ ${hours}시간 이상 작업 시작 없음\n💰 크레딧 $${(fin.creditRefund || 0).toFixed(4)} 복구`
+      }).catch(() => null);
+      refunded++;
+      if (o.sid) hitSids.add(o.sid);
+    }
+    // 같은 상품에서 최근 14일 미진행 환불 2건 이상 → 판매 중단
+    for (const sid of hitSids) {
+      if (PERMANENTLY_DISABLED_SEEDS.has(sid)) continue;
+      const cntR = await query(`
+        SELECT COUNT(*)::int AS c FROM orders
+        WHERE sid=$1 AND status='refunded'
+          AND COALESCE(starts_count,0)=0
+          AND created > NOW() - INTERVAL '14 days'
+      `, [sid]);
+      if ((cntR.rows[0]?.c || 0) >= 2) {
+        await hideServiceWithNote(sid,
+          '최근 주문에서 작업이 시작되지 않아 판매를 중단했습니다. 다른 상품을 이용해 주세요.');
+        console.log(`⚠️ 미진행 반복 상품 숨김: ${sid}`);
+      }
+    }
+    if (refunded > 0) console.log(`💸 미진행(시작0) 주문 ${refunded}건 자동 환불`);
+    return refunded;
+  } catch (e) {
+    console.log('미진행 주문 환불:', e.message);
+    return 0;
+  }
 }
 
 async function submitPeakerrOrder(apiKey, apiId, link, qty) {
@@ -3250,6 +3339,7 @@ async function runPreflightHealthCheck(opts = {}) {
     const backfilled = await backfillAllMissingStartCounts();
     await cleanupUnpaidPendingOrders();
     await refundStuckOrdersWithoutApiId();
+    await refundZeroProgressStuckOrders({ hours: 12 }).catch(e => console.log('미진행 환불:', e.message));
     const repairedDelivered = await repairDeliveredButFailedOrders();
     await query(`UPDATE orders SET completed_at=created WHERE status='completed' AND completed_at IS NULL`).catch(() => null);
     console.log(`🛡️ 사전점검: orphan=${orphan} 결제확정=${confirmed} 시작숫자=${backfilled} 전달보정=${repairedDelivered}`);
@@ -3622,6 +3712,7 @@ async function syncAllOrderStatuses() {
     await reconcileOrphanPeakerrOrders();
     await confirmAllPendingPayments();
     await refundStuckOrdersWithoutApiId();
+    await refundZeroProgressStuckOrders({ hours: 12 }).catch(e => console.log('미진행 환불:', e.message));
     await cleanupUnpaidPendingOrders();
     await backfillAllMissingStartCounts();
     const apiKey = await getPeakerrApiKey();
@@ -3642,6 +3733,7 @@ async function syncAllOrderStatuses() {
     
     const { synced, cancelled, completed, errors } = await syncOrdersWithPeakerr(r.rows, apiKey, { delayMs: 100 });
     await backfillAllMissingStartCounts();
+    await refundZeroProgressStuckOrders({ hours: 12 }).catch(() => null);
     console.log(`✅ 동기화 완료: 완료 ${completed}건, 취소·환불 ${cancelled}건, 오류 ${errors}건`);
     
     if (cancelled > 0) {
@@ -4354,7 +4446,8 @@ async function insertPeakerrImport(s, displayName, pl, description) {
 
 /** Peakerr — 한국 타겟 HQ·Real + Pinterest 고품질만 (있을 때만 추가) */
 async function importKoreanAndPinterestServices(opts = {}) {
-  const maxKrPerPlatform = opts.maxKrPerPlatform ?? 4;
+  // Peakerr 한국 타겟 실측 불량(외국인 유입) — 한국 자동 수입 중단, 핀터레스트만
+  const maxKrPerPlatform = 0;
   const maxPinterest = opts.maxPinterest ?? 5;
   const dryRun = !!opts.dryRun;
   const notify = opts.notify !== false;
@@ -5721,6 +5814,13 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const apiKey = await getPeakerrApiKey();
     if (!apiKey || !svc.api_id) {
       return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
+    }
+
+    // Peakerr 카탈로그에 없는(삭제·중단) SKU면 주문 차단 + 상품 숨김
+    await ensurePeakerrCatalogLoaded().catch(() => null);
+    if (peakerrCatalogCache.size > 0 && !peakerrCatalogCache.has(String(svc.api_id))) {
+      await hideServiceWithNote(svc.id, 'Peakerr에서 삭제·중단된 상품이라 판매를 중단했습니다.');
+      return res.json({ error: '이 상품은 공급이 중단되어 주문할 수 없습니다. 다른 상품을 선택해주세요.' });
     }
 
     const lockKey = orderLockKey(req.siteId, svc, linkNorm);
