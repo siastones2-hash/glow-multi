@@ -443,7 +443,7 @@ async function initDB() {
       {id:'pyt10',name:'YouTube 조회수 — 프리미엄 글로벌 (드롭 보상)',pl:'youtube',rate:1.68,min:500,max:10000000,description:'전 세계 실계정 기반으로 제공되는 고품질 YouTube 조회수 서비스입니다. 영상 업로드 직후 조회수를 빠르게 채워 유튜브 알고리즘에 강한 신호를 보냅니다. 초기 조회수가 빠를수록 추천·홈피드 배포 확률이 높아지며 실제 사용자 패턴으로 처리되어 계정 안전성이 보장됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'24039'},
       {id:'pyt11',name:'YouTube 시청시간 — 프리미엄 글로벌 (드롭 보상)',pl:'youtube',rate:42.0,min:10,max:4000,description:'전 세계 실계정 기반으로 제공되는 고품질 YouTube 시청시간 서비스입니다. 유튜브 수익화 조건인 연간 4,000시간을 빠르게 달성하세요. 신규 채널이나 재활성화 채널의 수익화 신청 기준을 단기간에 충족할 수 있으며, 실제 시청 패턴으로 안전하게 처리됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31339'},
       {id:'pyt12',name:'YouTube 구독자 — 프리미엄 (평생 보장) 🔥',pl:'youtube',rate:37.66,min:10,max:10000,description:'일 100명 슬로우 속도로 자연스럽게 유튜브 구독자를 늘리는 최상급 서비스입니다. 빠른 증가보다 안전한 장기 성장을 원하는 채널에 최적화되어 있으며, 평생 드롭 보장이 제공되어 한 번 쌓인 구독자가 영구적으로 유지됩니다. 유튜브 파트너 프로그램(YPP) 1천명 조건 달성과 채널 수익화 승인률을 높이는 데 가장 효과적입니다.',api_id:'27929'},
-      {id:'pyt13',name:'YouTube 구독자 — 고속 성장 (30일 보장)',pl:'youtube',rate:28.0,min:10,max:50000,description:'일 500~1000명 고속 속도로 유튜브 구독자를 빠르게 확보하는 서비스입니다. 채널 개설 초기 또는 바이럴 콘텐츠 게시 후 가속 성장이 필요한 경우에 적합하며, 30일 드롭 보상이 제공되어 단기 부스트 후에도 안정적인 구독자 수를 유지합니다. 브랜드 채널이나 이벤트성 프로모션에 강력한 효과를 발휘합니다.',api_id:'28716'},
+      {id:'pyt13',name:'YouTube 구독자 — 고속 성장 (30일 보장)',pl:'youtube',rate:41.99,min:50,max:100000,description:'실제 활동 중인 전 세계 유저 기반 YouTube 구독자를 일 2,500명 속도로 자연스럽게 늘립니다. 구독자 수는 채널의 권위와 신뢰도를 결정하는 가장 중요한 지표로, 광고주와 스폰서십 협상 단가에 직접적인 영향을 미칩니다. 평생 보장 리필로 드롭 걱정 없이 장기적인 채널 성장을 유지할 수 있는 프리미엄 서비스입니다.',api_id:'27905'},
       {id:'pyt14',name:'YouTube 조회수 — 리얼 네이티브 (200K+/일) 🔥',pl:'youtube',rate:1.05,min:1000,max:10000000,description:'실제 유저 기반 프리미엄 유튜브 조회수 서비스로, 일 20만 이상 초고속 처리가 가능합니다. 리얼 네이티브 뷰로 분류되어 유튜브 알고리즘이 조회수 가치를 100% 인정해 추천 영상·인기 급상승 피드 노출에 가장 강력한 효과를 발휘합니다. 드롭 없는 평생 보장으로 영상 가치가 영구 유지됩니다.',api_id:'28692'},
       {id:'pyt15',name:'YouTube 조회수 — 안정형 슬로우 (평생 보장)',pl:'youtube',rate:2.45,min:1000,max:50000,description:'일 4~5만 조회수를 안정적으로 지속 유입시키는 슬로우 페이스 프리미엄 서비스입니다. 빠른 스파이크보다 장기적·자연스러운 조회수 곡선을 원하는 브랜드 채널에 최적화되어 있으며, 유튜브 알고리즘이 "꾸준히 인기 있는 콘텐츠"로 판단해 장기 노출 효과가 이어집니다. 평생 보장 리필 포함.',api_id:'30743'},
       {id:'pyt16',name:'YouTube 조회수 — 저가 대량형',pl:'youtube',rate:1.036,min:10000,max:10000000,description:'대량 주문에 최적화된 저가형 유튜브 조회수 서비스입니다. 실제 유저 기반이지만 최소 10,000개부터 주문 가능한 대량형 옵션으로, 영상 초기 부스팅에 필요한 방대한 조회수를 가장 비용 효율적으로 확보할 수 있습니다. 신규 채널의 급성장이나 다수 영상 동시 관리에 적합합니다.',api_id:'28695'},
@@ -811,8 +811,10 @@ app.use((req, res, next) => {
     return res.status(503).json({
       ok: false,
       suspended: true,
-      error: '이 사이트는 현재 이용이 중단되었습니다. 관리자에게 문의해 주세요.',
-      siteName: req.site?.name || ''
+      error: '관리비 미납으로 이용이 중단되었습니다. 관리비 입금 후 재개됩니다.',
+      siteName: req.site?.name || '',
+      feeKrw: 70000,
+      bank: '우리은행 1002-160-164625 (예금주: 조인호)'
     });
   }
   next();
@@ -1520,9 +1522,16 @@ function normalizeOrderLink(url, platform) {
   if (!s) return s;
   if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
   try {
+    // 한글 @핸들 등이 %ED%.. 로 들어오면 Peakerr가 인식 못 하는 경우 있음 → 디코드
+    try { s = decodeURI(s); } catch (_) {}
     const u = new URL(s);
     u.hostname = u.hostname.replace(/^www\./, '').toLowerCase();
     if (platform === 'tiktok') {
+      u.search = '';
+      u.hash = '';
+    }
+    if (platform === 'youtube' || platform === 'instagram') {
+      // 쿼리 추적 파라미터 제거 (igsh 등)
       u.search = '';
       u.hash = '';
     }
@@ -1655,6 +1664,11 @@ const DISABLED_SEED_META = {
     note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
     replaceId: 'pig5',
   },
+  // Peakerr 한국 타겟 전체 — 팔로워 실측 불량으로 한국 SKU 판매 중단 (검증 전 재오픈 금지)
+  pig17: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
+  pkr3: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
+  pkr4: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
+  pkr5: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
@@ -1806,6 +1820,28 @@ function serviceMarketGeoKey(svc) {
 
 function peakerrMarketGeoKey(s) {
   return detectMarketGeoKey(`${s.name || ''} ${s.category || ''} ${s.type || ''}`);
+}
+
+/** Peakerr 종류 — 상품명 우선 (카테고리 Followers가 Like 상품을 덮는 오탐 방지) */
+function peakerrServiceTypeKo(s) {
+  const fromName = detectServiceTypeKo(String(s?.name || ''));
+  if (fromName && fromName !== '서비스') return fromName;
+  return detectServiceTypeKo(`${s?.name || ''} ${s?.category || ''} ${s?.type || ''}`);
+}
+
+function bucketsCompatible(glowBucket, peakBucket, peakName = '') {
+  if (!glowBucket || !peakBucket) return false;
+  if (glowBucket === peakBucket) return true;
+  const pn = String(peakName || '').toLowerCase();
+  // Likes + Views 복합 SKU는 좋아요·조회수 모두 허용
+  if (/likes?\s*\+\s*views?|views?\s*\+\s*likes?/i.test(pn)) {
+    if (glowBucket === '좋아요' || glowBucket === '조회수') return true;
+  }
+  // 2-in-1 likes+followers
+  if (/2-?in-?1|likes?\s*\+?\s*followers?|followers?\s*\+?\s*likes?/i.test(pn)) {
+    if (glowBucket === '좋아요' || glowBucket === '팔로워') return true;
+  }
+  return false;
 }
 
 function geoKeysCompatible(a, b) {
@@ -3869,6 +3905,10 @@ function detectServiceTypeKo(full) {
   if (/impression|reach|\bexpose/.test(n)) return '노출';
   if (/member|group member/.test(n)) return '멤버';
   if (/subscriber|subscription|\bsubs?\b/.test(n)) return '구독자';
+  // Like가 상품명에 있으면 카테고리 Followers보다 우선 (예: "Twitter Arab Like" + category Followers)
+  if (/\blikes?\b/.test(n) && !/\bfollowers?\b/.test(n.split('|')[0] || n)) return '좋아요';
+  if (/\blikes?\b/.test(n) && /arab like|korea like|brazil like|usa like|turkish like|india like/i.test(n)) return '좋아요';
+  if (/likes?\s*\+\s*views?|views?\s*\+\s*likes?/i.test(n)) return '좋아요'; // 복합 — 조회수용으로도 사용
   if (/follower|\bfollow\b/.test(n)) return '팔로워';
   if (/like/.test(n)) return '좋아요';
   if (/review|rating|\bstars?\b|\[\d+\s*star\]|google map|gmb\b|maps custom/.test(n)) return '리뷰';
@@ -7413,6 +7453,8 @@ app.post('/api/super/services/update', requireSuperAdmin, async (req, res) => {
 
 /** 검증 시드 — Peakerr 실존 api_id 고정 (국가·상품 그대로). 자동 리필 교체로 덮지 않음 */
 const CURATED_SEED_API_LOCK = {
+  pyt2: { api_id: '27905', rate: 41.99 },
+  pyt13: { api_id: '27905', rate: 41.99 }, // 구 28716 저속·미진행 → Real Lifetime 리필 SKU
   // Instagram 팔로워
   pig4: { api_id: '28284', rate: 2.4192 },  // 브라질 (구 29691 삭제)
   pig5: { api_id: '30505', rate: 0.57 },
@@ -8412,6 +8454,10 @@ app.get('*', async (req, res) => {
     if (req.siteSuspended) {
       const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
       const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
+      const feeKrw = 70000;
+      const bankLine = '우리은행 1002-160-164625';
+      const bankHolder = '예금주: 조인호';
+      const feeLabel = feeKrw.toLocaleString('ko-KR');
       return res.status(503).type('html').send(`<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -8424,22 +8470,39 @@ app.get('*', async (req, res) => {
   body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     background:#0f0f12;color:#f2f2f5;padding:24px}
-  .box{max-width:420px;width:100%;text-align:center;background:#1a1a22;border:1px solid #2e2e3a;
+  .box{max-width:440px;width:100%;text-align:center;background:#1a1a22;border:1px solid #2e2e3a;
     border-radius:20px;padding:40px 28px}
   .logo{font-size:42px;margin-bottom:12px}
   h1{font-size:22px;margin:0 0 8px;font-weight:800}
   p{margin:0;font-size:14px;line-height:1.65;color:#a8a8b8}
-  .badge{display:inline-block;margin-top:20px;padding:8px 14px;border-radius:999px;
+  .badge{display:inline-block;margin-top:18px;padding:8px 14px;border-radius:999px;
     background:#3a1520;color:#ff8a9a;font-size:12px;font-weight:700}
+  .pay{margin-top:22px;text-align:left;background:#121218;border:1px solid #2e2e3a;
+    border-radius:14px;padding:16px 18px}
+  .pay h2{margin:0 0 10px;font-size:13px;color:#ffb4c0;font-weight:700;letter-spacing:.02em}
+  .pay .fee{font-size:28px;font-weight:800;color:#fff;margin:0 0 12px}
+  .pay .fee span{font-size:14px;font-weight:600;color:#a8a8b8;margin-left:4px}
+  .pay .bank{font-size:15px;font-weight:700;color:#e8e8f0;line-height:1.5;word-break:keep-all}
+  .pay .holder{font-size:13px;color:#a8a8b8;margin-top:4px}
+  .pay .hint{margin-top:12px;font-size:12px;color:#8a8a9a;line-height:1.55}
 </style>
 </head>
 <body>
   <div class="box">
     <div class="logo">${logo}</div>
     <h1>${siteName}</h1>
-    <p>현재 이 사이트는 <b style="color:#fff">이용이 일시 중단</b>되었습니다.<br>
-    서비스 재개 일정은 사이트 관리자에게 문의해 주세요.</p>
-    <div class="badge">SERVICE SUSPENDED</div>
+    <p>현재 이 사이트는 <b style="color:#fff">관리비 미납</b>으로<br>
+    이용이 <b style="color:#fff">일시 중단</b>되었습니다.<br><br>
+    아래 계좌로 관리비를 입금해 주시면<br>
+    확인 후 <b style="color:#fff">바로 정지 해제</b>됩니다.</p>
+    <div class="pay">
+      <h2>관리비 입금 안내</h2>
+      <div class="fee">₩${feeLabel}<span>/월</span></div>
+      <div class="bank">${bankLine}</div>
+      <div class="holder">${bankHolder}</div>
+      <div class="hint">입금자명에 사이트명(또는 상호)을 적어 주세요.<br>입금 확인되면 서비스를 다시 열어 드립니다.</div>
+    </div>
+    <div class="badge">SERVICE SUSPENDED · 관리비 미납</div>
   </div>
 </body>
 </html>`);
