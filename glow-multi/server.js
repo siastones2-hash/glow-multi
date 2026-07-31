@@ -1757,14 +1757,47 @@ function peakerrBucketKeyFromService(s) {
   return `${pl}:${bucket}`;
 }
 
-/** 공급 카탈로그에서 리필 보장·고품질 SKU 선택 (팔로워·좋아요·조회수) */
-function findBestRefillPeakerrService(pl, bucket, excludeApiIds = new Set()) {
+/** 국가·지역 타겟 키 — 한국/미국 등이 글로벌 리필 SKU로 덮이지 않게 분리 */
+function detectMarketGeoKey(full) {
+  const t = String(full || '').toLowerCase();
+  if (/korea|korean|\bkr\b|south korea|한국/.test(t)) return 'korea';
+  if (/united states|\busa\b|\bus\b|america|american|미국/.test(t)) return 'usa';
+  if (/brazil|brazilian|brasil|브라질/.test(t)) return 'brazil';
+  if (/turkey|turkish|türk|터키/.test(t)) return 'turkey';
+  if (/arab|arabic|middle east|아랍|중동/.test(t)) return 'arab';
+  if (/india|indian|인도/.test(t)) return 'india';
+  if (/thailand|thai|태국/.test(t)) return 'thailand';
+  if (/vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|베트남/.test(t)) return 'vietnam';
+  if (/nigeria|nigerian|나이지리아/.test(t)) return 'nigeria';
+  if (/japan|japanese|일본/.test(t)) return 'japan';
+  if (/global|worldwide|world wide|premium global|프리미엄 글로벌|전 세계|글로벌/.test(t)) return 'global';
+  return 'other';
+}
+
+function serviceMarketGeoKey(svc) {
+  return detectMarketGeoKey(`${svc.name || ''} ${svc.description || ''}`);
+}
+
+function peakerrMarketGeoKey(s) {
+  return detectMarketGeoKey(`${s.name || ''} ${s.category || ''} ${s.type || ''}`);
+}
+
+function geoKeysCompatible(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  // 'other'는 같은 other끼리만 — 글로벌/한국과 섞지 않음
+  return false;
+}
+
+/** 공급 카탈로그에서 리필 보장·고품질 SKU 선택 (동일 플랫폼·종류·국가만) */
+function findBestRefillPeakerrService(pl, bucket, excludeApiIds = new Set(), geoKey = null) {
   let best = null;
   let bestScore = -1;
   for (const s of peakerrCatalogCache.values()) {
     if (excludeApiIds.has(String(s.service))) continue;
     const key = peakerrBucketKeyFromService(s);
     if (key !== `${pl}:${bucket}`) continue;
+    if (geoKey && !geoKeysCompatible(geoKey, peakerrMarketGeoKey(s))) continue;
     if (!peakerrServiceHasRefill(s)) continue;
     const score = scorePeakerrService(s);
     if (score > bestScore) {
@@ -1775,15 +1808,18 @@ function findBestRefillPeakerrService(pl, bucket, excludeApiIds = new Set()) {
   return best;
 }
 
-/** 시드 상품 — 공급 리필 SKU로 api_id 교체 + 리필 없는 참여형 상품 비활성화 */
+/** 시드 상품 — 동일 국가 안에서만 리필 SKU 교체. 검증 시드(api 고정)는 api_id 변경 금지 */
 async function upgradeEngagementSeedsFromPeakerr() {
+  // Peakerr 상품 그대로: 한국→한국 api, 브라질→브라질 api (섞인 매핑 먼저 복구)
+  await restoreCuratedSeedApiLocks().catch(e => console.log('시드 api 복구:', e.message));
+
   await ensurePeakerrCatalogLoaded();
   if (peakerrCatalogCache.size === 0) return { upgraded: 0, disabled: 0 };
 
   const ENGAGEMENT = new Set(['팔로워', '좋아요', '조회수']);
   const PLATFORMS = new Set(['tiktok', 'threads', 'instagram', 'facebook']);
   const r = await query(`
-    SELECT id, name, pl, api_id, active FROM services
+    SELECT id, name, pl, api_id, active, description FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
   `);
 
@@ -1795,17 +1831,22 @@ async function upgradeEngagementSeedsFromPeakerr() {
     if (!PLATFORMS.has(row.pl)) continue;
     const bucket = serviceOrderBucket(row);
     if (!ENGAGEMENT.has(bucket)) continue;
+    const geo = serviceMarketGeoKey(row);
+    const geoBucket = `${row.pl}:${bucket}:${geo}`;
 
     const peak = peakerrCatalogCache.get(String(row.api_id));
     const hasRefill = peakerrServiceHasRefill(peak);
     await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill ? 1 : 0, row.id]);
 
     if (hasRefill) {
-      refillBuckets.add(`${row.pl}:${bucket}`);
+      refillBuckets.add(geoBucket);
       continue;
     }
 
-    const alt = findBestRefillPeakerrService(row.pl, bucket, new Set([String(row.api_id)]));
+    // 검증 시드(pig6/pkr1 등)는 국가 라벨·api_id 고정 — 글로벌 리필로 덮어쓰지 않음
+    if (isCuratedServiceId(row.id)) continue;
+
+    const alt = findBestRefillPeakerrService(row.pl, bucket, new Set([String(row.api_id)]), geo);
     if (alt) {
       await query(`UPDATE services SET api_id=$1, refill_guaranteed=1, active=1, rate=$2, min=$3, max=$4,
         inactive_note='', replace_service_id=NULL
@@ -1816,34 +1857,38 @@ async function upgradeEngagementSeedsFromPeakerr() {
         parseInt(alt.max, 10) || 1000000,
         row.id
       ]);
-      refillBuckets.add(`${row.pl}:${bucket}`);
+      refillBuckets.add(geoBucket);
       upgraded++;
       upgradedIds.add(row.id);
-      console.log(`🔄 리필 SKU 교체: ${row.id} → api ${alt.service} (${(alt.name || '').slice(0, 40)})`);
+      console.log(`🔄 리필 SKU 교체: ${row.id} [${geo}] → api ${alt.service} (${(alt.name || '').slice(0, 40)})`);
     }
   }
 
   for (const row of r.rows) {
     if (upgradedIds.has(row.id)) continue;
+    if (isCuratedServiceId(row.id)) continue; // 검증 시드 숨김 금지
     if (!PLATFORMS.has(row.pl)) continue;
     const bucket = serviceOrderBucket(row);
     if (!ENGAGEMENT.has(bucket)) continue;
-    if (!refillBuckets.has(`${row.pl}:${bucket}`)) continue;
+    const geo = serviceMarketGeoKey(row);
+    const geoBucket = `${row.pl}:${bucket}:${geo}`;
+    if (!refillBuckets.has(geoBucket)) continue;
 
     const peak = peakerrCatalogCache.get(String(row.api_id));
     if (peakerrServiceHasRefill(peak)) continue;
-    const altExists = findBestRefillPeakerrService(row.pl, bucket);
+    const altExists = findBestRefillPeakerrService(row.pl, bucket, new Set(), geo);
     if (!altExists || String(altExists.service) === String(row.api_id)) continue;
 
     const rep = r.rows.find(x => {
       if (x.id === row.id || x.pl !== row.pl) return false;
       if (serviceOrderBucket(x) !== bucket) return false;
+      if (serviceMarketGeoKey(x) !== geo) return false;
       if (upgradedIds.has(x.id)) return true;
       return peakerrServiceHasRefill(peakerrCatalogCache.get(String(x.api_id)));
     });
     const note = rep
-      ? '리필 보장이 없는 동일 종류 상품 — 리필 SKU로 통합하여 판매 중단'
-      : '리필 보장 없음 · 동일 종류 리필 상품 없음 — 판매 중단';
+      ? '리필 보장이 없는 동일 종류·동일 국가 상품 — 리필 SKU로 통합하여 판매 중단'
+      : '리필 보장 없음 · 동일 국가 리필 상품 없음 — 판매 중단';
     await hideServiceWithNote(row.id, note, rep?.id || null);
     disabled++;
   }
@@ -1970,8 +2015,10 @@ async function resolveOrderService(sid) {
     SELECT * FROM services WHERE active=1 AND pl=$1 AND id <> $2
       AND api_id IS NOT NULL AND TRIM(api_id) <> ''
   `, [row.pl, row.id]);
+  const geo = serviceMarketGeoKey(row);
   const curated = altR.rows
     .filter(s => isCuratedServiceId(s.id) && serviceOrderBucket(s) === bucket)
+    .filter(s => geoKeysCompatible(geo, serviceMarketGeoKey(s)))
     .sort((a, b) => scoreServiceRow(b) - scoreServiceRow(a));
   return curated[0] || null;
 }
@@ -2130,15 +2177,18 @@ async function submitPeakerrOrder(apiKey, apiId, link, qty) {
 
 async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(), limit = 8) {
   const bucket = serviceOrderBucket(primary);
+  const geo = serviceMarketGeoKey(primary);
   const r = await query(`
     SELECT s.* FROM services s
     WHERE s.active=1 AND s.pl=$1 AND s.id<>$2
       AND s.api_id IS NOT NULL AND TRIM(s.api_id) <> ''
   `, [primary.pl, primary.id]);
   const sameBucket = (s) => !bucket || bucket === '서비스' || serviceOrderBucket(s) === bucket;
+  const sameGeo = (s) => geoKeysCompatible(geo, serviceMarketGeoKey(s));
   return r.rows
     .filter(s => !excludeIds.has(s.id))
     .filter(sameBucket)
+    .filter(sameGeo)
     .filter(s => qty >= (s.min || 1) && qty <= (s.max || 999999999))
     .filter(s => peakerrCatalogCache.size === 0 || peakerrCatalogCache.has(String(s.api_id)))
     .sort((a, b) => {
@@ -7294,6 +7344,90 @@ app.post('/api/super/services/update', requireSuperAdmin, async (req, res) => {
       [name, pl||'other', parseFloat(rate||0), parseInt(min||100), parseInt(max||1000000), description||'', active?1:0, apiId?String(apiId).trim():null, id]);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/** 검증 시드 — Peakerr api_id 고정 (국가·상품 그대로). 자동 리필 교체로 덮지 않음 */
+const CURATED_SEED_API_LOCK = {
+  pig4: { api_id: '29691', rate: 8.26 },   // IG 팔로워 브라질
+  pig5: { api_id: '30505', rate: 0.57 },   // IG 팔로워 글로벌
+  pig6: { api_id: '28308', rate: 40.32 },  // IG 팔로워 한국
+  pig8: { api_id: '30054', rate: 12.6 },   // IG 팔로워 터키
+  pig9: { api_id: '22628', rate: 48.91 },  // IG 팔로워 미국
+  pkr1: { api_id: '28309', rate: 47.04 },  // IG 팔로워 한국 30일
+  pkr2: { api_id: '30227', rate: 51.12 },  // IG 팔로워 한국 슬로우
+  pig13: { api_id: '28283', rate: 0.62 },  // IG 좋아요 아랍
+  pig16: { api_id: '29539', rate: 0.21 },  // IG 좋아요 인도
+  pig17: { api_id: '28306', rate: 6.45 },  // IG 좋아요 한국
+  pig20: { api_id: '22626', rate: 18.77 }, // IG 좋아요 미국
+  pkr3: { api_id: '28307', rate: 8.06 },   // IG 좋아요 한국 드롭
+  ptt2: { api_id: '26191', rate: 1.82 },   // TT 팔로워 아랍
+  ptt3: { api_id: '26182', rate: 1.65 },   // TT 팔로워 브라질
+  ptt4: { api_id: '26176', rate: 2.1 },    // TT 팔로워 글로벌
+  ptt5: { api_id: '25057', rate: 3.08 },   // TT 팔로워 미국
+  pfb2: { api_id: '29350', rate: 1.26 },
+  pfb3: { api_id: '28903', rate: 3.36 },
+  pfb4: { api_id: '31397', rate: 0.27 },
+  pfb5: { api_id: '30863', rate: 3.09 },
+  pfb6: { api_id: '28902', rate: 4.2 },
+  pfb7: { api_id: '22328', rate: 0.5887 },
+  pfb8: { api_id: '30865', rate: 1.55 },
+};
+
+/** Peakerr 상품 그대로 — 국가 라벨과 api_id가 어긋난 검증 시드 복구 */
+async function restoreCuratedSeedApiLocks() {
+  let fixed = 0;
+  for (const [id, lock] of Object.entries(CURATED_SEED_API_LOCK)) {
+    const r = await query(`SELECT id, api_id, rate FROM services WHERE id=$1`, [id]);
+    const row = r.rows[0];
+    if (!row) continue;
+    if (String(row.api_id) === String(lock.api_id) && Math.abs(parseFloat(row.rate) - lock.rate) < 0.0001) continue;
+    await query(`
+      UPDATE services SET api_id=$1, rate=$2, active=1, inactive_note='', replace_service_id=NULL
+      WHERE id=$3
+    `, [lock.api_id, lock.rate, id]);
+    fixed++;
+    console.log(`🔒 시드 api 복구: ${id} ${row.api_id} → ${lock.api_id}`);
+  }
+  return fixed;
+}
+
+/** 슈퍼 — 국가 타겟 섞인 검증 시드 api_id를 Peakerr 실명과 대조 */
+app.get('/api/super/services/geo-audit', requireSuperAdmin, async (req, res) => {
+  try {
+    await ensurePeakerrCatalogLoaded();
+    const r = await query(`
+      SELECT id, name, pl, api_id, rate, active FROM services
+      WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+      ORDER BY pl, id
+    `);
+    const mismatches = [];
+    for (const row of r.rows) {
+      const glowGeo = serviceMarketGeoKey(row);
+      const peak = peakerrCatalogCache.get(String(row.api_id));
+      const peakGeo = peak ? peakerrMarketGeoKey(peak) : null;
+      const peakName = peak ? String(peak.name || '') : '';
+      if (!peak) {
+        mismatches.push({ id: row.id, name: row.name, api_id: row.api_id, glowGeo, issue: 'peakerr_missing', peakName: '' });
+        continue;
+      }
+      if (!geoKeysCompatible(glowGeo, peakGeo)) {
+        mismatches.push({
+          id: row.id, name: row.name, api_id: row.api_id, rate: row.rate,
+          glowGeo, peakGeo, peakName: peakName.slice(0, 80), issue: 'geo_mismatch'
+        });
+      }
+    }
+    res.json({ ok: true, mismatches, count: mismatches.length, catalog: peakerrCatalogCache.size });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/** 슈퍼 — Peakerr 국가별 api_id 시드 고정값으로 즉시 복구 */
+app.post('/api/super/services/restore-geo-seeds', requireSuperAdmin, async (req, res) => {
+  try {
+    const fixed = await restoreCuratedSeedApiLocks();
+    await syncServiceDescriptionFooters().catch(() => null);
+    res.json({ ok: true, fixed, message: fixed ? `${fixed}개 국가·상품 api 복구` : '이미 Peakerr 시드와 일치' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/super/services/delete', requireSuperAdmin, async (req, res) => {
