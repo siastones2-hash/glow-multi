@@ -456,11 +456,11 @@ async function initDB() {
       {id:'pyt8',name:'YouTube 쇼츠 조회수 — 프리미엄 글로벌 (드롭 보상)',pl:'youtube',rate:1.68,min:100,max:1000000,description:'전 세계 실계정 기반으로 제공되는 고품질 YouTube 쇼츠 조회수 서비스입니다. 유튜브에서 지금 가장 빠르게 성장하는 쇼츠 포맷의 조회수를 늘립니다. 초기 조회수가 빠르게 쌓이면 쇼츠 피드 알고리즘의 바이럴 루프에 진입하여 수백만 조회수까지 자연 성장이 가능합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'27924'},
       {id:'pyt9',name:'YouTube 조회수 — 아랍 타겟',pl:'youtube',rate:4.69,min:500,max:100000,description:'아랍 기반 고품질 YouTube 조회수 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 영상 업로드 직후 조회수를 빠르게 채워 유튜브 알고리즘에 강한 신호를 보냅니다. 초기 조회수가 빠를수록 추천·홈피드 배포 확률이 높아지며 실제 사용자 패턴으로 처리되어 계정 안전성이 보장됩니다.',api_id:'2866'},
       {id:'pig11',name:'Instagram 노출 — 한국 타겟',pl:'instagram',rate:12.54,min:5,max:10000,description:'한국 기반 고품질 Instagram 노출 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다.',api_id:'29158'},
-      {id:'pig17',name:'Instagram 좋아요 — 한국 타겟',pl:'instagram',rate:6.45,min:10,max:20000,description:'한국 기반 고품질 Instagram 좋아요 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다.',api_id:'28306'},
+      {id:'pig17',name:'Instagram 좋아요 — 한국 타겟',pl:'instagram',rate:1.19,min:10,max:20000,description:'한국 기반 고품질 Instagram 좋아요 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다.',api_id:'30710'},
       {id:'pig6',name:'Instagram 팔로워 — 한국 타겟',pl:'instagram',rate:40.32,min:10,max:20000,description:'한국 기반 고품질 Instagram 팔로워 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다.',api_id:'28308'},
-      {id:'pkr1',name:'Instagram 팔로워 — 한국 (30일 드롭보상) ⭐',pl:'instagram',rate:47.04,min:10,max:20000,description:'한국인 실계정 기반 Instagram 팔로워 프리미엄 서비스로, 30일간 드롭 발생 시 자동 보상이 제공됩니다. 국내 타겟 마케팅의 핵심 자산인 한국인 팔로워는 브랜드 협찬 단가와 국내 소비자 대상 마케팅 효율을 크게 높여주며, 30일 리필 보장으로 장기적인 계정 신뢰도를 안정적으로 유지할 수 있습니다.',api_id:'28309'},
-      {id:'pkr2',name:'Instagram 팔로워 — 한국 (슬로우 속도)',pl:'instagram',rate:51.12,min:10,max:50000,description:'한국인 실계정 Instagram 팔로워를 일 1천명 슬로우 속도로 자연스럽게 증가시킵니다. 빠른 증가가 부담스러운 신규 계정이나 알고리즘 페널티를 피하고 싶은 계정에 최적화된 서비스입니다. 느린 속도로 쌓여 실제 유기적 성장처럼 보이며 장기 안정성이 가장 뛰어납니다.',api_id:'30227'},
-      {id:'pkr3',name:'Instagram 좋아요 — 한국 (드롭보상)',pl:'instagram',rate:8.06,min:10,max:20000,description:'한국인 실계정 기반 Instagram 좋아요 서비스로, 30일간 드롭 보상이 제공됩니다. 국내 타겟 게시물의 탐색 탭 노출을 강화하며, 한국인 좋아요 비율이 높을수록 인스타그램이 국내 사용자에게 우선 노출시켜 실제 국내 고객 유입으로 이어집니다.',api_id:'28307'},
+      {id:'pkr1',name:'Instagram 팔로워 — 한국 (30일 드롭보상) ⭐',pl:'instagram',rate:59.6409,min:10,max:20000,description:'한국인 실계정 기반 Instagram 팔로워 프리미엄 서비스로, 30일간 드롭 발생 시 자동 보상이 제공됩니다. 국내 타겟 마케팅의 핵심 자산인 한국인 팔로워는 브랜드 협찬 단가와 국내 소비자 대상 마케팅 효율을 크게 높여주며, 30일 리필 보장으로 장기적인 계정 신뢰도를 안정적으로 유지할 수 있습니다.',api_id:'27334'},
+      {id:'pkr2',name:'Instagram 팔로워 — 한국 (슬로우 속도)',pl:'instagram',rate:59.6409,min:10,max:50000,description:'한국인 실계정 Instagram 팔로워를 일 1천명 슬로우 속도로 자연스럽게 증가시킵니다. 빠른 증가가 부담스러운 신규 계정이나 알고리즘 페널티를 피하고 싶은 계정에 최적화된 서비스입니다. 느린 속도로 쌓여 실제 유기적 성장처럼 보이며 장기 안정성이 가장 뛰어납니다.',api_id:'27334'},
+      {id:'pkr3',name:'Instagram 좋아요 — 한국 (드롭보상)',pl:'instagram',rate:1.4,min:10,max:20000,description:'한국인 실계정 기반 Instagram 좋아요 서비스로, 30일간 드롭 보상이 제공됩니다. 국내 타겟 게시물의 탐색 탭 노출을 강화하며, 한국인 좋아요 비율이 높을수록 인스타그램이 국내 사용자에게 우선 노출시켜 실제 국내 고객 유입으로 이어집니다.',api_id:'30711'},
       {id:'pkr4',name:'Instagram 좋아요 — 한국 (저가형)',pl:'instagram',rate:2.38,min:50,max:1000,description:'한국인 계정 기반 Instagram 좋아요를 저렴한 가격으로 제공합니다. 국내 타겟 소규모 게시물이나 여러 게시물에 분산 주문할 때 유용하며, 한국 IP 기반 계정에서 좋아요가 발생하여 국내 탐색 탭 노출 알고리즘에 긍정적 신호를 전달합니다.',api_id:'27077'},
       {id:'pkr5',name:'Instagram 좋아요 — 한국 프리미엄 (365일 보상)',pl:'instagram',rate:1.4,min:10,max:1000000,description:'한국 기반 Instagram 좋아요 프리미엄 서비스로, 무려 365일간 드롭 보상이 제공됩니다. 1년 내 좋아요가 빠지면 자동으로 보충되어 장기적인 게시물 가치를 유지합니다. 브랜드 계정, 인플루언서 주요 게시물, 이벤트 게시물 등 장기 노출이 중요한 콘텐츠에 최적입니다.',api_id:'30711'},
       {id:'pkr6',name:'Instagram 댓글 — 한국 리얼 액티브 (10개)',pl:'instagram',rate:4.73,min:10,max:10,description:'한국 실계정 활성 사용자 10명이 자연스러운 한국어 댓글을 달아드립니다. 2시간 내 빠르게 처리되며, 실제 한국인이 다는 댓글이라 자연어 품질이 매우 높고 인스타그램 알고리즘도 국내 참여 신호로 강하게 인식합니다. 신제품 출시, 이벤트 게시물의 초기 댓글 확보에 가장 강력한 효과를 발휘합니다.',api_id:'29271'},
@@ -471,7 +471,7 @@ async function initDB() {
       {id:'pig13',name:'Instagram 좋아요 — 아랍 타겟',pl:'instagram',rate:0.62,min:10,max:100000,description:'아랍 기반 고품질 Instagram 좋아요 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다.',api_id:'28283'},
       {id:'pig14',name:'Instagram 팔로워 — 터키 여성 타겟 (리얼)',pl:'instagram',rate:34.02,min:10,max:30000,description:'터키 실제 여성 사용자 기반 Instagram 팔로워 프리미엄 서비스입니다. 여성 타겟 브랜드(뷰티·패션·라이프스타일)의 국제 마케팅에 특화되어 있으며, 터키는 중동·유럽 시장 진입의 전략 요충지로 여성 중심 뷰티·패션 브랜드의 글로벌 확장에 가장 강력한 자산이 됩니다.',api_id:'29835'},
       {id:'pig15',name:'Instagram 좋아요 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.09,min:10,max:1000000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 좋아요 서비스입니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31244'},
-      {id:'pig16',name:'Instagram 좋아요 — 인도 타겟 (드롭 보상)',pl:'instagram',rate:0.21,min:10,max:1000000,description:'인도 기반 고품질 Instagram 좋아요 서비스로, 인도는 글로벌 최대 사용자 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29539'},
+      {id:'pig16',name:'Instagram 좋아요 — 인도 타겟 (드롭 보상)',pl:'instagram',rate:0.6855,min:10,max:1000000,description:'인도 기반 고품질 Instagram 좋아요 서비스로, 인도는 글로벌 최대 사용자 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'17541'},
       {id:'pig18',name:'Instagram 좋아요 — 나이지리아 타겟 (드롭 보상)',pl:'instagram',rate:1.72,min:20,max:100000,description:'나이지리아 기반 고품질 Instagram 좋아요 서비스로, 나이지리아는 아프리카 최대 디지털 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29759'},
       {id:'pig19',name:'Instagram 좋아요 — 터키 타겟 (드롭 보상)',pl:'instagram',rate:0.7,min:20,max:1000,description:'터키 기반 고품질 Instagram 좋아요 서비스로, 터키 사용자는 참여율이 매우 높으며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'30040'},
       {id:'pig2',name:'Instagram 댓글 — 미국 타겟',pl:'instagram',rate:262.76,min:5,max:2500,description:'미국 기반 고품질 Instagram 댓글 서비스로, 미국 광고 RPM이 세계 최고 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 댓글이 많은 게시물은 알고리즘이 높은 참여도로 인식해 탐색 탭 노출을 늘립니다. 긍정적 댓글은 브랜드 이미지를 강화하고, 질문형 댓글은 추가 참여를 유발하는 연쇄 효과를 만듭니다.',api_id:'22623'},
@@ -480,16 +480,16 @@ async function initDB() {
       {id:'pig22',name:'Instagram 릴스 좋아요 — 인도 리얼',pl:'instagram',rate:0.252,min:100,max:500000,description:'인도 실제 유저 기반 Instagram 릴스 인터랙티브 좋아요입니다. 릴스는 인스타그램이 가장 공격적으로 밀고 있는 포맷으로, 좋아요가 많을수록 탐색 탭과 릴스 피드 상단 노출이 크게 증가합니다. 최대 50만개 대량 주문으로 릴스 바이럴 부스팅에 최적화된 서비스입니다.',api_id:'30671'},
       {id:'pig23',name:'Instagram 릴스 좋아요 — 인도 타겟',pl:'instagram',rate:1.61,min:10,max:30000,description:'인도 기반 고품질 Instagram 릴스 좋아요 서비스로, 인도는 글로벌 최대 사용자 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 릴스 좋아요를 빠르게 늘려 탐색 탭과 릴스 피드 상위 노출을 유도합니다. 좋아요가 많은 릴스는 알고리즘이 더 넓은 사용자층에게 배포하여 팔로워 급증 효과로 이어집니다.',api_id:'17529'},
       {id:'pig24',name:'Instagram 저장 — 프리미엄 글로벌',pl:'instagram',rate:1.84,min:100,max:10000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 저장 서비스입니다. 저장 수는 인스타그램 알고리즘에서 가장 높은 가중치를 받는 참여 지표입니다. 저장이 많은 게시물은 탐색 탭과 추천 피드에 장기간 지속 노출됩니다.',api_id:'2573'},
-      {id:'pig25',name:'Instagram 공유 — 프리미엄 글로벌',pl:'instagram',rate:2.77,min:10,max:5000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 공유 서비스입니다. 공유·리포스트 수를 늘립니다. 공유가 많은 게시물은 알고리즘에서 외부 확산 신호로 평가되어 탐색 탭 노출이 강화되고 신규 팔로워 유입이 가속화됩니다.',api_id:'30758'},
+      {id:'pig25',name:'Instagram 공유 — 프리미엄 글로벌',pl:'instagram',rate:0.56,min:10,max:5000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 공유 서비스입니다. 공유·리포스트 수를 늘립니다. 공유가 많은 게시물은 알고리즘에서 외부 확산 신호로 평가되어 탐색 탭 노출이 강화되고 신규 팔로워 유입이 가속화됩니다.',api_id:'31255'},
       {id:'pig26',name:'Instagram 스토리 조회수 — 프리미엄 글로벌',pl:'instagram',rate:15.0,min:10,max:10000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 스토리 조회수 서비스입니다. 스토리 조회수는 계정 활성도와 팔로워 참여도를 알고리즘에 알리는 신호입니다. 조회수가 높은 스토리는 팔로워 피드 상단에 우선 표시되어 더 많은 노출을 확보합니다.',api_id:'14571'},
       {id:'pig27',name:'Instagram 조회수 — 프리미엄 글로벌',pl:'instagram',rate:3.52,min:10,max:100000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 조회수 서비스입니다. 영상 조회수가 빠르게 쌓이면 인스타그램 알고리즘의 바이럴 루프에 진입하여 탐색 탭과 팔로워 외 사용자에게도 대규모 노출됩니다. 신규 팔로워 유입의 가장 빠른 경로입니다.',api_id:'14576'},
       {id:'pig3',name:'Instagram 팔로워 — 아랍 타겟 (드롭 보상)',pl:'instagram',rate:34.58,min:20,max:50000,description:'아랍 기반 고품질 Instagram 팔로워 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29762'},
-      {id:'pig4',name:'Instagram 팔로워 — 브라질 타겟 (드롭 보상)',pl:'instagram',rate:8.26,min:10,max:5000000,description:'브라질 기반 고품질 Instagram 팔로워 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29691'},
+      {id:'pig4',name:'Instagram 팔로워 — 브라질 타겟 (드롭 보상)',pl:'instagram',rate:2.4192,min:10,max:5000000,description:'브라질 기반 고품질 Instagram 팔로워 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'28284'},
       {id:'pig5',name:'Instagram 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.57,min:1,max:10000000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 팔로워 서비스입니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'30505'},
       {id:'pig7',name:'Instagram 팔로워 — 나이지리아 타겟 (드롭 보상)',pl:'instagram',rate:34.58,min:20,max:100000,description:'나이지리아 기반 고품질 Instagram 팔로워 서비스로, 나이지리아는 아프리카 최대 디지털 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29756'},
-      {id:'pig8',name:'Instagram 팔로워 — 터키 타겟 (드롭 보상)',pl:'instagram',rate:12.6,min:10,max:50000,description:'터키 기반 고품질 Instagram 팔로워 서비스로, 터키 사용자는 참여율이 매우 높으며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'30054'},
+      {id:'pig8',name:'Instagram 팔로워 — 터키 타겟 (드롭 보상)',pl:'instagram',rate:34.02,min:10,max:500000,description:'터키 기반 고품질 Instagram 팔로워 서비스로, 터키 사용자는 참여율이 매우 높으며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29835'},
       {id:'pig9',name:'Instagram 팔로워 — 미국 타겟',pl:'instagram',rate:48.91,min:50,max:6000,description:'미국 기반 고품질 Instagram 팔로워 서비스로, 미국 광고 RPM이 세계 최고 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다.',api_id:'22628'},
-      {id:'ptt1',name:'TikTok 댓글 — 프리미엄 글로벌',pl:'tiktok',rate:0.91,min:1,max:50000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 댓글 서비스입니다. 댓글이 많은 영상은 알고리즘이 높은 인게이지먼트로 인식해 포유 탭 노출을 늘립니다. 질문 형태의 댓글은 다른 시청자들의 댓글 참여를 유발하는 연쇄 효과가 있어 영상 활성도를 자연스럽게 높여줍니다.',api_id:'31288'},
+      {id:'ptt1',name:'TikTok 댓글 — 프리미엄 글로벌',pl:'tiktok',rate:1.4,min:1,max:50000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 댓글 서비스입니다. 댓글이 많은 영상은 알고리즘이 높은 인게이지먼트로 인식해 포유 탭 노출을 늘립니다. 질문 형태의 댓글은 다른 시청자들의 댓글 참여를 유발하는 연쇄 효과가 있어 영상 활성도를 자연스럽게 높여줍니다.',api_id:'23882'},
       {id:'ptt10',name:'TikTok 공유 — 프리미엄 글로벌',pl:'tiktok',rate:1.13,min:1,max:5000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 공유 서비스입니다. 공유는 틱톡에서 가장 강력한 바이럴 신호입니다. 공유가 많은 영상은 외부 트래픽을 유입시키고 알고리즘이 바이럴 콘텐츠로 판단해 대규모 배포합니다.',api_id:'30998'},
       {id:'ptt11',name:'TikTok 스토리 조회수 — 프리미엄 글로벌',pl:'tiktok',rate:0.18,min:10,max:10000000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 스토리 조회수 서비스입니다. 틱톡 스토리 조회수를 늘려 계정 활성도를 높입니다. 활발한 스토리 활동은 알고리즘이 활성 크리에이터로 인식하게 만들어 콘텐츠 노출 범위를 확대합니다.',api_id:'25820'},
       {id:'ptt12',name:'TikTok 조회수 — 브라질 타겟 (드롭 보상)',pl:'tiktok',rate:0.08,min:1,max:1000000,description:'브라질 기반 고품질 TikTok 조회수 서비스입니다. 틱톡 조회수 대표 상품으로, 초기 조회수가 빠르게 쌓이면 포유 탭 배포가 넓어집니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31183'},
@@ -1763,14 +1763,14 @@ function detectMarketGeoKey(full) {
   if (/korea|korean|\bkr\b|south korea|한국/.test(t)) return 'korea';
   if (/united states|\busa\b|\bus\b|america|american|미국/.test(t)) return 'usa';
   if (/brazil|brazilian|brasil|브라질/.test(t)) return 'brazil';
-  if (/turkey|turkish|türk|터키/.test(t)) return 'turkey';
+  if (/india|indian|i̇ndian|ındian|🇮🇳|인도/.test(t)) return 'india';
+  if (/turkey|turkish|türk|🇹🇷|터키/.test(t)) return 'turkey';
   if (/arab|arabic|middle east|아랍|중동/.test(t)) return 'arab';
-  if (/india|indian|인도/.test(t)) return 'india';
-  if (/thailand|thai|태국/.test(t)) return 'thailand';
-  if (/vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|베트남/.test(t)) return 'vietnam';
+  if (/thailand|thai|태국|🇹🇭/.test(t)) return 'thailand';
+  if (/vietnam|vietnamese|việt\s*nam|viet\s*nam|\bvn\b|베트남|🇻🇳/.test(t)) return 'vietnam';
   if (/nigeria|nigerian|나이지리아/.test(t)) return 'nigeria';
-  if (/japan|japanese|일본/.test(t)) return 'japan';
-  if (/global|worldwide|world wide|premium global|프리미엄 글로벌|전 세계|글로벌/.test(t)) return 'global';
+  if (/japan|japanese|일본|🇯🇵/.test(t)) return 'japan';
+  if (/global|worldwide|world wide|premium global|프리미엄 글로벌|전 세계|글로벌|world\s*wide/.test(t)) return 'global';
   return 'other';
 }
 
@@ -1785,7 +1785,8 @@ function peakerrMarketGeoKey(s) {
 function geoKeysCompatible(a, b) {
   if (!a || !b) return false;
   if (a === b) return true;
-  // 'other'는 같은 other끼리만 — 글로벌/한국과 섞지 않음
+  // Peakerr 영문에 국가 표기 없는 Worldwide ≈ GLOW 글로벌
+  if ((a === 'global' && b === 'other') || (a === 'other' && b === 'global')) return true;
   return false;
 }
 
@@ -3835,6 +3836,10 @@ function detectServiceTypeKo(full) {
   if (/reel/.test(n)) return /like/.test(n) ? '릴스 좋아요' : /view|play/.test(n) ? '릴스 조회수' : '릴스';
   if (/story/.test(n)) return /view/.test(n) ? '스토리 조회수' : '스토리';
   if (/comment/.test(n)) return '댓글';
+  if (/share|repost|reshare|re-?post/.test(n)) return '공유';
+  if (/\bsaves?\b|bookmark/.test(n)) return '저장';
+  if (/impression|reach|\bexpose/.test(n)) return '노출';
+  if (/member|group member/.test(n)) return '멤버';
   if (/subscriber|subscription|\bsubs?\b/.test(n)) return '구독자';
   if (/follower|\bfollow\b/.test(n)) return '팔로워';
   if (/like/.test(n)) return '좋아요';
@@ -3842,7 +3847,7 @@ function detectServiceTypeKo(full) {
   if (/\bviews?\b|\bplay\b|\bwatch\b/.test(n)) return '조회수';
   if (/seo|search|organic|keyword/.test(n)) return '검색 유입';
   if (/profile visit|profile view/.test(n)) return '프로필 방문';
-  if (/stream|listen|play count/.test(n)) return '재생';
+  if (/stream|listen|play count|monthly listener/.test(n)) return '재생';
   return '서비스';
 }
 
@@ -7348,34 +7353,39 @@ app.post('/api/super/services/update', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-/** 검증 시드 — Peakerr api_id 고정 (국가·상품 그대로). 자동 리필 교체로 덮지 않음 */
+/** 검증 시드 — Peakerr 실존 api_id 고정 (국가·상품 그대로). 자동 리필 교체로 덮지 않음 */
 const CURATED_SEED_API_LOCK = {
-  pig4: { api_id: '29691', rate: 8.26 },   // IG 팔로워 브라질
-  pig5: { api_id: '30505', rate: 0.57 },   // IG 팔로워 글로벌
-  pig6: { api_id: '28308', rate: 40.32 },  // IG 팔로워 한국
-  pig8: { api_id: '30054', rate: 12.6 },   // IG 팔로워 터키
-  pig9: { api_id: '22628', rate: 48.91 },  // IG 팔로워 미국
-  pkr1: { api_id: '28309', rate: 47.04 },  // IG 팔로워 한국 30일
-  pkr2: { api_id: '30227', rate: 51.12 },  // IG 팔로워 한국 슬로우
-  pig15: { api_id: '31244', rate: 0.09 },  // IG 좋아요 글로벌
-  pig16: { api_id: '29539', rate: 0.21 },  // IG 좋아요 인도
-  pig17: { api_id: '28306', rate: 6.45 },  // IG 좋아요 한국 (Peakerr 삭제 시 remap)
-  pig18: { api_id: '29759', rate: 1.72 },  // IG 좋아요 나이지리아
-  pig19: { api_id: '30040', rate: 0.7 },   // IG 좋아요 터키
-  pig20: { api_id: '22626', rate: 18.77 }, // IG 좋아요 미국
-  pkr3: { api_id: '28307', rate: 8.06 },   // IG 좋아요 한국 드롭
-  pkr4: { api_id: '27077', rate: 2.38 },   // IG 좋아요 한국 저가
-  pkr5: { api_id: '30711', rate: 1.4 },    // IG 좋아요 한국 365일
-  pig13: { api_id: '28283', rate: 0.62 },  // IG 좋아요 아랍
-  ptt2: { api_id: '26191', rate: 1.82 },   // TT 팔로워 아랍
-  ptt3: { api_id: '26182', rate: 1.65 },   // TT 팔로워 브라질
-  ptt4: { api_id: '26176', rate: 2.1 },    // TT 팔로워 글로벌
-  ptt5: { api_id: '25057', rate: 3.08 },   // TT 팔로워 미국
+  // Instagram 팔로워
+  pig4: { api_id: '28284', rate: 2.4192 },  // 브라질 (구 29691 삭제)
+  pig5: { api_id: '30505', rate: 0.57 },
+  pig6: { api_id: '28308', rate: 40.32 },   // 한국
+  pig8: { api_id: '29835', rate: 34.02 },   // 터키 (구 30054 삭제)
+  pig9: { api_id: '22628', rate: 48.91 },
+  pkr1: { api_id: '27334', rate: 59.6409 }, // 한국 30일 (구 28309 삭제)
+  pkr2: { api_id: '27334', rate: 59.6409 }, // 한국 슬로우 → 동일 KR refill SKU
+  // Instagram 좋아요
+  pig13: { api_id: '28283', rate: 0.62 },
+  pig15: { api_id: '31244', rate: 0.09 },
+  pig16: { api_id: '17541', rate: 0.6855 }, // 인도 (구 29539 삭제)
+  pig17: { api_id: '30710', rate: 1.19 },   // 한국 (구 28306 삭제)
+  pig18: { api_id: '29759', rate: 1.72 },
+  pig19: { api_id: '30040', rate: 0.7 },
+  pig20: { api_id: '22626', rate: 18.77 },
+  pkr3: { api_id: '30711', rate: 1.4 },     // 한국 드롭 → 365 refill KR
+  pkr4: { api_id: '27077', rate: 2.38 },
+  pkr5: { api_id: '30711', rate: 1.4 },
+  // Instagram 기타
+  pig25: { api_id: '31255', rate: 0.56 },   // 공유 Worldwide
+  // TikTok
+  ptt1: { api_id: '23882', rate: 1.4 },
+  ptt2: { api_id: '26191', rate: 1.82 },
+  ptt3: { api_id: '26182', rate: 1.65 },
+  ptt4: { api_id: '26176', rate: 2.1 },
+  ptt5: { api_id: '25057', rate: 3.08 },
+  // Facebook
   pfb2: { api_id: '29350', rate: 1.26 },
-  pfb3: { api_id: '28903', rate: 3.36 },
   pfb4: { api_id: '31397', rate: 0.27 },
   pfb5: { api_id: '30863', rate: 3.09 },
-  pfb6: { api_id: '28902', rate: 4.2 },
   pfb7: { api_id: '22328', rate: 0.5887 },
   pfb8: { api_id: '30865', rate: 1.55 },
 };
@@ -7444,30 +7454,44 @@ app.post('/api/super/services/restore-geo-seeds', requireSuperAdmin, async (req,
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/** Peakerr에서 삭제된 국가 시드 → 동종·동국가 SKU로 재연결 */
+/** Peakerr에서 삭제된 국가 시드 → 동종·동국가 SKU로만 재연결 (종류 불일치 금지) */
 async function remapMissingGeoSeedServices() {
   await ensurePeakerrCatalogLoaded();
-  if (peakerrCatalogCache.size === 0) return { remapped: 0, stillMissing: [] };
+  if (peakerrCatalogCache.size === 0) return { remapped: 0, stillMissing: [], hidden: 0 };
 
   const r = await query(`
-    SELECT id, name, pl, api_id, rate, description FROM services
+    SELECT id, name, pl, api_id, rate, description, active FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
   `);
   const remapped = [];
   const stillMissing = [];
+  let hidden = 0;
   for (const row of r.rows) {
+    if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) continue;
     const glowGeo = serviceMarketGeoKey(row);
-    if (glowGeo === 'other') continue;
     if (peakerrCatalogCache.has(String(row.api_id))) continue;
+    // 국가 라벨 없는 기타도 Peakerr 삭제분이면 동종(글로벌/other)으로 재연결 시도
     const bucket = serviceOrderBucket(row);
+    if (!bucket || bucket === '서비스') {
+      stillMissing.push(row.id);
+      continue;
+    }
     let best = null;
     let bestScore = -1;
     for (const s of peakerrCatalogCache.values()) {
       const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
       if (detectPlat(full) !== row.pl) continue;
-      if (detectServiceTypeKo(full) !== bucket) continue;
-      if (!geoKeysCompatible(glowGeo, peakerrMarketGeoKey(s))) continue;
+      const peakBucket = detectServiceTypeKo(full);
+      if (peakBucket !== bucket) continue;
+      if (peakBucket === '서비스') continue;
+      const peakGeo = peakerrMarketGeoKey(s);
+      if (glowGeo === 'other') {
+        if (peakGeo !== 'other' && peakGeo !== 'global') continue;
+      } else if (!geoKeysCompatible(glowGeo, peakGeo)) {
+        continue;
+      }
       const sc = scorePeakerrService(s);
+      if (sc < 0) continue;
       if (sc > bestScore) {
         bestScore = sc;
         best = s;
@@ -7475,6 +7499,10 @@ async function remapMissingGeoSeedServices() {
     }
     if (!best) {
       stillMissing.push(row.id);
+      if (parseInt(row.active, 10) === 1) {
+        await hideServiceWithNote(row.id, 'Peakerr에서 해당 국가·종류 상품이 삭제되어 판매를 중단했습니다.');
+        hidden++;
+      }
       continue;
     }
     await query(`
@@ -7498,10 +7526,11 @@ async function remapMissingGeoSeedServices() {
       peakName: String(best.name || '').slice(0, 80),
       rate: parseFloat(best.rate || 0),
       geo: glowGeo,
+      bucket,
     });
-    console.log(`♻️ geo 재연결: ${row.id} ${row.api_id} → ${best.service} (${(best.name || '').slice(0, 40)})`);
+    console.log(`♻️ geo 재연결: ${row.id} [${glowGeo}/${bucket}] ${row.api_id} → ${best.service}`);
   }
-  return { remapped: remapped.length, items: remapped, stillMissing };
+  return { remapped: remapped.length, items: remapped, stillMissing, hidden };
 }
 
 /** 슈퍼 — Peakerr 카탈로그 검색 (국가·상품 재매핑용) */
@@ -7553,6 +7582,44 @@ app.post('/api/super/services/remap-missing-geo', requireSuperAdmin, async (req,
     const result = await remapMissingGeoSeedServices();
     await syncServiceDescriptionFooters().catch(() => null);
     res.json({ ok: true, ...result, missing: (result.stillMissing || []).length + (result.remapped || 0) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/** 슈퍼 — 전체 국가/종류 Peakerr 정합: 재연결 → 잠금복구 → 감사 */
+app.post('/api/super/services/fix-all-geo', requireSuperAdmin, async (req, res) => {
+  try {
+    const remap = await remapMissingGeoSeedServices();
+    const fixed = await restoreCuratedSeedApiLocks();
+    await syncServiceDescriptionFooters().catch(() => null);
+    await ensurePeakerrCatalogLoaded();
+    const r = await query(`
+      SELECT id, name, pl, api_id, rate, active FROM services
+      WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+    `);
+    const mismatches = [];
+    for (const row of r.rows) {
+      if (!parseInt(row.active, 10)) continue;
+      const glowGeo = serviceMarketGeoKey(row);
+      const peak = peakerrCatalogCache.get(String(row.api_id));
+      if (!peak) {
+        mismatches.push({ id: row.id, name: row.name, api_id: row.api_id, glowGeo, issue: 'peakerr_missing' });
+        continue;
+      }
+      const peakGeo = peakerrMarketGeoKey(peak);
+      if (!geoKeysCompatible(glowGeo, peakGeo) && glowGeo !== 'other') {
+        mismatches.push({
+          id: row.id, name: row.name, api_id: row.api_id, glowGeo, peakGeo,
+          peakName: String(peak.name || '').slice(0, 60), issue: 'geo_mismatch'
+        });
+      }
+    }
+    res.json({
+      ok: true,
+      remap,
+      lockFixed: fixed,
+      activeMismatches: mismatches.length,
+      mismatches: mismatches.slice(0, 60),
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
