@@ -2745,7 +2745,7 @@ function validateFacebookLink(svc, url) {
 
 /** 연동 B 큐레이션 — GLOW 판매 · 작업은 연동 B. cost=실원가(USD/1K), rate는 최종 판매≈원가×target배 되도록 환산 */
 /** 연동 B 판매 목표 배수 (고객 최종가 ≈ 공급원가 × 이 값) */
-const SMMKINGS_TARGET_MULT = 2.5;
+const SMMKINGS_TARGET_MULT = 2;
 
 const SMMKINGS_CURATED_SEEDS = [
   {
