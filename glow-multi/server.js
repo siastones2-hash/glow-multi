@@ -1319,6 +1319,9 @@ function stripSupplierBrand(msg) {
   t = t.replace(/Peakerr/gi, '');
   t = t.replace(/peakerr\.com/gi, '');
   t = t.replace(/피커/g, '');
+  t = t.replace(/SMMKings?/gi, '');
+  t = t.replace(/smmkings\.com/gi, '');
+  t = t.replace(/킹즈/g, '');
   t = t.replace(/공급사/g, '시스템');
   t = t.replace(/API\s*크레딧/gi, '크레딧');
   t = t.replace(/사이트\s*API/gi, '사이트');
@@ -1394,6 +1397,8 @@ function sanitizeOrderForClient(order, isSuperAdmin) {
   if (!isSuperAdmin) {
     delete o.api_order_id;
     delete o.api_cost;
+    delete o.api_provider;
+    delete o.provider;
   }
   return o;
 }
@@ -1789,7 +1794,7 @@ const DISABLED_SEED_META = {
   pig6: {
     note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
     replaceId: 'skg1',
-    replaceHint: 'Instagram 팔로워 — 한국 (SMMKings)'
+    replaceHint: 'Instagram 팔로워 — 한국 HQ'
   },
   pkr1: {
     note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
@@ -1885,7 +1890,7 @@ async function syncSmmkingsCatalog() {
       const remote = map.get(String(glowSvc.api_id));
       if (!remote) {
         if (glowSvc.active === 1) {
-          await hideServiceWithNote(glowSvc.id, 'SMMKings에서 삭제·중단됨');
+          await hideServiceWithNote(glowSvc.id, '공급 목록에서 삭제·중단됨');
           disabled++;
         }
         continue;
@@ -2733,7 +2738,7 @@ const SMMKINGS_CURATED_SEEDS = [
   {
     id: 'skg1', pl: 'instagram', api_id: '5165', rate: 25.50, min: 20, max: 10000, refill: 0,
     name: 'Instagram 팔로워 — 한국 HQ ⭐',
-    description: '한국 타겟 Instagram HQ 팔로워입니다. 국내 마케팅·브랜드 신뢰도에 적합하며 SMMKings 공급으로 처리됩니다. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 타겟 Instagram HQ 팔로워입니다. 국내 마케팅·브랜드 신뢰도에 적합합니다. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg2', pl: 'instagram', api_id: '3770', rate: 97.50, min: 10, max: 35000, refill: 1,
@@ -6148,13 +6153,13 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (prov === 'smmkings') {
       await ensureSmmkingsCatalogLoaded().catch(() => null);
       if (smmkingsCatalogCache.size > 0 && !smmkingsCatalogCache.has(String(svc.api_id))) {
-        await hideServiceWithNote(svc.id, 'SMMKings에서 삭제·중단된 상품이라 판매를 중단했습니다.');
+        await hideServiceWithNote(svc.id, '공급이 중단되어 판매를 중단했습니다.');
         return res.json({ error: '이 상품은 공급이 중단되어 주문할 수 없습니다. 다른 상품을 선택해주세요.' });
       }
     } else {
       await ensurePeakerrCatalogLoaded().catch(() => null);
       if (peakerrCatalogCache.size > 0 && !peakerrCatalogCache.has(String(svc.api_id))) {
-        await hideServiceWithNote(svc.id, '공급 목록에서 삭제·중단된 상품이라 판매를 중단했습니다.');
+        await hideServiceWithNote(svc.id, '공급이 중단되어 판매를 중단했습니다.');
         return res.json({ error: '이 상품은 공급이 중단되어 주문할 수 없습니다. 다른 상품을 선택해주세요.' });
       }
     }
