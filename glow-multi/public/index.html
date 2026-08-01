@@ -2049,14 +2049,19 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔑 API 설정</div>
-              <div class="fg"><label>API 키</label><input type="password" id="spApiKey" placeholder="API 키 입력"/></div>
+              <div class="fg"><label>Peakerr API 키</label><input type="password" id="spApiKey" placeholder="Peakerr API 키"/></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
                 <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalSetting('peakerr_api_key','spApiKey')">저장</button>
                 <button class="bo bsm" onclick="testApi()">연결 테스트</button>
                 <button class="bo bsm" onclick="syncSvcs()">🔄 서비스 동기화</button>
               </div>
               <div id="spApiRes" style="font-size:12px;color:var(--tm)"></div>
-              <div style="font-size:11px;color:#64748b;margin-top:8px">🔒 <strong>안전 잠금</strong> — 공급 API 연결 테스트 통과한 키만 저장 · 백업 자동복구 · 잘못된 키는 기존 연동 유지</div>
+              <div class="fg" style="margin-top:14px"><label>SMMKings API 키</label><input type="password" id="spSmmkingsKey" placeholder="SMMKings API 키"/></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalSetting('smmkings_api_key','spSmmkingsKey')">킹즈 키 저장</button>
+              </div>
+              <div id="spSmmkingsRes" style="font-size:12px;color:var(--tm)"></div>
+              <div style="font-size:11px;color:#64748b;margin-top:8px">🔒 <strong>안전 잠금</strong> — 공급 API 연결 테스트 통과한 키만 저장 · 백업 자동복구 · 잘못된 키는 기존 연동 유지<br>한국 인스타·유튜브 등은 <strong>SMMKings</strong>로 작업됩니다.</div>
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">📧 비밀번호 찾기 메일 (Resend)</div>
@@ -4553,7 +4558,7 @@ async function saveApiKey(){
 async function saveGlobalSetting(key,inputId){
   var v=ge(inputId).value.trim();
   if(!v||v.includes('설정됨')){toast('값을 입력하세요','err');return}
-  var superKeys=['peakerr_api_key','tg_token','tg_chat','super_margin','global_site_margin','global_exrate','resend_api_key','email_from'];
+  var superKeys=['peakerr_api_key','smmkings_api_key','tg_token','tg_chat','super_margin','global_site_margin','global_exrate','resend_api_key','email_from'];
   var url=(_isSuperUser()&&superKeys.indexOf(key)>=0)?'/api/super/settings/save':'/api/admin/settings/save';
   var d=await api(url,'POST',{key:key,value:v});
   if(d.error){toast(d.error,'err');return}
@@ -4572,6 +4577,14 @@ async function saveGlobalSetting(key,inputId){
     }else{
       toast('저장됐지만 공급 API 연결 실패: '+(d.peakerrTest.error||''),'err');
     }
+  }else if(key==='smmkings_api_key'&&d.smmkingsTest){
+    if(d.smmkingsTest.balance!=null){
+      toast('🔒 SMMKings 잠금 저장 · $'+parseFloat(d.smmkingsTest.balance).toFixed(2)+' ✨','ok');
+      var skRes=ge('spSmmkingsRes');
+      if(skRes)skRes.textContent='✅ 연결됨 · $'+parseFloat(d.smmkingsTest.balance).toFixed(2)+' · 한국 상품 등록됨';
+    }else{
+      toast('SMMKings 연결 실패','err');
+    }
   }else{
     toast('저장 완료 ✨','ok');
   }
@@ -4579,6 +4592,7 @@ async function saveGlobalSetting(key,inputId){
     loadSuperDash();
     setTimeout(testApi,300);
   }
+  if(key==='smmkings_api_key') loadSuperDash();
 }
 async function saveSuperMargin(){
   var val=ge('spSuperMargin').value;

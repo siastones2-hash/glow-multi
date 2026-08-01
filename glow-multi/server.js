@@ -20,6 +20,9 @@ const {
 if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
 
 const peakerrHttpsAgent = new https.Agent({ keepAlive: true, family: 4, maxSockets: 8 });
+const smmkingsHttpsAgent = new https.Agent({ keepAlive: true, family: 4, maxSockets: 8 });
+const PANEL_HOSTS = { peakerr: 'peakerr.com', smmkings: 'smmkings.com' };
+const PANEL_AGENTS = { peakerr: peakerrHttpsAgent, smmkings: smmkingsHttpsAgent };
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -235,10 +238,14 @@ async function initDB() {
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS inactive_note TEXT DEFAULT ''`); } catch(e) {}
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS replace_service_id TEXT DEFAULT NULL`); } catch(e) {}
   try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS inactive_at TIMESTAMP`); } catch(e) {}
+  try { await query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'peakerr'`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS target_count INTEGER DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_count INTEGER DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_last_at TIMESTAMP`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP`); } catch(e) {}
+  try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS api_provider TEXT DEFAULT 'peakerr'`); } catch(e) {}
+  try { await query(`UPDATE services SET provider='peakerr' WHERE provider IS NULL OR TRIM(provider)=''`); } catch(e) {}
+  try { await query(`UPDATE orders SET api_provider='peakerr' WHERE api_provider IS NULL OR TRIM(api_provider)=''`); } catch(e) {}
 
   await query(`
     CREATE TABLE IF NOT EXISTS charges (
@@ -274,6 +281,7 @@ async function initDB() {
   // 기본 설정
   const defaults = {
     peakerr_api_key: process.env.PEAKERR_API_KEY || '',
+    smmkings_api_key: process.env.SMMKINGS_API_KEY || '',
     tg_token: process.env.TG_TOKEN || '',
     tg_chat: process.env.TG_CHAT || '',
     super_margin: '50',  // 슈퍼관리자 마진율 (%)
@@ -856,11 +864,25 @@ function isValidPeakerrApiKey(key) {
   if (!k || k.includes('설정') || k.includes('••')) return false;
   return k.length >= 16 && k.length <= 128 && /^[a-zA-Z0-9_-]+$/.test(k);
 }
+const isValidPanelApiKey = isValidPeakerrApiKey;
+
+function normalizeProvider(p) {
+  return String(p || 'peakerr').toLowerCase() === 'smmkings' ? 'smmkings' : 'peakerr';
+}
+function serviceProvider(svc) {
+  return normalizeProvider(svc?.provider || svc?.api_provider);
+}
+function orderProvider(order) {
+  return normalizeProvider(order?.api_provider || order?.provider);
+}
 
 const PEAKERR_KEY_BACKUP = 'peakerr_api_key_backup';
 const PEAKERR_KEY_VERIFIED = 'peakerr_api_key_verified_at';
+const SMMKINGS_KEY_BACKUP = 'smmkings_api_key_backup';
+const SMMKINGS_KEY_VERIFIED = 'smmkings_api_key_verified_at';
 /** 메모리 캐시 — DB 조회·연결 실패 시에도 작업 키 유지 */
 let _peakerrWorkingKey = '';
+let _smmkingsWorkingKey = '';
 
 async function readPeakerrKeyRaw(settingKey) {
   const r = await query(`SELECT value FROM global_settings WHERE key=$1`, [settingKey]);
@@ -949,6 +971,87 @@ async function reconcilePeakerrApiKey(opts = {}) {
 
   if (!silent) console.log('⚠️ Peakerr API 키 없거나 연결 실패');
   return { ok: false, error: 'API 키 미설정 또는 연결 실패' };
+}
+
+async function getSmmkingsApiKey() {
+  if (isValidPanelApiKey(_smmkingsWorkingKey)) return _smmkingsWorkingKey;
+  const candidates = [
+    await readPeakerrKeyRaw('smmkings_api_key'),
+    await readPeakerrKeyRaw(SMMKINGS_KEY_BACKUP),
+    String(process.env.SMMKINGS_API_KEY || '').trim()
+  ];
+  for (const c of candidates) {
+    if (isValidPanelApiKey(c)) {
+      _smmkingsWorkingKey = c;
+      return c;
+    }
+  }
+  return '';
+}
+
+async function saveSmmkingsApiKeySafely(newKey) {
+  const v = String(newKey || '').trim();
+  if (!isValidPanelApiKey(v)) {
+    return { ok: false, error: 'SMMKings API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' };
+  }
+  const current = await getSmmkingsApiKey();
+  const test = await fetchPanelBalance('smmkings', v);
+  if (!test.ok) {
+    return {
+      ok: false,
+      error: (test.error || 'SMMKings 연결 실패') + ' — 키가 저장되지 않았습니다.'
+    };
+  }
+  if (current && current !== v && isValidPanelApiKey(current)) {
+    await setGlobalSetting(SMMKINGS_KEY_BACKUP, current);
+  }
+  await setGlobalSetting('smmkings_api_key', v);
+  await setGlobalSetting(SMMKINGS_KEY_BACKUP, v);
+  await setGlobalSetting(SMMKINGS_KEY_VERIFIED, new Date().toISOString());
+  _smmkingsWorkingKey = v;
+  console.log(`🔒 SMMKings API 키 저장 (…${v.slice(-4)}) · $${test.balance.toFixed(2)}`);
+  return { ok: true, balance: test.balance, unchanged: current === v };
+}
+
+async function reconcileSmmkingsApiKey(opts = {}) {
+  const silent = !!opts.silent;
+  const primary = await readPeakerrKeyRaw('smmkings_api_key');
+  if (isValidPanelApiKey(primary)) {
+    const test = await fetchPanelBalance('smmkings', primary);
+    if (test.ok) {
+      _smmkingsWorkingKey = primary;
+      await setGlobalSetting(SMMKINGS_KEY_BACKUP, primary);
+      if (!silent) console.log(`✓ SMMKings API 정상 · $${test.balance.toFixed(2)}`);
+      return { ok: true, balance: test.balance, source: 'primary' };
+    }
+  }
+  const backup = await readPeakerrKeyRaw(SMMKINGS_KEY_BACKUP);
+  if (isValidPanelApiKey(backup) && backup !== primary) {
+    const test = await fetchPanelBalance('smmkings', backup);
+    if (test.ok) {
+      await setGlobalSetting('smmkings_api_key', backup);
+      _smmkingsWorkingKey = backup;
+      console.log(`🔒 SMMKings API 키 백업 복구 (…${backup.slice(-4)}) · $${test.balance.toFixed(2)}`);
+      return { ok: true, balance: test.balance, source: 'backup', restored: true };
+    }
+  }
+  const envKey = String(process.env.SMMKINGS_API_KEY || '').trim();
+  if (isValidPanelApiKey(envKey)) {
+    const test = await fetchPanelBalance('smmkings', envKey);
+    if (test.ok) {
+      await setGlobalSetting('smmkings_api_key', envKey);
+      await setGlobalSetting(SMMKINGS_KEY_BACKUP, envKey);
+      _smmkingsWorkingKey = envKey;
+      console.log(`🔒 SMMKings API 키 ENV 복구 · $${test.balance.toFixed(2)}`);
+      return { ok: true, balance: test.balance, source: 'env', restored: true };
+    }
+  }
+  if (!silent) console.log('⚠️ SMMKings API 키 없거나 연결 실패');
+  return { ok: false, error: 'SMMKings API 키 미설정 또는 연결 실패' };
+}
+
+async function getPanelApiKey(provider) {
+  return normalizeProvider(provider) === 'smmkings' ? getSmmkingsApiKey() : getPeakerrApiKey();
 }
 
 function peakerrBalanceErrorKo(msg) {
@@ -1485,6 +1588,10 @@ async function checkRateLimit(key, maxPerMinute = 60) {
 
 /** Peakerr 카탈로그 캐시 (주문 대체·min/max 검증용) */
 let peakerrCatalogCache = new Map();
+let smmkingsCatalogCache = new Map();
+function catalogCacheFor(provider) {
+  return normalizeProvider(provider) === 'smmkings' ? smmkingsCatalogCache : peakerrCatalogCache;
+}
 /** 동시 주문 방지 — site+link 단위 (Peakerr 중복 전송 차단) */
 const orderPlacementLocks = new Map();
 const cancelOrderLocks = new Map();
@@ -1593,16 +1700,17 @@ function peakerrNetworkErrorKo(err) {
   return '연결 오류입니다. 잠시 후 다시 시도해주세요.';
 }
 
-/** Peakerr API — node-fetch 대신 https 직접 호출 (Render에서 안정적) */
-function peakerrHttpsPost(params, timeoutMs = 30000) {
+/** PerfectPanel API — node-fetch 대신 https 직접 호출 (Render에서 안정적) */
+function panelHttpsPost(provider, params, timeoutMs = 30000) {
+  const prov = normalizeProvider(provider);
   const body = new URLSearchParams(params).toString();
   return new Promise((resolve, reject) => {
     const req = https.request({
-      hostname: 'peakerr.com',
+      hostname: PANEL_HOSTS[prov],
       port: 443,
       path: '/api/v2',
       method: 'POST',
-      agent: peakerrHttpsAgent,
+      agent: PANEL_AGENTS[prov],
       family: 4,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1630,21 +1738,27 @@ function peakerrHttpsPost(params, timeoutMs = 30000) {
     req.end();
   });
 }
+function peakerrHttpsPost(params, timeoutMs = 30000) {
+  return panelHttpsPost('peakerr', params, timeoutMs);
+}
 
-/** Peakerr API — 타임아웃·재시도 */
-async function peakerrFetch(params, opts = {}) {
+/** PerfectPanel API — 타임아웃·재시도 */
+async function panelFetch(provider, params, opts = {}) {
   const timeoutMs = opts.timeoutMs ?? 30000;
   const retries = opts.retries ?? 2;
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      return await peakerrHttpsPost(params, timeoutMs);
+      return await panelHttpsPost(provider, params, timeoutMs);
     } catch (e) {
       lastErr = e;
       if (attempt < retries) await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
     }
   }
   throw lastErr;
+}
+async function peakerrFetch(params, opts = {}) {
+  return panelFetch('peakerr', params, opts);
 }
 
 function serviceBucketKey(svc) {
@@ -1674,22 +1788,22 @@ const DISABLED_SEED_META = {
   // Peakerr "Korean Followers" 실측: 외국인 계정만 유입 (2026-07-31 테스트 O1785464742025)
   pig6: {
     note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
-    replaceId: 'pig5',
-    replaceHint: 'Instagram 팔로워 — 프리미엄 글로벌'
+    replaceId: 'skg1',
+    replaceHint: 'Instagram 팔로워 — 한국 (SMMKings)'
   },
   pkr1: {
     note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
-    replaceId: 'pig5',
+    replaceId: 'skg1',
   },
   pkr2: {
     note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
-    replaceId: 'pig5',
+    replaceId: 'skg1',
   },
   // Peakerr 한국 타겟 전체 — 팔로워 실측 불량으로 한국 SKU 판매 중단 (검증 전 재오픈 금지)
-  pig17: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
-  pkr3: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
-  pkr4: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
-  pkr5: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'pig15' },
+  pig17: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
+  pkr3: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
+  pkr4: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
+  pkr5: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
   // pyt13은 pyt2와 동일 SKU(27905) — 중복 판매 방지
   pyt13: {
     note: '동일 공급 SKU 상품과 통합되어 판매를 중단했습니다.',
@@ -1750,6 +1864,64 @@ async function ensurePeakerrCatalogLoaded(opts = {}) {
   }
 }
 
+async function syncSmmkingsCatalog() {
+  try {
+    const apiKey = await getSmmkingsApiKey();
+    if (!apiKey) return { skipped: true };
+    const resp = await panelFetch('smmkings', { key: apiKey, action: 'services' }, { timeoutMs: 90000 });
+    const services = await resp.json();
+    if (!Array.isArray(services)) return { skipped: true };
+    const map = new Map();
+    services.forEach(s => map.set(String(s.service), s));
+    smmkingsCatalogCache = map;
+
+    const glowR = await query(`
+      SELECT id, name, api_id, rate, min, max, active FROM services
+      WHERE api_id IS NOT NULL AND api_id != ''
+        AND COALESCE(provider,'peakerr')='smmkings'
+    `);
+    let disabled = 0, priceChanged = 0;
+    for (const glowSvc of glowR.rows) {
+      const remote = map.get(String(glowSvc.api_id));
+      if (!remote) {
+        if (glowSvc.active === 1) {
+          await hideServiceWithNote(glowSvc.id, 'SMMKings에서 삭제·중단됨');
+          disabled++;
+        }
+        continue;
+      }
+      const newRate = parseFloat(remote.rate);
+      const oldRate = parseFloat(glowSvc.rate);
+      const pMin = Math.max(1, parseInt(remote.min, 10) || glowSvc.min || 1);
+      const pMax = parseInt(remote.max, 10) || glowSvc.max || 10000000;
+      await query(`UPDATE services SET min=$1, max=$2 WHERE id=$3`, [pMin, pMax, glowSvc.id]);
+      if (oldRate > 0 && Math.abs(newRate - oldRate) / oldRate > 0.05) {
+        await query(`UPDATE services SET rate=$1 WHERE id=$2`, [newRate, glowSvc.id]);
+        priceChanged++;
+      }
+      const nameHint = `${remote.name || ''} ${remote.category || ''}`;
+      const hasRefill = peakerrServiceHasRefill(remote) || /refill|보장|드롭/i.test(nameHint) ? 1 : 0;
+      await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill, glowSvc.id]);
+    }
+    if (disabled || priceChanged) {
+      console.log(`✅ SMMKings 동기화: 비활성 ${disabled} · 가격 ${priceChanged}`);
+    }
+    return { disabled, priceChanged, checked: glowR.rows.length };
+  } catch (e) {
+    console.log('SMMKings 카탈로그 동기화:', e.message);
+    return { skipped: true, error: e.message };
+  }
+}
+
+async function ensureSmmkingsCatalogLoaded(opts = {}) {
+  if (smmkingsCatalogCache.size > 0) return;
+  if (opts.background) {
+    syncSmmkingsCatalog().catch(e => console.log('SMMKings 카탈로그 백그라운드:', e.message));
+    return;
+  }
+  await syncSmmkingsCatalog();
+}
+
 /** 최근 주문이 전부 실패·취소인 상품 (성공 0건) — 시드 상품도 숨김 대상 */
 async function getUnreliableServiceIds(opts = {}) {
   const minOrders = opts.minOrders ?? 2;
@@ -1788,17 +1960,19 @@ async function deactivateUnreliableServices(opts = {}) {
 
 async function reactivateCuratedSeedServices() {
   await ensurePeakerrCatalogLoaded();
-  if (peakerrCatalogCache.size === 0) return 0;
+  await ensureSmmkingsCatalogLoaded().catch(() => null);
   const unreliable = await getUnreliableServiceIds();
   const r = await query(`
-    SELECT id, api_id FROM services
+    SELECT id, api_id, provider FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
   `);
   let n = 0;
   for (const row of r.rows) {
     if (unreliable.has(row.id)) continue;
     if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) continue;
-    if (!peakerrCatalogCacheHas(row.api_id)) continue;
+    const prov = serviceProvider(row);
+    const catalog = catalogCacheFor(prov);
+    if (catalog.size === 0 || !catalog.has(String(row.api_id))) continue;
     const u = await query(`UPDATE services SET active=1 WHERE id=$1 AND active=0 RETURNING id`, [row.id]);
     if (u.rowCount) n++;
   }
@@ -1910,8 +2084,9 @@ async function upgradeEngagementSeedsFromPeakerr() {
   const ENGAGEMENT = new Set(['팔로워', '좋아요', '조회수']);
   const PLATFORMS = new Set(['tiktok', 'threads', 'instagram', 'facebook']);
   const r = await query(`
-    SELECT id, name, pl, api_id, active, description FROM services
+    SELECT id, name, pl, api_id, active, description, provider FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+      AND COALESCE(provider,'peakerr')='peakerr'
   `);
 
   let upgraded = 0, disabled = 0;
@@ -1992,7 +2167,11 @@ async function upgradeEngagementSeedsFromPeakerr() {
 }
 
 async function syncServiceRefillFlagsFromPeakerr(peakerrMap) {
-  const r = await query(`SELECT id, api_id FROM services WHERE api_id IS NOT NULL AND TRIM(api_id) <> ''`);
+  const r = await query(`
+    SELECT id, api_id FROM services
+    WHERE api_id IS NOT NULL AND TRIM(api_id) <> ''
+      AND COALESCE(provider,'peakerr')='peakerr'
+  `);
   for (const row of r.rows) {
     const peak = peakerrMap.get(String(row.api_id));
     const hasRefill = peakerrServiceHasRefill(peak);
@@ -2000,10 +2179,10 @@ async function syncServiceRefillFlagsFromPeakerr(peakerrMap) {
   }
 }
 
-async function submitPeakerrRefill(apiKey, apiOrderId) {
+async function submitPanelRefill(provider, apiKey, apiOrderId) {
   if (!apiKey || !apiOrderId) return { ok: false, error: 'missing' };
   try {
-    const resp = await peakerrFetch({ key: apiKey, action: 'refill', order: String(apiOrderId) });
+    const resp = await panelFetch(provider, { key: apiKey, action: 'refill', order: String(apiOrderId) });
     const data = await resp.json();
     if (data?.error) return { ok: false, error: String(data.error) };
     if (/success|refill/i.test(String(data?.status || data?.message || ''))) {
@@ -2015,15 +2194,15 @@ async function submitPeakerrRefill(apiKey, apiOrderId) {
     return { ok: false, error: e.message };
   }
 }
+async function submitPeakerrRefill(apiKey, apiOrderId) {
+  return submitPanelRefill('peakerr', apiKey, apiOrderId);
+}
 
 /** 완료 주문 — 드롭 보장 상품: 실제 감소 확인 후 자동 보충 */
 async function processEligibleRefills(opts = {}) {
-  const apiKey = await getPeakerrApiKey();
-  if (!apiKey) return { processed: 0, ok: 0, skipped: 0 };
-
   const maxPerRun = opts.maxPerRun ?? 15;
   const r = await query(`
-    SELECT o.*, s.refill_guaranteed
+    SELECT o.*, s.refill_guaranteed, s.provider AS service_provider
     FROM orders o
     INNER JOIN services s ON s.id = o.sid
     WHERE o.status = 'completed'
@@ -2062,7 +2241,10 @@ async function processEligibleRefills(opts = {}) {
       continue;
     }
 
-    const result = await submitPeakerrRefill(apiKey, order.api_order_id);
+    const prov = orderProvider(order) || normalizeProvider(order.service_provider);
+    const apiKey = await getPanelApiKey(prov);
+    if (!apiKey) { skipped++; continue; }
+    const result = await submitPanelRefill(prov, apiKey, order.api_order_id);
     if (result.ok) {
       ok++;
       const detail = `목표 ${drop.target.toLocaleString()} → 현재 ${drop.current.toLocaleString()} (${drop.drop.toLocaleString()} 감소)`;
@@ -2097,10 +2279,19 @@ async function resolveOrderService(sid) {
   // 영구 중단 시드는 Peakerr에 살아 있어도 절대 재활성화하지 않음
   if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) return null;
   if (isCuratedServiceId(row.id) && row.api_id) {
-    await ensurePeakerrCatalogLoaded();
-    if (peakerrCatalogCache.has(String(row.api_id))) {
-      await query(`UPDATE services SET active=1 WHERE id=$1`, [row.id]);
-      return { ...row, active: 1 };
+    const prov = serviceProvider(row);
+    if (prov === 'smmkings') {
+      await ensureSmmkingsCatalogLoaded().catch(() => null);
+      if (smmkingsCatalogCache.has(String(row.api_id))) {
+        await query(`UPDATE services SET active=1 WHERE id=$1`, [row.id]);
+        return { ...row, active: 1 };
+      }
+    } else {
+      await ensurePeakerrCatalogLoaded();
+      if (peakerrCatalogCache.has(String(row.api_id))) {
+        await query(`UPDATE services SET active=1 WHERE id=$1`, [row.id]);
+        return { ...row, active: 1 };
+      }
     }
   }
   const bucket = serviceOrderBucket(row);
@@ -2118,7 +2309,11 @@ async function resolveOrderService(sid) {
 
 async function getMaxPeakerrOrderIdInDb() {
   try {
-    const r = await query(`SELECT MAX(CAST(api_order_id AS BIGINT)) AS m FROM orders WHERE api_order_id ~ '^[0-9]+$'`);
+    const r = await query(`
+      SELECT MAX(CAST(api_order_id AS BIGINT)) AS m FROM orders
+      WHERE api_order_id ~ '^[0-9]+$'
+        AND COALESCE(api_provider,'peakerr')='peakerr'
+    `);
     return parseInt(r.rows[0]?.m || 0, 10) || 0;
   } catch (e) { return 0; }
 }
@@ -2262,7 +2457,6 @@ async function refundStuckOrdersWithoutApiId() {
 async function refundZeroProgressStuckOrders(opts = {}) {
   const hours = opts.hours ?? 12;
   try {
-    const apiKey = await getPeakerrApiKey();
     const r = await query(`
       SELECT * FROM orders
       WHERE status='processing'
@@ -2278,9 +2472,11 @@ async function refundZeroProgressStuckOrders(opts = {}) {
     let refunded = 0;
     const hitSids = new Set();
     for (const o of r.rows) {
-      // Peakerr 최신 상태 재확인 — 이미 돌기 시작했으면 스킵
+      // 공급사 최신 상태 재확인 — 이미 돌기 시작했으면 스킵
+      const prov = orderProvider(o);
+      const apiKey = await getPanelApiKey(prov);
       if (apiKey) {
-        const st = await fetchPeakerrOrderStatus(apiKey, o.api_order_id).catch(() => null);
+        const st = await fetchPanelOrderStatus(prov, apiKey, o.api_order_id).catch(() => null);
         if (st && !st.error) {
           const sc = parsePeakerrStartCount(st);
           const rem = parseInt(st.remains ?? st.remains_count ?? o.remains ?? o.qty, 10);
@@ -2289,9 +2485,8 @@ async function refundZeroProgressStuckOrders(opts = {}) {
             await autoRefundOrder(o, st, { notifyTg: false }).catch(() => null);
             continue;
           }
-          // Peakerr 취소 시도 (가능하면)
           if (['pending', 'in progress', 'processing', 'awaiting'].includes(pst)) {
-            await submitPeakerrCancel(apiKey, o.api_order_id).catch(() => null);
+            await submitPanelCancel(prov, apiKey, o.api_order_id).catch(() => null);
           }
         }
       }
@@ -2333,10 +2528,10 @@ async function refundZeroProgressStuckOrders(opts = {}) {
   }
 }
 
-async function submitPeakerrOrder(apiKey, apiId, link, qty) {
+async function submitPanelOrder(provider, apiKey, apiId, link, qty) {
   try {
-    // add는 재시도 금지 — 응답 유실 시 재전송하면 Peakerr에 중복 주문 생성됨
-    const resp = await peakerrFetch({
+    // add는 재시도 금지 — 응답 유실 시 재전송하면 공급사에 중복 주문 생성됨
+    const resp = await panelFetch(provider, {
       key: apiKey, action: 'add', service: String(apiId), link, quantity: String(qty)
     }, { timeoutMs: 45000, retries: 0 });
     const data = await resp.json();
@@ -2346,15 +2541,21 @@ async function submitPeakerrOrder(apiKey, apiId, link, qty) {
     return { ok: false, networkError: true, error: peakerrNetworkErrorKo(e) };
   }
 }
+async function submitPeakerrOrder(apiKey, apiId, link, qty) {
+  return submitPanelOrder('peakerr', apiKey, apiId, link, qty);
+}
 
 async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(), limit = 8) {
   const bucket = serviceOrderBucket(primary);
   const geo = serviceMarketGeoKey(primary);
+  const prov = serviceProvider(primary);
   const r = await query(`
     SELECT s.* FROM services s
     WHERE s.active=1 AND s.pl=$1 AND s.id<>$2
       AND s.api_id IS NOT NULL AND TRIM(s.api_id) <> ''
-  `, [primary.pl, primary.id]);
+      AND COALESCE(s.provider,'peakerr')=$3
+  `, [primary.pl, primary.id, prov]);
+  const catalog = catalogCacheFor(prov);
   const sameBucket = (s) => !bucket || bucket === '서비스' || serviceOrderBucket(s) === bucket;
   const sameGeo = (s) => geoKeysCompatible(geo, serviceMarketGeoKey(s));
   return r.rows
@@ -2362,7 +2563,7 @@ async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(
     .filter(sameBucket)
     .filter(sameGeo)
     .filter(s => qty >= (s.min || 1) && qty <= (s.max || 999999999))
-    .filter(s => peakerrCatalogCache.size === 0 || peakerrCatalogCache.has(String(s.api_id)))
+    .filter(s => catalog.size === 0 || catalog.has(String(s.api_id)))
     .sort((a, b) => {
       const pa = serviceIdPriority(a.id) - serviceIdPriority(b.id);
       if (pa !== 0) return pa;
@@ -2377,7 +2578,8 @@ async function findAlternateServices(primary, siteId, qty, excludeIds = new Set(
 }
 
 async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
-  const baselineId = await getMaxPeakerrOrderIdInDb();
+  const prov = serviceProvider(primary);
+  const baselineId = prov === 'peakerr' ? await getMaxPeakerrOrderIdInDb() : 0;
   const tried = new Set();
   // 검증 상품(ig1, yt2 등)은 선택한 SKU만 — 대체 전송 시 중복·혼선 방지
   const alternates = isCuratedServiceId(primary.id)
@@ -2388,26 +2590,30 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
   let lastLinkError = null;
   let hadNetworkError = false;
   const expectedPrimaryUsd = parseFloat(primary.rate) / 1000 * qty;
+  const catalog = catalogCacheFor(prov);
 
   for (const svc of candidates) {
     if (!svc.api_id || tried.has(svc.id)) continue;
+    if (serviceProvider(svc) !== prov) continue;
     tried.add(svc.id);
-    const cached = peakerrCatalogCache.get(String(svc.api_id));
+    const cached = catalog.get(String(svc.api_id));
     if (cached) {
       const cMin = parseInt(cached.min, 10) || svc.min || 1;
       const cMax = parseInt(cached.max, 10) || svc.max || 999999999;
       if (qty < cMin || qty > cMax) continue;
     }
-    const result = await submitPeakerrOrder(apiKey, svc.api_id, link, qty);
-    if (result.ok) return { ok: true, apiOrderId: result.apiOrderId, usedSvc: svc };
+    const result = await submitPanelOrder(prov, apiKey, svc.api_id, link, qty);
+    if (result.ok) return { ok: true, apiOrderId: result.apiOrderId, usedSvc: svc, provider: prov };
     if (result.networkError) {
       hadNetworkError = true;
       lastError = result.error;
-      const expectedUsd = parseFloat(svc.rate) / 1000 * qty;
-      const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd, 50)
-        || await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd, 50, { loose: true, waitMs: 0 });
-      if (rec?.apiOrderId) return { ok: true, apiOrderId: rec.apiOrderId, usedSvc: svc, recovered: true };
-      // ⚠️ 네트워크 오류 시 다른 SKU로 재전송하면 Peakerr 중복 주문 — 여기서 중단
+      if (prov === 'peakerr') {
+        const expectedUsd = parseFloat(svc.rate) / 1000 * qty;
+        const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd, 50)
+          || await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedUsd, 50, { loose: true, waitMs: 0 });
+        if (rec?.apiOrderId) return { ok: true, apiOrderId: rec.apiOrderId, usedSvc: svc, recovered: true, provider: prov };
+      }
+      // ⚠️ 네트워크 오류 시 다른 SKU로 재전송하면 중복 주문 — 여기서 중단
       break;
     }
     lastError = result.error;
@@ -2426,11 +2632,13 @@ async function placeOrderWithFallback(apiKey, primary, link, qty, siteId) {
   }
 
   if (hadNetworkError && !lastLinkError) {
-    const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedPrimaryUsd, 50);
-    if (rec?.apiOrderId) return { ok: true, apiOrderId: rec.apiOrderId, usedSvc: primary, recovered: true };
-    return { ok: true, uncertain: true, usedSvc: primary, apiOrderId: null };
+    if (prov === 'peakerr') {
+      const rec = await recoverPeakerrOrderAfterNetworkError(apiKey, baselineId, expectedPrimaryUsd, 50);
+      if (rec?.apiOrderId) return { ok: true, apiOrderId: rec.apiOrderId, usedSvc: primary, recovered: true, provider: prov };
+    }
+    return { ok: true, uncertain: true, usedSvc: primary, apiOrderId: null, provider: prov };
   }
-  return { ok: false, error: lastLinkError || lastError || '주문 접수 실패', linkError: !!lastLinkError };
+  return { ok: false, error: lastLinkError || lastError || '주문 접수 실패', linkError: !!lastLinkError, provider: prov };
 }
 
 // 🔗 URL 검증 (플랫폼·상품 유형별)
@@ -2518,6 +2726,70 @@ function validateFacebookLink(svc, url) {
     return { ok: true };
   }
   return { ok: true };
+}
+
+/** SMMKings 큐레이션 상품 — GLOW 판매 · 작업은 smmkings.com */
+const SMMKINGS_CURATED_SEEDS = [
+  {
+    id: 'skg1', pl: 'instagram', api_id: '5165', rate: 25.50, min: 20, max: 10000, refill: 0,
+    name: 'Instagram 팔로워 — 한국 HQ ⭐',
+    description: '한국 타겟 Instagram HQ 팔로워입니다. 국내 마케팅·브랜드 신뢰도에 적합하며 SMMKings 공급으로 처리됩니다. 프로필 링크 또는 사용자명을 입력하세요.'
+  },
+  {
+    id: 'skg2', pl: 'instagram', api_id: '3770', rate: 97.50, min: 10, max: 35000, refill: 1,
+    name: 'Instagram 팔로워 — 한국 리얼 (30일 보장)',
+    description: '한국 리얼 계정 기반 Instagram 팔로워 (30일 자동 리필 표기). 국내 타겟 계정 성장에 사용하세요. 프로필 링크 또는 사용자명을 입력하세요.'
+  },
+  {
+    id: 'skg3', pl: 'instagram', api_id: '2859', rate: 8.45, min: 50, max: 12000, refill: 0,
+    name: 'Instagram 좋아요 — 한국 (노출 포함)',
+    description: '한국 타겟 Instagram 좋아요+노출입니다. 게시물·릴스 URL을 입력하세요.'
+  },
+  {
+    id: 'skg4', pl: 'instagram', api_id: '5226', rate: 0.03, min: 100, max: 1000000, refill: 0,
+    name: 'Instagram 조회수 — 한국',
+    description: '한국 타겟 Instagram 조회수입니다. 릴스·영상 게시물 URL을 입력하세요.'
+  },
+  {
+    id: 'sky1', pl: 'youtube', api_id: '7303', rate: 5.76, min: 1000, max: 1000000, refill: 0,
+    name: 'YouTube 조회수 — 한국 모바일',
+    description: '한국 타겟 YouTube 모바일 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'sky2', pl: 'youtube', api_id: '2594', rate: 6.72, min: 500, max: 100000, refill: 0,
+    name: 'YouTube 조회수 — 한국 Unique',
+    description: '한국 Unique Viewer 기반 YouTube 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'skt1', pl: 'tiktok', api_id: '3693', rate: 4.13, min: 10, max: 1000000, refill: 1,
+    name: 'TikTok 팔로워 — HQ (30일 보장)',
+    description: '고품질 TikTok 팔로워 (30일 리필). 프로필 링크를 입력하세요.'
+  },
+  {
+    id: 'skt2', pl: 'tiktok', api_id: '3734', rate: 0.38, min: 50, max: 200000, refill: 1,
+    name: 'TikTok 좋아요 — HQ (30일 보장)',
+    description: '고품질 TikTok 좋아요 (30일 리필). 영상 링크를 입력하세요.'
+  },
+];
+
+async function ensureSmmkingsSeedServices() {
+  let n = 0;
+  for (const s of SMMKINGS_CURATED_SEEDS) {
+    await query(`
+      INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'smmkings')
+      ON CONFLICT(id) DO UPDATE SET
+        name=EXCLUDED.name, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max,
+        description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
+        refill_guaranteed=EXCLUDED.refill_guaranteed, provider='smmkings',
+        inactive_note='', replace_service_id=NULL
+    `, [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description, s.api_id, s.refill ? 1 : 0]);
+    await linkServiceToAllSites(s.id);
+    n++;
+  }
+  await applyDisabledSeedMeta().catch(() => null);
+  if (n > 0) console.log(`✅ SMMKings 큐레이션 상품 ${n}개 등록·갱신`);
+  return n;
 }
 
 /** 공급 카탈로그에서 Facebook 조회수 시드(pfb10) 자동 등록 */
@@ -2767,17 +3039,17 @@ async function sendTelegramToSuper(message) {
   } catch(e) { console.log('텔레그램 발송 실패:', e.message); return false; }
 }
 
-/** Peakerr USD 잔액 조회 */
-async function fetchPeakerrBalance(apiKey) {
+/** PerfectPanel USD 잔액 조회 */
+async function fetchPanelBalance(provider, apiKey) {
   const key = String(apiKey || '').trim();
   if (!key) return { ok: false, error: 'API 키 미설정' };
-  if (!isValidPeakerrApiKey(key)) return { ok: false, error: 'API 키 형식 오류 — 공급 API 키를 다시 저장하세요.' };
+  if (!isValidPanelApiKey(key)) return { ok: false, error: 'API 키 형식 오류 — 공급 API 키를 다시 저장하세요.' };
 
   const params = { key, action: 'balance' };
   let lastErr = '조회 실패';
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const resp = await peakerrHttpsPost(params, 35000);
+      const resp = await panelHttpsPost(provider, params, 35000);
       const text = await resp.text();
       let data;
       try { data = JSON.parse(text); } catch {
@@ -2798,6 +3070,9 @@ async function fetchPeakerrBalance(apiKey) {
     }
   }
   return { ok: false, error: lastErr };
+}
+async function fetchPeakerrBalance(apiKey) {
+  return fetchPanelBalance('peakerr', apiKey);
 }
 
 // 💵 Peakerr 잔액 체크 (주문 시마다)
@@ -2914,13 +3189,15 @@ function attachPartnerAdminJsonMask(req, res) {
 // 🔄 Peakerr 자동 동기화 시스템
 // ═══════════════════════════════════════
 
-// Peakerr 주문 상태 조회
-async function fetchPeakerrOrderStatus(apiKey, apiOrderId) {
+// PerfectPanel 주문 상태 조회
+async function fetchPanelOrderStatus(provider, apiKey, apiOrderId) {
   try {
-    const resp = await peakerrFetch({ key: apiKey, action: 'status', order: apiOrderId });
+    const resp = await panelFetch(provider, { key: apiKey, action: 'status', order: apiOrderId });
     return await resp.json();
-    // { charge, start_count, status: 'Completed'/'In progress'/'Partial'/'Canceled', remains, currency }
-  } catch(e) { console.log('Peakerr 상태 조회 실패:', e.message); return null; }
+  } catch(e) { console.log(`${normalizeProvider(provider)} 상태 조회 실패:`, e.message); return null; }
+}
+async function fetchPeakerrOrderStatus(apiKey, apiOrderId) {
+  return fetchPanelOrderStatus('peakerr', apiKey, apiOrderId);
 }
 
 function parsePeakerrStartCount(data) {
@@ -3416,22 +3693,28 @@ function parsePeakerrCancelResult(data, apiOrderId) {
   return { ok: false, error: '취소 응답 형식 오류' };
 }
 
-async function submitPeakerrCancel(apiKey, apiOrderId) {
-  const resp = await peakerrFetch({ key: apiKey, action: 'cancel', orders: String(apiOrderId) });
+async function submitPanelCancel(provider, apiKey, apiOrderId) {
+  const resp = await panelFetch(provider, { key: apiKey, action: 'cancel', orders: String(apiOrderId) });
   const data = await resp.json();
   return parsePeakerrCancelResult(data, apiOrderId);
 }
+async function submitPeakerrCancel(apiKey, apiOrderId) {
+  return submitPanelCancel('peakerr', apiKey, apiOrderId);
+}
 
-async function pollPeakerrStatus(apiKey, apiOrderId, tries = 5, delayMs = 1500) {
+async function pollPanelStatus(provider, apiKey, apiOrderId, tries = 5, delayMs = 1500) {
   let last = null;
   for (let i = 0; i < tries; i++) {
-    last = await fetchPeakerrOrderStatus(apiKey, apiOrderId);
+    last = await fetchPanelOrderStatus(provider, apiKey, apiOrderId);
     if (!last || last.error) break;
     const s = (last.status || '').toLowerCase();
     if (['canceled', 'cancelled', 'partial', 'completed', 'error', 'failed'].includes(s)) return last;
     if (i < tries - 1) await new Promise(r => setTimeout(r, delayMs));
   }
   return last;
+}
+async function pollPeakerrStatus(apiKey, apiOrderId, tries = 5, delayMs = 1500) {
+  return pollPanelStatus('peakerr', apiKey, apiOrderId, tries, delayMs);
 }
 
 function peakerrCancelErrorKo(msg) {
@@ -3443,12 +3726,13 @@ function peakerrCancelErrorKo(msg) {
 
 async function pullPeakerrOrderSnapshot(order, apiKey, opts = {}) {
   if (!order?.api_order_id || !apiKey) return null;
+  const prov = opts.provider || orderProvider(order);
   if (opts.delayMs) await new Promise(r => setTimeout(r, opts.delayMs));
   const pollTries = opts.startPollTries ?? 1;
   let peakerrData = null;
   let currentOrder = order;
   for (let i = 0; i < pollTries; i++) {
-    peakerrData = await fetchPeakerrOrderStatus(apiKey, currentOrder.api_order_id);
+    peakerrData = await fetchPanelOrderStatus(prov, apiKey, currentOrder.api_order_id);
     if (!peakerrData || peakerrData.error) return null;
     const sc = parsePeakerrStartCount(peakerrData);
     const prev = parseInt(currentOrder.starts_count || 0, 10);
@@ -3511,15 +3795,16 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
       };
     }
 
-    const apiKey = await getPeakerrApiKey();
+    const prov = orderProvider(order);
+    const apiKey = await getPanelApiKey(prov);
     if (!apiKey) return { ok: false, error: 'API 키 미설정' };
 
-    const cancelResult = await submitPeakerrCancel(apiKey, order.api_order_id);
+    const cancelResult = await submitPanelCancel(prov, apiKey, order.api_order_id);
     if (!cancelResult.ok) {
       return { ok: false, error: peakerrCancelErrorKo(cancelResult.error) };
     }
 
-    const statusData = await pollPeakerrStatus(apiKey, order.api_order_id, 10, 2000);
+    const statusData = await pollPanelStatus(prov, apiKey, order.api_order_id, 10, 2000);
     if (!statusData || statusData.error) {
       return {
         ok: false,
@@ -3693,21 +3978,25 @@ async function earnPoints(order) {
   } catch(e) { console.log('포인트 적립 실패:', e.message); }
 }
 
-// 🔄 Peakerr ↔ GLOW 주문 상태 동기화 (공통)
-async function syncOrdersWithPeakerr(orders, apiKey, opts = {}) {
-  if (!apiKey || !orders?.length) return { synced: 0, cancelled: 0, completed: 0, errors: 0 };
+// 🔄 공급사 ↔ GLOW 주문 상태 동기화 (공통)
+async function syncOrdersWithPeakerr(orders, _apiKeyIgnored, opts = {}) {
+  if (!orders?.length) return { synced: 0, cancelled: 0, completed: 0, errors: 0 };
   let synced = 0, cancelled = 0, completed = 0, errors = 0;
   const delay = opts.delayMs ?? 80;
   for (const order of orders) {
     let o = order;
+    const prov = orderProvider(o);
+    const apiKey = await getPanelApiKey(prov);
+    if (!apiKey) { errors++; continue; }
     if (!o.api_order_id) {
+      if (prov !== 'peakerr') { errors++; continue; }
       const recovered = await reconcileOrderMissingApiId(o);
       if (recovered) {
         await query(`UPDATE orders SET api_order_id=$1 WHERE id=$2`, [recovered, o.id]);
         o = (await query(`SELECT * FROM orders WHERE id=$1`, [o.id])).rows[0];
       } else { errors++; continue; }
     }
-    const result = await pullPeakerrOrderSnapshot(o, apiKey, { startPollTries: 3 });
+    const result = await pullPeakerrOrderSnapshot(o, apiKey, { startPollTries: 3, provider: prov });
     if (result) {
       synced++;
       if (result.status === 'completed') completed++;
@@ -3724,24 +4013,20 @@ async function syncOrdersWithPeakerr(orders, apiKey, opts = {}) {
 }
 
 async function syncActiveOrdersForUser(userId) {
-  const apiKey = await getPeakerrApiKey();
-  if (!apiKey) return null;
   const r = await query(`
     SELECT * FROM orders WHERE uid=$1
     AND status IN ('pending','processing')
     AND created > NOW() - INTERVAL '30 days'
     ORDER BY created DESC LIMIT 15
   `, [userId]);
-  return syncOrdersWithPeakerr(r.rows, apiKey);
+  return syncOrdersWithPeakerr(r.rows);
 }
 
 async function syncActiveOrdersForSite(siteId) {
-  const apiKey = await getPeakerrApiKey();
-  if (!apiKey) return null;
   const r = siteId
     ? await query(`SELECT * FROM orders WHERE site_id=$1 AND status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 40`, [siteId])
     : await query(`SELECT * FROM orders WHERE status IN ('pending','processing') AND created > NOW() - INTERVAL '30 days' ORDER BY created DESC LIMIT 40`);
-  return syncOrdersWithPeakerr(r.rows, apiKey);
+  return syncOrdersWithPeakerr(r.rows);
 }
 
 // 🔄 진행중인 모든 주문 상태 동기화
@@ -3753,9 +4038,7 @@ async function syncAllOrderStatuses() {
     await refundZeroProgressStuckOrders({ hours: 12 }).catch(e => console.log('미진행 환불:', e.message));
     await cleanupUnpaidPendingOrders();
     await backfillAllMissingStartCounts();
-    const apiKey = await getPeakerrApiKey();
-    if (!apiKey) return;
-    
+
     const r = await query(`
       SELECT * FROM orders 
       WHERE api_order_id IS NOT NULL 
@@ -3769,7 +4052,7 @@ async function syncAllOrderStatuses() {
     if (r.rows.length === 0) return;
     console.log(`🔄 주문 상태 동기화 시작: ${r.rows.length}건`);
     
-    const { synced, cancelled, completed, errors } = await syncOrdersWithPeakerr(r.rows, apiKey, { delayMs: 100 });
+    const { synced, cancelled, completed, errors } = await syncOrdersWithPeakerr(r.rows, null, { delayMs: 100 });
     await backfillAllMissingStartCounts();
     await refundZeroProgressStuckOrders({ hours: 12 }).catch(() => null);
     console.log(`✅ 동기화 완료: 완료 ${completed}건, 취소·환불 ${cancelled}건, 오류 ${errors}건`);
@@ -3796,8 +4079,12 @@ async function syncPeakerrServices() {
     peakerrCatalogCache = peakerrMap;
     await syncServiceRefillFlagsFromPeakerr(peakerrMap);
     
-    // GLOW DB의 모든 서비스 조회
-    const glowR = await query(`SELECT id, name, api_id, rate, min, max, active FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+    // GLOW DB의 Peakerr 서비스만 (SMMKings SKU와 api_id 충돌 방지)
+    const glowR = await query(`
+      SELECT id, name, api_id, rate, min, max, active FROM services
+      WHERE api_id IS NOT NULL AND api_id != ''
+        AND COALESCE(provider,'peakerr')='peakerr'
+    `);
     
     let disabled = 0, priceChanged = 0, checked = 0;
     const priceChangedList = [];
@@ -3918,6 +4205,8 @@ async function reconcileServiceCatalog(opts = {}) {
     noApi = noApiR.rowCount || 0;
 
     const sync = await syncPeakerrServices();
+    await syncSmmkingsCatalog().catch(e => console.log('SMMKings 동기화:', e.message));
+    await ensureSmmkingsSeedServices().catch(e => console.log('SMMKings 시드:', e.message));
     await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
     await reactivateCuratedSeedServices();
     await upgradeEngagementSeedsFromPeakerr();
@@ -5849,16 +6138,25 @@ app.post('/api/orders', requireAuth, async (req, res) => {
       return res.json({ error: `잔액이 약 ₩${shortfall.toLocaleString()} 부족합니다. 충전 탭에서 충전 후 다시 주문해 주세요.` });
     }
 
-    const apiKey = await getPeakerrApiKey();
+    const prov = serviceProvider(svc);
+    const apiKey = await getPanelApiKey(prov);
     if (!apiKey || !svc.api_id) {
       return res.json({ error: '현재 이 상품은 주문을 받을 수 없습니다. 다른 상품을 선택해주세요.' });
     }
 
-    // Peakerr 카탈로그에 없는(삭제·중단) SKU면 주문 차단 + 상품 숨김
-    await ensurePeakerrCatalogLoaded().catch(() => null);
-    if (peakerrCatalogCache.size > 0 && !peakerrCatalogCache.has(String(svc.api_id))) {
-      await hideServiceWithNote(svc.id, 'Peakerr에서 삭제·중단된 상품이라 판매를 중단했습니다.');
-      return res.json({ error: '이 상품은 공급이 중단되어 주문할 수 없습니다. 다른 상품을 선택해주세요.' });
+    // 공급 카탈로그에 없는(삭제·중단) SKU면 주문 차단 + 상품 숨김
+    if (prov === 'smmkings') {
+      await ensureSmmkingsCatalogLoaded().catch(() => null);
+      if (smmkingsCatalogCache.size > 0 && !smmkingsCatalogCache.has(String(svc.api_id))) {
+        await hideServiceWithNote(svc.id, 'SMMKings에서 삭제·중단된 상품이라 판매를 중단했습니다.');
+        return res.json({ error: '이 상품은 공급이 중단되어 주문할 수 없습니다. 다른 상품을 선택해주세요.' });
+      }
+    } else {
+      await ensurePeakerrCatalogLoaded().catch(() => null);
+      if (peakerrCatalogCache.size > 0 && !peakerrCatalogCache.has(String(svc.api_id))) {
+        await hideServiceWithNote(svc.id, '공급 목록에서 삭제·중단된 상품이라 판매를 중단했습니다.');
+        return res.json({ error: '이 상품은 공급이 중단되어 주문할 수 없습니다. 다른 상품을 선택해주세요.' });
+      }
     }
 
     const lockKey = orderLockKey(req.siteId, svc, linkNorm);
@@ -5869,7 +6167,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     try {
       return await placeOrderHandler(req, res, {
         svc, linkNorm, qtyNum, site, margins, charge, apiCost, orderCostKrw,
-        user, adminCreditOnly, apiKey
+        user, adminCreditOnly, apiKey, provider: prov
       });
     } finally {
       orderPlacementLocks.delete(lockKey);
@@ -5880,10 +6178,12 @@ app.post('/api/orders', requireAuth, async (req, res) => {
 async function placeOrderHandler(req, res, ctx) {
   try {
     const { svc, linkNorm, qtyNum, site, margins, charge, apiCost, orderCostKrw, user, adminCreditOnly, apiKey } = ctx;
+    const provider = ctx.provider || serviceProvider(svc);
     let usedApiCost = apiCost;
     let usedOrderCostKrw = orderCostKrw;
 
-    ensurePeakerrCatalogLoaded({ background: true });
+    if (provider === 'smmkings') ensureSmmkingsCatalogLoaded({ background: true });
+    else ensurePeakerrCatalogLoaded({ background: true });
 
     // 선택한 상품 기준만 검사 (대체 SKU는 실제 전환 시에만 재검사 — 과다 차단 방지)
     const creditErr = await assertPartnerCreditForOrder(site, margins, usedOrderCostKrw);
@@ -5904,14 +6204,15 @@ async function placeOrderHandler(req, res, ctx) {
           ? '일시적 사유로 주문이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
           : `주문 접수에 실패했습니다. (${stripSupplierBrand(placement.error) || '접수 거절'})`;
       try {
-        await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-          [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed']);
+        await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,api_provider) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+          [failId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, null, linkNorm, qtyNum, 0, 'failed', provider]);
       } catch (e) {}
-      console.log('주문 실패:', svc.id, placement.error);
+      console.log('주문 실패:', svc.id, provider, placement.error);
       return res.json({ error: errMsg });
     }
 
     const usedSvc = placement.usedSvc || svc;
+    const usedProvider = placement.provider || serviceProvider(usedSvc) || provider;
     if (usedSvc.id !== svc.id) {
       const altAmounts = computeOrderAmounts(usedSvc, qtyNum, site, margins);
       usedApiCost = altAmounts.apiCost;
@@ -5926,17 +6227,17 @@ async function placeOrderHandler(req, res, ctx) {
     const orderId = 'O' + Date.now();
     const orderCost = usedOrderCostKrw;
 
-    // ① Peakerr ID 확정 전 — pending + 차감 보류 (손실·이중차감 방지)
+    // ① 공급사 ID 확정 전 — pending + 차감 보류 (손실·이중차감 방지)
     try {
-      await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost,paid) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-        [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'pending', orderCost, usedApiCost, 0]);
+      await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status,cost,api_cost,paid,api_provider) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+        [orderId, req.siteId, user.id, user.name, usedSvc.id, usedSvc.name, usedSvc.pl, apiOrderId, linkNorm, qtyNum, charge, 'pending', orderCost, usedApiCost, 0, usedProvider]);
     } catch (insertErr) {
       console.log('주문 INSERT 실패:', insertErr.message);
       return res.json({ error: '주문 저장 실패. 다시 시도해주세요.' });
     }
 
     let snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
-    if (!apiOrderId) {
+    if (!apiOrderId && usedProvider === 'peakerr') {
       await new Promise(r => setTimeout(r, 1800));
       apiOrderId = await reconcileOrderMissingApiId(snapOrder);
       if (apiOrderId) {
@@ -5944,7 +6245,7 @@ async function placeOrderHandler(req, res, ctx) {
         snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       }
     }
-    if (!apiOrderId) {
+    if (!apiOrderId && usedProvider === 'peakerr') {
       await new Promise(r => setTimeout(r, 2500));
       snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       apiOrderId = await reconcileOrderMissingApiId(snapOrder);
@@ -5979,7 +6280,7 @@ async function placeOrderHandler(req, res, ctx) {
     snapOrder = confirmed;
 
     if (snapOrder?.api_order_id) {
-      await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 1200, startPollTries: 5 });
+      await pullPeakerrOrderSnapshot(snapOrder, apiKey, { delayMs: 1200, startPollTries: 5, provider: usedProvider });
       snapOrder = (await query(`SELECT * FROM orders WHERE id=$1`, [orderId])).rows[0];
       if (!(snapOrder?.starts_count > 0)) {
         await backfillOrderStartCount(snapOrder);
@@ -6979,7 +7280,7 @@ app.post('/api/admin/settings/save', requireAdmin, async (req, res) => {
     const { key, value } = req.body;
     const isSuperAdmin = req.session.role === 'superadmin';
     const adminErr = (msg) => res.json({ error: neutralAdminMsg(msg, isSuperAdmin) });
-    const superOnly = ['peakerr_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from'];
+    const superOnly = ['peakerr_api_key', 'smmkings_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from'];
     if (superOnly.includes(key)) {
       if (isSuperAdmin) {
         const v = String(value || '').trim();
@@ -7715,8 +8016,9 @@ async function remapMissingGeoSeedServices() {
   if (peakerrCatalogCache.size === 0) return { remapped: 0, stillMissing: [], hidden: 0 };
 
   const r = await query(`
-    SELECT id, name, pl, api_id, rate, description, active FROM services
+    SELECT id, name, pl, api_id, rate, description, active, provider FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> ''
+      AND COALESCE(provider,'peakerr')='peakerr'
   `);
   const remapped = [];
   const stillMissing = [];
@@ -7846,8 +8148,9 @@ async function remapGeoMismatchServices() {
   if (peakerrCatalogCache.size === 0) return { remapped: 0, items: [], hidden: 0 };
 
   const r = await query(`
-    SELECT id, name, pl, api_id, rate, description, active FROM services
+    SELECT id, name, pl, api_id, rate, description, active, provider FROM services
     WHERE id ~ '^[a-z]{2,3}[0-9]+' AND api_id IS NOT NULL AND TRIM(api_id) <> '' AND active=1
+      AND COALESCE(provider,'peakerr')='peakerr'
   `);
   const remapped = [];
   let hidden = 0;
@@ -8366,7 +8669,7 @@ app.post('/api/super/exrate-sync', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
-    const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from'];
+    const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'smmkings_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
     const v = String(value || '').trim();
     if (key === 'peakerr_api_key') {
@@ -8375,6 +8678,17 @@ app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
       return res.json({
         ok: true,
         peakerrTest: { balance: saved.balance },
+        locked: true
+      });
+    }
+    if (key === 'smmkings_api_key') {
+      const saved = await saveSmmkingsApiKeySafely(v);
+      if (!saved.ok) return res.json({ error: saved.error });
+      await ensureSmmkingsSeedServices().catch(() => null);
+      await syncSmmkingsCatalog().catch(() => null);
+      return res.json({
+        ok: true,
+        smmkingsTest: { balance: saved.balance },
         locked: true
       });
     }
@@ -8418,6 +8732,18 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
     else apiBalanceError = balR.error;
     const peakerrLocked = !!(apiKey && balR.ok);
     const peakerrVerifiedAt = await getGlobalSetting(PEAKERR_KEY_VERIFIED);
+    let smmkingsBalance = null, smmkingsBalanceError = null;
+    let skKey = await getSmmkingsApiKey();
+    let skBal = await fetchPanelBalance('smmkings', skKey);
+    if (!skBal.ok) {
+      const skRec = await reconcileSmmkingsApiKey({ silent: true });
+      if (skRec.ok) {
+        skKey = await getSmmkingsApiKey();
+        skBal = await fetchPanelBalance('smmkings', skKey);
+      }
+    }
+    if (skBal.ok) smmkingsBalance = skBal.balance.toFixed(2);
+    else smmkingsBalanceError = skBal.error;
     const siteStats = await Promise.all(sites.rows.map(async s => {
       const uc = await query(`SELECT COUNT(*) as c FROM users WHERE site_id=$1 AND role='user'`, [s.id]);
       const oc = await query(`SELECT COUNT(*) as c FROM orders WHERE site_id=$1 AND ${EXCLUDE}`, [s.id]);
@@ -8467,6 +8793,9 @@ app.get('/api/super/dashboard', requireSuperAdmin, async (req, res) => {
       apiBalanceError,
       peakerrLocked,
       peakerrVerifiedAt: peakerrVerifiedAt || null,
+      smmkingsBalance,
+      smmkingsBalanceError,
+      smmkingsLocked: !!(skKey && skBal.ok),
       myProfit: Math.round(myProfitKrw),
       globalExrate: parseFloat((await getGlobalSetting('global_exrate')) || '1500')
     });
@@ -8815,6 +9144,8 @@ app.listen(PORT, async () => {
   }, 6 * 60 * 60 * 1000);
   
   reconcilePeakerrApiKey({ silent: false }).catch(e => console.log('Peakerr 키 시작 점검:', e.message));
+  reconcileSmmkingsApiKey({ silent: false }).catch(e => console.log('SMMKings 키 시작 점검:', e.message));
+  ensureSmmkingsSeedServices().catch(e => console.log('SMMKings 시드:', e.message));
   
   // 🔄 주문 상태 자동 동기화 (5분마다 — Peakerr 취소·완료 즉시 반영)
   setInterval(async () => {
