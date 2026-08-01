@@ -1536,9 +1536,25 @@ function normalizeOrderLink(url, platform) {
       }
       u.pathname = path;
     } catch (_) {}
-    if (platform === 'tiktok' || platform === 'youtube' || platform === 'instagram') {
+    if (platform === 'tiktok') {
       u.search = '';
       u.hash = '';
+    } else if (platform === 'instagram') {
+      // igsh 등 추적 파라미터만 제거 (게시물 경로는 pathname에 있음)
+      u.search = '';
+      u.hash = '';
+    } else if (platform === 'youtube') {
+      // ⚠️ watch?v=VIDEO_ID 의 v= 는 절대 지우면 안 됨 (조회수·좋아요 대상)
+      const v = u.searchParams.get('v');
+      const list = u.searchParams.get('list');
+      u.search = '';
+      u.hash = '';
+      if (v) u.searchParams.set('v', v);
+      // 쇼츠/라이브 등 경로형이면 pathname만으로 충분
+      if (/\/watch\/?$/i.test(u.pathname) && v) {
+        u.pathname = '/watch';
+      }
+      // youtu.be/ID → 그대로 pathname 유지
     }
     return u.href;
   } catch {
@@ -2610,6 +2626,28 @@ function validateUrl(url, platform, svc = null) {
     if (platform === 'instagram' && svc && serviceOrderBucket(svc) === '팔로워') {
       if (/\/p\/|\/reel\/|\/tv\//.test(u.pathname)) {
         return { ok: false, error: '인스타 팔로워는 프로필 링크를 입력해주세요. (게시물 링크 불가)' };
+      }
+    }
+    if (platform === 'youtube' && svc) {
+      const bucket = serviceOrderBucket(svc);
+      const path = u.pathname || '';
+      const vid = u.searchParams.get('v') || '';
+      const isYoutuBe = domain === 'youtu.be' && /^\/[A-Za-z0-9_-]{6,}/.test(path);
+      const isShorts = /\/shorts\/[A-Za-z0-9_-]{6,}/.test(path);
+      const isLive = /\/live\/[A-Za-z0-9_-]{6,}/.test(path);
+      const isWatch = /\/watch/.test(path) && /^[A-Za-z0-9_-]{6,}$/.test(vid);
+      const isChannel = /\/@|\/channel\/|\/c\/|\/user\//.test(path);
+      if (bucket === '구독자') {
+        if (!isChannel && !isYoutuBe) {
+          // 채널 URL 권장 — @핸들 또는 channel
+          if (!isChannel) {
+            return { ok: false, error: '유튜브 구독자는 채널 링크를 입력해주세요. (예: youtube.com/@채널명)' };
+          }
+        }
+      } else if (['조회수', '좋아요', '쇼츠 조회수', '쇼츠 좋아요', '댓글', '라이브 좋아요', '시청시간'].includes(bucket)) {
+        if (!(isWatch || isYoutuBe || isShorts || isLive)) {
+          return { ok: false, error: '유튜브 영상 링크를 입력해주세요. (예: youtube.com/watch?v=영상ID 또는 youtu.be/영상ID)' };
+        }
       }
     }
     if (platform === 'facebook' && svc) {
