@@ -2786,6 +2786,16 @@ const SMMKINGS_CURATED_SEEDS = [
     description: '한국 Unique Viewer 기반 YouTube 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
   },
   {
+    id: 'sky3', pl: 'youtube', api_id: '4574', cost: 57.00, min: 50, max: 25000, refill: 1,
+    name: 'YouTube 구독자 — HQ (30일 보장) ⭐',
+    description: 'YouTube HQ 구독자입니다. 채널 또는 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'sky4', pl: 'youtube', api_id: '7176', cost: 87.00, min: 10, max: 2000, refill: 1,
+    name: 'YouTube 구독자 — 리얼 (30일 보장)',
+    description: 'YouTube 리얼 구독자입니다. 채널 또는 영상 링크를 입력하세요. 최대 2,000명.'
+  },
+  {
     id: 'skt1', pl: 'tiktok', api_id: '3693', cost: 4.13, min: 10, max: 1000000, refill: 1,
     name: 'TikTok 팔로워 — HQ (30일 보장)',
     description: '고품질 TikTok 팔로워입니다. 프로필 링크를 입력하세요.'
