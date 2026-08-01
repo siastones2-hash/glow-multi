@@ -1900,7 +1900,12 @@ async function syncSmmkingsCatalog() {
         }
         continue;
       }
-      const newRate = parseFloat(remote.rate);
+      const newRateRaw = parseFloat(remote.rate);
+      const seed = SMMKINGS_CURATED_SEEDS.find(x => x.id === glowSvc.id || String(x.api_id) === String(glowSvc.api_id));
+      const marginMult = seed ? await getDefaultSellMarginMult() : 1;
+      const newRate = seed
+        ? glowRateForTargetMultiple(seed.cost != null ? seed.cost : newRateRaw, marginMult, 3)
+        : newRateRaw;
       const oldRate = parseFloat(glowSvc.rate);
       const pMin = Math.max(1, parseInt(remote.min, 10) || glowSvc.min || 1);
       const pMax = parseInt(remote.max, 10) || glowSvc.max || 10000000;
@@ -2738,53 +2743,83 @@ function validateFacebookLink(svc, url) {
   return { ok: true };
 }
 
-/** SMMKings 큐레이션 상품 — GLOW 판매 · 작업은 smmkings.com */
+/** 연동 B 큐레이션 — GLOW 판매 · 작업은 연동 B. cost=실원가(USD/1K), rate는 최종 판매≈원가×target배 되도록 환산 */
 const SMMKINGS_CURATED_SEEDS = [
   {
-    id: 'skg1', pl: 'instagram', api_id: '5165', rate: 25.50, min: 20, max: 10000, refill: 0,
+    id: 'skg1', pl: 'instagram', api_id: '5165', cost: 25.50, min: 20, max: 10000, refill: 0,
     name: 'Instagram 팔로워 — 한국 HQ ⭐',
     description: '한국 타겟 Instagram HQ 팔로워입니다. 국내 마케팅·브랜드 신뢰도에 적합합니다. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg2', pl: 'instagram', api_id: '3770', rate: 97.50, min: 10, max: 35000, refill: 1,
-    name: 'Instagram 팔로워 — 한국 리얼 (30일 보장)',
-    description: '한국 리얼 계정 기반 Instagram 팔로워 (30일 자동 리필 표기). 국내 타겟 계정 성장에 사용하세요. 프로필 링크 또는 사용자명을 입력하세요.'
+    id: 'skg5', pl: 'instagram', api_id: '7377', cost: 51.00, min: 10, max: 20000, refill: 0,
+    name: 'Instagram 팔로워 — 한국 UHQ (논드롭)',
+    description: '한국 타겟 Instagram UHQ 팔로워입니다. 논드롭 품질로 장기 유지에 유리합니다. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg3', pl: 'instagram', api_id: '2859', rate: 8.45, min: 50, max: 12000, refill: 0,
+    id: 'skg2', pl: 'instagram', api_id: '3770', cost: 97.50, min: 10, max: 35000, refill: 1,
+    name: 'Instagram 팔로워 — 한국 리얼 (30일 보장)',
+    description: '한국 리얼 계정 기반 Instagram 팔로워입니다. 30일 보장 표기 상품으로 국내 타겟 성장에 사용하세요. 프로필 링크 또는 사용자명을 입력하세요.'
+  },
+  {
+    id: 'skg6', pl: 'instagram', api_id: '5240', cost: 112.50, min: 5, max: 50000, refill: 1,
+    name: 'Instagram 팔로워 — 한국 리얼 프리미엄 (30일)',
+    description: '한국 리얼 팔로워 프리미엄(대량)입니다. 30일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+  },
+  {
+    id: 'skg3', pl: 'instagram', api_id: '2859', cost: 8.45, min: 50, max: 12000, refill: 0,
     name: 'Instagram 좋아요 — 한국 (노출 포함)',
     description: '한국 타겟 Instagram 좋아요+노출입니다. 게시물·릴스 URL을 입력하세요.'
   },
   {
-    id: 'skg4', pl: 'instagram', api_id: '5226', rate: 0.03, min: 100, max: 1000000, refill: 0,
+    id: 'skg4', pl: 'instagram', api_id: '5226', cost: 0.03, min: 100, max: 1000000, refill: 0,
     name: 'Instagram 조회수 — 한국',
     description: '한국 타겟 Instagram 조회수입니다. 릴스·영상 게시물 URL을 입력하세요.'
   },
   {
-    id: 'sky1', pl: 'youtube', api_id: '7303', rate: 5.76, min: 1000, max: 1000000, refill: 0,
+    id: 'sky1', pl: 'youtube', api_id: '7303', cost: 5.76, min: 1000, max: 1000000, refill: 0,
     name: 'YouTube 조회수 — 한국 모바일',
     description: '한국 타겟 YouTube 모바일 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
   },
   {
-    id: 'sky2', pl: 'youtube', api_id: '2594', rate: 6.72, min: 500, max: 100000, refill: 0,
+    id: 'sky2', pl: 'youtube', api_id: '2594', cost: 6.72, min: 500, max: 100000, refill: 0,
     name: 'YouTube 조회수 — 한국 Unique',
     description: '한국 Unique Viewer 기반 YouTube 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
   },
   {
-    id: 'skt1', pl: 'tiktok', api_id: '3693', rate: 4.13, min: 10, max: 1000000, refill: 1,
+    id: 'skt1', pl: 'tiktok', api_id: '3693', cost: 4.13, min: 10, max: 1000000, refill: 1,
     name: 'TikTok 팔로워 — HQ (30일 보장)',
-    description: '고품질 TikTok 팔로워 (30일 리필). 프로필 링크를 입력하세요.'
+    description: '고품질 TikTok 팔로워입니다. 프로필 링크를 입력하세요.'
   },
   {
-    id: 'skt2', pl: 'tiktok', api_id: '3734', rate: 0.38, min: 50, max: 200000, refill: 1,
+    id: 'skt2', pl: 'tiktok', api_id: '3734', cost: 0.38, min: 50, max: 200000, refill: 1,
     name: 'TikTok 좋아요 — HQ (30일 보장)',
-    description: '고품질 TikTok 좋아요 (30일 리필). 영상 링크를 입력하세요.'
+    description: '고품질 TikTok 좋아요입니다. 영상 링크를 입력하세요.'
   },
 ];
 
+/** 본사 판매가 ≈ 실원가 × target배 가 되도록 services.rate 환산 */
+async function getDefaultSellMarginMult() {
+  const superMg = parseFloat(await getGlobalSetting('super_margin') || '50');
+  const siteR = await query(`SELECT margin FROM sites WHERE id='default'`).catch(() => ({ rows: [] }));
+  let siteMg = siteR.rows[0]?.margin;
+  if (siteMg == null || siteMg < 0) {
+    siteMg = parseFloat(await getGlobalSetting('global_site_margin') || '50');
+  }
+  return (1 + superMg / 100) * (1 + parseFloat(siteMg) / 100);
+}
+
+function glowRateForTargetMultiple(supplierUsd, marginMult, targetMult = 3) {
+  const cost = parseFloat(supplierUsd) || 0;
+  const m = marginMult > 0 ? marginMult : 1;
+  return Math.round((cost * targetMult / m) * 10000) / 10000;
+}
+
 async function ensureSmmkingsSeedServices() {
+  const marginMult = await getDefaultSellMarginMult();
   let n = 0;
   for (const s of SMMKINGS_CURATED_SEEDS) {
+    const cost = s.cost != null ? s.cost : s.rate;
+    const rate = glowRateForTargetMultiple(cost, marginMult, 3);
     await query(`
       INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'smmkings')
@@ -2793,12 +2828,12 @@ async function ensureSmmkingsSeedServices() {
         description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
         refill_guaranteed=EXCLUDED.refill_guaranteed, provider='smmkings',
         inactive_note='', replace_service_id=NULL
-    `, [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description, s.api_id, s.refill ? 1 : 0]);
+    `, [s.id, s.name, s.pl, rate, s.min, s.max, s.description, s.api_id, s.refill ? 1 : 0]);
     await linkServiceToAllSites(s.id);
     n++;
   }
   await applyDisabledSeedMeta().catch(() => null);
-  if (n > 0) console.log(`✅ SMMKings 큐레이션 상품 ${n}개 등록·갱신`);
+  if (n > 0) console.log(`✅ 연동 B 큐레이션 ${n}개 등록 (판매≈원가×3, marginMult=${marginMult.toFixed(2)})`);
   return n;
 }
 
