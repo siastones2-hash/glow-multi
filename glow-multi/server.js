@@ -1903,10 +1903,8 @@ async function syncSmmkingsCatalog() {
       const newRateRaw = parseFloat(remote.rate);
       const seed = SMMKINGS_CURATED_SEEDS.find(x => x.id === glowSvc.id || String(x.api_id) === String(glowSvc.api_id));
       const marginMult = seed ? await getDefaultSellMarginMult() : 1;
-      const costForMult = seed && seed.cost != null ? seed.cost : newRateRaw;
-      const targetMult = seed ? await smmkingsTargetMultForCost(costForMult) : SMMKINGS_TARGET_MULT;
       const newRate = seed
-        ? glowRateForTargetMultiple(costForMult, marginMult, targetMult)
+        ? await glowRateForSmmkingsSeed(seed, marginMult)
         : newRateRaw;
       const oldRate = parseFloat(glowSvc.rate);
       const pMin = Math.max(1, parseInt(remote.min, 10) || glowSvc.min || 1);
@@ -2760,6 +2758,18 @@ async function smmkingsTargetMultForCost(costUsd) {
   return SMMKINGS_TARGET_MULT;
 }
 
+/** 시드 → services.rate (sellKrw 있으면 원화 고정가 우선) */
+async function glowRateForSmmkingsSeed(seed, marginMult) {
+  const m = marginMult > 0 ? marginMult : 1;
+  const ex = parseFloat(await getGlobalSetting('global_exrate') || '1444') || 1444;
+  if (seed.sellKrw != null && seed.sellKrw > 0 && ex > 0) {
+    return Math.round((seed.sellKrw / (m * ex)) * 10000) / 10000;
+  }
+  const cost = seed.cost != null ? seed.cost : seed.rate;
+  const targetMult = await smmkingsTargetMultForCost(cost);
+  return glowRateForTargetMultiple(cost, m, targetMult);
+}
+
 const SMMKINGS_CURATED_SEEDS = [
   {
     id: 'skg1', pl: 'instagram', api_id: '5165', cost: 25.50, min: 20, max: 10000, refill: 0,
@@ -2772,47 +2782,47 @@ const SMMKINGS_CURATED_SEEDS = [
     description: '한국 타겟 Instagram UHQ 팔로워입니다. 논드롭 품질로 장기 유지에 유리합니다. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg2', pl: 'instagram', api_id: '3770', cost: 97.50, min: 10, max: 35000, refill: 1,
+    id: 'skg2', pl: 'instagram', api_id: '3770', cost: 97.50, sellKrw: 220000, min: 10, max: 35000, refill: 1,
     name: 'Instagram 팔로워 — 한국 리얼 S1 (30일 보장)',
     description: '한국 리얼 계정 기반 Instagram 팔로워(S1)입니다. 30일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg6', pl: 'instagram', api_id: '5240', cost: 112.50, min: 5, max: 50000, refill: 1,
+    id: 'skg6', pl: 'instagram', api_id: '5240', cost: 112.50, sellKrw: 260000, min: 5, max: 50000, refill: 1,
     name: 'Instagram 팔로워 — 한국 리얼 S2 (30일 보장)',
     description: '한국 리얼 팔로워 프리미엄 S2(대량)입니다. 30일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg7', pl: 'instagram', api_id: '5239', cost: 157.50, min: 10, max: 40000, refill: 1,
+    id: 'skg7', pl: 'instagram', api_id: '5239', cost: 157.50, sellKrw: 320000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 리얼 연령±20 (90일)',
     description: '한국 리얼 팔로워 · 연령대 ±20 타겟입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg8', pl: 'instagram', api_id: '5257', cost: 157.50, min: 10, max: 20000, refill: 1,
+    id: 'skg8', pl: 'instagram', api_id: '5257', cost: 157.50, sellKrw: 320000, min: 10, max: 20000, refill: 1,
     name: 'Instagram 팔로워 — 한국 남성 (90일)',
     description: '한국 남성 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg9', pl: 'instagram', api_id: '5258', cost: 157.50, min: 10, max: 20000, refill: 1,
+    id: 'skg9', pl: 'instagram', api_id: '5258', cost: 157.50, sellKrw: 320000, min: 10, max: 20000, refill: 1,
     name: 'Instagram 팔로워 — 한국 여성 (90일)',
     description: '한국 여성 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg10', pl: 'instagram', api_id: '5242', cost: 210.00, min: 10, max: 40000, refill: 1,
+    id: 'skg10', pl: 'instagram', api_id: '5242', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 남성·연령±20 (90일)',
     description: '한국 남성 + 연령±20 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg11', pl: 'instagram', api_id: '5243', cost: 210.00, min: 10, max: 40000, refill: 1,
+    id: 'skg11', pl: 'instagram', api_id: '5243', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 여성·연령±20 (90일)',
     description: '한국 여성 + 연령±20 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg12', pl: 'instagram', api_id: '5244', cost: 210.00, min: 10, max: 40000, refill: 1,
+    id: 'skg12', pl: 'instagram', api_id: '5244', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 남성·연령±30 (90일)',
     description: '한국 남성 + 연령±30 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
-    id: 'skg13', pl: 'instagram', api_id: '5245', cost: 210.00, min: 10, max: 40000, refill: 1,
+    id: 'skg13', pl: 'instagram', api_id: '5245', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 여성·연령±30 (90일)',
     description: '한국 여성 + 연령±30 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
   },
@@ -2869,9 +2879,7 @@ async function ensureSmmkingsSeedServices() {
   const marginMult = await getDefaultSellMarginMult();
   let n = 0;
   for (const s of SMMKINGS_CURATED_SEEDS) {
-    const cost = s.cost != null ? s.cost : s.rate;
-    const targetMult = await smmkingsTargetMultForCost(cost);
-    const rate = glowRateForTargetMultiple(cost, marginMult, targetMult);
+    const rate = await glowRateForSmmkingsSeed(s, marginMult);
     await query(`
       INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'smmkings')
@@ -2885,7 +2893,7 @@ async function ensureSmmkingsSeedServices() {
     n++;
   }
   await applyDisabledSeedMeta().catch(() => null);
-  if (n > 0) console.log(`✅ 연동 B 큐레이션 ${n}개 등록 (기본×${SMMKINGS_TARGET_MULT}, 고마진×${SMMKINGS_HIGH_COST_MULT}, marginMult=${marginMult.toFixed(2)})`);
+  if (n > 0) console.log(`✅ 연동 B 큐레이션 ${n}개 등록 (기본×${SMMKINGS_TARGET_MULT}/고정가, marginMult=${marginMult.toFixed(2)})`);
   return n;
 }
 
