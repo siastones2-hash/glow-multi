@@ -2049,19 +2049,19 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
           <div style="display:flex;flex-direction:column;gap:12px;max-width:500px">
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🔑 API 설정</div>
-              <div class="fg"><label>Peakerr API 키</label><input type="password" id="spApiKey" placeholder="Peakerr API 키"/></div>
+              <div class="fg"><label>연동 A 키</label><input type="password" id="spApiKey" placeholder="연동 A 키 입력"/></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
                 <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalSetting('peakerr_api_key','spApiKey')">저장</button>
                 <button class="bo bsm" onclick="testApi()">연결 테스트</button>
                 <button class="bo bsm" onclick="syncSvcs()">🔄 서비스 동기화</button>
               </div>
               <div id="spApiRes" style="font-size:12px;color:var(--tm)"></div>
-              <div class="fg" style="margin-top:14px"><label>SMMKings API 키</label><input type="password" id="spSmmkingsKey" placeholder="SMMKings API 키"/></div>
+              <div class="fg" style="margin-top:14px"><label>연동 B 키</label><input type="password" id="spSmmkingsKey" placeholder="연동 B 키 입력"/></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-                <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalSetting('smmkings_api_key','spSmmkingsKey')">킹즈 키 저장</button>
+                <button class="bp bsm" style="padding:9px 16px" onclick="saveGlobalSetting('smmkings_api_key','spSmmkingsKey')">연동 B 저장</button>
               </div>
               <div id="spSmmkingsRes" style="font-size:12px;color:var(--tm)"></div>
-              <div style="font-size:11px;color:#64748b;margin-top:8px">🔒 <strong>안전 잠금</strong> — 공급 API 연결 테스트 통과한 키만 저장 · 백업 자동복구 · 잘못된 키는 기존 연동 유지<br>한국 인스타·유튜브 등은 <strong>SMMKings</strong>로 작업됩니다.</div>
+              <div style="font-size:11px;color:#64748b;margin-top:8px">🔒 <strong>안전 잠금</strong> — 연결 테스트 통과한 키만 저장 · 백업 자동복구 · 잘못된 키는 기존 연동 유지<br>한국 인스타·유튜브 등은 <strong>연동 B</strong>로 처리됩니다.</div>
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">📧 비밀번호 찾기 메일 (Resend)</div>
@@ -2554,8 +2554,24 @@ function applyPartnerAdminChrome(){
   syncAdminUiStyleOptions(false);
 }
 function _partnerMsg(s){
-  if(_isSuperUser()||s==null)return s;
+  if(s==null)return s;
   var t=String(s);
+  // 금지어는 슈퍼포함 전원 제거
+  t=t.replace(/SMM\s*Kings?/gi,'');
+  t=t.replace(/SMMKings?/gi,'');
+  t=t.replace(/smmkings\.com/gi,'');
+  t=t.replace(/Perfect\s*Panel/gi,'');
+  t=t.replace(/\bSMM\b/gi,'');
+  t=t.replace(/킹즈/g,'');
+  t=t.replace(/패널/g,'');
+  t=t.replace(/\b[Pp]anels?\b/g,'');
+  t=t.replace(/Peakerr/gi,'');
+  t=t.replace(/peakerr\.com/gi,'');
+  t=t.replace(/피커/g,'');
+  if(_isSuperUser()){
+    t=t.replace(/\s{2,}/g,' ').trim();
+    return t;
+  }
   t=t.replace(/\(본사 전용\)/gi,'');
   t=t.replace(/슈퍼관리자/gi,'');
   t=t.replace(/GLOW 본사(\([^)]*\))?/gi,'');
@@ -2570,9 +2586,14 @@ function _partnerMsg(s){
   t=t.replace(/Peakerr/gi,'');
   t=t.replace(/peakerr\.com/gi,'');
   t=t.replace(/피커/g,'');
+  t=t.replace(/SMM\s*Kings?/gi,'');
   t=t.replace(/SMMKings?/gi,'');
   t=t.replace(/smmkings\.com/gi,'');
+  t=t.replace(/Perfect\s*Panel/gi,'');
+  t=t.replace(/\bSMM\b/gi,'');
   t=t.replace(/킹즈/g,'');
+  t=t.replace(/패널/g,'');
+  t=t.replace(/\b[Pp]anels?\b/g,'');
   t=t.replace(/공급사/g,'시스템');
   t=t.replace(/API\s*크레딧/gi,'크레딧');
   t=t.replace(/사이트\s*API/gi,'사이트');
@@ -4582,11 +4603,11 @@ async function saveGlobalSetting(key,inputId){
     }
   }else if(key==='smmkings_api_key'&&d.smmkingsTest){
     if(d.smmkingsTest.balance!=null){
-      toast('🔒 SMMKings 잠금 저장 · $'+parseFloat(d.smmkingsTest.balance).toFixed(2)+' ✨','ok');
+      toast('🔒 연동 B 잠금 저장 · $'+parseFloat(d.smmkingsTest.balance).toFixed(2)+' ✨','ok');
       var skRes=ge('spSmmkingsRes');
       if(skRes)skRes.textContent='✅ 연결됨 · $'+parseFloat(d.smmkingsTest.balance).toFixed(2)+' · 한국 상품 등록됨';
     }else{
-      toast('SMMKings 연결 실패','err');
+      toast('연동 B 연결 실패','err');
     }
   }else{
     toast('저장 완료 ✨','ok');

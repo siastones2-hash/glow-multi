@@ -992,14 +992,14 @@ async function getSmmkingsApiKey() {
 async function saveSmmkingsApiKeySafely(newKey) {
   const v = String(newKey || '').trim();
   if (!isValidPanelApiKey(v)) {
-    return { ok: false, error: 'SMMKings API 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' };
+    return { ok: false, error: '연동 B 키 형식이 올바르지 않습니다. 키 전체를 다시 붙여넣으세요.' };
   }
   const current = await getSmmkingsApiKey();
   const test = await fetchPanelBalance('smmkings', v);
   if (!test.ok) {
     return {
       ok: false,
-      error: (test.error || 'SMMKings 연결 실패') + ' — 키가 저장되지 않았습니다.'
+      error: (test.error || '연동 B 연결 실패') + ' — 키가 저장되지 않았습니다.'
     };
   }
   if (current && current !== v && isValidPanelApiKey(current)) {
@@ -1046,8 +1046,8 @@ async function reconcileSmmkingsApiKey(opts = {}) {
       return { ok: true, balance: test.balance, source: 'env', restored: true };
     }
   }
-  if (!silent) console.log('⚠️ SMMKings API 키 없거나 연결 실패');
-  return { ok: false, error: 'SMMKings API 키 미설정 또는 연결 실패' };
+  if (!silent) console.log('⚠️ 연동 B 키 없거나 연결 실패');
+  return { ok: false, error: '연동 B 키 미설정 또는 연결 실패' };
 }
 
 async function getPanelApiKey(provider) {
@@ -1309,7 +1309,7 @@ async function assertPhoneAvailableForReferral(siteId, phone, excludeUserId) {
   return { ok: true, norm };
 }
 
-/** 외부 노출 문구 — 외부 연동·업체 브랜드명 제거 (본사 톤) */
+/** 외부 노출 문구 — 외부 연동·업체 브랜드명·금지어 제거 (누구에게도 노출 금지) */
 function stripSupplierBrand(msg) {
   if (msg == null || msg === '') return msg;
   let t = String(msg);
@@ -1319,9 +1319,14 @@ function stripSupplierBrand(msg) {
   t = t.replace(/Peakerr/gi, '');
   t = t.replace(/peakerr\.com/gi, '');
   t = t.replace(/피커/g, '');
+  t = t.replace(/SMM\s*Kings?/gi, '');
   t = t.replace(/SMMKings?/gi, '');
   t = t.replace(/smmkings\.com/gi, '');
+  t = t.replace(/Perfect\s*Panel/gi, '');
+  t = t.replace(/\bSMM\b/gi, '');
   t = t.replace(/킹즈/g, '');
+  t = t.replace(/패널/g, '');
+  t = t.replace(/\b[Pp]anels?\b/g, '');
   t = t.replace(/공급사/g, '시스템');
   t = t.replace(/API\s*크레딧/gi, '크레딧');
   t = t.replace(/사이트\s*API/gi, '사이트');
@@ -1357,11 +1362,11 @@ function neutralAdminMsg(msg, isSuperAdmin) {
 function sanitizeServiceForClient(svc, priceExtras = {}) {
   return {
     id: svc.id,
-    name: svc.name,
+    name: stripSupplierBrand(svc.name),
     pl: svc.pl,
     min: svc.min,
     max: svc.max,
-    description: svc.description || '',
+    description: stripSupplierBrand(svc.description || ''),
     active: svc.active,
     global_active: svc.global_active,
     site_active: svc.site_active,
@@ -1369,16 +1374,16 @@ function sanitizeServiceForClient(svc, priceExtras = {}) {
   };
 }
 
-/** 슈퍼관리자 전용 — Peakerr $원가·api_id 포함 */
+/** 슈퍼관리자 전용 — 원가·api_id 포함 (금지어는 설명/이름에서 제거) */
 function sanitizeServiceForSuper(svc, priceExtras = {}) {
   return {
     id: svc.id,
-    name: svc.name,
+    name: stripSupplierBrand(svc.name),
     pl: svc.pl,
     rate: svc.rate,
     min: svc.min,
     max: svc.max,
-    description: svc.description || '',
+    description: stripSupplierBrand(svc.description || ''),
     active: svc.active,
     api_id: svc.api_id || '',
     ...priceExtras
@@ -1720,7 +1725,7 @@ function panelHttpsPost(provider, params, timeoutMs = 30000) {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Content-Length': Buffer.byteLength(body),
-        'User-Agent': 'GLOW-SMM/1.0',
+        'User-Agent': 'GLOW/1.0',
         'Accept': 'application/json'
       },
       timeout: timeoutMs
@@ -3160,30 +3165,46 @@ async function requireSuperAdmin(req, res, next) {
     if (!session) return res.status(401).json({ error: '로그인 필요' });
     if (session.role !== 'superadmin') return res.status(403).json({ error: '접근 권한이 없습니다' });
     req.session = session;
+    attachPartnerAdminJsonMask(req, res);
     next();
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 }
 
-/** 지인 사이트(default 제외) — 슈퍼·공급사 브랜드 표현 JSON 마스킹 */
+/** 전원 — 금지어·외부 브랜드 표현 JSON 마스킹 (슈퍼 포함) */
 function attachPartnerAdminJsonMask(req, res) {
-  const role = req.session?.role;
-  if (role === 'superadmin' || req.siteId === 'default') return;
   if (res._partnerJsonWrapped) return;
   res._partnerJsonWrapped = true;
+  const role = req.session?.role;
   const orig = res.json.bind(res);
   res.json = (body) => {
     if (body && typeof body === 'object') {
-      if (body.error) {
-        body.error = stripSupplierBrand(
-          ['admin', 'partner'].includes(role) ? neutralAdminMsg(body.error, false) : body.error
+      const scrub = (v) => {
+        if (v == null) return v;
+        if (typeof v !== 'string') return v;
+        if (role === 'superadmin' || req.siteId === 'default') return stripSupplierBrand(v);
+        return stripSupplierBrand(
+          ['admin', 'partner'].includes(role) ? neutralAdminMsg(v, false) : v
         );
-      }
-      if (body.message) {
-        body.message = stripSupplierBrand(
-          ['admin', 'partner'].includes(role) ? neutralAdminMsg(body.message, false) : body.message
-        );
+      };
+      if (body.error) body.error = scrub(body.error);
+      if (body.message) body.message = scrub(body.message);
+      if (body.note) body.note = scrub(body.note);
+      if (Array.isArray(body.services)) {
+        body.services = body.services.map(s => {
+          if (!s || typeof s !== 'object') return s;
+          const o = { ...s };
+          if (o.description) o.description = scrub(o.description);
+          if (o.name) o.name = scrub(o.name);
+          if (o.inactive_note) o.inactive_note = scrub(o.inactive_note);
+          if (role !== 'superadmin') {
+            delete o.provider;
+            delete o.api_id;
+            delete o.apiId;
+          }
+          return o;
+        });
       }
     }
     return orig(body);
@@ -3245,7 +3266,7 @@ async function fetchTikTokMediaFromTikwm(pageUrl) {
         method: 'GET',
         agent: peakerrHttpsAgent,
         family: 4,
-        headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' },
+        headers: { 'User-Agent': 'GLOW/1.0', Accept: 'application/json' },
         timeout: 25000
       }, (res) => {
         let raw = '';
@@ -3284,7 +3305,7 @@ async function fetchTikTokUserFromTikwm(uniqueId) {
         method: 'GET',
         agent: peakerrHttpsAgent,
         family: 4,
-        headers: { 'User-Agent': 'GLOW-SMM/1.0', Accept: 'application/json' },
+        headers: { 'User-Agent': 'GLOW/1.0', Accept: 'application/json' },
         timeout: 25000
       }, (res) => {
         let raw = '';
@@ -5957,6 +5978,7 @@ app.post('/api/referral/apply', requireAuth, async (req, res) => {
 
 app.get('/api/services', async (req, res) => {
   try {
+    attachPartnerAdminJsonMask(req, res);
     const site = req.site;
     let priceUser = null;
     const svcToken = getToken(req);
