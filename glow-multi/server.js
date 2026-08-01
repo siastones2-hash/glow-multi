@@ -1903,8 +1903,10 @@ async function syncSmmkingsCatalog() {
       const newRateRaw = parseFloat(remote.rate);
       const seed = SMMKINGS_CURATED_SEEDS.find(x => x.id === glowSvc.id || String(x.api_id) === String(glowSvc.api_id));
       const marginMult = seed ? await getDefaultSellMarginMult() : 1;
+      const costForMult = seed && seed.cost != null ? seed.cost : newRateRaw;
+      const targetMult = seed ? await smmkingsTargetMultForCost(costForMult) : SMMKINGS_TARGET_MULT;
       const newRate = seed
-        ? glowRateForTargetMultiple(seed.cost != null ? seed.cost : newRateRaw, marginMult, SMMKINGS_TARGET_MULT)
+        ? glowRateForTargetMultiple(costForMult, marginMult, targetMult)
         : newRateRaw;
       const oldRate = parseFloat(glowSvc.rate);
       const pMin = Math.max(1, parseInt(remote.min, 10) || glowSvc.min || 1);
@@ -2746,6 +2748,17 @@ function validateFacebookLink(svc, url) {
 /** 연동 B 큐레이션 — GLOW 판매 · 작업은 연동 B. cost=실원가(USD/1K), rate는 최종 판매≈원가×target배 되도록 환산 */
 /** 연동 B 판매 목표 배수 (고객 최종가 ≈ 공급원가 × 이 값) */
 const SMMKINGS_TARGET_MULT = 2;
+/** 2배 적용 시 마진(원)이 이 금액을 넘으면 낮은 배수 사용 */
+const SMMKINGS_MARGIN_KRW_CAP = 300000;
+const SMMKINGS_HIGH_COST_MULT = 1.5;
+
+async function smmkingsTargetMultForCost(costUsd) {
+  const cost = parseFloat(costUsd) || 0;
+  const ex = parseFloat(await getGlobalSetting('global_exrate') || '1444') || 1444;
+  // 2배 판매 시 마진 ≈ 원가(원). 30만 원 초과면 1.5배
+  if (cost * ex > SMMKINGS_MARGIN_KRW_CAP) return SMMKINGS_HIGH_COST_MULT;
+  return SMMKINGS_TARGET_MULT;
+}
 
 const SMMKINGS_CURATED_SEEDS = [
   {
@@ -2857,7 +2870,8 @@ async function ensureSmmkingsSeedServices() {
   let n = 0;
   for (const s of SMMKINGS_CURATED_SEEDS) {
     const cost = s.cost != null ? s.cost : s.rate;
-    const rate = glowRateForTargetMultiple(cost, marginMult, SMMKINGS_TARGET_MULT);
+    const targetMult = await smmkingsTargetMultForCost(cost);
+    const rate = glowRateForTargetMultiple(cost, marginMult, targetMult);
     await query(`
       INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'smmkings')
@@ -2871,7 +2885,7 @@ async function ensureSmmkingsSeedServices() {
     n++;
   }
   await applyDisabledSeedMeta().catch(() => null);
-  if (n > 0) console.log(`✅ 연동 B 큐레이션 ${n}개 등록 (판매≈원가×${SMMKINGS_TARGET_MULT}, marginMult=${marginMult.toFixed(2)})`);
+  if (n > 0) console.log(`✅ 연동 B 큐레이션 ${n}개 등록 (기본×${SMMKINGS_TARGET_MULT}, 고마진×${SMMKINGS_HIGH_COST_MULT}, marginMult=${marginMult.toFixed(2)})`);
   return n;
 }
 
