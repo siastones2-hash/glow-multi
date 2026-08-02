@@ -2863,102 +2863,102 @@ const SMMKINGS_CURATED_SEEDS = [
   {
     id: 'sktr1', pl: 'kr_traffic', targetMult: 10, api_id: '4420', cost: 0.50, min: 500, max: 1000000, refill: 0,
     name: '웹사이트 직접 방문 — 한국 ⭐',
-    description: '한국 IP 기반 직접 방문 트래픽입니다(레퍼러 없음). GA·방문자 지표 개선용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 한국 IP 방문자가 입력하신 사이트로 접속합니다. 레퍼러(이전 사이트) 없이 Direct(직접 방문)로 잡혀 GA·방문자 수가 늘어납니다. 브랜드·랜딩 페이지 방문 지표를 빠르게 올릴 때 사용하세요. 홈페이지 또는 랜딩 URL을 입력하세요.'
   },
   {
     id: 'sktr2', pl: 'kr_traffic', targetMult: 10, api_id: '1368', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '구글 유입 트래픽 — 한국',
-    description: '한국 타겟 구글 검색 레퍼러 트래픽입니다. SEO·국내 유입 지표용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 한국 방문자가 구글에서 들어온 것처럼 사이트로 유입됩니다. GA에 google / organic·referral 유입이 쌓여 검색 유입 지표가 개선됩니다. SEO·국내 유입 리포트용으로 쓰세요. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr3', pl: 'kr_traffic', targetMult: 10, api_id: '1369', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '네이버 검색 유입 — 한국',
-    description: '한국 타겟 네이버 검색 유입 트래픽입니다. 국내 검색·쇼핑몰 사이트에 적합합니다. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 한국 방문자가 네이버 검색을 통해 들어온 형태로 사이트에 접속합니다. GA·애널리틱스에 네이버 유입이 기록되어 국내 검색 트래픽 비중이 올라갑니다. 쇼핑몰·로컬 비즈니스에 적합합니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr4', pl: 'kr_traffic', targetMult: 10, api_id: '1371', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '다음 검색 유입 — 한국',
-    description: '한국 타겟 다음(Daum) 검색 유입 트래픽입니다. 국내 포털 유입 분산용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 다음(Daum) 검색 경유로 한국 방문자가 사이트에 들어옵니다. 네이버·구글과 함께 포털 유입을 분산해 두면 유입 소스가 더 자연스러워 보입니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr5', pl: 'kr_traffic', targetMult: 10, api_id: '1375', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '인스타그램 유입 트래픽 — 한국',
-    description: '한국 타겟 인스타그램 레퍼러 트래픽입니다. 소셜 유입 지표용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 인스타그램을 통해 들어온 것처럼 한국 방문자가 사이트로 유입됩니다. GA에 소셜(Instagram) 유입이 쌓여 SNS→웹 전환 지표를 만들 수 있습니다. 프로필·바이오 링크 성과용으로 쓰세요. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr6', pl: 'kr_traffic', targetMult: 10, api_id: '1374', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '유튜브 유입 트래픽 — 한국',
-    description: '한국 타겟 유튜브 레퍼러 트래픽입니다. 영상·채널 연동 사이트에 적합합니다. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 유튜브를 통해 들어온 형태로 한국 방문자가 사이트에 접속합니다. GA에 YouTube 소셜 유입이 기록됩니다. 영상 설명란·채널과 연결된 홈페이지·랜딩 지표용입니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr7', pl: 'kr_traffic', targetMult: 10, api_id: '1373', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '페이스북 유입 트래픽 — 한국',
-    description: '한국 타겟 페이스북 레퍼러 트래픽입니다. 소셜 유입 분산용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 페이스북 경유로 한국 방문자가 사이트에 들어옵니다. GA에 Facebook 소셜 유입이 쌓여 SNS 유입 비중을 올릴 수 있습니다. 페이지·광고 랜딩과 함께 쓰세요. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr8', pl: 'kr_traffic', targetMult: 10, api_id: '3258', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '쿠팡 유입 트래픽 — 한국',
-    description: '한국 타겟 쿠팡 레퍼러 트래픽입니다. 이커머스·쇼핑몰 GA 유입용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 쿠팡에서 넘어온 것처럼 한국 방문자가 사이트에 접속합니다. GA에 쿠팡 레퍼러 유입이 기록되어 이커머스·쇼핑몰 유입 리포트에 활용할 수 있습니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr9', pl: 'kr_traffic', targetMult: 10, api_id: '3269', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '네이버쇼핑 유입 — 한국',
-    description: '한국 타겟 네이버쇼핑 레퍼러 트래픽입니다. 쇼핑·브랜드몰 유입용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 네이버쇼핑을 통해 들어온 형태로 한국 방문자가 사이트에 유입됩니다. GA에 쇼핑 레퍼러가 쌓여 구매 전 유입 지표를 만들 수 있습니다. 브랜드몰·자사몰에 적합합니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr10', pl: 'kr_traffic', targetMult: 10, api_id: '3706', cost: 0.80, min: 1000, max: 1000000, refill: 0,
     name: '모바일(Android) 트래픽 — 한국',
-    description: '한국 Android 모바일 유기 트래픽입니다. 모바일 비중 높은 사이트용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 한국 Android 기기에서 사이트를 방문한 트래픽이 들어갑니다. GA에 모바일·Android 비중이 올라갑니다. 모바일 웹·앱 랜딩 지표를 키울 때 사용하세요. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr11', pl: 'kr_traffic', targetMult: 10, api_id: '2475', cost: 1.00, min: 1000, max: 60000, refill: 0,
     name: '아이폰 트래픽 — 한국',
-    description: '한국 아이폰 유기 트래픽입니다. iOS 사용자 유입 지표용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 한국 아이폰(iOS)에서 사이트를 방문한 트래픽이 들어갑니다. GA에 모바일·iOS 비중이 올라갑니다. 아이폰 사용자 비중이 중요한 브랜드·쇼핑몰에 적합합니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr12', pl: 'kr_traffic', targetMult: 10, api_id: '1376', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '트위터(X) 유입 트래픽 — 한국',
-    description: '한국 타겟 트위터(X) 레퍼러 트래픽입니다. 소셜 유입 분산용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 트위터(X)를 통해 들어온 것처럼 한국 방문자가 사이트에 접속합니다. GA에 X/Twitter 소셜 유입이 기록됩니다. SNS 유입 소스를 분산할 때 사용하세요. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr13', pl: 'kr_traffic', targetMult: 10, api_id: '1370', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '네이버 블로그 유입 — 한국',
-    description: '한국 타겟 네이버 블로그 레퍼러 트래픽입니다. 국내 콘텐츠·유입 지표용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 네이버 블로그에서 넘어온 형태로 한국 방문자가 사이트에 들어옵니다. GA에 블로그 레퍼러 유입이 쌓여 콘텐츠 마케팅 지표를 만들 수 있습니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr14', pl: 'kr_traffic', targetMult: 10, api_id: '3948', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '네이버 포스트 유입 — 한국',
-    description: '한국 타겟 네이버 포스트 레퍼러 트래픽입니다. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 네이버 포스트 경유로 한국 방문자가 사이트에 유입됩니다. GA에 post.naver 레퍼러가 기록됩니다. 네이버 콘텐츠 유입 비중을 올릴 때 사용하세요. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr15', pl: 'kr_traffic', targetMult: 10, api_id: '3952', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '네이버 스마트스토어 유입 — 한국',
-    description: '한국 타겟 네이버 스마트스토어 레퍼러 트래픽입니다. 쇼핑몰·브랜드몰용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 네이버 스마트스토어에서 넘어온 것처럼 한국 방문자가 사이트에 접속합니다. GA에 스마트스토어 레퍼러가 쌓입니다. 자사몰·브랜드 페이지 유입 리포트용입니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr16', pl: 'kr_traffic', targetMult: 10, api_id: '1382', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: 'G마켓 유입 트래픽 — 한국',
-    description: '한국 타겟 G마켓 레퍼러 트래픽입니다. 이커머스 유입용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 G마켓에서 들어온 형태로 한국 방문자가 사이트에 유입됩니다. GA에 gmarket 레퍼러가 기록되어 오픈마켓→자사몰 유입 지표를 만들 수 있습니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr17', pl: 'kr_traffic', targetMult: 10, api_id: '1383', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '티스토리 유입 트래픽 — 한국',
-    description: '한국 타겟 티스토리 레퍼러 트래픽입니다. 블로그·콘텐츠 유입용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 티스토리 블로그에서 넘어온 것처럼 한국 방문자가 사이트에 접속합니다. GA에 티스토리 레퍼러 유입이 쌓입니다. 블로그 마케팅·콘텐츠 유입 지표용입니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr18', pl: 'kr_traffic', targetMult: 10, api_id: '1381', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '나무위키 유입 트래픽 — 한국',
-    description: '한국 타겟 나무위키 레퍼러 트래픽입니다. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 나무위키에서 넘어온 형태로 한국 방문자가 사이트에 들어옵니다. GA에 namu.wiki 레퍼러가 기록됩니다. 커뮤니티·정보성 유입 소스를 만들 때 사용하세요. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr19', pl: 'kr_traffic', targetMult: 10, api_id: '1390', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '링크드인 유입 트래픽 — 한국',
-    description: '한국 타겟 링크드인 레퍼러 트래픽입니다. B2B·채용 사이트용. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 링크드인을 통해 들어온 것처럼 한국 방문자가 사이트에 접속합니다. GA에 LinkedIn 소셜 유입이 쌓입니다. B2B·채용·기업 사이트 유입 지표용입니다. 웹사이트 URL을 입력하세요.'
   },
   {
     id: 'sktr20', pl: 'kr_traffic', targetMult: 10, api_id: '1392', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '핀터레스트 유입 트래픽 — 한국',
-    description: '한국 타겟 핀터레스트 레퍼러 트래픽입니다. 웹사이트 URL을 입력하세요.'
+    description: '주문하면 핀터레스트에서 넘어온 형태로 한국 방문자가 사이트에 유입됩니다. GA에 Pinterest 소셜 유입이 기록됩니다. 이미지·쇼핑·인테리어 등 비주얼 브랜드에 적합합니다. 웹사이트 URL을 입력하세요.'
   },
 ];
 
