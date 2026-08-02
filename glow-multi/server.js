@@ -2766,7 +2766,10 @@ async function glowRateForSmmkingsSeed(seed, marginMult) {
     return Math.round((seed.sellKrw / (m * ex)) * 10000) / 10000;
   }
   const cost = seed.cost != null ? seed.cost : seed.rate;
-  const targetMult = await smmkingsTargetMultForCost(cost);
+  // 시드별 targetMult 우선 (예: 한국 트래픽 ×3)
+  const targetMult = seed.targetMult > 0
+    ? seed.targetMult
+    : await smmkingsTargetMultForCost(cost);
   return glowRateForTargetMultiple(cost, m, targetMult);
 }
 
@@ -2858,57 +2861,57 @@ const SMMKINGS_CURATED_SEEDS = [
   },
   // —— 한국 트래픽 카테고리 (Instant · 링크+수량) ——
   {
-    id: 'sktr1', pl: 'kr_traffic', api_id: '4420', cost: 0.50, min: 500, max: 1000000, refill: 0,
+    id: 'sktr1', pl: 'kr_traffic', targetMult: 3, api_id: '4420', cost: 0.50, min: 500, max: 1000000, refill: 0,
     name: '웹사이트 직접 방문 — 한국 ⭐',
     description: '한국 IP 기반 직접 방문 트래픽입니다(레퍼러 없음). GA·방문자 지표 개선용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr2', pl: 'kr_traffic', api_id: '1368', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr2', pl: 'kr_traffic', targetMult: 3, api_id: '1368', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '구글 유입 트래픽 — 한국',
     description: '한국 타겟 구글 검색 레퍼러 트래픽입니다. SEO·국내 유입 지표용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr3', pl: 'kr_traffic', api_id: '1369', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr3', pl: 'kr_traffic', targetMult: 3, api_id: '1369', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '네이버 검색 유입 — 한국',
     description: '한국 타겟 네이버 검색 유입 트래픽입니다. 국내 검색·쇼핑몰 사이트에 적합합니다. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr4', pl: 'kr_traffic', api_id: '1371', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr4', pl: 'kr_traffic', targetMult: 3, api_id: '1371', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '다음 검색 유입 — 한국',
     description: '한국 타겟 다음(Daum) 검색 유입 트래픽입니다. 국내 포털 유입 분산용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr5', pl: 'kr_traffic', api_id: '1375', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr5', pl: 'kr_traffic', targetMult: 3, api_id: '1375', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '인스타그램 유입 트래픽 — 한국',
     description: '한국 타겟 인스타그램 레퍼러 트래픽입니다. 소셜 유입 지표용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr6', pl: 'kr_traffic', api_id: '1374', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr6', pl: 'kr_traffic', targetMult: 3, api_id: '1374', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '유튜브 유입 트래픽 — 한국',
     description: '한국 타겟 유튜브 레퍼러 트래픽입니다. 영상·채널 연동 사이트에 적합합니다. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr7', pl: 'kr_traffic', api_id: '1373', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr7', pl: 'kr_traffic', targetMult: 3, api_id: '1373', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '페이스북 유입 트래픽 — 한국',
     description: '한국 타겟 페이스북 레퍼러 트래픽입니다. 소셜 유입 분산용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr8', pl: 'kr_traffic', api_id: '3258', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr8', pl: 'kr_traffic', targetMult: 3, api_id: '3258', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '쿠팡 유입 트래픽 — 한국',
     description: '한국 타겟 쿠팡 레퍼러 트래픽입니다. 이커머스·쇼핑몰 GA 유입용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr9', pl: 'kr_traffic', api_id: '3269', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    id: 'sktr9', pl: 'kr_traffic', targetMult: 3, api_id: '3269', cost: 0.35, min: 500, max: 1000000, refill: 0,
     name: '네이버쇼핑 유입 — 한국',
     description: '한국 타겟 네이버쇼핑 레퍼러 트래픽입니다. 쇼핑·브랜드몰 유입용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr10', pl: 'kr_traffic', api_id: '3706', cost: 0.80, min: 1000, max: 1000000, refill: 0,
+    id: 'sktr10', pl: 'kr_traffic', targetMult: 3, api_id: '3706', cost: 0.80, min: 1000, max: 1000000, refill: 0,
     name: '모바일(Android) 트래픽 — 한국',
     description: '한국 Android 모바일 유기 트래픽입니다. 모바일 비중 높은 사이트용. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'sktr11', pl: 'kr_traffic', api_id: '2475', cost: 1.00, min: 1000, max: 60000, refill: 0,
+    id: 'sktr11', pl: 'kr_traffic', targetMult: 3, api_id: '2475', cost: 1.00, min: 1000, max: 60000, refill: 0,
     name: '아이폰 트래픽 — 한국',
     description: '한국 아이폰 유기 트래픽입니다. iOS 사용자 유입 지표용. 웹사이트 URL을 입력하세요.'
   },
