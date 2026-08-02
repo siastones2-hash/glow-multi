@@ -2972,7 +2972,7 @@ const SMMKINGS_CURATED_SEEDS = [
   },
   // —— SEO·상위노출 (백링크/오프페이지 · 순위 보장 아님, 효과 설명 필수) ——
   {
-    id: 'skseo1', pl: 'seo', package: true, api_id: '7193', cost: 84.00, min: 1, max: 1, refill: 0,
+    id: 'skseo1', pl: 'seo', package: true, targetMult: 1.5, api_id: '7193', cost: 84.00, min: 1, max: 1, refill: 0,
     name: '한국 백링크 패키지 (5개) ⭐',
     description: '주문하면 한국 고권위 사이트에 백링크 5개가 생성됩니다. 효과: 구글·검색엔진이 내 사이트를 더 신뢰하는 신호가 쌓여 장기적으로 검색 노출에 도움이 될 수 있습니다. 단, 네이버/구글 1페이지를 보장하지는 않습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
   },
@@ -2992,7 +2992,7 @@ const SMMKINGS_CURATED_SEEDS = [
     description: '주문하면 교육(.edu) 성격 사이트 백링크 5개와 기사(약 500자+)가 함께 작업됩니다. 효과: 상대적으로 신뢰도 높은 도메인 링크가 쌓여 SEO에 유리한 신호가 될 수 있습니다. 업종 무관 패키지이며 순위 보장은 없습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'skseo5', pl: 'seo', package: true, api_id: '7147', cost: 250.00, min: 1, max: 1, refill: 0,
+    id: 'skseo5', pl: 'seo', package: true, targetMult: 1.3, api_id: '7147', cost: 250.00, min: 1, max: 1, refill: 0,
     name: '게스트포스트 백링크 (20개 + 기사)',
     description: '주문하면 트래픽·DR이 높은 사이트의 게스트포스트형 백링크 약 20개와 기사(약 500자+)가 작업됩니다. 효과: 고품질 외부 노출·링크로 브랜드 인지와 SEO 신호를 동시에 노릴 수 있습니다. 비용이 큰 패키지이며 순위·트래픽을 보장하지는 않습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
   },
