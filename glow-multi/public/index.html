@@ -3653,6 +3653,10 @@ function setFlt(f,el){FLT=f;document.querySelectorAll('#sfBar .sf').forEach(func
 function _svcListPrice(s){
   var aco=window._adminCreditOnly;
   var unit=aco?(s.baseCost!=null?s.baseCost:s.sell):s.sell;
+  // 수량1=패키지1회 (백링크 SEO 등) — 1개 가격이 곧 판매가
+  if(s && Number(s.min)===1 && Number(s.max)===1){
+    return {amount:Math.round(unit),label:aco?'크레딧/회':'/ 1회'};
+  }
   return {amount:Math.round(unit*1000),label:aco?'크레딧/1K':'/ 1,000개'};
 }
 function renderSvcList(){

@@ -2758,18 +2758,28 @@ async function smmkingsTargetMultForCost(costUsd) {
   return SMMKINGS_TARGET_MULT;
 }
 
-/** 시드 → services.rate (sellKrw 있으면 원화 고정가 우선) */
+/** 시드 → services.rate (sellKrw 있으면 원화 고정가 우선)
+ *  package:true 는 수량1=패키지1회. GLOW 과금이 (rate×환율×마진)/1000×qty 이므로
+ *  rate에 ×1000을 넣어 1회 결제액이 패키지 판매가가 되게 함. */
 async function glowRateForSmmkingsSeed(seed, marginMult) {
   const m = marginMult > 0 ? marginMult : 1;
   const ex = parseFloat(await getGlobalSetting('global_exrate') || '1444') || 1444;
+  const isPkg = !!seed.package;
   if (seed.sellKrw != null && seed.sellKrw > 0 && ex > 0) {
-    return Math.round((seed.sellKrw / (m * ex)) * 10000) / 10000;
+    // sellKrw = 고객 원화가 (패키지면 1회 가격, 아니면 1K 가격)
+    const rate = isPkg
+      ? (seed.sellKrw * 1000) / (m * ex)
+      : seed.sellKrw / (m * ex);
+    return Math.round(rate * 10000) / 10000;
   }
   const cost = seed.cost != null ? seed.cost : seed.rate;
   // 시드별 targetMult 우선 (한국 트래픽만 ×10, 나머지 연동B는 기본 ×2 — 타 상품 건드리지 않음)
   const targetMult = seed.targetMult > 0
     ? seed.targetMult
     : await smmkingsTargetMultForCost(cost);
+  if (isPkg) {
+    return Math.round((cost * 1000 * targetMult / m) * 10000) / 10000;
+  }
   return glowRateForTargetMultiple(cost, m, targetMult);
 }
 
@@ -2962,32 +2972,32 @@ const SMMKINGS_CURATED_SEEDS = [
   },
   // —— SEO·상위노출 (백링크/오프페이지 · 순위 보장 아님, 효과 설명 필수) ——
   {
-    id: 'skseo1', pl: 'seo', api_id: '7193', cost: 84.00, min: 1, max: 1, refill: 0,
+    id: 'skseo1', pl: 'seo', package: true, api_id: '7193', cost: 84.00, min: 1, max: 1, refill: 0,
     name: '한국 백링크 패키지 (5개) ⭐',
     description: '주문하면 한국 고권위 사이트에 백링크 5개가 생성됩니다. 효과: 구글·검색엔진이 내 사이트를 더 신뢰하는 신호가 쌓여 장기적으로 검색 노출에 도움이 될 수 있습니다. 단, 네이버/구글 1페이지를 보장하지는 않습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'skseo2', pl: 'seo', api_id: '3939', cost: 14.00, min: 1, max: 1, refill: 0,
+    id: 'skseo2', pl: 'seo', package: true, api_id: '3939', cost: 14.00, min: 1, max: 1, refill: 0,
     name: 'Dofollow 백링크 + 기사 (GoogleAPIs)',
     description: '주문하면 dofollow 백링크 1개와 약 400자 이상 기사가 함께 등록됩니다. 효과: 외부 사이트에서 내 사이트로 연결되는 링크가 생겨 SEO 기초 신호(피인용)가 생깁니다. 단독으로 상위노출을 보장하지는 않으며, 콘텐츠·사이트 품질과 함께 써야 합니다. 수량 1 = 1건. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'skseo3', pl: 'seo', api_id: '7148', cost: 112.50, min: 1, max: 1, refill: 0,
+    id: 'skseo3', pl: 'seo', package: true, api_id: '7148', cost: 112.50, min: 1, max: 1, refill: 0,
     name: 'High-DA Web 2.0 백링크 (30개)',
     description: '주문하면 DA(도메인 권위)가 높은 Web 2.0 성격 사이트에 백링크 약 30개가 생성됩니다. 효과: 링크 프로필이 두꺼워져 검색엔진이 사이트를 인지·평가하는 데 도움이 될 수 있습니다. 순위 급등을 보장하지 않으며, 스팸성 과다 주문은 오히려 리스크가 있습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'skseo4', pl: 'seo', api_id: '6285', cost: 150.00, min: 1, max: 1, refill: 0,
+    id: 'skseo4', pl: 'seo', package: true, api_id: '6285', cost: 150.00, min: 1, max: 1, refill: 0,
     name: 'EDU 백링크 패키지 (5개 + 기사)',
     description: '주문하면 교육(.edu) 성격 사이트 백링크 5개와 기사(약 500자+)가 함께 작업됩니다. 효과: 상대적으로 신뢰도 높은 도메인 링크가 쌓여 SEO에 유리한 신호가 될 수 있습니다. 업종 무관 패키지이며 순위 보장은 없습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'skseo5', pl: 'seo', api_id: '7147', cost: 250.00, min: 1, max: 1, refill: 0,
+    id: 'skseo5', pl: 'seo', package: true, api_id: '7147', cost: 250.00, min: 1, max: 1, refill: 0,
     name: '게스트포스트 백링크 (20개 + 기사)',
     description: '주문하면 트래픽·DR이 높은 사이트의 게스트포스트형 백링크 약 20개와 기사(약 500자+)가 작업됩니다. 효과: 고품질 외부 노출·링크로 브랜드 인지와 SEO 신호를 동시에 노릴 수 있습니다. 비용이 큰 패키지이며 순위·트래픽을 보장하지는 않습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
   },
   {
-    id: 'skseo6', pl: 'seo', api_id: '7459', cost: 252.00, min: 1, max: 1, refill: 0,
+    id: 'skseo6', pl: 'seo', package: true, api_id: '7459', cost: 252.00, min: 1, max: 1, refill: 0,
     name: '유튜브 오프페이지 SEO (임베드·백링크)',
     description: '주문하면 영상 임베드·클라우드/EDU/Web2.0 등 프리미엄 백링크 스택(약 16개)이 유튜브 영상에 연결됩니다. 효과: 영상 관련 외부 신호가 쌓여 유튜브·웹 검색에서의 발견 가능성을 높이는 데 쓰입니다. 조회수·구독 급등을 보장하지는 않습니다. 수량 1 = 패키지 1회. 유튜브 영상 URL을 입력하세요.'
   },
