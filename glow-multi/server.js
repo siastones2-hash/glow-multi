@@ -2915,6 +2915,51 @@ const SMMKINGS_CURATED_SEEDS = [
     name: '아이폰 트래픽 — 한국',
     description: '한국 아이폰 유기 트래픽입니다. iOS 사용자 유입 지표용. 웹사이트 URL을 입력하세요.'
   },
+  {
+    id: 'sktr12', pl: 'kr_traffic', targetMult: 3, api_id: '1376', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '트위터(X) 유입 트래픽 — 한국',
+    description: '한국 타겟 트위터(X) 레퍼러 트래픽입니다. 소셜 유입 분산용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr13', pl: 'kr_traffic', targetMult: 3, api_id: '1370', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '네이버 블로그 유입 — 한국',
+    description: '한국 타겟 네이버 블로그 레퍼러 트래픽입니다. 국내 콘텐츠·유입 지표용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr14', pl: 'kr_traffic', targetMult: 3, api_id: '3948', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '네이버 포스트 유입 — 한국',
+    description: '한국 타겟 네이버 포스트 레퍼러 트래픽입니다. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr15', pl: 'kr_traffic', targetMult: 3, api_id: '3952', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '네이버 스마트스토어 유입 — 한국',
+    description: '한국 타겟 네이버 스마트스토어 레퍼러 트래픽입니다. 쇼핑몰·브랜드몰용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr16', pl: 'kr_traffic', targetMult: 3, api_id: '1382', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: 'G마켓 유입 트래픽 — 한국',
+    description: '한국 타겟 G마켓 레퍼러 트래픽입니다. 이커머스 유입용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr17', pl: 'kr_traffic', targetMult: 3, api_id: '1383', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '티스토리 유입 트래픽 — 한국',
+    description: '한국 타겟 티스토리 레퍼러 트래픽입니다. 블로그·콘텐츠 유입용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr18', pl: 'kr_traffic', targetMult: 3, api_id: '1381', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '나무위키 유입 트래픽 — 한국',
+    description: '한국 타겟 나무위키 레퍼러 트래픽입니다. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr19', pl: 'kr_traffic', targetMult: 3, api_id: '1390', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '링크드인 유입 트래픽 — 한국',
+    description: '한국 타겟 링크드인 레퍼러 트래픽입니다. B2B·채용 사이트용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr20', pl: 'kr_traffic', targetMult: 3, api_id: '1392', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '핀터레스트 유입 트래픽 — 한국',
+    description: '한국 타겟 핀터레스트 레퍼러 트래픽입니다. 웹사이트 URL을 입력하세요.'
+  },
 ];
 
 /** 본사 판매가 ≈ 실원가 × target배 가 되도록 services.rate 환산 */
