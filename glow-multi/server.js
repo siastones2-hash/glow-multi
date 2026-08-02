@@ -2960,6 +2960,42 @@ const SMMKINGS_CURATED_SEEDS = [
     name: '핀터레스트 유입 트래픽 — 한국',
     description: '주문하면 핀터레스트에서 넘어온 형태로 한국 방문자가 사이트에 유입됩니다. GA에 Pinterest 소셜 유입이 기록됩니다. 이미지·쇼핑·인테리어 등 비주얼 브랜드에 적합합니다. 웹사이트 URL을 입력하세요.'
   },
+  // —— SEO·상위노출 (백링크/오프페이지 · 순위 보장 아님, 효과 설명 필수) ——
+  {
+    id: 'skseo1', pl: 'seo', api_id: '7193', cost: 84.00, min: 1, max: 1, refill: 0,
+    name: '한국 백링크 패키지 (5개) ⭐',
+    description: '주문하면 한국 고권위 사이트에 백링크 5개가 생성됩니다. 효과: 구글·검색엔진이 내 사이트를 더 신뢰하는 신호가 쌓여 장기적으로 검색 노출에 도움이 될 수 있습니다. 단, 네이버/구글 1페이지를 보장하지는 않습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'skseo2', pl: 'seo', api_id: '3939', cost: 14.00, min: 1, max: 1, refill: 0,
+    name: 'Dofollow 백링크 + 기사 (GoogleAPIs)',
+    description: '주문하면 dofollow 백링크 1개와 약 400자 이상 기사가 함께 등록됩니다. 효과: 외부 사이트에서 내 사이트로 연결되는 링크가 생겨 SEO 기초 신호(피인용)가 생깁니다. 단독으로 상위노출을 보장하지는 않으며, 콘텐츠·사이트 품질과 함께 써야 합니다. 수량 1 = 1건. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'skseo3', pl: 'seo', api_id: '7148', cost: 112.50, min: 1, max: 1, refill: 0,
+    name: 'High-DA Web 2.0 백링크 (30개)',
+    description: '주문하면 DA(도메인 권위)가 높은 Web 2.0 성격 사이트에 백링크 약 30개가 생성됩니다. 효과: 링크 프로필이 두꺼워져 검색엔진이 사이트를 인지·평가하는 데 도움이 될 수 있습니다. 순위 급등을 보장하지 않으며, 스팸성 과다 주문은 오히려 리스크가 있습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'skseo4', pl: 'seo', api_id: '6285', cost: 150.00, min: 1, max: 1, refill: 0,
+    name: 'EDU 백링크 패키지 (5개 + 기사)',
+    description: '주문하면 교육(.edu) 성격 사이트 백링크 5개와 기사(약 500자+)가 함께 작업됩니다. 효과: 상대적으로 신뢰도 높은 도메인 링크가 쌓여 SEO에 유리한 신호가 될 수 있습니다. 업종 무관 패키지이며 순위 보장은 없습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'skseo5', pl: 'seo', api_id: '7147', cost: 250.00, min: 1, max: 1, refill: 0,
+    name: '게스트포스트 백링크 (20개 + 기사)',
+    description: '주문하면 트래픽·DR이 높은 사이트의 게스트포스트형 백링크 약 20개와 기사(약 500자+)가 작업됩니다. 효과: 고품질 외부 노출·링크로 브랜드 인지와 SEO 신호를 동시에 노릴 수 있습니다. 비용이 큰 패키지이며 순위·트래픽을 보장하지는 않습니다. 수량 1 = 패키지 1회. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'skseo6', pl: 'seo', api_id: '7459', cost: 252.00, min: 1, max: 1, refill: 0,
+    name: '유튜브 오프페이지 SEO (임베드·백링크)',
+    description: '주문하면 영상 임베드·클라우드/EDU/Web2.0 등 프리미엄 백링크 스택(약 16개)이 유튜브 영상에 연결됩니다. 효과: 영상 관련 외부 신호가 쌓여 유튜브·웹 검색에서의 발견 가능성을 높이는 데 쓰입니다. 조회수·구독 급등을 보장하지는 않습니다. 수량 1 = 패키지 1회. 유튜브 영상 URL을 입력하세요.'
+  },
+  {
+    id: 'skg14', pl: 'instagram', api_id: '5009', cost: 12.00, min: 100, max: 100000, refill: 0,
+    name: 'Instagram 좋아요 — 한국 상위노출용 ⭐',
+    description: '주문하면 한국 계정 기반 좋아요가 게시물에 들어갑니다. 효과: 초반 좋아요·참여가 붙으면 인스타 알고리즘이 게시물을 더 많은 사람에게 보여줄 가능성이 커집니다(탐색·인기게시물 쪽). 네이버·구글 검색 상위노출과는 무관합니다. 게시물·릴스 URL을 입력하세요.'
+  },
 ];
 
 /** 본사 판매가 ≈ 실원가 × target배 가 되도록 services.rate 환산 */
@@ -4511,7 +4547,7 @@ const PL_DISPLAY_KO = {
   telegram: 'Telegram', spotify: 'Spotify', twitch: 'Twitch',
   pinterest: 'Pinterest', naver: '네이버', kakao: '카카오',
   coupang: '쿠팡', amazon: 'Amazon', ecommerce: '이커머스',
-  traffic: '웹 트래픽', kr_traffic: '한국 트래픽', appstore: '앱스토어', other: 'SNS'
+  traffic: '웹 트래픽', kr_traffic: '한국 트래픽', seo: 'SEO·상위노출', appstore: '앱스토어', other: 'SNS'
 };
 
 function detectServiceTypeKo(full) {
@@ -4611,7 +4647,7 @@ function formatPeakerrServiceDescription(name, pl, fallback) {
   const plKo = {
     youtube: '유튜브', instagram: '인스타그램', tiktok: '틱톡', threads: '스레드',
     twitter: 'X(트위터)', facebook: '페이스북', telegram: '텔레그램',
-    kr_traffic: '한국 웹사이트', traffic: '웹사이트',
+    kr_traffic: '한국 웹사이트', traffic: '웹사이트', seo: 'SEO·상위노출',
     naver: '네이버', kakao: '카카오', amazon: 'Amazon', coupang: '쿠팡'
   }[pl] || 'SNS';
   const typeKo = detectServiceTypeKo(name || '');
@@ -5316,7 +5352,7 @@ async function pruneServiceCatalog(opts = {}) {
     }
   }
 
-  const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'pinterest', 'kr_traffic', 'traffic', 'appstore', 'other'];
+  const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'pinterest', 'kr_traffic', 'seo', 'traffic', 'appstore', 'other'];
   for (const pl of platforms) {
     const activeR = await query(`
       SELECT id, name, pl, rate, description FROM services
@@ -6233,6 +6269,7 @@ app.get('/api/services', async (req, res) => {
     // YouTube, Instagram, TikTok 먼저 → Twitter, Threads → 기타
     const platformOrder = {
       kr_traffic: 0,
+      seo: 0.5,
       youtube: 1, instagram: 2, tiktok: 3,
       naver: 4, kakao: 5, coupang: 6, amazon: 7, ecommerce: 8,
       threads: 9, twitter: 10, spotify: 11,
@@ -9053,11 +9090,15 @@ function detectPlat(n) {
   if (n.includes('reddit')) return 'other';
   if (n.includes('soundcloud')) return 'other';
   if (/google my business|google map|gmb |google review/.test(n)) return 'traffic';
-  if ((n.includes('트래픽') || n.includes('traffic') || n.includes('seo') || n.includes('방문'))
+  if ((n.includes('트래픽') || n.includes('traffic') || n.includes('방문'))
       && /korea|korean|\bkr\b|south korea|한국|대한민국/.test(n)) {
     return 'kr_traffic';
   }
-  if (n.includes('트래픽') || n.includes('traffic') || n.includes('seo') || n.includes('검색')) return 'traffic';
+  if (/backlink|백링크|guest post|off-?page seo|dofollow|\bseo\b|상위노출/.test(n)
+      && !/traffic|트래픽|like|좋아요|follower|팔로워/.test(n)) {
+    return 'seo';
+  }
+  if (n.includes('트래픽') || n.includes('traffic') || n.includes('검색')) return 'traffic';
   if (n.includes('appstore') || n.includes('play store') || n.includes('ios') || n.includes('android')) return 'appstore';
   return 'other';
 }

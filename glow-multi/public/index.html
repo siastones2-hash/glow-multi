@@ -2181,6 +2181,7 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
           <option value="spotify">Spotify</option>
           <option value="twitch">Twitch</option>
           <option value="kr_traffic">한국 트래픽</option>
+          <option value="seo">SEO·상위노출</option>
           <option value="traffic">웹트래픽/SEO</option>
           <option value="appstore">앱스토어</option>
           <option value="other">기타</option>
@@ -2347,16 +2348,17 @@ async function loadChargeHis(){
   tb.innerHTML=h;
 }
 
-var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',kakao:'💬',twitch:'🎮',amazon:'🛒',ecommerce:'🛍',coupang:'🚀',pinterest:'📌',kr_traffic:'🇰🇷',traffic:'🌐',appstore:'📱',travel:'✈',delivery:'🍔',gaming:'🎮',other:'📡'};
-var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',pinterest:'#E60023',kr_traffic:'#CD2E3A',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
-var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',kr_traffic:'한국트래픽',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
-var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',pinterest:'핀터레스트 핀/보드 URL',kr_traffic:'웹사이트 URL',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
+var PLI={youtube:'▶',instagram:'📷',tiktok:'🎵',threads:'🧵',twitter:'𝕏',telegram:'✈',facebook:'f',spotify:'♫',naver:'N',kakao:'💬',twitch:'🎮',amazon:'🛒',ecommerce:'🛍',coupang:'🚀',pinterest:'📌',kr_traffic:'🇰🇷',seo:'📈',traffic:'🌐',appstore:'📱',travel:'✈',delivery:'🍔',gaming:'🎮',other:'📡'};
+var PLC={youtube:'#FF0000',instagram:'#C13584',tiktok:'#111',threads:'#000',twitter:'#111',telegram:'#229ED9',facebook:'#1877F2',spotify:'#1DB954',naver:'#03C75A',kakao:'#FAE100',twitch:'#9146FF',amazon:'#FF9900',ecommerce:'#EE4D2D',coupang:'#1E2D5E',pinterest:'#E60023',kr_traffic:'#CD2E3A',seo:'#0F766E',traffic:'#4285F4',appstore:'#0D96F6',travel:'#00A699',delivery:'#FA4A0C',gaming:'#171A21',other:'#5865F2'};
+var PLK={youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',kr_traffic:'한국트래픽',seo:'SEO상위노출',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
+var HINTS={youtube:'유튜브 영상/채널 URL',instagram:'인스타그램 URL',tiktok:'틱톡 URL',threads:'스레드 URL',twitter:'트위터 URL',telegram:'텔레그램 링크',facebook:'페이스북 URL',spotify:'Spotify URL',naver:'네이버 URL',kakao:'카카오 채널/스토어 URL',twitch:'트위치 채널 URL',amazon:'아마존 상품 URL',ecommerce:'쇼피/라자다/알리 상품 URL',coupang:'쿠팡 상품 URL',pinterest:'핀터레스트 핀/보드 URL',kr_traffic:'웹사이트 URL',seo:'웹사이트 URL (유튜브SEO는 영상 URL)',traffic:'웹사이트 URL',appstore:'앱스토어 앱 URL',travel:'트립어드바이저/에어비앤비 URL',delivery:'가게 URL',gaming:'게임 URL',other:'서비스 대상 URL'};
 var ORDERGUIDE={
   youtube:{title:'유튜브 링크 넣는 법',steps:['유튜브 앱이나 사이트에서 대상 영상을 엽니다.','영상 아래 <b>공유</b> 버튼을 누르고 <b>링크 복사</b>를 선택합니다.','복사한 주소(youtube.com/... 또는 youtu.be/...)를 그대로 붙여넣습니다.'],warn:'구독자 주문은 영상 링크가 아닌 <b>채널 주소</b>를 넣어주세요.'},
   instagram:{title:'인스타그램 링크 넣는 법',steps:['인스타그램에서 대상 게시물(또는 릴스)을 엽니다.','게시물 우측 상단 <b>···</b> 메뉴에서 <b>링크 복사</b>를 누릅니다.','복사한 주소(instagram.com/p/... 등)를 붙여넣습니다.'],warn:'팔로워 주문은 게시물이 아닌 <b>프로필 주소</b>(instagram.com/아이디)를 넣어주세요. 계정은 <b>공개</b> 상태여야 합니다.'},
   tiktok:{title:'틱톡 링크 넣는 법',steps:['틱톡에서 대상 영상을 엽니다.','우측 <b>공유</b> 아이콘을 누르고 <b>링크 복사</b>를 선택합니다.','복사한 주소(tiktok.com/... 또는 vt.tiktok.com/...)를 붙여넣습니다.'],warn:'팔로워 주문은 영상이 아닌 <b>프로필 주소</b>를 넣어주세요. 계정은 <b>공개</b> 상태여야 합니다.'},
   facebook:{title:'페이스북 링크 넣는 법',steps:['페이스북에서 대상 게시물 또는 페이지를 엽니다.','게시물 우측 상단 <b>···</b> 메뉴 또는 <b>공유 → 링크 복사</b>를 누릅니다.','복사한 주소를 붙여넣습니다.'],warn:'좋아요·팔로워 주문은 <b>페이지 주소</b>를, 게시물 주문은 <b>게시물 주소</b>를 넣어주세요. 공개 상태여야 합니다.'},
   kr_traffic:{title:'한국 트래픽 — 주문 방법',steps:['유입 받을 <b>웹사이트 주소</b>(https://...)를 복사합니다.','아래 링크 칸에 붙여넣고 수량을 입력합니다.','주문하기를 누르면 자동으로 작업이 시작됩니다.'],warn:''},
+  seo:{title:'SEO·상위노출 — 주문 방법',steps:['백링크/SEO는 <b>웹사이트 주소</b>를, 유튜브 SEO는 <b>영상 주소</b>를 넣습니다.','패키지 상품은 보통 <b>수량 1</b>이 1회 패키지입니다.','상품 설명의 <b>효과·한계</b>를 읽고 주문하세요. (순위 보장이 아닙니다)'],warn:''},
   traffic:{title:'웹 트래픽 — 주문 방법',steps:['유입 받을 <b>웹사이트 주소</b>(https://...)를 복사합니다.','아래 링크 칸에 붙여넣고 수량을 입력합니다.','주문하기를 누르면 자동으로 작업이 시작됩니다.'],warn:''}
 };
 
@@ -3641,8 +3643,8 @@ async function loadSvcs(){
   if(Array.isArray(d)){SVCS=d;window._svcs=d;renderSvcList();renderQCards()}
 }
 function renderSfBar(){
-  var plats=['all','kr_traffic','youtube','instagram','tiktok','twitter','facebook','telegram','threads','spotify','twitch','traffic','other'];
-  var lbl={all:'전체',kr_traffic:'🇰🇷 한국트래픽',youtube:'▶ YouTube',instagram:'📷 Instagram',tiktok:'🎵 TikTok',twitter:'𝕏 Twitter/X',facebook:'f Facebook',telegram:'✈ Telegram',threads:'🧵 Threads',spotify:'♫ Spotify',twitch:'🎮 Twitch',traffic:'🌐 트래픽',other:'📡 기타'};
+  var plats=['all','kr_traffic','seo','youtube','instagram','tiktok','twitter','facebook','telegram','threads','spotify','twitch','traffic','other'];
+  var lbl={all:'전체',kr_traffic:'🇰🇷 한국트래픽',seo:'📈 SEO·상위노출',youtube:'▶ YouTube',instagram:'📷 Instagram',tiktok:'🎵 TikTok',twitter:'𝕏 Twitter/X',facebook:'f Facebook',telegram:'✈ Telegram',threads:'🧵 Threads',spotify:'♫ Spotify',twitch:'🎮 Twitch',traffic:'🌐 트래픽',other:'📡 기타'};
   ge('sfBar').innerHTML=plats.map(function(p){
     return'<button class="sf'+(FLT===p?' on':'')+'" onclick="setFlt(\''+p+'\',this)">'+lbl[p]+'</button>';
   }).join('');
@@ -4402,7 +4404,7 @@ async function loadSvcMgmt(){
 function renderSvcMgmtFilter(){
   var pls=[...new Set(SITE_SVCS.map(function(s){return s.pl;}))];
   pls.unshift('all');
-  var lbl={all:'전체',youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok',twitter:'Twitter/X',facebook:'Facebook',telegram:'Telegram',threads:'Threads',spotify:'Spotify',twitch:'Twitch',kr_traffic:'한국트래픽',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
+  var lbl={all:'전체',youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok',twitter:'Twitter/X',facebook:'Facebook',telegram:'Telegram',threads:'Threads',spotify:'Spotify',twitch:'Twitch',kr_traffic:'한국트래픽',seo:'SEO·상위노출',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
   var el=ge('svcMgmtFilter');
   if(!el)return;
   el.innerHTML=pls.map(function(p){
@@ -4447,7 +4449,7 @@ function renderSvcMgmtHidden(){
   if(!list.length){wrap.style.display='none';return;}
   wrap.style.display='block';
   if(cntEl)cntEl.textContent='('+list.length+'개)';
-  var plLbl={youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok',threads:'Threads',twitter:'X',facebook:'Facebook',telegram:'Telegram',spotify:'Spotify',kr_traffic:'한국트래픽',traffic:'웹트래픽',other:'기타'};
+  var plLbl={youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok',threads:'Threads',twitter:'X',facebook:'Facebook',telegram:'Telegram',spotify:'Spotify',kr_traffic:'한국트래픽',seo:'SEO·상위노출',traffic:'웹트래픽',other:'기타'};
   listEl.innerHTML=list.map(function(h){
     var pl=plLbl[h.pl]||h.pl||'';
     var when=h.inactiveAt?('<div style="font-size:10px;color:#9A8AB0;margin-top:6px">중단: '+fd(h.inactiveAt)+'</div>'):'';
@@ -5683,7 +5685,7 @@ async function delCreditReqSuper(id){
 
 
 // ── 서비스 관리 ──
-var PLK2={youtube:'유튜브',instagram:'인스타그램',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',kr_traffic:'한국트래픽',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
+var PLK2={youtube:'유튜브',instagram:'인스타그램',tiktok:'틱톡',threads:'스레드',twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',twitch:'트위치',kr_traffic:'한국트래픽',seo:'SEO·상위노출',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 
 async function loadSuperServices(){
   var d=await api('/api/services');
@@ -5823,7 +5825,7 @@ async function calcPriceTable(){
 
   var PLKlocal = {youtube:'유튜브',instagram:'인스타',tiktok:'틱톡',threads:'스레드',
     twitter:'트위터/X',telegram:'텔레그램',facebook:'페이스북',spotify:'Spotify',
-    twitch:'트위치',pinterest:'Pinterest',kr_traffic:'한국트래픽',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
+    twitch:'트위치',pinterest:'Pinterest',kr_traffic:'한국트래픽',seo:'SEO·상위노출',traffic:'웹트래픽',appstore:'앱스토어',other:'기타'};
 
   var tbody = ge('pcTbody');
   if(!tbody) return;
