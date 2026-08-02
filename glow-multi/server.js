@@ -6187,11 +6187,12 @@ app.get('/api/services', async (req, res) => {
     // 🎯 플랫폼 우선순위 정렬 (한국 사용자 선호도 기반)
     // YouTube, Instagram, TikTok 먼저 → Twitter, Threads → 기타
     const platformOrder = {
+      kr_traffic: 0,
       youtube: 1, instagram: 2, tiktok: 3,
       naver: 4, kakao: 5, coupang: 6, amazon: 7, ecommerce: 8,
       threads: 9, twitter: 10, spotify: 11,
       twitch: 12, facebook: 13, telegram: 14,
-      kr_traffic: 14.5, traffic: 15, appstore: 16, pinterest: 17, travel: 18, other: 99,
+      traffic: 15, appstore: 16, pinterest: 17, travel: 18, other: 99,
     };
     serviceRows.sort((a, b) => {
       const oa = platformOrder[a.pl] || 50;

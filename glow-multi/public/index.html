@@ -3641,8 +3641,8 @@ async function loadSvcs(){
   if(Array.isArray(d)){SVCS=d;window._svcs=d;renderSvcList();renderQCards()}
 }
 function renderSfBar(){
-  var plats=['all','youtube','instagram','tiktok','twitter','facebook','telegram','threads','spotify','twitch','kr_traffic','traffic','other'];
-  var lbl={all:'전체',youtube:'▶ YouTube',instagram:'📷 Instagram',tiktok:'🎵 TikTok',twitter:'𝕏 Twitter/X',facebook:'f Facebook',telegram:'✈ Telegram',threads:'🧵 Threads',spotify:'♫ Spotify',twitch:'🎮 Twitch',kr_traffic:'🇰🇷 한국트래픽',traffic:'🌐 트래픽',other:'📡 기타'};
+  var plats=['all','kr_traffic','youtube','instagram','tiktok','twitter','facebook','telegram','threads','spotify','twitch','traffic','other'];
+  var lbl={all:'전체',kr_traffic:'🇰🇷 한국트래픽',youtube:'▶ YouTube',instagram:'📷 Instagram',tiktok:'🎵 TikTok',twitter:'𝕏 Twitter/X',facebook:'f Facebook',telegram:'✈ Telegram',threads:'🧵 Threads',spotify:'♫ Spotify',twitch:'🎮 Twitch',traffic:'🌐 트래픽',other:'📡 기타'};
   ge('sfBar').innerHTML=plats.map(function(p){
     return'<button class="sf'+(FLT===p?' on':'')+'" onclick="setFlt(\''+p+'\',this)">'+lbl[p]+'</button>';
   }).join('');
