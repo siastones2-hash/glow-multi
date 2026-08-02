@@ -2856,6 +2856,62 @@ const SMMKINGS_CURATED_SEEDS = [
     name: 'TikTok 좋아요 — HQ (30일 보장)',
     description: '고품질 TikTok 좋아요입니다. 영상 링크를 입력하세요.'
   },
+  // —— 한국 트래픽 카테고리 (Instant · 링크+수량) ——
+  {
+    id: 'sktr1', pl: 'kr_traffic', api_id: '4420', cost: 0.50, min: 500, max: 1000000, refill: 0,
+    name: '웹사이트 직접 방문 — 한국 ⭐',
+    description: '한국 IP 기반 직접 방문 트래픽입니다(레퍼러 없음). GA·방문자 지표 개선용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr2', pl: 'kr_traffic', api_id: '1368', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '구글 유입 트래픽 — 한국',
+    description: '한국 타겟 구글 검색 레퍼러 트래픽입니다. SEO·국내 유입 지표용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr3', pl: 'kr_traffic', api_id: '1369', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '네이버 검색 유입 — 한국',
+    description: '한국 타겟 네이버 검색 유입 트래픽입니다. 국내 검색·쇼핑몰 사이트에 적합합니다. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr4', pl: 'kr_traffic', api_id: '1371', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '다음 검색 유입 — 한국',
+    description: '한국 타겟 다음(Daum) 검색 유입 트래픽입니다. 국내 포털 유입 분산용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr5', pl: 'kr_traffic', api_id: '1375', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '인스타그램 유입 트래픽 — 한국',
+    description: '한국 타겟 인스타그램 레퍼러 트래픽입니다. 소셜 유입 지표용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr6', pl: 'kr_traffic', api_id: '1374', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '유튜브 유입 트래픽 — 한국',
+    description: '한국 타겟 유튜브 레퍼러 트래픽입니다. 영상·채널 연동 사이트에 적합합니다. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr7', pl: 'kr_traffic', api_id: '1373', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '페이스북 유입 트래픽 — 한국',
+    description: '한국 타겟 페이스북 레퍼러 트래픽입니다. 소셜 유입 분산용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr8', pl: 'kr_traffic', api_id: '3258', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '쿠팡 유입 트래픽 — 한국',
+    description: '한국 타겟 쿠팡 레퍼러 트래픽입니다. 이커머스·쇼핑몰 GA 유입용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr9', pl: 'kr_traffic', api_id: '3269', cost: 0.35, min: 500, max: 1000000, refill: 0,
+    name: '네이버쇼핑 유입 — 한국',
+    description: '한국 타겟 네이버쇼핑 레퍼러 트래픽입니다. 쇼핑·브랜드몰 유입용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr10', pl: 'kr_traffic', api_id: '3706', cost: 0.80, min: 1000, max: 1000000, refill: 0,
+    name: '모바일(Android) 트래픽 — 한국',
+    description: '한국 Android 모바일 유기 트래픽입니다. 모바일 비중 높은 사이트용. 웹사이트 URL을 입력하세요.'
+  },
+  {
+    id: 'sktr11', pl: 'kr_traffic', api_id: '2475', cost: 1.00, min: 1000, max: 60000, refill: 0,
+    name: '아이폰 트래픽 — 한국',
+    description: '한국 아이폰 유기 트래픽입니다. iOS 사용자 유입 지표용. 웹사이트 URL을 입력하세요.'
+  },
 ];
 
 /** 본사 판매가 ≈ 실원가 × target배 가 되도록 services.rate 환산 */
@@ -4407,7 +4463,7 @@ const PL_DISPLAY_KO = {
   telegram: 'Telegram', spotify: 'Spotify', twitch: 'Twitch',
   pinterest: 'Pinterest', naver: '네이버', kakao: '카카오',
   coupang: '쿠팡', amazon: 'Amazon', ecommerce: '이커머스',
-  traffic: '웹 트래픽', appstore: '앱스토어', other: 'SNS'
+  traffic: '웹 트래픽', kr_traffic: '한국 트래픽', appstore: '앱스토어', other: 'SNS'
 };
 
 function detectServiceTypeKo(full) {
@@ -4506,7 +4562,8 @@ function formatPeakerrServiceDescription(name, pl, fallback) {
   if (fallback && /[\uAC00-\uD7AF]/.test(fallback) && (fallback || '').length > 50) return fallback;
   const plKo = {
     youtube: '유튜브', instagram: '인스타그램', tiktok: '틱톡', threads: '스레드',
-    twitter: 'X(트위터)', facebook: '페이스북', telegram: '텔레그램', traffic: '웹사이트',
+    twitter: 'X(트위터)', facebook: '페이스북', telegram: '텔레그램',
+    kr_traffic: '한국 웹사이트', traffic: '웹사이트',
     naver: '네이버', kakao: '카카오', amazon: 'Amazon', coupang: '쿠팡'
   }[pl] || 'SNS';
   const typeKo = detectServiceTypeKo(name || '');
@@ -5211,7 +5268,7 @@ async function pruneServiceCatalog(opts = {}) {
     }
   }
 
-  const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'pinterest', 'traffic', 'appstore', 'other'];
+  const platforms = ['youtube', 'instagram', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram', 'spotify', 'twitch', 'amazon', 'coupang', 'ecommerce', 'naver', 'kakao', 'pinterest', 'kr_traffic', 'traffic', 'appstore', 'other'];
   for (const pl of platforms) {
     const activeR = await query(`
       SELECT id, name, pl, rate, description FROM services
@@ -6131,7 +6188,7 @@ app.get('/api/services', async (req, res) => {
       naver: 4, kakao: 5, coupang: 6, amazon: 7, ecommerce: 8,
       threads: 9, twitter: 10, spotify: 11,
       twitch: 12, facebook: 13, telegram: 14,
-      traffic: 15, appstore: 16, pinterest: 17, travel: 18, other: 99,
+      kr_traffic: 14.5, traffic: 15, appstore: 16, pinterest: 17, travel: 18, other: 99,
     };
     serviceRows.sort((a, b) => {
       const oa = platformOrder[a.pl] || 50;
@@ -8947,6 +9004,10 @@ function detectPlat(n) {
   if (n.includes('reddit')) return 'other';
   if (n.includes('soundcloud')) return 'other';
   if (/google my business|google map|gmb |google review/.test(n)) return 'traffic';
+  if ((n.includes('트래픽') || n.includes('traffic') || n.includes('seo') || n.includes('방문'))
+      && /korea|korean|\bkr\b|south korea|한국|대한민국/.test(n)) {
+    return 'kr_traffic';
+  }
   if (n.includes('트래픽') || n.includes('traffic') || n.includes('seo') || n.includes('검색')) return 'traffic';
   if (n.includes('appstore') || n.includes('play store') || n.includes('ios') || n.includes('android')) return 'appstore';
   return 'other';
