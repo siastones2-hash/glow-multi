@@ -8960,6 +8960,22 @@ app.post('/api/super/sites/default-pricing', requireSuperAdmin, async (req, res)
 
 app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
   try {
+    await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_krw INTEGER DEFAULT 70000`).catch(() => null);
+    await query(`CREATE TABLE IF NOT EXISTS mgmt_fee_requests (
+      id TEXT PRIMARY KEY,
+      site_id TEXT NOT NULL,
+      site_name TEXT NOT NULL,
+      domain TEXT DEFAULT '',
+      amount INTEGER NOT NULL,
+      depositor TEXT DEFAULT '',
+      phone TEXT DEFAULT '',
+      note TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      created TIMESTAMP DEFAULT NOW(),
+      processed_at TIMESTAMP,
+      processed_by TEXT DEFAULT ''
+    )`).catch(() => null);
+
     const { siteId, name, domain, logo, primaryColor, accentColor, margin, exrate, active } = req.body;
     if (!siteId) return res.json({ error: 'siteId가 필요합니다' });
 
