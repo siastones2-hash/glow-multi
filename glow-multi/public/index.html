@@ -1952,6 +1952,7 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
           <button class="admtab" onclick="goSuperTab('allorders',this)">📦 전체 주문</button>
           <button class="admtab" onclick="goSuperTab('allcharges',this)">💳 전체 충전</button>
           <button class="admtab" onclick="goSuperTab('creditreqs',this)">💰 크레딧 요청</button>
+          <button class="admtab" onclick="goSuperTab('mgmtfees',this)">⏸ 관리비</button>
           <button class="admtab" onclick="goSuperTab('services',this)">⚙ 서비스 관리</button>
           <button class="admtab" onclick="goSuperTab('pricecalc',this)">💹 단가표</button>
           <button class="admtab" onclick="goSuperTab('globalapi',this)">🔑 API/텔레그램</button>
@@ -1991,6 +1992,11 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
         <div class="atab-body" id="sp-creditreqs">
           <div style="font-size:14px;font-weight:700;margin-bottom:8px">💰 사이트 크레딧 요청 내역</div>
           <div class="tw"><table><thead><tr><th>사이트</th><th>금액</th><th>메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="spCRTb"></tbody></table></div>
+        </div>
+        <div class="atab-body" id="sp-mgmtfees">
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">⏸ 관리비 입금 신청</div>
+          <div class="ibox" style="margin-bottom:12px">정지 사이트에서 입금 신청이 오면 텔레그램으로 알림이 옵니다. <strong>승인</strong>하면 사이트가 바로 다시 열립니다.</div>
+          <div class="tw"><table><thead><tr><th>사이트</th><th>금액</th><th>입금자</th><th>연락/메모</th><th>상태</th><th>날짜</th><th>처리</th></tr></thead><tbody id="spMgmtFeeTb"></tbody></table></div>
         </div>
         <div class="atab-body" id="sp-services">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -4921,6 +4927,7 @@ function goSuperTab(tab,el){
   if(tab==='allcharges')loadSuperCharges();
   if(tab==='summary')renderSiteSummary(window._lastSuperSites||[]);
   if(tab==='creditreqs')loadSuperCreditReqs();
+  if(tab==='mgmtfees')loadSuperMgmtFees();
   if(tab==='services')loadSuperServices();
   if(tab==='pricecalc'){
     var se=ge('spGlobalExrate');
@@ -5215,6 +5222,8 @@ function editSite(s){
     '<div class="fg"><label>슈퍼마진 (%)</label><input type="number" id="seSuperMg" value="'+(s.super_margin>=0?s.super_margin:50)+'"/></div>' +
     '<div class="fg"><label>사이트마진 (%)</label><input type="number" id="seMg" value="'+(s.margin||0)+'"/></div>' +
     '</div>' +
+    '<div class="fg"><label>월 관리비 (원)</label><input type="number" id="seFee" value="'+(s.mgmt_fee_krw!=null?s.mgmt_fee_krw:70000)+'"/></div>' +
+    '<div class="fg"><label><input type="checkbox" id="seActive" '+(Number(s.active)===1?'checked':'')+'/> 사이트 활성 (끄면 관리비 미납 정지 화면)</label></div>' +
     '<div class="fg"><label>환율 (글로벌 자동)</label><input type="number" id="seEx" value="'+(_globalExrate||1500)+'" readonly style="opacity:.7;cursor:not-allowed" title="슈퍼관리자 글로벌 환율과 자동 동기화"/></div>' +
     '<div style="display:flex;gap:10px;margin-top:16px">' +
     '<button class="bo bpf" onclick="document.getElementById(\'siteEditModal\').remove()">취소</button>' +
@@ -5225,8 +5234,10 @@ function editSite(s){
 async function saveSiteEdit(siteId){
   var margin=parseFloat(ge('seMg')?.value);
   var superMg=parseFloat(ge('seSuperMg')?.value);
+  var fee=parseInt(ge('seFee')?.value,10);
   if(isNaN(margin)||margin<0||margin>500){toast('사이트마진 0~500% 로 입력하세요','err');return}
   if(isNaN(superMg)||superMg<0||superMg>500){toast('슈퍼마진 0~500% 로 입력하세요','err');return}
+  if(isNaN(fee)||fee<0||fee>10000000){toast('관리비 금액을 확인하세요','err');return}
   var body={
     siteId:siteId,
     name:ge('seName').value.trim(),
@@ -5235,8 +5246,9 @@ async function saveSiteEdit(siteId){
     primaryColor:ge('sePrimary').value,
     accentColor:ge('seAccent').value,
     margin:margin,
-    active:1,
-    superMargin:superMg
+    active:!!(ge('seActive')&&ge('seActive').checked),
+    superMargin:superMg,
+    mgmtFeeKrw:fee
   };
   if(!body.name||!body.domain){toast('사이트 이름과 도메인을 입력하세요','err');return}
   try{
@@ -5678,6 +5690,40 @@ async function processCR(id,action){
   toast(action==='approve'?'크레딧 승인 완료 ✨':'거절 완료','ok');
   loadSuperCreditReqs();
   loadSuperDash();
+}
+async function loadSuperMgmtFees(){
+  var d=await api('/api/super/mgmt-fee-requests');
+  var tb=ge('spMgmtFeeTb'),h='';
+  if(!tb)return;
+  if(d&&d.error){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:#EF4444">'+d.error+'</td></tr>';return}
+  if(!Array.isArray(d)||!d.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:#9A8AB0">신청이 없습니다</td></tr>';return}
+  var sb={pending:'background:#FEF3C7;color:#F59E0B',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444'};
+  var sl={pending:'대기중',approved:'승인·재오픈',rejected:'거절'};
+  d.forEach(function(r){
+    var contact=[r.phone,r.note].filter(Boolean).join(' · ')||'-';
+    var actions=r.status==='pending'
+      ?'<button class="btn bok bxs" onclick="processMgmtFee(\''+r.id+'\',\'approve\')">✅ 승인·열기</button> '
+       +'<button class="btn ber bxs" onclick="processMgmtFee(\''+r.id+'\',\'reject\')">❌ 거절</button>'
+      :'<span style="font-size:11px;color:var(--tl)">처리됨</span>';
+    h+='<tr>'
+      +'<td style="font-weight:700;color:var(--p2)">'+(r.site_name||'')+'<div style="font-size:11px;color:var(--tl)">'+(r.domain||'')+'</div></td>'
+      +'<td style="font-weight:800">₩'+Math.round(r.amount||0).toLocaleString()+'</td>'
+      +'<td>'+(r.depositor||'-')+'</td>'
+      +'<td style="font-size:12px">'+contact+'</td>'
+      +'<td><span class="bdg" style="'+(sb[r.status]||'')+'">'+(sl[r.status]||r.status)+'</span></td>'
+      +'<td style="font-size:11px;color:var(--tl)">'+fd(r.created)+'</td>'
+      +'<td><div style="display:flex;gap:5px;flex-wrap:wrap">'+actions+'</div></td></tr>';
+  });
+  tb.innerHTML=h;
+}
+async function processMgmtFee(id,action){
+  if(action==='approve'&&!confirm('입금 확인 후 사이트를 다시 열까요?'))return;
+  if(action==='reject'&&!confirm('이 신청을 거절할까요?'))return;
+  var d=await api('/api/super/mgmt-fee-requests/process','POST',{id:id,action:action});
+  if(d.error){toast(d.error,'err');return}
+  toast(action==='approve'?'승인 완료 · 사이트 재오픈 ✨':'거절 완료','ok');
+  loadSuperMgmtFees();
+  if(typeof loadSuperDash==='function')loadSuperDash();
 }
 async function delCreditReqSuper(id){
   if(!confirm('이 크레딧 요청 내역을 삭제하시겠습니까?\n삭제해도 이미 지급된 크레딧은 회수되지 않습니다.'))return;

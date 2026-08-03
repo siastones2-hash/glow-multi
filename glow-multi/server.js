@@ -593,6 +593,23 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'glow'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS ui_layout TEXT DEFAULT 'classic'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS hero_prefix TEXT DEFAULT '콘텐츠가'`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_krw INTEGER DEFAULT 70000`); } catch(e) {}
+  try {
+    await query(`CREATE TABLE IF NOT EXISTS mgmt_fee_requests (
+      id TEXT PRIMARY KEY,
+      site_id TEXT NOT NULL,
+      site_name TEXT NOT NULL,
+      domain TEXT DEFAULT '',
+      amount INTEGER NOT NULL,
+      depositor TEXT DEFAULT '',
+      phone TEXT DEFAULT '',
+      note TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      created TIMESTAMP DEFAULT NOW(),
+      processed_at TIMESTAMP,
+      processed_by TEXT DEFAULT ''
+    )`);
+  } catch(e) {}
   // 사이트별 서비스 활성화 설정
   try { await query(`CREATE TABLE IF NOT EXISTS site_services (
     site_id TEXT NOT NULL,
@@ -815,17 +832,65 @@ app.use(async (req, res, next) => {
 // 관리비 미납 등으로 비활성화된 파트너 사이트 — API 차단
 app.use((req, res, next) => {
   if (!req.siteSuspended) return next();
+  // 정지 화면에서 입금 신청만 허용
+  if (req.method === 'POST' && req.path === '/api/public/mgmt-fee-paid') return next();
   if (req.path.startsWith('/api/')) {
+    const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || 70000);
     return res.status(503).json({
       ok: false,
       suspended: true,
       error: '관리비 미납으로 이용이 중단되었습니다. 관리비 입금 후 재개됩니다.',
       siteName: req.site?.name || '',
-      feeKrw: 70000,
+      feeKrw,
       bank: '우리은행 1002-160-164625 (예금주: 조인호)'
     });
   }
   next();
+});
+
+/** 정지 사이트 — 관리비 입금 신청 (텔레그램 알림 → 슈퍼 승인 시 재오픈) */
+app.post('/api/public/mgmt-fee-paid', async (req, res) => {
+  try {
+    if (!req.siteSuspended || !req.site || req.site.id === 'default') {
+      return res.status(400).json({ error: '정지된 파트너 사이트에서만 신청할 수 있습니다' });
+    }
+    const depositor = String(req.body?.depositor || '').trim().slice(0, 40);
+    const phone = String(req.body?.phone || '').trim().slice(0, 30);
+    const note = String(req.body?.note || '').trim().slice(0, 200);
+    if (!depositor || depositor.length < 2) {
+      return res.json({ error: '입금자명을 입력해 주세요' });
+    }
+    const pending = await query(
+      `SELECT id FROM mgmt_fee_requests WHERE site_id=$1 AND status='pending' LIMIT 1`,
+      [req.site.id]
+    );
+    if (pending.rows[0]) {
+      return res.json({
+        ok: true,
+        already: true,
+        message: '이미 입금 신청이 접수되어 있습니다. 확인 후 사이트를 다시 열어 드립니다.'
+      });
+    }
+    const feeKrw = Math.max(0, parseInt(req.site.mgmt_fee_krw, 10) || 70000);
+    const id = 'mfee_' + Date.now();
+    await query(
+      `INSERT INTO mgmt_fee_requests(id,site_id,site_name,domain,amount,depositor,phone,note,status)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'pending')`,
+      [id, req.site.id, req.site.name || '', req.site.domain || '', feeKrw, depositor, phone, note]
+    );
+    await sendTelegramToSuper(
+      `💰 <b>관리비 입금 신청</b>\n\n` +
+      `🏷 <b>${req.site.name || ''}</b> (${req.site.domain || ''})\n` +
+      `💵 ₩${feeKrw.toLocaleString('ko-KR')}\n` +
+      `👤 입금자: <b>${depositor}</b>\n` +
+      (phone ? `📞 ${phone}\n` : '') +
+      (note ? `📝 ${note}\n` : '') +
+      `\n슈퍼관리자 → <b>관리비</b> 탭에서 승인하면 사이트가 다시 열립니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`
+    ).catch(() => null);
+    res.json({ ok: true, message: '입금 신청이 접수되었습니다. 확인 후 사이트를 다시 열어 드립니다.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 /** 카카오톡·SNS 공유 미리보기 이미지 (사이트별 · 도메인 매핑 이후) */
@@ -8117,6 +8182,43 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+/** 슈퍼 — 관리비 입금 신청 목록 */
+app.get('/api/super/mgmt-fee-requests', requireSuperAdmin, async (req, res) => {
+  try {
+    const r = await query(`SELECT * FROM mgmt_fee_requests ORDER BY created DESC LIMIT 100`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/** 슈퍼 — 관리비 입금 승인(사이트 재오픈) / 거절 */
+app.post('/api/super/mgmt-fee-requests/process', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id, action } = req.body || {};
+    const r = await query(`SELECT * FROM mgmt_fee_requests WHERE id=$1`, [id]);
+    const row = r.rows[0];
+    if (!row) return res.json({ error: '신청을 찾을 수 없습니다' });
+    if (row.status !== 'pending') return res.json({ error: '이미 처리된 신청입니다' });
+    const approve = action === 'approve';
+    const status = approve ? 'approved' : 'rejected';
+    await query(
+      `UPDATE mgmt_fee_requests SET status=$1, processed_at=NOW(), processed_by=$2 WHERE id=$3`,
+      [status, req.session?.userId || '', id]
+    );
+    if (approve) {
+      await query(`UPDATE sites SET active=1 WHERE id=$1 AND id <> 'default'`, [row.site_id]);
+      await logActivity('default', req.session.userId, '', '관리비 승인·사이트 재오픈', 'site', row.site_id,
+        `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor}`);
+      await sendTelegramToSuper(
+        `✅ <b>관리비 승인 · 사이트 재오픈</b>\n\n🏷 <b>${row.site_name}</b> (${row.domain})\n💵 ₩${Number(row.amount).toLocaleString()}\n👤 ${row.depositor}\n\n사이트가 다시 열렸습니다.`
+      ).catch(() => null);
+    } else {
+      await logActivity('default', req.session.userId, '', '관리비 신청 거절', 'site', row.site_id,
+        `${row.site_name} · ${row.depositor}`);
+    }
+    res.json({ ok: true, reopened: approve });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 크레딧 요청 내역 삭제 (관리자 전용 · DB 완전 삭제 · 모든 상태 삭제 가능)
 // ⚠️ 삭제는 '기록 정리'이며 이미 지급된 크레딧은 회수하지 않음
 app.post('/api/admin/credit-requests/delete', requireAdmin, async (req, res) => {
@@ -8880,13 +8982,26 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
       superMarginVal = sm;
     }
 
+    let mgmtFee = before.mgmt_fee_krw != null ? parseInt(before.mgmt_fee_krw, 10) : 70000;
+    if (req.body.mgmtFeeKrw !== undefined && req.body.mgmtFeeKrw !== null && String(req.body.mgmtFeeKrw).trim() !== '') {
+      const fee = parseInt(req.body.mgmtFeeKrw, 10);
+      if (isNaN(fee) || fee < 0 || fee > 10000000) {
+        return res.json({ error: '관리비는 0~10,000,000원 사이여야 합니다' });
+      }
+      mgmtFee = fee;
+    }
+
+    const activeVal = active === undefined || active === null
+      ? (Number(before.active) === 1 ? 1 : 0)
+      : (active ? 1 : 0);
+
     // theme은 건드리지 않음 (자동 테마 JSON 보존 · 저장 실패처럼 보이는 현상 방지)
     await query(
-      `UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9 WHERE id=$10`,
-      [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, active ? 1 : 0, superMarginVal, siteId]
+      `UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9,mgmt_fee_krw=$10 WHERE id=$11`,
+      [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, activeVal, superMarginVal, mgmtFee, siteId]
     );
 
-    const afterR = await query(`SELECT id, name, margin, super_margin, domain FROM sites WHERE id=$1`, [siteId]);
+    const afterR = await query(`SELECT id, name, margin, super_margin, domain, active, mgmt_fee_krw FROM sites WHERE id=$1`, [siteId]);
     res.json({ ok: true, site: afterR.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -9204,7 +9319,7 @@ app.get('*', async (req, res) => {
     if (req.siteSuspended) {
       const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
       const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
-      const feeKrw = 70000;
+      const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || 70000);
       const bankLine = '우리은행 1002-160-164625';
       const bankHolder = '예금주: 조인호';
       const feeLabel = feeKrw.toLocaleString('ko-KR');
@@ -9235,6 +9350,15 @@ app.get('*', async (req, res) => {
   .pay .bank{font-size:15px;font-weight:700;color:#e8e8f0;line-height:1.5;word-break:keep-all}
   .pay .holder{font-size:13px;color:#a8a8b8;margin-top:4px}
   .pay .hint{margin-top:12px;font-size:12px;color:#8a8a9a;line-height:1.55}
+  .form{margin-top:18px;text-align:left}
+  .form label{display:block;font-size:12px;color:#a8a8b8;margin:10px 0 6px}
+  .form input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #2e2e3a;
+    background:#121218;color:#fff;font-size:14px}
+  .form button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;
+    background:linear-gradient(135deg,#ff6b81,#c9184a);color:#fff;font-size:15px;font-weight:800;cursor:pointer}
+  .form button:disabled{opacity:.55;cursor:not-allowed}
+  .msg{margin-top:12px;font-size:13px;line-height:1.5;color:#8AD4A8;display:none}
+  .msg.err{color:#ff8a9a}
 </style>
 </head>
 <body>
@@ -9243,17 +9367,51 @@ app.get('*', async (req, res) => {
     <h1>${siteName}</h1>
     <p>현재 이 사이트는 <b style="color:#fff">관리비 미납</b>으로<br>
     이용이 <b style="color:#fff">일시 중단</b>되었습니다.<br><br>
-    아래 계좌로 관리비를 입금해 주시면<br>
-    확인 후 <b style="color:#fff">바로 정지 해제</b>됩니다.</p>
+    아래 계좌로 관리비를 입금한 뒤<br>
+    <b style="color:#fff">입금 신청</b>을 남겨 주세요.<br>
+    확인·승인 후 바로 다시 열립니다.</p>
     <div class="pay">
       <h2>관리비 입금 안내</h2>
       <div class="fee">₩${feeLabel}<span>/월</span></div>
       <div class="bank">${bankLine}</div>
       <div class="holder">${bankHolder}</div>
-      <div class="hint">입금자명에 사이트명(또는 상호)을 적어 주세요.<br>입금 확인되면 서비스를 다시 열어 드립니다.</div>
+      <div class="hint">입금자명에 사이트명(또는 상호)을 적어 주세요.</div>
+    </div>
+    <div class="form">
+      <label>입금자명 *</label>
+      <input id="depositor" placeholder="통장 입금자명" maxlength="40"/>
+      <label>연락처 (선택)</label>
+      <input id="phone" placeholder="휴대폰 또는 카톡 ID" maxlength="30"/>
+      <label>메모 (선택)</label>
+      <input id="note" placeholder="입금 시각 등" maxlength="200"/>
+      <button type="button" id="btn">입금 완료 · 신청하기</button>
+      <div class="msg" id="msg"></div>
     </div>
     <div class="badge">SERVICE SUSPENDED · 관리비 미납</div>
   </div>
+<script>
+(function(){
+  var btn=document.getElementById('btn');
+  var msg=document.getElementById('msg');
+  btn.onclick=async function(){
+    var depositor=(document.getElementById('depositor').value||'').trim();
+    var phone=(document.getElementById('phone').value||'').trim();
+    var note=(document.getElementById('note').value||'').trim();
+    if(depositor.length<2){msg.className='msg err';msg.style.display='block';msg.textContent='입금자명을 입력해 주세요.';return}
+    btn.disabled=true;msg.style.display='none';
+    try{
+      var r=await fetch('/api/public/mgmt-fee-paid',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({depositor:depositor,phone:phone,note:note})});
+      var d=await r.json();
+      if(d.error){msg.className='msg err';msg.textContent=d.error;msg.style.display='block';btn.disabled=false;return}
+      msg.className='msg';msg.textContent=d.message||'신청이 접수되었습니다.';msg.style.display='block';
+      btn.textContent='신청 완료';
+    }catch(e){
+      msg.className='msg err';msg.textContent='전송 실패. 잠시 후 다시 시도해 주세요.';msg.style.display='block';btn.disabled=false;
+    }
+  };
+})();
+</script>
 </body>
 </html>`);
     }
