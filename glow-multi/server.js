@@ -3400,6 +3400,78 @@ async function sendTelegramToSuper(message) {
   } catch(e) { console.log('텔레그램 발송 실패:', e.message); return false; }
 }
 
+/** 텔레그램 한 건 발송 (토큰·채팅 지정) */
+async function sendTelegramRaw(token, chat, message) {
+  if (!token || !chat) return false;
+  try {
+    const text = stripSupplierBrand(message);
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML' })
+    });
+    return true;
+  } catch (e) {
+    console.log('TG raw 오류:', e.message);
+    return false;
+  }
+}
+
+/**
+ * 상품 추가 알림 — 슈퍼 + 지인 사이트 관리자 TG
+ * 가격($/원/rate)은 절대 넣지 않음
+ */
+async function notifyAdminsNewServices(title, added, opts = {}) {
+  const list = Array.isArray(added) ? added : [];
+  if (!list.length) return { sent: 0 };
+  const maxLines = opts.maxLines ?? 10;
+  const footer = opts.footer || '전체 사이트에 연결되었습니다. 판매 목록에서 확인하세요.';
+
+  let msg = `${title}\n\n`;
+  if (opts.summary) msg += `${opts.summary}\n\n`;
+  list.slice(0, maxLines).forEach((s, i) => {
+    const pl = s.pl || s.platform || '';
+    const name = String(s.name || s.sname || s.id || '상품').substring(0, 48);
+    msg += `${i + 1}. ${pl ? `[${pl}] ` : ''}${name}\n`;
+  });
+  if (list.length > maxLines) msg += `…외 ${list.length - maxLines}개\n`;
+  msg += `\n총 ${list.length}개\n${footer}`;
+
+  const recipients = [];
+  const seen = new Set();
+  const push = (token, chat, label) => {
+    const t = String(token || '').trim();
+    const c = String(chat || '').trim();
+    if (!t || !c) return;
+    const key = `${t}::${c}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    recipients.push({ token: t, chat: c, label });
+  };
+
+  push(await getGlobalSetting('tg_token'), await getGlobalSetting('tg_chat'), 'super');
+
+  try {
+    const sitesR = await query(`
+      SELECT id, name, tg_token, tg_chat FROM sites
+      WHERE active=1
+        AND COALESCE(tg_token,'') <> ''
+        AND COALESCE(tg_chat,'') <> ''
+    `);
+    for (const site of sitesR.rows) {
+      push(site.tg_token, site.tg_chat, site.id);
+    }
+  } catch (e) {
+    console.log('상품추가 TG 사이트 조회:', e.message);
+  }
+
+  let sent = 0;
+  await Promise.all(recipients.map(async (r) => {
+    if (await sendTelegramRaw(r.token, r.chat, msg)) sent++;
+  }));
+  return { sent, recipients: recipients.length };
+}
+
 /** PerfectPanel USD 잔액 조회 */
 async function fetchPanelBalance(provider, apiKey) {
   const key = String(apiKey || '').trim();
@@ -5138,12 +5210,7 @@ async function importNichePeakerrServices(opts = {}) {
   }
 
   if (notify && added.length && !dryRun) {
-    let msg = `🛒 <b>이커머스·보너스 상품 추가</b>\n\n`;
-    added.forEach((s, i) => {
-      msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 45)}\n   💰 $${s.rate}/1K\n`;
-    });
-    msg += `\n총 ${added.length}개 · 전체 사이트 연결`;
-    await sendTelegramToSuper(msg);
+    await notifyAdminsNewServices('🛒 <b>이커머스·보너스 상품 추가</b>', added);
   }
 
   return { ok: true, added, count: added.length, scanned, candidates: toAdd.length };
@@ -5287,14 +5354,9 @@ async function importKoreanAndPinterestServices(opts = {}) {
   const pinterest = added.filter(a => !a.isKr).length;
 
   if (notify && added.length && !dryRun) {
-    let msg = `🇰🇷 <b>한국·Pinterest 상품 추가</b>\n\n`;
-    msg += `한국 ${korean}개 · Pinterest ${pinterest}개\n\n`;
-    added.slice(0, 8).forEach((s, i) => {
-      msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 42)}\n`;
+    await notifyAdminsNewServices('🇰🇷 <b>한국·Pinterest 상품 추가</b>', added, {
+      summary: `한국 ${korean}개 · Pinterest ${pinterest}개`
     });
-    if (added.length > 8) msg += `…외 ${added.length - 8}개\n`;
-    msg += `\n전체 사이트 연결 완료`;
-    await sendTelegramToSuper(msg);
   }
 
   return { ok: true, added, count: added.length, korean, pinterest, candidates: toAdd.length };
@@ -5398,14 +5460,9 @@ async function importVietnamInstagramTiktokServices(opts = {}) {
   const tiktok = added.filter(a => a.pl === 'tiktok').length;
 
   if (notify && added.length && !dryRun) {
-    let msg = `🇻🇳 <b>베트남 Instagram·TikTok 상품 추가</b>\n\n`;
-    msg += `인스타 ${instagram}개 · 틱톡 ${tiktok}개\n\n`;
-    added.slice(0, 8).forEach((s, i) => {
-      msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 42)}\n`;
+    await notifyAdminsNewServices('🇻🇳 <b>베트남 Instagram·TikTok 상품 추가</b>', added, {
+      summary: `인스타 ${instagram}개 · 틱톡 ${tiktok}개`
     });
-    if (added.length > 8) msg += `…외 ${added.length - 8}개\n`;
-    msg += `\nGLOW·지인 사이트 전체 연결 완료`;
-    await sendTelegramToSuper(msg);
   }
 
   return { ok: true, added, count: added.length, instagram, tiktok, scanned, candidates: toAdd.length };
@@ -5420,13 +5477,7 @@ async function scanNewServices(opts = {}) {
       return result;
     }
     if (result.added.length > 0) {
-      let msg = `🔥 <b>핫상품 자동 추가</b>\n\n`;
-      result.added.forEach((s, i) => {
-        msg += `${i + 1}. [${s.pl}] ${(s.name || '').substring(0, 45)}\n`;
-        msg += `   💰 $${s.rate}/1K\n\n`;
-      });
-      msg += `총 ${result.count}개 · 전체 사이트 연결 완료`;
-      await sendTelegramToSuper(msg);
+      await notifyAdminsNewServices('🔥 <b>핫상품 자동 추가</b>', result.added);
     }
     return result;
   } catch (e) { console.log('신규 서비스 스캔 실패:', e.message); return { error: e.message, added: [], count: 0 }; }
@@ -8386,6 +8437,7 @@ app.post('/api/super/services/create', requireSuperAdmin, async (req, res) => {
     try {
       await linkServiceToAllSites(id);
     } catch(e) { console.error('site_services 자동 연결 실패:', e.message); }
+    notifyAdminsNewServices('🆕 <b>새 상품 등록</b>', [{ id, name, pl: pl || 'other' }]).catch(() => null);
     res.json({ ok: true, id });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
