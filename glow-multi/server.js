@@ -8203,6 +8203,7 @@ app.post('/api/super/import-hot-services', requireSuperAdmin, async (req, res) =
     if (result.count > 0) {
       const pr = await pruneServiceCatalog({ maxPerPlatform: 28, notify: false }).catch(() => null);
       if (pr && pr.total > 0) msg += ` · 중복/과다 ${pr.total}개 정리`;
+      await notifyAdminsNewServices('🔥 <b>핫상품 추가</b>', result.added).catch(() => null);
     }
     res.json({ ok: true, message: msg, added: result.added, count: result.count });
   } catch (e) { res.status(500).json({ error: e.message }); }
