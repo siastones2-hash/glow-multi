@@ -2021,6 +2021,7 @@ async function getUnreliableServiceIds(opts = {}) {
 async function deactivateUnreliableServices(opts = {}) {
   const details = await getUnreliableServiceDetails(opts);
   let n = 0;
+  const items = [];
   for (const row of details) {
     const parts = [`최근 ${opts.days ?? 30}일 주문 ${row.total}건 전부 미완료`];
     if (row.cancelled > 0) parts.push(`취소 ${row.cancelled}건`);
@@ -2029,15 +2030,16 @@ async function deactivateUnreliableServices(opts = {}) {
     const note = parts.join(' · ');
     const u = await query(`
       UPDATE services SET active=0, inactive_note=$1, inactive_at=COALESCE(inactive_at, NOW())
-      WHERE id=$2 AND active=1 RETURNING id, name
+      WHERE id=$2 AND active=1 RETURNING id, name, pl
     `, [note, row.sid]);
     if (u.rowCount) {
       n++;
       await query(`UPDATE site_services SET active=0 WHERE service_id=$1`, [row.sid]);
+      items.push({ id: u.rows[0].id, name: u.rows[0].name, pl: u.rows[0].pl, reason: '최근 주문 실패·취소' });
       console.log(`⚠️ 미작동 상품 숨김: ${row.sid} (${u.rows[0]?.name || ''})`);
     }
   }
-  return n;
+  return { count: n, items };
 }
 
 async function reactivateCuratedSeedServices() {
@@ -3437,6 +3439,37 @@ async function notifyAdminsNewServices(title, added, opts = {}) {
   if (list.length > maxLines) msg += `…외 ${list.length - maxLines}개\n`;
   msg += `\n총 ${list.length}개\n${footer}`;
 
+  return broadcastToAdminTelegrams(msg);
+}
+
+/**
+ * 상품 삭제·판매중단(숨김) 알림 — 슈퍼 + 관리자 TG
+ * 가격 없음. 사유는 짧게만.
+ */
+async function notifyAdminsRemovedServices(title, removed, opts = {}) {
+  const list = Array.isArray(removed) ? removed : [];
+  if (!list.length) return { sent: 0 };
+  const maxLines = opts.maxLines ?? 10;
+  const footer = opts.footer || '판매 목록에서 더 이상 노출되지 않습니다.';
+
+  let msg = `${title}\n\n`;
+  if (opts.summary) msg += `${opts.summary}\n\n`;
+  list.slice(0, maxLines).forEach((s, i) => {
+    const pl = s.pl || s.platform || '';
+    const name = String(s.name || s.sname || s.id || '상품').substring(0, 48);
+    const reason = String(s.reason || s.note || '').replace(/\$[\d.]+/g, '').trim();
+    msg += `${i + 1}. ${pl ? `[${pl}] ` : ''}${name}`;
+    if (reason) msg += `\n   · ${reason.substring(0, 60)}`;
+    msg += `\n`;
+  });
+  if (list.length > maxLines) msg += `…외 ${list.length - maxLines}개\n`;
+  msg += `\n총 ${list.length}개\n${footer}`;
+
+  return broadcastToAdminTelegrams(msg);
+}
+
+/** 슈퍼 + 사이트 TG 봇이 있는 관리자 전원에게 동일 메시지 */
+async function broadcastToAdminTelegrams(message) {
   const recipients = [];
   const seen = new Set();
   const push = (token, chat, label) => {
@@ -3462,12 +3495,12 @@ async function notifyAdminsNewServices(title, added, opts = {}) {
       push(site.tg_token, site.tg_chat, site.id);
     }
   } catch (e) {
-    console.log('상품추가 TG 사이트 조회:', e.message);
+    console.log('관리자 TG 수신자 조회:', e.message);
   }
 
   let sent = 0;
   await Promise.all(recipients.map(async (r) => {
-    if (await sendTelegramRaw(r.token, r.chat, msg)) sent++;
+    if (await sendTelegramRaw(r.token, r.chat, message)) sent++;
   }));
   return { sent, recipients: recipients.length };
 }
@@ -4606,13 +4639,14 @@ async function syncPeakerrServices() {
     
     // GLOW DB의 Peakerr 서비스만 (SMMKings SKU와 api_id 충돌 방지)
     const glowR = await query(`
-      SELECT id, name, api_id, rate, min, max, active FROM services
+      SELECT id, name, pl, api_id, rate, min, max, active FROM services
       WHERE api_id IS NOT NULL AND api_id != ''
         AND COALESCE(provider,'peakerr')='peakerr'
     `);
     
     let disabled = 0, priceChanged = 0, checked = 0;
     const priceChangedList = [];
+    const disabledList = [];
     
     for (const glowSvc of glowR.rows) {
       const peakerrSvc = peakerrMap.get(glowSvc.api_id);
@@ -4623,6 +4657,7 @@ async function syncPeakerrServices() {
         if (glowSvc.active === 1) {
           await hideServiceWithNote(glowSvc.id, '카탈로그에서 삭제·중단됨');
           disabled++;
+          disabledList.push({ id: glowSvc.id, name: glowSvc.name, pl: glowSvc.pl, reason: '공급 목록에서 삭제·중단' });
           console.log(`  ⚠️ 비활성화: ${glowSvc.name}`);
         }
       } else {
@@ -4686,22 +4721,30 @@ async function syncPeakerrServices() {
     
     // 슈퍼관리자 알림 (변경사항 있을 때만)
     if (disabled > 0 || priceChanged > 0 || stuckRefunded > 0) {
-      let msg = `🔄 <b>서비스 자동 동기화</b>\n\n`;
-      if (disabled > 0) msg += `⚠️ 비활성화: ${disabled}개 (목록에서 삭제·중단)\n`;
-      if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
-      if (priceChanged > 0) {
-        msg += `💰 가격 업데이트: ${priceChanged}개\n`;
-        priceChangedList
-          .sort((a, b) => Math.abs(parseFloat(b.change)) - Math.abs(parseFloat(a.change)))
-          .slice(0, 5)
-          .forEach(p => {
-            const pct = parseFloat(p.change);
-            const pctLabel = Math.abs(pct) >= 500 ? (pct > 0 ? '대폭 인상' : '대폭 인하') : `${p.change}%`;
-            msg += `  • ${p.name.substring(0, 30)}: $${p.old} → $${p.new} (${pctLabel})\n`;
-          });
-        if (priceChanged > 5) msg += `  … 외 ${priceChanged - 5}개\n`;
+      // 삭제·숨김 → 관리자 전원 (가격 없음)
+      if (disabledList.length) {
+        await notifyAdminsRemovedServices('🗑️ <b>상품 판매 중단</b>', disabledList, {
+          summary: '공급 목록에서 삭제·중단된 상품입니다.'
+        }).catch(() => null);
       }
-      await sendTelegramToSuper(msg);
+      // 가격 변동·자동환불 요약은 슈퍼만 (금액 포함)
+      if (priceChanged > 0 || stuckRefunded > 0) {
+        let msg = `🔄 <b>서비스 자동 동기화</b>\n\n`;
+        if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
+        if (priceChanged > 0) {
+          msg += `💰 가격 업데이트: ${priceChanged}개\n`;
+          priceChangedList
+            .sort((a, b) => Math.abs(parseFloat(b.change)) - Math.abs(parseFloat(a.change)))
+            .slice(0, 5)
+            .forEach(p => {
+              const pct = parseFloat(p.change);
+              const pctLabel = Math.abs(pct) >= 500 ? (pct > 0 ? '대폭 인상' : '대폭 인하') : `${p.change}%`;
+              msg += `  • ${p.name.substring(0, 30)}: $${p.old} → $${p.new} (${pctLabel})\n`;
+            });
+          if (priceChanged > 5) msg += `  … 외 ${priceChanged - 5}개\n`;
+        }
+        await sendTelegramToSuper(msg);
+      }
     }
 
     await query(`
@@ -4719,13 +4762,15 @@ async function syncPeakerrServices() {
 async function reconcileServiceCatalog(opts = {}) {
   const notify = opts.notify !== false;
   let noApi = 0, failHide = 0;
+  const removedList = [];
   try {
     const noApiR = await query(`
-      SELECT id FROM services
+      SELECT id, name, pl FROM services
       WHERE active=1 AND (api_id IS NULL OR TRIM(api_id) = '')
     `);
     for (const row of noApiR.rows) {
       await hideServiceWithNote(row.id, '연동 코드 없음 — 판매 불가');
+      removedList.push({ id: row.id, name: row.name, pl: row.pl, reason: '연동 코드 없음' });
     }
     noApi = noApiR.rowCount || 0;
 
@@ -4739,7 +4784,11 @@ async function reconcileServiceCatalog(opts = {}) {
     const purged = await purgeUnsellableServices();
     await backfillPartnerOrderCosts();
 
-    failHide = await deactivateUnreliableServices();
+    const unreliableHide = await deactivateUnreliableServices();
+    failHide = unreliableHide.count || 0;
+    for (const row of unreliableHide.items || []) {
+      removedList.push(row);
+    }
 
     await applyDisabledSeedMeta();
 
@@ -4755,13 +4804,12 @@ async function reconcileServiceCatalog(opts = {}) {
     const activeCount = activeR.rows[0]?.c || 0;
     console.log(`✅ 카탈로그 정리: 활성 ${activeCount}개 (미연동 ${noApi}, 반복실패 ${failHide})`);
 
-    if (notify && (noApi || failHide || sync?.disabled > 0)) {
-      let msg = `🧹 <b>상품 카탈로그 정리</b>\n\n`;
-      if (sync?.disabled) msg += `⚠️ 삭제·중단: ${sync.disabled}개 숨김\n`;
-      if (noApi) msg += `🔗 API 미연동: ${noApi}개 숨김\n`;
-      if (failHide) msg += `❌ 최근 주문 전부 실패·취소: ${failHide}개 숨김\n`;
-      msg += `\n✅ 활성 상품 ${activeCount}개 (작동 가능만 노출)`;
-      await sendTelegramToSuper(msg);
+    // syncPeakerrServices가 이미 삭제분 알림을 보냄 — 여기선 noApi·failHide만
+    const extraRemoved = removedList.filter(r => r.reason !== '공급 목록에서 삭제·중단');
+    if (notify && extraRemoved.length) {
+      await notifyAdminsRemovedServices('🧹 <b>상품 판매 중단</b>', extraRemoved, {
+        summary: `활성 상품 ${activeCount}개 유지`
+      }).catch(() => null);
     }
 
     return { ok: true, noApi, failHide, sync, activeCount, purged };
@@ -5662,14 +5710,19 @@ async function pruneServiceCatalog(opts = {}) {
   }
 
   if (notify && total > 0 && !dryRun) {
-    let msg = `🧹 <b>상품 정리</b>\n\n`;
-    if (stats.bad) msg += `❌ 저품질·무효: ${stats.bad}개\n`;
-    if (stats.duplicate) msg += `📋 중복 api_id: ${stats.duplicate}개\n`;
-    if (stats.namedup) msg += `📋 동일 상품명: ${stats.namedup}개\n`;
-    if (stats.overflow) msg += `📦 플랫폼별 상한 초과: ${stats.overflow}개\n`;
-    msg += `\n총 ${total}개 숨김 (주문 기록 유지)`;
-    items.slice(0, 5).forEach(s => { msg += `\n• ${(s.name || '').substring(0, 40)}`; });
-    await sendTelegramToSuper(msg);
+    const parts = [];
+    if (stats.bad) parts.push(`저품질·무효 ${stats.bad}`);
+    if (stats.duplicate) parts.push(`중복 ${stats.duplicate}`);
+    if (stats.namedup) parts.push(`동일명 ${stats.namedup}`);
+    if (stats.overflow) parts.push(`상한초과 ${stats.overflow}`);
+    await notifyAdminsRemovedServices('🧹 <b>상품 정리·판매 중단</b>', items.map(s => ({
+      id: s.id,
+      name: s.name,
+      reason: PRUNE_REASON_KO[s.reason] || s.reason
+    })), {
+      summary: parts.length ? parts.join(' · ') : undefined,
+      footer: '판매 목록에서 숨김 처리되었습니다. (주문 기록은 유지)'
+    }).catch(() => null);
   }
 
   const activeR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
@@ -8854,7 +8907,16 @@ app.post('/api/super/services/fix-all-geo', requireSuperAdmin, async (req, res) 
 app.post('/api/super/services/delete', requireSuperAdmin, async (req, res) => {
   try {
     const { id } = req.body;
+    if (!id) return res.json({ error: '삭제할 상품을 지정하세요' });
+    const prev = await query(`SELECT id, name, pl FROM services WHERE id=$1`, [id]);
+    const row = prev.rows[0];
+    await query(`DELETE FROM site_services WHERE service_id=$1`, [id]);
     await query(`DELETE FROM services WHERE id=$1`, [id]);
+    if (row) {
+      await notifyAdminsRemovedServices('🗑️ <b>상품 삭제</b>', [{
+        id: row.id, name: row.name, pl: row.pl, reason: '관리자 삭제'
+      }]).catch(() => null);
+    }
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
