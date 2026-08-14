@@ -2356,19 +2356,9 @@ async function processEligibleRefills(opts = {}) {
     const apiKey = await getPanelApiKey(prov);
     if (!apiKey) { skipped++; continue; }
 
-    let result = await submitPanelRefill(prov, apiKey, order.api_order_id);
-    let mode = 'refill';
-    // 공급사 리필 불가·실패 + 감소량 확인됨 → 동일 상품으로 무상 보충 주문
-    if (!result.ok && drop.needsRefill && drop.drop > 0 && order.service_api_id && order.link) {
-      const qty = Math.min(Math.max(1, Math.floor(drop.drop)), parseInt(order.qty || drop.drop, 10) || drop.drop);
-      const top = await submitPanelOrder(prov, apiKey, order.service_api_id, order.link, qty);
-      if (top.ok) {
-        result = { ok: true, data: top, topUp: true, topUpQty: qty, topUpOrderId: top.apiOrderId };
-        mode = 'topup';
-      } else {
-        result = { ok: false, error: `${result.error || '리필 실패'} / 보충주문: ${top.error || '실패'}` };
-      }
-    }
+    // ⚠️ 비용 0원 경로만 사용: 공급사 refill API (보장 상품 무료 보충)
+    // 신규 add 주문(유료)으로 메우지 않음 — 사장님 Peakerr/SMMKings 잔액 차감 금지
+    const result = await submitPanelRefill(prov, apiKey, order.api_order_id);
 
     await query(`
       UPDATE orders SET refill_count=COALESCE(refill_count,0)+1, refill_last_at=NOW() WHERE id=$1
@@ -2378,23 +2368,22 @@ async function processEligibleRefills(opts = {}) {
       ok++;
       const detail = drop.needsRefill
         ? `목표 ${drop.target.toLocaleString()} → 현재 ${drop.current.toLocaleString()} (${drop.drop.toLocaleString()} 감소)`
-        : '측정 불가 · 공급사 리필 요청';
-      const modeKo = mode === 'topup' ? `무상 보충 주문 ${result.topUpQty?.toLocaleString?.() || result.topUpQty}개` : '공급사 리필';
+        : '측정 불가 · 공급사 무료 리필 요청';
       await logActivity(order.site_id, 'system', '자동리필',
-        `드롭 자동 보충`, 'order', order.id, `${order.sname} · ${modeKo} · ${detail}`);
-      console.log(`♻️ 자동 보충: ${order.id} · ${modeKo} · ${detail}`);
+        `드롭 자동 보충`, 'order', order.id, `${order.sname} · 공급사 무료 리필 · ${detail}`);
+      console.log(`♻️ 자동 보충(무료 리필): ${order.id} · ${detail}`);
       await tgOrderNotify('♻️ <b>드롭 자동 보충</b>', order, {
         actorId: 'system',
-        extra: `📉 ${detail}\n✅ ${modeKo} 완료`
+        extra: `📉 ${detail}\n✅ 공급사 무료 리필 요청 완료 (추가 비용 없음)`
       }).catch(() => null);
       await sendTelegramToSuper(
-        `♻️ <b>드롭 자동 보충</b>\n\n주문 <code>${order.id}</code>\n${order.sname}\n${modeKo}\n${detail}`
+        `♻️ <b>드롭 자동 보충</b> (무료 리필)\n\n주문 <code>${order.id}</code>\n${order.sname}\n${detail}\n💰 추가 비용 없음`
       ).catch(() => null);
     } else {
       const errKo = stripSupplierBrand(result.error || '보충 요청 실패');
       console.log(`♻️ 보충 실패 ${order.id}: ${errKo}`);
       await sendTelegramToSuper(
-        `⚠️ <b>드롭 보충 실패</b>\n\n주문 <code>${order.id}</code>\n${order.sname}\n${errKo}`
+        `⚠️ <b>드롭 보충 실패</b> (유료 재주문 안 함)\n\n주문 <code>${order.id}</code>\n${order.sname}\n${errKo}`
       ).catch(() => null);
     }
     await new Promise(res => setTimeout(res, 400));
