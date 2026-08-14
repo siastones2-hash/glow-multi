@@ -2383,10 +2383,8 @@ async function processEligibleRefills(opts = {}) {
       ).catch(() => null);
     } else {
       const errKo = stripSupplierBrand(result.error || '보충 요청 실패');
+      // 실패 TG 알림 끔 — 건수 많아 스팸됨. 서버 로그만 남김
       console.log(`♻️ 보충 실패 ${order.id}: ${errKo}`);
-      await sendTelegramToSuper(
-        `⚠️ <b>드롭 보충 실패</b> (유료 재주문 안 함)\n\n주문 <code>${order.id}</code>\n${order.sname}\n${errKo}`
-      ).catch(() => null);
     }
     await new Promise(res => setTimeout(res, 400));
   }
