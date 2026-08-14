@@ -1190,12 +1190,6 @@ async function autoSyncGlobalExrate(opts = {}) {
   const sync = await syncAllSitesExrate(fetched.rate);
   console.log(`💱 환율 자동 갱신: ₩${prev} → ₩${fetched.rate}/USD (${fetched.source})`);
 
-  if (notify && prev >= 100 && Math.abs(fetched.rate - prev) / prev >= 0.01) {
-    await sendTelegramToSuper(
-      `💱 <b>환율 자동 갱신</b>\n\n₩${prev.toLocaleString()} → <b>₩${fetched.rate.toLocaleString()}</b>/USD\n출처: ${fetched.source}\n전체 ${sync.count || 0}개 사이트 동기화`
-    ).catch(() => {});
-  }
-
   return { ok: true, rate: fetched.rate, previous: prev, source: fetched.source, sitesSynced: sync.count };
 }
 
@@ -2374,16 +2368,9 @@ async function processEligibleRefills(opts = {}) {
       await logActivity(order.site_id, 'system', '자동리필',
         `드롭 자동 보충`, 'order', order.id, `${order.sname} · 공급사 무료 리필 · ${detail}`);
       console.log(`♻️ 자동 보충(무료 리필): ${order.id} · ${detail}`);
-      await tgOrderNotify('♻️ <b>드롭 자동 보충</b>', order, {
-        actorId: 'system',
-        extra: `📉 ${detail}\n✅ 공급사 무료 리필 요청 완료 (추가 비용 없음)`
-      }).catch(() => null);
-      await sendTelegramToSuper(
-        `♻️ <b>드롭 자동 보충</b> (무료 리필)\n\n주문 <code>${order.id}</code>\n${order.sname}\n${detail}\n💰 추가 비용 없음`
-      ).catch(() => null);
+      // TG 안 함 — 리필 성공/실패 알림은 스팸. 로그만
     } else {
       const errKo = stripSupplierBrand(result.error || '보충 요청 실패');
-      // 실패 TG 알림 끔 — 건수 많아 스팸됨. 서버 로그만 남김
       console.log(`♻️ 보충 실패 ${order.id}: ${errKo}`);
     }
     await new Promise(res => setTimeout(res, 400));
@@ -3384,7 +3371,9 @@ async function syncServiceDescriptionFooters() {
   return n;
 }
 
-// 🤖 텔레그램 알림 발송 (통합 함수)
+// 🤖 텔레그램 — 액션·돈만
+// ON: 새주문 · 충전요청 · 관리비입금 · 잔액부족 · 취소·환불 · 가입 · 일일리포트 · 작업번호미확인
+// OFF: 리필·작업완료·동기화요약·시작숫자·사전점검·환율·카탈로그·가격동기화·상품추가삭제
 async function sendTelegramToSuper(message) {
   try {
     const token = await getGlobalSetting('tg_token');
@@ -3418,12 +3407,16 @@ async function sendTelegramRaw(token, chat, message) {
 }
 
 /**
- * 상품 추가 알림 — 슈퍼 + 지인 사이트 관리자 TG
+ * 상품 추가 알림 — TG 끔 (스팸). 필요 시 opts.forceTg=true
  * 가격($/원/rate)은 절대 넣지 않음
  */
 async function notifyAdminsNewServices(title, added, opts = {}) {
   const list = Array.isArray(added) ? added : [];
   if (!list.length) return { sent: 0 };
+  if (!opts.forceTg) {
+    console.log(`🛒 상품 추가 ${list.length}개 (TG 생략): ${title.replace(/<[^>]+>/g, '')}`);
+    return { sent: 0, skipped: true };
+  }
   const maxLines = opts.maxLines ?? 10;
   const footer = opts.footer || '전체 사이트에 연결되었습니다. 판매 목록에서 확인하세요.';
 
@@ -3441,12 +3434,15 @@ async function notifyAdminsNewServices(title, added, opts = {}) {
 }
 
 /**
- * 상품 삭제·판매중단(숨김) 알림 — 슈퍼 + 관리자 TG
- * 가격 없음. 사유는 짧게만.
+ * 상품 삭제·판매중단 알림 — TG 끔 (스팸). 필요 시 opts.forceTg=true
  */
 async function notifyAdminsRemovedServices(title, removed, opts = {}) {
   const list = Array.isArray(removed) ? removed : [];
   if (!list.length) return { sent: 0 };
+  if (!opts.forceTg) {
+    console.log(`🗑️ 상품 중단 ${list.length}개 (TG 생략): ${title.replace(/<[^>]+>/g, '')}`);
+    return { sent: 0, skipped: true };
+  }
   const maxLines = opts.maxLines ?? 10;
   const footer = opts.footer || '판매 목록에서 더 이상 노출되지 않습니다.';
 
@@ -4156,7 +4152,8 @@ async function alertMissingStartCounts() {
     if (o.link) msg += `🔗 ${String(o.link).slice(0, 50)}\n\n`;
   }
   msg += `\n🔄 주문 내역 새로고침 · 24시간 내 재알림 없음`;
-  await sendTelegramToSuper(msg).catch(() => null);
+  // 시작숫자 미확인 TG 끔 — 로그만
+  console.log(`⚠️ 시작 숫자 미확인 ${toAlert.length}건 (TG 생략)`);
   for (const o of toAlert) await markStartCountAlerted(o.id);
   return toAlert.length;
 }
@@ -4215,7 +4212,8 @@ async function runPreflightHealthCheck(opts = {}) {
     await query(`UPDATE orders SET completed_at=created WHERE status='completed' AND completed_at IS NULL`).catch(() => null);
     console.log(`🛡️ 사전점검: orphan=${orphan} 결제확정=${confirmed} 시작숫자=${backfilled} 전달보정=${repairedDelivered}`);
     if (issues.length && opts.notify !== false) {
-      await sendTelegramToSuper(`🛡️ <b>GLOW 사전점검</b>\n\n${issues.join('\n')}`).catch(() => null);
+      // 사전점검 TG 끔 — API키 없음·잔액위험은 잔액부족 알림으로만
+      console.log(`🛡️ 사전점검 이슈 (TG 생략): ${issues.join(' · ')}`);
     }
     return { issues, orphan, confirmed, backfilled };
   } catch (e) {
@@ -4502,7 +4500,8 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
     }
 
     if (newStatus === 'completed' && order.status !== 'completed' && opts.notifyTg !== false) {
-      await tgOrderNotify('✅ <b>작업 완료</b>', { ...order, starts_count: startsCount, status: 'completed' }, { actorId: 'system' });
+      // 작업 완료 TG 끔 — 주문마다 스팸. 새주문·환불만 유지
+      console.log(`✅ 작업 완료 ${order.id} (TG 생략)`);
     }
     
     return {
@@ -4612,10 +4611,7 @@ async function syncAllOrderStatuses() {
     await backfillAllMissingStartCounts();
     await refundZeroProgressStuckOrders({ hours: 12 }).catch(() => null);
     console.log(`✅ 동기화 완료: 완료 ${completed}건, 취소·환불 ${cancelled}건, 오류 ${errors}건`);
-    
-    if (cancelled > 0) {
-      await sendTelegramToSuper(`🔄 <b>주문 자동 동기화</b>\n\n완료: ${completed}건\n취소·환불: ${cancelled}건\n오류: ${errors}건`);
-    }
+    // 동기화 요약 TG 끔 — 개별 환불 알림만 유지
   } catch(e) { console.log('주문 동기화 실패:', e.message); }
 }
 
@@ -4725,23 +4721,9 @@ async function syncPeakerrServices() {
           summary: '공급 목록에서 삭제·중단된 상품입니다.'
         }).catch(() => null);
       }
-      // 가격 변동·자동환불 요약은 슈퍼만 (금액 포함)
+      // 가격 변동·자동환불 요약 TG 끔 — 서버 로그만
       if (priceChanged > 0 || stuckRefunded > 0) {
-        let msg = `🔄 <b>서비스 자동 동기화</b>\n\n`;
-        if (stuckRefunded > 0) msg += `💸 미처리 주문 자동 환불: ${stuckRefunded}건\n`;
-        if (priceChanged > 0) {
-          msg += `💰 가격 업데이트: ${priceChanged}개\n`;
-          priceChangedList
-            .sort((a, b) => Math.abs(parseFloat(b.change)) - Math.abs(parseFloat(a.change)))
-            .slice(0, 5)
-            .forEach(p => {
-              const pct = parseFloat(p.change);
-              const pctLabel = Math.abs(pct) >= 500 ? (pct > 0 ? '대폭 인상' : '대폭 인하') : `${p.change}%`;
-              msg += `  • ${p.name.substring(0, 30)}: $${p.old} → $${p.new} (${pctLabel})\n`;
-            });
-          if (priceChanged > 5) msg += `  … 외 ${priceChanged - 5}개\n`;
-        }
-        await sendTelegramToSuper(msg);
+        console.log(`🔄 서비스 동기화: 가격 ${priceChanged} · 미처리환불 ${stuckRefunded} (TG 생략)`);
       }
     }
 
@@ -5767,9 +5749,7 @@ async function runCatalogHealthCheck(autoRepair = true) {
     const today = new Date().toDateString();
     const last = await getGlobalSetting('catalog_health_alert');
     if (last !== today) {
-      let msg = `⚠️ <b>상품 카탈로그 점검</b>\n\n${issues.join('\n')}`;
-      if (autoRepair) msg += `\n\n✅ 자동 복구 시도 완료`;
-      await sendTelegramToSuper(msg);
+      console.log(`⚠️ 상품 카탈로그 점검 (TG 생략): ${issues.join(' · ')}`);
       await setGlobalSetting('catalog_health_alert', today);
     }
   }
@@ -8444,9 +8424,7 @@ app.post('/api/super/mgmt-fee-requests/process', requireSuperAdmin, async (req, 
       await query(`UPDATE sites SET active=1 WHERE id=$1 AND id <> 'default'`, [row.site_id]);
       await logActivity('default', req.session.userId, '', '관리비 승인·사이트 재오픈', 'site', row.site_id,
         `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor}`);
-      await sendTelegramToSuper(
-        `✅ <b>관리비 승인 · 사이트 재오픈</b>\n\n🏷 <b>${row.site_name}</b> (${row.domain})\n💵 ₩${Number(row.amount).toLocaleString()}\n👤 ${row.depositor}\n\n사이트가 다시 열렸습니다.`
-      ).catch(() => null);
+      // 승인 확인 TG 끔 — 신청 알림만 유지 (본인이 방금 승인한 건)
     } else {
       await logActivity('default', req.session.userId, '', '관리비 신청 거절', 'site', row.site_id,
         `${row.site_name} · ${row.depositor}`);
