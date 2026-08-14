@@ -550,9 +550,11 @@ async function initDB() {
 
     for (const s of svcs) {
       const active = s.active != null ? s.active : 1;
-      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
-        ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id`,
-        [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description||'', s.api_id||null, active]);
+      const refill = glowServicePromisesRefill(s.name, s.description) ? 1 : 0;
+      await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id,
+          refill_guaranteed=GREATEST(COALESCE(services.refill_guaranteed,0), EXCLUDED.refill_guaranteed)`,
+        [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description||'', s.api_id||null, active, refill]);
       if (active === 0) {
         await query(`UPDATE services SET active=0 WHERE id=$1`, [s.id]);
       }
@@ -1979,8 +1981,8 @@ async function syncSmmkingsCatalog() {
         await query(`UPDATE services SET rate=$1 WHERE id=$2`, [newRate, glowSvc.id]);
         priceChanged++;
       }
-      const nameHint = `${remote.name || ''} ${remote.category || ''}`;
-      const hasRefill = peakerrServiceHasRefill(remote) || /refill|보장|드롭/i.test(nameHint) ? 1 : 0;
+      const nameHint = `${glowSvc.name || ''} ${glowSvc.description || ''} ${remote.name || ''} ${remote.category || ''}`;
+      const hasRefill = computeRefillGuaranteed(remote, nameHint, '');
       await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill, glowSvc.id]);
     }
     if (disabled || priceChanged) {
@@ -2068,6 +2070,34 @@ function peakerrServiceHasRefill(s) {
   if (!s) return false;
   const v = s.refill;
   return v === true || v === 1 || v === '1' || String(v).toLowerCase() === 'true';
+}
+
+/** GLOW 판매명·설명에 드롭/30일 보장·리필이 있으면 고객 약속 = 리필 대상 */
+function glowServicePromisesRefill(name, description) {
+  const t = `${name || ''} ${description || ''}`;
+  if (/논드롭|노드롭|non[-\s]?drop|no[-\s]?refill/i.test(t)) return false;
+  return /드롭\s*보상|드롭\s*시|자동\s*보상|자동\s*보충|30일\s*보장|365일\s*보상|평생\s*보장|리필\s*보장|보장\s*상품|\brefill\b/i.test(t);
+}
+
+function computeRefillGuaranteed(peakOrRemote, name, description) {
+  return (peakerrServiceHasRefill(peakOrRemote) || glowServicePromisesRefill(name, description)) ? 1 : 0;
+}
+
+/** 이름·설명 기준 리필 플래그 복구 (동기화가 Peakerr만 보고 꺼버린 경우 대비) */
+async function repairRefillGuaranteedFromNames() {
+  const r = await query(`
+    SELECT id, name, description, refill_guaranteed FROM services
+    WHERE active=1 OR refill_guaranteed IS NULL OR refill_guaranteed=0
+  `);
+  let n = 0;
+  for (const row of r.rows) {
+    if (!glowServicePromisesRefill(row.name, row.description)) continue;
+    if (parseInt(row.refill_guaranteed || 0, 10) === 1) continue;
+    await query(`UPDATE services SET refill_guaranteed=1 WHERE id=$1`, [row.id]);
+    n++;
+  }
+  if (n) console.log(`♻️ 리필 보장 플래그 복구: ${n}개`);
+  return n;
 }
 
 function peakerrBucketKeyFromService(s) {
@@ -2181,7 +2211,7 @@ async function upgradeEngagementSeedsFromPeakerr() {
     const geoBucket = `${row.pl}:${bucket}:${geo}`;
 
     const peak = peakerrCatalogCache.get(String(row.api_id));
-    const hasRefill = peakerrServiceHasRefill(peak);
+    const hasRefill = computeRefillGuaranteed(peak, row.name, row.description) === 1;
     await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill ? 1 : 0, row.id]);
 
     if (hasRefill) {
@@ -2248,14 +2278,14 @@ async function upgradeEngagementSeedsFromPeakerr() {
 
 async function syncServiceRefillFlagsFromPeakerr(peakerrMap) {
   const r = await query(`
-    SELECT id, api_id FROM services
+    SELECT id, api_id, name, description FROM services
     WHERE api_id IS NOT NULL AND TRIM(api_id) <> ''
       AND COALESCE(provider,'peakerr')='peakerr'
   `);
   for (const row of r.rows) {
     const peak = peakerrMap.get(String(row.api_id));
-    const hasRefill = peakerrServiceHasRefill(peak);
-    await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill ? 1 : 0, row.id]);
+    const hasRefill = computeRefillGuaranteed(peak, row.name, row.description);
+    await query(`UPDATE services SET refill_guaranteed=$1 WHERE id=$2`, [hasRefill, row.id]);
   }
 }
 
@@ -2278,11 +2308,12 @@ async function submitPeakerrRefill(apiKey, apiOrderId) {
   return submitPanelRefill('peakerr', apiKey, apiOrderId);
 }
 
-/** 완료 주문 — 드롭 보장 상품: 실제 감소 확인 후 자동 보충 */
+/** 완료 주문 — 드롭 보장 상품: 실제 감소 확인 후 자동 보충 (측정 불가 시 공급사 리필 API 시도) */
 async function processEligibleRefills(opts = {}) {
   const maxPerRun = opts.maxPerRun ?? 15;
+  const force = !!opts.force;
   const r = await query(`
-    SELECT o.*, s.refill_guaranteed, s.provider AS service_provider
+    SELECT o.*, s.refill_guaranteed, s.provider AS service_provider, s.api_id AS service_api_id
     FROM orders o
     INNER JOIN services s ON s.id = o.sid
     WHERE o.status = 'completed'
@@ -2291,13 +2322,14 @@ async function processEligibleRefills(opts = {}) {
       AND o.created >= NOW() - INTERVAL '30 days'
       AND COALESCE(o.refill_count, 0) < 5
       AND (
-        o.refill_last_at IS NULL
+        $2::boolean = true
+        OR o.refill_last_at IS NULL
         OR o.refill_last_at < NOW() - INTERVAL '48 hours'
       )
-      AND COALESCE(o.completed_at, o.created) <= NOW() - INTERVAL '24 hours'
+      AND COALESCE(o.completed_at, o.created) <= NOW() - INTERVAL '12 hours'
     ORDER BY o.created ASC
     LIMIT $1
-  `, [maxPerRun]);
+  `, [maxPerRun, force]);
 
   let processed = 0, ok = 0, skipped = 0;
   const checkpoints = [1, 3, 7, 14, 21];
@@ -2306,17 +2338,16 @@ async function processEligibleRefills(opts = {}) {
     const daysSince = (Date.now() - new Date(order.completed_at || order.created).getTime()) / 86400000;
     const checkRound = parseInt(order.refill_count || 0, 10);
     const checkIdx = Math.min(checkRound, checkpoints.length - 1);
-    if (daysSince < checkpoints[checkIdx]) continue;
+    if (!force && daysSince < checkpoints[checkIdx]) continue;
 
     const drop = await detectOrderDrop(order);
-    await query(`
-      UPDATE orders SET refill_count=COALESCE(refill_count,0)+1, refill_last_at=NOW() WHERE id=$1
-    `, [order.id]);
-
-    if (!drop.needsRefill) {
+    // 측정 가능 + 감소 없음 → 보충 불필요 (체크만 기록)
+    if (!drop.needsRefill && drop.reason !== 'unmeasured') {
+      await query(`
+        UPDATE orders SET refill_count=COALESCE(refill_count,0)+1, refill_last_at=NOW() WHERE id=$1
+      `, [order.id]);
       skipped++;
-      const why = drop.reason === 'unmeasured' ? '숫자 확인 불가' : `감소 없음 (${drop.current ?? '?'}/${drop.target ?? '?'})`;
-      console.log(`♻️ 리필 보류 ${order.id}: ${why}`);
+      console.log(`♻️ 리필 보류 ${order.id}: 감소 없음 (${drop.current ?? '?'}/${drop.target ?? '?'})`);
       await new Promise(res => setTimeout(res, 200));
       continue;
     }
@@ -2324,19 +2355,40 @@ async function processEligibleRefills(opts = {}) {
     const prov = orderProvider(order) || normalizeProvider(order.service_provider);
     const apiKey = await getPanelApiKey(prov);
     if (!apiKey) { skipped++; continue; }
-    const result = await submitPanelRefill(prov, apiKey, order.api_order_id);
+
+    let result = await submitPanelRefill(prov, apiKey, order.api_order_id);
+    let mode = 'refill';
+    // 공급사 리필 불가·실패 + 감소량 확인됨 → 동일 상품으로 무상 보충 주문
+    if (!result.ok && drop.needsRefill && drop.drop > 0 && order.service_api_id && order.link) {
+      const qty = Math.min(Math.max(1, Math.floor(drop.drop)), parseInt(order.qty || drop.drop, 10) || drop.drop);
+      const top = await submitPanelOrder(prov, apiKey, order.service_api_id, order.link, qty);
+      if (top.ok) {
+        result = { ok: true, data: top, topUp: true, topUpQty: qty, topUpOrderId: top.apiOrderId };
+        mode = 'topup';
+      } else {
+        result = { ok: false, error: `${result.error || '리필 실패'} / 보충주문: ${top.error || '실패'}` };
+      }
+    }
+
+    await query(`
+      UPDATE orders SET refill_count=COALESCE(refill_count,0)+1, refill_last_at=NOW() WHERE id=$1
+    `, [order.id]);
+
     if (result.ok) {
       ok++;
-      const detail = `목표 ${drop.target.toLocaleString()} → 현재 ${drop.current.toLocaleString()} (${drop.drop.toLocaleString()} 감소)`;
+      const detail = drop.needsRefill
+        ? `목표 ${drop.target.toLocaleString()} → 현재 ${drop.current.toLocaleString()} (${drop.drop.toLocaleString()} 감소)`
+        : '측정 불가 · 공급사 리필 요청';
+      const modeKo = mode === 'topup' ? `무상 보충 주문 ${result.topUpQty?.toLocaleString?.() || result.topUpQty}개` : '공급사 리필';
       await logActivity(order.site_id, 'system', '자동리필',
-        `드롭 자동 보충`, 'order', order.id, `${order.sname} · ${detail}`);
-      console.log(`♻️ 자동 보충: ${order.id} · ${detail}`);
+        `드롭 자동 보충`, 'order', order.id, `${order.sname} · ${modeKo} · ${detail}`);
+      console.log(`♻️ 자동 보충: ${order.id} · ${modeKo} · ${detail}`);
       await tgOrderNotify('♻️ <b>드롭 자동 보충</b>', order, {
         actorId: 'system',
-        extra: `📉 ${detail}\n✅ 보충 작업 요청 완료`
+        extra: `📉 ${detail}\n✅ ${modeKo} 완료`
       }).catch(() => null);
       await sendTelegramToSuper(
-        `♻️ <b>드롭 자동 보충</b>\n\n주문 <code>${order.id}</code>\n${order.sname}\n${detail}`
+        `♻️ <b>드롭 자동 보충</b>\n\n주문 <code>${order.id}</code>\n${order.sname}\n${modeKo}\n${detail}`
       ).catch(() => null);
     } else {
       const errKo = stripSupplierBrand(result.error || '보충 요청 실패');
@@ -3672,6 +3724,77 @@ async function fetchThreadsMetricFromHtml(url, patterns) {
   return null;
 }
 
+async function fetchInstagramFollowerCount(link) {
+  const user = extractInstagramUsername(link);
+  if (!user) return null;
+  try {
+    const apiUrl = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(user)}`;
+    const resp = await fetch(apiUrl, {
+      timeout: 18000,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'X-IG-App-ID': '936619743392459',
+        'Referer': `https://www.instagram.com/${user}/`
+      }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const n = parseInt(
+        data?.data?.user?.edge_followed_by?.count
+          ?? data?.data?.user?.follower_count
+          ?? data?.user?.edge_followed_by?.count
+          ?? 0,
+        10
+      );
+      if (Number.isFinite(n) && n >= 0) return n;
+    }
+  } catch (e) { console.log('IG web_profile_info:', e.message); }
+  try {
+    const pageUrl = `https://www.instagram.com/${encodeURIComponent(user)}/`;
+    const resp = await fetch(pageUrl, {
+      timeout: 18000,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        Accept: 'text/html,application/xhtml+xml'
+      }
+    });
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    const patterns = [
+      /"edge_followed_by"\s*:\s*\{\s*"count"\s*:\s*(\d+)/,
+      /"follower_count"\s*:\s*(\d+)/,
+      /"userInteractionCount"\s*:\s*"(\d+)"/
+    ];
+    for (const re of patterns) {
+      const m = html.match(re);
+      if (m) {
+        const n = parseInt(String(m[1]).replace(/,/g, ''), 10);
+        if (Number.isFinite(n) && n >= 0) return n;
+      }
+    }
+  } catch (e) { console.log('IG HTML 팔로워:', e.message); }
+  return null;
+}
+
+function extractInstagramUsername(link) {
+  try {
+    const s = normalizeOrderLink(link, 'instagram');
+    const u = new URL(s);
+    const parts = (u.pathname || '/').split('/').filter(Boolean);
+    if (!parts.length) return null;
+    const skip = new Set(['p', 'reel', 'reels', 'tv', 'stories', 'explore', 'accounts']);
+    if (skip.has(parts[0].toLowerCase())) return null;
+    const user = parts[0].replace(/^@/, '');
+    if (!/^[A-Za-z0-9._]{1,30}$/.test(user)) return null;
+    return user;
+  } catch { return null; }
+}
+
 async function fetchThreadsFollowerCount(link) {
   const normalized = normalizeOrderLink(link, 'threads');
   return fetchThreadsMetricFromHtml(normalized, [
@@ -3726,6 +3849,11 @@ async function measureOrderCurrentCount(order) {
       }
       if (bucket === '팔로워' || /팔로워|follower/i.test(label)) {
         return await fetchTikTokFollowerCount(link);
+      }
+    }
+    if (pl === 'instagram') {
+      if (bucket === '팔로워' || /팔로워|follower/i.test(label)) {
+        return await fetchInstagramFollowerCount(link);
       }
     }
     if (pl === 'threads') {
@@ -7995,6 +8123,22 @@ app.post('/api/super/sync-orders', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ♻️ 슈퍼관리자: 드롭 보장 주문 리필 즉시 실행
+app.post('/api/super/refill-run', requireSuperAdmin, async (req, res) => {
+  try {
+    const maxPerRun = Math.min(50, Math.max(1, parseInt(req.body?.maxPerRun || 20, 10) || 20));
+    const force = req.body?.force !== false;
+    const repaired = await repairRefillGuaranteedFromNames().catch(() => 0);
+    const result = await processEligibleRefills({ maxPerRun, force });
+    res.json({
+      ok: true,
+      repaired,
+      ...result,
+      message: `리필 점검 완료 · 복구 플래그 ${repaired} · 처리 ${result.processed} · 보충 ${result.ok} · 보류 ${result.skipped}`
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 🔄 슈퍼관리자: 수동 서비스 동기화 (작동 상품만 + 중복 제거)
 app.post('/api/super/sync-services', requireSuperAdmin, async (req, res) => {
   try {
@@ -9610,8 +9754,11 @@ app.listen(PORT, async () => {
   }, 5 * 60 * 1000);
 
   // ♻️ 리필 보장 상품 — 완료 후 드롭 자동 보충 (12시간마다)
-  processEligibleRefills({ maxPerRun: 10 }).catch(e => console.log('리필 초기 실행:', e.message));
+  repairRefillGuaranteedFromNames()
+    .then(() => processEligibleRefills({ maxPerRun: 10 }))
+    .catch(e => console.log('리필 초기 실행:', e.message));
   setInterval(async () => {
+    await repairRefillGuaranteedFromNames().catch(() => {});
     await processEligibleRefills({ maxPerRun: 15 }).catch(e => console.log('리필 스케줄러:', e.message));
   }, 12 * 60 * 60 * 1000);
   
@@ -9650,7 +9797,8 @@ app.listen(PORT, async () => {
     await runPreflightHealthCheck({ notify: true }).catch(() => {});
     await syncAllOrderStatuses().catch(() => {});
     await upgradeEngagementSeedsFromPeakerr().catch(e => console.log('참여형 시드 업그레이드:', e.message));
-    await processEligibleRefills({ maxPerRun: 20 }).catch(() => {});
+    await repairRefillGuaranteedFromNames().catch(() => {});
+    await processEligibleRefills({ maxPerRun: 20, force: true }).catch(() => {});
     await runCatalogHealthCheck(true).catch(() => {});
     const niche = await importNichePeakerrServices({ notify: false }).catch(e => ({ error: e.message, count: 0 }));
     if (niche.count > 0) console.log(`🛒 이커머스·보너스 상품 ${niche.count}개 추가`);
