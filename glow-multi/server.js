@@ -850,7 +850,66 @@ app.use((req, res, next) => {
   next();
 });
 
-/** 정지 사이트 — 관리비 입금 신청 (텔레그램 알림 → 슈퍼 승인 시 재오픈) */
+/** 관리비 입금 신청 승인/거절 (슈퍼관리자·텔레그램 공통) */
+async function processMgmtFeeRequest(id, action, processedBy = '') {
+  const r = await query(`SELECT * FROM mgmt_fee_requests WHERE id=$1`, [id]);
+  const row = r.rows[0];
+  if (!row) return { ok: false, error: '신청을 찾을 수 없습니다' };
+  if (row.status !== 'pending') return { ok: false, error: '이미 처리된 신청입니다', already: true };
+  const approve = action === 'approve';
+  const status = approve ? 'approved' : 'rejected';
+  await query(
+    `UPDATE mgmt_fee_requests SET status=$1, processed_at=NOW(), processed_by=$2 WHERE id=$3`,
+    [status, processedBy, id]
+  );
+  if (approve) {
+    await query(`UPDATE sites SET active=1 WHERE id=$1 AND id <> 'default'`, [row.site_id]);
+    await logActivity('default', processedBy, '', '관리비 승인·사이트 재오픈', 'site', row.site_id,
+      `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor}`);
+  } else {
+    await logActivity('default', processedBy, '', '관리비 신청 거절', 'site', row.site_id,
+      `${row.site_name} · ${row.depositor}`);
+  }
+  return { ok: true, reopened: approve, row };
+}
+
+/** 관리비 입금 신청 — 텔레그램 알림 (승인/거절 버튼) */
+async function tgMgmtFeeAlert(row) {
+  const token = await getGlobalSetting('tg_token');
+  const chat = await getGlobalSetting('tg_chat');
+  if (!token || !chat) return false;
+  const feeKrw = Math.max(0, parseInt(row.amount, 10) || 0);
+  let msg = `💰 <b>관리비 입금 신청</b>\n\n` +
+    `🏷 <b>${row.site_name || ''}</b> (${row.domain || ''})\n` +
+    `💵 ₩${feeKrw.toLocaleString('ko-KR')}\n` +
+    `👤 입금자: <b>${row.depositor || ''}</b>\n`;
+  if (row.phone) msg += `📞 ${row.phone}\n`;
+  if (row.note) msg += `📝 ${row.note}\n`;
+  msg += `\n<b>✅ 승인</b> 누르면 사이트가 바로 열립니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chat,
+        text: stripSupplierBrand(msg),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ 승인 · 재오픈', callback_data: `mfee_approve_${row.id}` },
+            { text: '❌ 거절', callback_data: `mfee_reject_${row.id}` }
+          ]]
+        }
+      })
+    });
+    return true;
+  } catch (e) {
+    console.log('관리비 TG 알림 실패:', e.message);
+    return false;
+  }
+}
+
+/** 정지 사이트 — 관리비 입금 신청 (텔레그램 알림 → 승인 시 즉시 재오픈) */
 app.post('/api/public/mgmt-fee-paid', async (req, res) => {
   try {
     if (!req.siteSuspended || !req.site || req.site.id === 'default') {
@@ -880,15 +939,15 @@ app.post('/api/public/mgmt-fee-paid', async (req, res) => {
        VALUES($1,$2,$3,$4,$5,$6,$7,$8,'pending')`,
       [id, req.site.id, req.site.name || '', req.site.domain || '', feeKrw, depositor, phone, note]
     );
-    await sendTelegramToSuper(
-      `💰 <b>관리비 입금 신청</b>\n\n` +
-      `🏷 <b>${req.site.name || ''}</b> (${req.site.domain || ''})\n` +
-      `💵 ₩${feeKrw.toLocaleString('ko-KR')}\n` +
-      `👤 입금자: <b>${depositor}</b>\n` +
-      (phone ? `📞 ${phone}\n` : '') +
-      (note ? `📝 ${note}\n` : '') +
-      `\n슈퍼관리자 → <b>관리비</b> 탭에서 승인하면 사이트가 다시 열립니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`
-    ).catch(() => null);
+    await tgMgmtFeeAlert({
+      id,
+      site_name: req.site.name || '',
+      domain: req.site.domain || '',
+      amount: feeKrw,
+      depositor,
+      phone,
+      note
+    }).catch(() => null);
     res.json({ ok: true, message: '입금 신청이 접수되었습니다. 확인 후 사이트를 다시 열어 드립니다.' });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -7966,6 +8025,53 @@ app.post('/api/tg-webhook', async (req, res) => {
     const token = await getGlobalSetting('tg_token');
     if (!token) return res.json({ ok: true });
 
+    // 관리비 입금 신청 처리 (mfee_approve_ / mfee_reject_)
+    if (cbData.startsWith('mfee_approve_') || cbData.startsWith('mfee_reject_')) {
+      const mfeeAction = cbData.startsWith('mfee_approve_') ? 'approve' : 'reject';
+      const mfeeId = cbData.replace('mfee_approve_', '').replace('mfee_reject_', '');
+      const result = await processMgmtFeeRequest(mfeeId, mfeeAction, 'telegram');
+      if (!result.ok) {
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: result.error || '처리 실패' })
+        });
+        return res.json({ ok: true });
+      }
+      const row = result.row;
+      await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
+      });
+      if (mfeeAction === 'approve') {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: `✅ <b>관리비 승인 · 재오픈</b>\n\n🏷 ${row.site_name} (${row.domain})\n💵 ₩${Number(row.amount).toLocaleString('ko-KR')}\n👤 ${row.depositor}\n\n사이트가 바로 열렸습니다.`,
+            parse_mode: 'HTML'
+          })
+        });
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '✅ 승인 · 재오픈 완료!' })
+        });
+      } else {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: `❌ <b>관리비 거절</b>\n\n🏷 ${row.site_name}\n👤 ${row.depositor}`,
+            parse_mode: 'HTML'
+          })
+        });
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '❌ 거절 완료!' })
+        });
+      }
+      return res.json({ ok: true });
+    }
+
     // 크레딧 요청 처리 (cr_approve_ / cr_reject_)
     if (cbData.startsWith('cr_approve_') || cbData.startsWith('cr_reject_')) {
       const crAction = cbData.startsWith('cr_approve_') ? 'approve' : 'reject';
@@ -8410,26 +8516,9 @@ app.get('/api/super/mgmt-fee-requests', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/mgmt-fee-requests/process', requireSuperAdmin, async (req, res) => {
   try {
     const { id, action } = req.body || {};
-    const r = await query(`SELECT * FROM mgmt_fee_requests WHERE id=$1`, [id]);
-    const row = r.rows[0];
-    if (!row) return res.json({ error: '신청을 찾을 수 없습니다' });
-    if (row.status !== 'pending') return res.json({ error: '이미 처리된 신청입니다' });
-    const approve = action === 'approve';
-    const status = approve ? 'approved' : 'rejected';
-    await query(
-      `UPDATE mgmt_fee_requests SET status=$1, processed_at=NOW(), processed_by=$2 WHERE id=$3`,
-      [status, req.session?.userId || '', id]
-    );
-    if (approve) {
-      await query(`UPDATE sites SET active=1 WHERE id=$1 AND id <> 'default'`, [row.site_id]);
-      await logActivity('default', req.session.userId, '', '관리비 승인·사이트 재오픈', 'site', row.site_id,
-        `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor}`);
-      // 승인 확인 TG 끔 — 신청 알림만 유지 (본인이 방금 승인한 건)
-    } else {
-      await logActivity('default', req.session.userId, '', '관리비 신청 거절', 'site', row.site_id,
-        `${row.site_name} · ${row.depositor}`);
-    }
-    res.json({ ok: true, reopened: approve });
+    const result = await processMgmtFeeRequest(id, action, req.session?.userId || '');
+    if (!result.ok) return res.json({ error: result.error });
+    res.json({ ok: true, reopened: result.reopened });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
