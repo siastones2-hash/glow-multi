@@ -26,6 +26,7 @@ const PANEL_AGENTS = { peakerr: peakerrHttpsAgent, smmkings: smmkingsHttpsAgent 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MGMT_FEE_DEFAULT_KRW = 100000;
 
 // ── HMAC 자체서명 토큰 시스템 ──
 const TOKEN_SECRET = process.env.TOKEN_SECRET || 'glow-multi-secret-key-2024';
@@ -595,7 +596,14 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'glow'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS ui_layout TEXT DEFAULT 'classic'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS hero_prefix TEXT DEFAULT '콘텐츠가'`); } catch(e) {}
-  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_krw INTEGER DEFAULT 70000`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_krw INTEGER DEFAULT ${MGMT_FEE_DEFAULT_KRW}`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ALTER COLUMN mgmt_fee_krw SET DEFAULT ${MGMT_FEE_DEFAULT_KRW}`); } catch(e) {}
+  try {
+    await query(
+      `UPDATE sites SET mgmt_fee_krw=$1 WHERE id <> 'default' AND COALESCE(mgmt_fee_krw, 70000) = 70000`,
+      [MGMT_FEE_DEFAULT_KRW]
+    );
+  } catch(e) {}
   try {
     await query(`CREATE TABLE IF NOT EXISTS mgmt_fee_requests (
       id TEXT PRIMARY KEY,
@@ -837,7 +845,7 @@ app.use((req, res, next) => {
   // 정지 화면에서 입금 신청만 허용
   if (req.method === 'POST' && req.path === '/api/public/mgmt-fee-paid') return next();
   if (req.path.startsWith('/api/')) {
-    const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || 70000);
+    const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
     return res.status(503).json({
       ok: false,
       suspended: true,
@@ -932,7 +940,7 @@ app.post('/api/public/mgmt-fee-paid', async (req, res) => {
         message: '이미 입금 신청이 접수되어 있습니다. 확인 후 사이트를 다시 열어 드립니다.'
       });
     }
-    const feeKrw = Math.max(0, parseInt(req.site.mgmt_fee_krw, 10) || 70000);
+    const feeKrw = Math.max(0, parseInt(req.site.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
     const id = 'mfee_' + Date.now();
     await query(
       `INSERT INTO mgmt_fee_requests(id,site_id,site_name,domain,amount,depositor,phone,note,status)
@@ -9273,7 +9281,7 @@ app.post('/api/super/sites/default-pricing', requireSuperAdmin, async (req, res)
 
 app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
   try {
-    await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_krw INTEGER DEFAULT 70000`).catch(() => null);
+    await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_krw INTEGER DEFAULT ${MGMT_FEE_DEFAULT_KRW}`).catch(() => null);
     await query(`CREATE TABLE IF NOT EXISTS mgmt_fee_requests (
       id TEXT PRIMARY KEY,
       site_id TEXT NOT NULL,
@@ -9311,7 +9319,7 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
       superMarginVal = sm;
     }
 
-    let mgmtFee = before.mgmt_fee_krw != null ? parseInt(before.mgmt_fee_krw, 10) : 70000;
+    let mgmtFee = before.mgmt_fee_krw != null ? parseInt(before.mgmt_fee_krw, 10) : MGMT_FEE_DEFAULT_KRW;
     if (req.body.mgmtFeeKrw !== undefined && req.body.mgmtFeeKrw !== null && String(req.body.mgmtFeeKrw).trim() !== '') {
       const fee = parseInt(req.body.mgmtFeeKrw, 10);
       if (isNaN(fee) || fee < 0 || fee > 10000000) {
@@ -9648,7 +9656,7 @@ app.get('*', async (req, res) => {
     if (req.siteSuspended) {
       const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
       const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
-      const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || 70000);
+      const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
       const bankLine = '우리은행 1002-160-164625';
       const bankHolder = '예금주: 조인호';
       const feeLabel = feeKrw.toLocaleString('ko-KR');
