@@ -5223,6 +5223,7 @@ function editSite(s){
     '<div class="fg"><label>사이트마진 (%)</label><input type="number" id="seMg" value="'+(s.margin||0)+'"/></div>' +
     '</div>' +
     '<div class="fg"><label>월 관리비 (원)</label><input type="number" id="seFee" value="'+(s.mgmt_fee_krw!=null?s.mgmt_fee_krw:100000)+'"/></div>' +
+    '<div class="fg"><label>관리비 납부 기한 (미납 시 정지)</label><input type="date" id="seFeeDue" value="'+(s.mgmt_fee_due?String(s.mgmt_fee_due).slice(0,10):'')+'"/><div style="font-size:11px;color:var(--tl);margin-top:4px">30일 주기 · 기한 3일 전 텔레그램 알림</div></div>' +
     '<div class="fg"><label><input type="checkbox" id="seActive" '+(Number(s.active)===1?'checked':'')+'/> 사이트 활성 (끄면 관리비 미납 정지 화면)</label></div>' +
     '<div class="fg"><label>환율 (글로벌 자동)</label><input type="number" id="seEx" value="'+(_globalExrate||1500)+'" readonly style="opacity:.7;cursor:not-allowed" title="슈퍼관리자 글로벌 환율과 자동 동기화"/></div>' +
     '<div style="display:flex;gap:10px;margin-top:16px">' +
@@ -5235,6 +5236,7 @@ async function saveSiteEdit(siteId){
   var margin=parseFloat(ge('seMg')?.value);
   var superMg=parseFloat(ge('seSuperMg')?.value);
   var fee=parseInt(ge('seFee')?.value,10);
+  var feeDue=(ge('seFeeDue')?.value||'').trim();
   if(isNaN(margin)||margin<0||margin>500){toast('사이트마진 0~500% 로 입력하세요','err');return}
   if(isNaN(superMg)||superMg<0||superMg>500){toast('슈퍼마진 0~500% 로 입력하세요','err');return}
   if(isNaN(fee)||fee<0||fee>10000000){toast('관리비 금액을 확인하세요','err');return}
@@ -5248,7 +5250,8 @@ async function saveSiteEdit(siteId){
     margin:margin,
     active:!!(ge('seActive')&&ge('seActive').checked),
     superMargin:superMg,
-    mgmtFeeKrw:fee
+    mgmtFeeKrw:fee,
+    mgmtFeeDue:feeDue||undefined
   };
   if(!body.name||!body.domain){toast('사이트 이름과 도메인을 입력하세요','err');return}
   try{

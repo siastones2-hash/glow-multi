@@ -598,11 +598,24 @@ async function initDB() {
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS hero_prefix TEXT DEFAULT '콘텐츠가'`); } catch(e) {}
   try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_krw INTEGER DEFAULT ${MGMT_FEE_DEFAULT_KRW}`); } catch(e) {}
   try { await query(`ALTER TABLE sites ALTER COLUMN mgmt_fee_krw SET DEFAULT ${MGMT_FEE_DEFAULT_KRW}`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_due DATE`); } catch(e) {}
+  try { await query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS mgmt_fee_remind_for DATE`); } catch(e) {}
   try {
     await query(
       `UPDATE sites SET mgmt_fee_krw=$1 WHERE id <> 'default' AND COALESCE(mgmt_fee_krw, 70000) = 70000`,
       [MGMT_FEE_DEFAULT_KRW]
     );
+  } catch(e) {}
+  // 관리비 주기 초기값: 활성 파트너 = 오늘+30일, 이미 정지 = 오늘(미납)
+  try {
+    await query(`
+      UPDATE sites SET mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '30 days')::date
+      WHERE id <> 'default' AND mgmt_fee_due IS NULL AND COALESCE(active,1)=1
+    `);
+    await query(`
+      UPDATE sites SET mgmt_fee_due = (NOW() AT TIME ZONE 'Asia/Seoul')::date
+      WHERE id <> 'default' AND mgmt_fee_due IS NULL AND COALESCE(active,1)=0
+    `);
   } catch(e) {}
   try {
     await query(`CREATE TABLE IF NOT EXISTS mgmt_fee_requests (
@@ -858,6 +871,124 @@ app.use((req, res, next) => {
   next();
 });
 
+function kstTodayYmd() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+}
+
+function formatYmd(d) {
+  if (!d) return '';
+  if (typeof d === 'string') return d.slice(0, 10);
+  try {
+    return new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+  } catch (_) {
+    return String(d).slice(0, 10);
+  }
+}
+
+/** 관리비 승인 시 다음 납부일(+30일) 갱신 */
+async function extendMgmtFeeDue(siteId) {
+  await query(`
+    UPDATE sites SET
+      active = 1,
+      mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '30 days')::date,
+      mgmt_fee_remind_for = NULL
+    WHERE id = $1 AND id <> 'default'
+  `, [siteId]);
+}
+
+/**
+ * 관리비 주기 점검 (매일 10:00 KST)
+ * - 막히기 3일 전: 텔레그램 알림 (슈퍼 + 사이트 TG)
+ * - 납부일 도래·경과 + 미납: 사이트 자동 정지
+ */
+async function runMgmtFeeCycle() {
+  const today = kstTodayYmd();
+  console.log(`📅 관리비 주기 점검 ${today}`);
+
+  // 1) 3일 전 리마인더
+  const remindR = await query(`
+    SELECT id, name, domain, mgmt_fee_krw, mgmt_fee_due, tg_token, tg_chat
+    FROM sites
+    WHERE id <> 'default'
+      AND mgmt_fee_due IS NOT NULL
+      AND mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '3 days')::date
+      AND (mgmt_fee_remind_for IS NULL OR mgmt_fee_remind_for IS DISTINCT FROM mgmt_fee_due)
+    ORDER BY name
+  `);
+  for (const s of remindR.rows) {
+    const fee = Math.max(0, parseInt(s.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
+    const due = formatYmd(s.mgmt_fee_due);
+    const msg =
+      `⏰ <b>관리비 납부 안내</b> (3일 전)\n\n` +
+      `🏷 <b>${s.name || ''}</b> (${s.domain || ''})\n` +
+      `💵 월 관리비 ₩${fee.toLocaleString('ko-KR')}\n` +
+      `📅 납부 기한 <b>${due}</b>\n\n` +
+      `기한까지 미입금 시 사이트가 <b>자동 정지</b>됩니다.\n` +
+      `입금 후 정지 화면에서 신청 → 텔레그램 승인하면 바로 열립니다.`;
+    await sendTelegramToSuper(msg).catch(() => null);
+    if (s.tg_token && s.tg_chat) {
+      await sendTelegramRaw(s.tg_token, s.tg_chat, msg).catch(() => null);
+    }
+    await query(`UPDATE sites SET mgmt_fee_remind_for = mgmt_fee_due WHERE id=$1`, [s.id]);
+  }
+  if (remindR.rows.length) {
+    console.log(`⏰ 관리비 3일 전 알림 ${remindR.rows.length}곳`);
+  }
+
+  // 2) 납부일 경과 → 자동 정지
+  const lockR = await query(`
+    SELECT id, name, domain, mgmt_fee_krw, mgmt_fee_due, tg_token, tg_chat
+    FROM sites
+    WHERE id <> 'default'
+      AND COALESCE(active,1)=1
+      AND mgmt_fee_due IS NOT NULL
+      AND mgmt_fee_due <= (NOW() AT TIME ZONE 'Asia/Seoul')::date
+    ORDER BY name
+  `);
+  for (const s of lockR.rows) {
+    await query(`UPDATE sites SET active=0 WHERE id=$1 AND id <> 'default'`, [s.id]);
+    const fee = Math.max(0, parseInt(s.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
+    const due = formatYmd(s.mgmt_fee_due);
+    const msg =
+      `⏸ <b>관리비 미납 · 사이트 정지</b>\n\n` +
+      `🏷 <b>${s.name || ''}</b> (${s.domain || ''})\n` +
+      `💵 ₩${fee.toLocaleString('ko-KR')}\n` +
+      `📅 납부 기한 ${due}\n\n` +
+      `입금 확인 후 텔레그램/관리비 탭에서 승인하면 재오픈됩니다.`;
+    await sendTelegramToSuper(msg).catch(() => null);
+    if (s.tg_token && s.tg_chat) {
+      await sendTelegramRaw(s.tg_token, s.tg_chat, msg).catch(() => null);
+    }
+    await logActivity('default', 'system', '', '관리비 미납 자동 정지', 'site', s.id,
+      `${s.name} · 기한 ${due}`);
+  }
+  if (lockR.rows.length) {
+    console.log(`⏸ 관리비 미납 자동 정지 ${lockR.rows.length}곳`);
+  }
+  return { reminded: remindR.rows.length, locked: lockR.rows.length };
+}
+
+function startMgmtFeeScheduler() {
+  let lastRun = '';
+  const tick = async () => {
+    try {
+      const hour = Number(new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Seoul', hour: 'numeric', hour12: false
+      }));
+      const today = kstTodayYmd();
+      // 매일 10시 KST 1회 (Render sleep 대비 09~11시도 허용하되 날짜당 1회)
+      if (hour >= 9 && hour <= 11 && lastRun !== today) {
+        lastRun = today;
+        await runMgmtFeeCycle();
+      }
+    } catch (e) {
+      console.log('관리비 스케줄러 오류:', e.message);
+    }
+  };
+  setTimeout(tick, 45 * 1000);
+  setInterval(tick, 30 * 60 * 1000);
+}
+
 /** 관리비 입금 신청 승인/거절 (슈퍼관리자·텔레그램 공통) */
 async function processMgmtFeeRequest(id, action, processedBy = '') {
   const r = await query(`SELECT * FROM mgmt_fee_requests WHERE id=$1`, [id]);
@@ -871,9 +1002,9 @@ async function processMgmtFeeRequest(id, action, processedBy = '') {
     [status, processedBy, id]
   );
   if (approve) {
-    await query(`UPDATE sites SET active=1 WHERE id=$1 AND id <> 'default'`, [row.site_id]);
+    await extendMgmtFeeDue(row.site_id);
     await logActivity('default', processedBy, '', '관리비 승인·사이트 재오픈', 'site', row.site_id,
-      `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor}`);
+      `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor} · 다음 기한 +30일`);
   } else {
     await logActivity('default', processedBy, '', '관리비 신청 거절', 'site', row.site_id,
       `${row.site_name} · ${row.depositor}`);
@@ -9169,14 +9300,16 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
     await query(`INSERT INTO sites(
       id,domain,name,logo,primary_color,accent_color,margin,exrate,credit,super_margin,theme,
       hero_badge,hero_prefix,ui_layout,slogan,slogan_sub,description,
-      stat1_num,stat1_label,stat2_num,stat2_label,stat3_num,stat3_label,stat4_num,stat4_label
-    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
+      stat1_num,stat1_label,stat2_num,stat2_label,stat3_num,stat3_label,stat4_num,stat4_label,
+      mgmt_fee_krw,mgmt_fee_due
+    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '30 days')::date)`,
       [siteId, domain, name, finalLogo, finalPrimary, finalAccent,
         parseFloat(margin || 0), newSiteExrate, parseFloat(credit || 0), superMarginVal, finalTheme,
         branding.hero_badge, branding.hero_prefix, branding.ui_layout,
         branding.slogan, branding.slogan_sub, branding.description,
         branding.stat1_num, branding.stat1_label, branding.stat2_num, branding.stat2_label,
-        branding.stat3_num, branding.stat3_label, branding.stat4_num, branding.stat4_label]);
+        branding.stat3_num, branding.stat3_label, branding.stat4_num, branding.stat4_label,
+        MGMT_FEE_DEFAULT_KRW]);
     const hash = bcrypt.hashSync(adminPw, 10);
     const adminRole = req.body.adminRole || 'admin';
     await query(`INSERT INTO users(id,site_id,name,email,pw,role,balance) VALUES($1,$2,$3,$4,$5,$6,$7)`,
@@ -9328,17 +9461,26 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
       mgmtFee = fee;
     }
 
+    let mgmtFeeDue = before.mgmt_fee_due ? formatYmd(before.mgmt_fee_due) : null;
+    if (req.body.mgmtFeeDue !== undefined && req.body.mgmtFeeDue !== null && String(req.body.mgmtFeeDue).trim() !== '') {
+      const dueStr = String(req.body.mgmtFeeDue).trim().slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dueStr)) {
+        return res.json({ error: '관리비 납부일은 YYYY-MM-DD 형식이어야 합니다' });
+      }
+      mgmtFeeDue = dueStr;
+    }
+
     const activeVal = active === undefined || active === null
       ? (Number(before.active) === 1 ? 1 : 0)
       : (active ? 1 : 0);
 
     // theme은 건드리지 않음 (자동 테마 JSON 보존 · 저장 실패처럼 보이는 현상 방지)
     await query(
-      `UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9,mgmt_fee_krw=$10 WHERE id=$11`,
-      [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, activeVal, superMarginVal, mgmtFee, siteId]
+      `UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9,mgmt_fee_krw=$10,mgmt_fee_due=$11 WHERE id=$12`,
+      [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, activeVal, superMarginVal, mgmtFee, mgmtFeeDue, siteId]
     );
 
-    const afterR = await query(`SELECT id, name, margin, super_margin, domain, active, mgmt_fee_krw FROM sites WHERE id=$1`, [siteId]);
+    const afterR = await query(`SELECT id, name, margin, super_margin, domain, active, mgmt_fee_krw, mgmt_fee_due FROM sites WHERE id=$1`, [siteId]);
     res.json({ ok: true, site: afterR.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -9996,4 +10138,6 @@ app.listen(PORT, async () => {
   }, 30 * 60 * 1000);
 
   startDailyReportScheduler(query, getGlobalSetting, setGlobalSetting, sendTelegramToSuper);
+  startMgmtFeeScheduler();
+  console.log('📅 관리비 주기 스케줄러 시작 (막히기 3일 전 TG 알림 · 미납 자동 정지)');
 });
