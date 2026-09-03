@@ -273,7 +273,7 @@
       var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
       if (ready.length) {
         runBtn.disabled = false;
-        setStatus(currentPerson() + " 읽기 끝났습니다. 「내 컴퓨터에 폴더로 저장」을 누르세요. 바탕화면을 고르면 그 사람 폴더가 생깁니다.");
+        setStatus(currentPerson() + " 읽기 끝났습니다. 「컴퓨터에 받기」를 누르세요. 폴더를 고를 필요 없습니다.");
       } else {
         setStatus("완료. 정리할 사진·PDF가 없습니다.");
       }
@@ -367,7 +367,7 @@
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-    setStatus("완료. " + firstPerson + "_서류함.zip 이 받아졌습니다. 다음 사람 알집을 놓으면 됩니다.");
+    setStatus("완료. 다운로드에 " + firstPerson + "_서류함.zip 이 있습니다. 풀어서 쓰세요. 다음 사람 알집을 놓으면 됩니다.");
   }
 
   async function writeBlob(dir, name, blob) {
@@ -412,22 +412,16 @@
   }
 
   async function saveToComputer(ready) {
-    runBtn.disabled = false;
-    setStatus("지금 뜨는 창에서 저장할 폴더를 고르세요. 알집이 아닙니다. 바탕화면을 선택하면 됩니다.");
+    runBtn.disabled = true;
+    setStatus("받는 중… 폴더를 고르지 마세요. 잠시 뒤 다운로드에 zip이 생깁니다.");
     try {
-      if (!window.showDirectoryPicker) throw new Error("no-picker");
-      var handle = await window.showDirectoryPicker({ mode: "readwrite" });
-      await writeFilesToDir(handle, ready);
-      var saved = currentPerson();
-      queue = [];
-      if (personInput) personInput.value = "";
-      render();
-      setStatus("완료. 서류함 → " + saved + " 폴더에 넣어 두었습니다. 다음 사람 알집을 놓으면 됩니다.");
-    } catch (err) {
       await downloadFolderZip(ready);
       queue = [];
       if (personInput) personInput.value = "";
       render();
+    } catch (err) {
+      runBtn.disabled = false;
+      setStatus("받기에 실패했습니다. 다시 「컴퓨터에 받기」를 눌러 주세요.");
     }
   }
 

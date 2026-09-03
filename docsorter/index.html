@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>서류 자동분류</title>
-  <link rel="stylesheet" href="assets/app.css?v=9">
+  <link rel="stylesheet" href="assets/app.css?v=10">
 </head>
 <body>
   <div class="wrap">
@@ -26,19 +26,19 @@
         <input id="personName" type="text" placeholder="한규숙" autocomplete="off">
       </label>
       <label class="filebtn" for="filePick">알집 고르기</label>
-      <button id="runBtn" disabled>내 컴퓨터에 폴더로 저장</button>
+      <button id="runBtn" disabled>컴퓨터에 받기</button>
       <button id="clearBtn" class="ghost">비우기</button>
     </div>
 
     <div id="status" class="status">사람 알집을 놓으세요. 한규숙 다음엔 다른 사람 알집을 또 넣으면 됩니다.</div>
     <div id="list" class="list"></div>
-    <p class="note">알집 이름이 그 사람 이름이 됩니다. 저장하면 서류함 → 한규숙 → 초본·등본·원본 으로 들어갑니다. 다음 사람도 같은 방식으로 계속 넣으면 사람마다 폴더가 쌓입니다.</p>
+    <p class="note">알집 이름이 그 사람 이름이 됩니다. 「컴퓨터에 받기」를 누르면 다운로드에 zip이 생깁니다. 풀면 서류함 → 한규숙 → 초본·등본·원본 입니다.</p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-  <script src="assets/classify.js?v=9"></script>
-  <script src="assets/app.js?v=9"></script>
+  <script src="assets/classify.js?v=10"></script>
+  <script src="assets/app.js?v=10"></script>
 </body>
 </html>
