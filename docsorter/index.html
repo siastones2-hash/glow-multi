@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>서류 자동분류</title>
-  <link rel="stylesheet" href="assets/app.css?v=10">
+  <link rel="stylesheet" href="assets/app.css?v=11">
 </head>
 <body>
   <div class="wrap">
     <h1>서류 자동분류</h1>
-    <p id="sub" class="sub">알집을 넣고 「컴퓨터에 받기」만 누르면 됩니다. 폴더를 고를 필요 없습니다. 다운로드에 zip이 생깁니다.</p>
+    <p id="sub" class="sub">알집을 놓으면 분류가 끝난 뒤 다운로드 폴더에 자동으로 들어갑니다.</p>
 
     <div id="gate" class="card-gate hidden">
       <p>지금은 사용할 수 없습니다.</p>
@@ -26,19 +26,19 @@
         <input id="personName" type="text" placeholder="한규숙" autocomplete="off">
       </label>
       <label class="filebtn" for="filePick">알집 고르기</label>
-      <button id="runBtn" disabled>컴퓨터에 받기</button>
+      <button id="runBtn" disabled>다시 받기</button>
       <button id="clearBtn" class="ghost">비우기</button>
     </div>
 
-    <div id="status" class="status">사람 알집을 놓으세요. 한규숙 다음엔 다른 사람 알집을 또 넣으면 됩니다.</div>
+    <div id="status" class="status">사람 알집을 놓으세요. 끝나면 다운로드 폴더에 자동으로 들어갑니다.</div>
     <div id="list" class="list"></div>
-    <p class="note">알집 이름이 그 사람 이름이 됩니다. 「컴퓨터에 받기」를 누르면 다운로드에 zip이 생깁니다. 풀면 서류함 → 한규숙 → 초본·등본·원본 입니다.</p>
+    <p class="note">알집 이름이 그 사람 이름입니다. 끝나면 파인더에서 다운로드를 여세요. zip을 풀면 서류함 → 이름 → 초본·등본·원본 입니다.</p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-  <script src="assets/classify.js?v=10"></script>
-  <script src="assets/app.js?v=10"></script>
+  <script src="assets/classify.js?v=11"></script>
+  <script src="assets/app.js?v=11"></script>
 </body>
 </html>

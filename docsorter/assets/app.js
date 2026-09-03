@@ -43,6 +43,7 @@
   var queue = [];
   var worker = null;
   var busy = false;
+  var outDir = null;
 
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
   var SKIP_NAME = /(^|[\/\\])(\.|__macosx|thumbs\.db|desktop\.ini)/i;
@@ -272,8 +273,8 @@
       render();
       var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
       if (ready.length) {
-        runBtn.disabled = false;
-        setStatus(currentPerson() + " 읽기 끝났습니다. 「컴퓨터에 받기」를 누르세요. 폴더를 고를 필요 없습니다.");
+        setStatus("분류 끝났습니다. 다운로드 폴더에 넣는 중…");
+        await saveToComputer(ready);
       } else {
         setStatus("완료. 정리할 사진·PDF가 없습니다.");
       }
@@ -367,7 +368,76 @@
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-    setStatus("완료. 다운로드에 " + firstPerson + "_서류함.zip 이 있습니다. 풀어서 쓰세요. 다음 사람 알집을 놓으면 됩니다.");
+    setStatus("다운로드 폴더에 " + firstPerson + "_서류함.zip 이 생겼습니다. 파인더에서 다운로드를 열어 보세요.");
+  }
+
+  function openIdb() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open("docsorter", 1);
+      req.onupgradeneeded = function () {
+        req.result.createObjectStore("kv");
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  async function loadOutDir() {
+    try {
+      var db = await openIdb();
+      var handle = await new Promise(function (resolve, reject) {
+        var g = db.transaction("kv", "readonly").objectStore("kv").get("outdir");
+        g.onsuccess = function () { resolve(g.result || null); };
+        g.onerror = function () { reject(g.error); };
+      });
+      if (!handle || !handle.queryPermission) return null;
+      var perm = await handle.queryPermission({ mode: "readwrite" });
+      if (perm !== "granted") {
+        perm = await handle.requestPermission({ mode: "readwrite" });
+      }
+      return perm === "granted" ? handle : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function rememberOutDir(handle) {
+    try {
+      var db = await openIdb();
+      await new Promise(function (resolve, reject) {
+        var tx = db.transaction("kv", "readwrite");
+        tx.objectStore("kv").put(handle, "outdir");
+        tx.oncomplete = resolve;
+        tx.onerror = function () { reject(tx.error); };
+      });
+    } catch (e) {}
+  }
+
+  async function ensureOutDir() {
+    if (outDir) {
+      try {
+        var perm = await outDir.queryPermission({ mode: "readwrite" });
+        if (perm === "granted") return outDir;
+      } catch (e) {
+        outDir = null;
+      }
+    }
+    outDir = await loadOutDir();
+    if (outDir) return outDir;
+    if (!window.showDirectoryPicker) return null;
+    try {
+      setStatus("한 번만: 창에서 「다운로드」를 고르세요. 홈·바탕화면은 안 됩니다.");
+      var handle = await window.showDirectoryPicker({
+        id: "docsorter-dl",
+        mode: "readwrite",
+        startIn: "downloads",
+      });
+      outDir = handle;
+      await rememberOutDir(handle);
+      return handle;
+    } catch (e) {
+      return null;
+    }
   }
 
   async function writeBlob(dir, name, blob) {
@@ -408,20 +478,26 @@
     }
     var zipFile = files.filter(function (f) { return /\.zip$/i.test(f.name); })[0];
     if (zipFile) setPerson(cleanPerson(zipFile.name));
+    if (!outDir) outDir = await loadOutDir();
     await ingestFiles(files);
   }
 
   async function saveToComputer(ready) {
     runBtn.disabled = true;
-    setStatus("받는 중… 폴더를 고르지 마세요. 잠시 뒤 다운로드에 zip이 생깁니다.");
+    setStatus("다운로드 폴더에 넣는 중…");
     try {
+      if (outDir) {
+        try { await writeFilesToDir(outDir, ready); } catch (e) { outDir = null; }
+      }
       await downloadFolderZip(ready);
+      var who = (ready[0] && ready[0].person) || currentPerson();
       queue = [];
       if (personInput) personInput.value = "";
       render();
+      setStatus("완료. 파인더에서 다운로드를 여세요. " + who + "_서류함.zip 이 있습니다.");
     } catch (err) {
       runBtn.disabled = false;
-      setStatus("받기에 실패했습니다. 다시 「컴퓨터에 받기」를 눌러 주세요.");
+      setStatus("자동 저장이 막혔습니다. 「다시 받기」를 누르면 다운로드에 생깁니다.");
     }
   }
 
