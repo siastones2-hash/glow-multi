@@ -282,8 +282,8 @@
       var entry = zip.files[path];
       if (entry.dir || SKIP_NAME.test(path)) continue;
       var base = path.split("/").pop();
-      var blob = await entry.async("blob");
-      blob = new Blob([blob], { type: blob.type || "application/octet-stream" });
+      var bytes = await entry.async("uint8array");
+      var blob = new Blob([bytes], { type: "application/octet-stream" });
       if (extOf(base || path) === "zip") {
         await ingestZip(new File([blob], base || path));
       } else {
@@ -331,8 +331,10 @@
     var zip = new JSZip();
     var used = {};
     ready.forEach(function (item) {
-      var name = uniqueName(used, item.folder, fileTitle(item));
-      zip.folder("서류함").folder(item.folder).file(name, item.blob);
+      var titled = uniqueName(used, item.folder, fileTitle(item));
+      var original = uniqueName(used, "원본", item.name || titled);
+      zip.folder("서류함").folder(item.folder).file(titled, item.blob);
+      zip.folder("서류함").folder("원본").file(original, item.blob);
     });
     var blob = await zip.generateAsync({ type: "blob" });
     var a = document.createElement("a");
@@ -345,20 +347,28 @@
     setStatus("완료. 서류함.zip 이 받아졌습니다. 풀면 초본·등본 폴더가 들어 있습니다.");
   }
 
+  async function writeBlob(dir, name, blob) {
+    var file = await dir.getFileHandle(name, { create: true });
+    var writable = await file.createWritable();
+    var buf = blob instanceof Blob ? await blob.arrayBuffer() : blob;
+    await writable.write(buf);
+    await writable.close();
+  }
+
   async function writeFilesToDir(handle, ready) {
     var root = handle;
     if (handle.name !== "서류함") {
       root = await handle.getDirectoryHandle("서류함", { create: true });
     }
     var used = {};
+    var origDir = await root.getDirectoryHandle("원본", { create: true });
     for (var i = 0; i < ready.length; i++) {
       var item = ready[i];
       var folder = await root.getDirectoryHandle(item.folder, { create: true });
-      var name = uniqueName(used, item.folder, fileTitle(item));
-      var file = await folder.getFileHandle(name, { create: true });
-      var writable = await file.createWritable();
-      await writable.write(item.blob);
-      await writable.close();
+      var titled = uniqueName(used, item.folder, fileTitle(item));
+      var original = uniqueName(used, "원본", item.name || titled);
+      await writeBlob(folder, titled, item.blob);
+      await writeBlob(origDir, original, item.blob);
     }
   }
 
