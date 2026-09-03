@@ -44,6 +44,9 @@
   var worker = null;
   var busy = false;
   var outDir = null;
+  var incoming = [];
+  var pumping = false;
+  var justDropped = 0;
 
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
   var SKIP_NAME = /(^|[\/\\])(\.|__macosx|thumbs\.db|desktop\.ini)/i;
@@ -247,10 +250,7 @@
 
   async function ingestFiles(fileList) {
     var files = Array.prototype.slice.call(fileList || []);
-    if (!files.length) {
-      setStatus("파일이 들어오지 않았습니다. 알집 zip을 이 창에 다시 놓아 주세요.");
-      return;
-    }
+    if (!files.length) return;
     busy = true;
     runBtn.disabled = true;
     try {
@@ -281,9 +281,10 @@
     } catch (err) {
       runBtn.disabled = false;
       setStatus("압축을 풀지 못했습니다. zip 파일을 다시 놓아 주세요.");
+    } finally {
+      busy = false;
+      render();
     }
-    busy = false;
-    render();
   }
 
   async function ingestZip(file, person) {
@@ -494,10 +495,38 @@
       queue = [];
       if (personInput) personInput.value = "";
       render();
-      setStatus("완료. 파인더에서 다운로드를 여세요. " + who + "_서류함.zip 이 있습니다.");
+      setStatus("완료. 다운로드에 " + who + "_서류함.zip 이 있습니다. 다음 사람 알집을 놓으세요.");
     } catch (err) {
       runBtn.disabled = false;
-      setStatus("자동 저장이 막혔습니다. 「다시 받기」를 누르면 다운로드에 생깁니다.");
+      setStatus("자동 저장이 막혔습니다. 「다시 받기」를 누르거나 알집을 다시 놓으세요.");
+    }
+  }
+
+  function acceptFiles(files, dirReads) {
+    files = Array.prototype.slice.call(files || []);
+    dirReads = dirReads || [];
+    if (!files.length && !dirReads.length) {
+      if (!busy && !pumping) setStatus("파일이 안 들어왔습니다. 「알집 고르기」로 다시 선택해 주세요.");
+      return;
+    }
+    incoming.push({ files: files, dirReads: dirReads });
+    if (busy || pumping) {
+      setStatus("지금 정리 중입니다. 방금 넣은 알집은 끝나면 이어서 합니다.");
+    }
+    pumpIncoming();
+  }
+
+  async function pumpIncoming() {
+    if (pumping) return;
+    pumping = true;
+    try {
+      while (incoming.length) {
+        var job = incoming.shift();
+        await takeFiles(job.files, job.dirReads);
+      }
+    } finally {
+      pumping = false;
+      busy = false;
     }
   }
 
@@ -513,16 +542,18 @@
     e.preventDefault();
     e.stopPropagation();
     drop.classList.remove("over");
+    justDropped = Date.now();
     var snapped = snapshotDropped(e.dataTransfer);
-    if (!busy) takeFiles(snapped.files, snapped.dirReads);
+    acceptFiles(snapped.files, snapped.dirReads);
+    filePick.value = "";
   }, true);
   filePick.addEventListener("change", function () {
     var files = Array.prototype.slice.call(filePick.files || []);
     filePick.value = "";
-    if (!busy) takeFiles(files);
+    if (Date.now() - justDropped < 1000) return;
+    acceptFiles(files);
   });
   runBtn.addEventListener("click", function () {
-    if (busy) return;
     var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
     if (ready.length) saveToComputer(ready);
   });
