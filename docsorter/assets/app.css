@@ -60,6 +60,24 @@ button.ghost { background: #e8e2d6; color: var(--ink); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .filebtn { display: inline-block; }
 .filebtn input { display: none; }
+.namebox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.namebox input {
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  width: 140px;
+  outline: none;
+}
 .status {
   background: var(--card);
   border: 1px solid var(--line);

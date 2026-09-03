@@ -38,6 +38,7 @@
   var clearBtn = document.getElementById("clearBtn");
   var statusEl = document.getElementById("status");
   var listEl = document.getElementById("list");
+  var personInput = document.getElementById("personName");
 
   var queue = [];
   var worker = null;
@@ -59,8 +60,22 @@
     return i < 0 ? "" : name.slice(i + 1).toLowerCase();
   }
 
-  function addItem(name, folder, note) {
-    queue.push({ name: name, folder: folder, note: note || "", blob: null });
+  function cleanPerson(name) {
+    var n = String(name || "").replace(/\.(zip|alz|egg)$/i, "").trim();
+    n = n.replace(/[\\/:*?"<>|]/g, "").trim();
+    return n;
+  }
+
+  function currentPerson() {
+    return cleanPerson(personInput && personInput.value) || "이름없음";
+  }
+
+  function setPerson(name) {
+    if (personInput && name) personInput.value = name;
+  }
+
+  function addItem(name, folder, note, person) {
+    queue.push({ name: name, folder: folder, note: note || "", blob: null, person: person || currentPerson() });
     render();
   }
 
@@ -68,6 +83,8 @@
     listEl.innerHTML = queue.map(function (item) {
       return (
         '<div class="item"><span class="tag">' +
+        escapeHtml(item.person || currentPerson()) +
+        "</span><span class="tag">' +
         escapeHtml(item.folder || "대기") +
         "</span><span><b>" +
         escapeHtml(item.title || item.folder || "") +
@@ -245,16 +262,18 @@
           continue;
         }
         if (await isZipBlob(file)) {
-          await ingestZip(file);
+          var zipPerson = cleanPerson(file.name) || currentPerson();
+          setPerson(zipPerson);
+          await ingestZip(file, zipPerson);
         } else {
-          await ingestOne(file.name, file);
+          await ingestOne(file.name, file, currentPerson());
         }
       }
       render();
       var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
       if (ready.length) {
         runBtn.disabled = false;
-        setStatus("읽기 끝났습니다. 「내 컴퓨터에 폴더로 저장」을 누르세요. 지금 뜨는 창에서 바탕화면을 고르면 됩니다.");
+        setStatus(currentPerson() + " 읽기 끝났습니다. 「내 컴퓨터에 폴더로 저장」을 누르세요. 바탕화면을 고르면 그 사람 폴더가 생깁니다.");
       } else {
         setStatus("완료. 정리할 사진·PDF가 없습니다.");
       }
@@ -266,13 +285,14 @@
     render();
   }
 
-  async function ingestZip(file) {
-    setStatus(file.name + " 압축을 푸는 중…");
+  async function ingestZip(file, person) {
+    person = person || cleanPerson(file.name) || currentPerson();
+    setStatus(person + " 압축을 푸는 중…");
     var zip;
     try {
       zip = await JSZip.loadAsync(file);
     } catch (err) {
-      addItem(file.name, "건너뜀", "압축을 열 수 없습니다. zip으로 다시 묶어 주세요.");
+      addItem(file.name, "건너뜀", "압축을 열 수 없습니다. zip으로 다시 묶어 주세요.", person);
       return;
     }
     var names = Object.keys(zip.files);
@@ -285,29 +305,30 @@
       var bytes = await entry.async("uint8array");
       var blob = new Blob([bytes], { type: "application/octet-stream" });
       if (extOf(base || path) === "zip") {
-        await ingestZip(new File([blob], base || path));
+        await ingestZip(new File([blob], base || path), cleanPerson(base) || person);
       } else {
-        await ingestOne(base || path, blob);
+        await ingestOne(base || path, blob, person);
       }
       found += 1;
     }
     if (!found) {
-      addItem(file.name, "건너뜀", "압축 안에 사진·PDF가 없습니다.");
+      addItem(file.name, "건너뜀", "압축 안에 사진·PDF가 없습니다.", person);
     }
   }
 
-  async function ingestOne(name, blob) {
-    setStatus(name + " 글자를 읽는 중…");
+  async function ingestOne(name, blob, person) {
+    person = person || currentPerson();
+    setStatus(person + " · " + name + " 글자를 읽는 중…");
     try {
       var hit = await classifyBlob(name, blob);
       if (!hit) {
-        addItem(name, "건너뜀", "지원하지 않는 형식");
+        addItem(name, "건너뜀", "지원하지 않는 형식", person);
         return;
       }
-      queue.push({ name: name, folder: hit.folder, title: hit.title || hit.folder, note: "", blob: blob });
+      queue.push({ name: name, folder: hit.folder, title: hit.title || hit.folder, note: "", blob: blob, person: person });
       render();
     } catch (err) {
-      queue.push({ name: name, folder: "기타", title: "기타", note: "읽기 실패", blob: blob });
+      queue.push({ name: name, folder: "기타", title: "기타", note: "읽기 실패", blob: blob, person: person });
       render();
     }
   }
@@ -331,20 +352,22 @@
     var zip = new JSZip();
     var used = {};
     ready.forEach(function (item) {
-      var titled = uniqueName(used, item.folder, fileTitle(item));
-      var original = uniqueName(used, "원본", item.name || titled);
-      zip.folder("서류함").folder(item.folder).file(titled, item.blob);
-      zip.folder("서류함").folder("원본").file(original, item.blob);
+      var person = item.person || currentPerson();
+      var titled = uniqueName(used, person + "/" + item.folder, fileTitle(item));
+      var original = uniqueName(used, person + "/원본", item.name || titled);
+      zip.folder("서류함").folder(person).folder(item.folder).file(titled, item.blob);
+      zip.folder("서류함").folder(person).folder("원본").file(original, item.blob);
     });
     var blob = await zip.generateAsync({ type: "blob" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "서류함.zip";
+    var firstPerson = (ready[0] && ready[0].person) || currentPerson();
+    a.download = firstPerson + "_서류함.zip";
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-    setStatus("완료. 서류함.zip 이 받아졌습니다. 풀면 초본·등본 폴더가 들어 있습니다.");
+    setStatus("완료. " + firstPerson + "_서류함.zip 이 받아졌습니다. 다음 사람 알집을 놓으면 됩니다.");
   }
 
   async function writeBlob(dir, name, blob) {
@@ -361,12 +384,14 @@
       root = await handle.getDirectoryHandle("서류함", { create: true });
     }
     var used = {};
-    var origDir = await root.getDirectoryHandle("원본", { create: true });
     for (var i = 0; i < ready.length; i++) {
       var item = ready[i];
-      var folder = await root.getDirectoryHandle(item.folder, { create: true });
-      var titled = uniqueName(used, item.folder, fileTitle(item));
-      var original = uniqueName(used, "원본", item.name || titled);
+      var person = item.person || currentPerson();
+      var personDir = await root.getDirectoryHandle(person, { create: true });
+      var folder = await personDir.getDirectoryHandle(item.folder, { create: true });
+      var origDir = await personDir.getDirectoryHandle("원본", { create: true });
+      var titled = uniqueName(used, person + "/" + item.folder, fileTitle(item));
+      var original = uniqueName(used, person + "/원본", item.name || titled);
       await writeBlob(folder, titled, item.blob);
       await writeBlob(origDir, original, item.blob);
     }
@@ -381,6 +406,8 @@
         extra.forEach(function (arr) { files = files.concat(arr); });
       } catch (e) {}
     }
+    var zipFile = files.filter(function (f) { return /\.zip$/i.test(f.name); })[0];
+    if (zipFile) setPerson(cleanPerson(zipFile.name));
     await ingestFiles(files);
   }
 
@@ -391,13 +418,16 @@
       if (!window.showDirectoryPicker) throw new Error("no-picker");
       var handle = await window.showDirectoryPicker({ mode: "readwrite" });
       await writeFilesToDir(handle, ready);
-      setStatus("완료. 고른 위치에 「서류함」이 생겼고, 안에 초본·등본 폴더와 파일이 들어 있습니다.");
+      var saved = currentPerson();
+      queue = [];
+      if (personInput) personInput.value = "";
+      render();
+      setStatus("완료. 서류함 → " + saved + " 폴더에 넣어 두었습니다. 다음 사람 알집을 놓으면 됩니다.");
     } catch (err) {
-      if (err && err.name === "AbortError") {
-        await downloadFolderZip(ready);
-        return;
-      }
       await downloadFolderZip(ready);
+      queue = [];
+      if (personInput) personInput.value = "";
+      render();
     }
   }
 
@@ -430,7 +460,8 @@
   clearBtn.addEventListener("click", function () {
     if (busy) return;
     queue = [];
+    if (personInput) personInput.value = "";
     render();
-    setStatus("파일을 넣으면 자동으로 읽기 시작합니다.");
+    setStatus("다음 사람 알집을 놓으세요.");
   });
 })();
