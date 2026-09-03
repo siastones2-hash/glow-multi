@@ -896,11 +896,29 @@ async function extendMgmtFeeDue(siteId) {
 const MGMT_FEE_BANK = '우리은행 1002-160-164625';
 const MGMT_FEE_HOLDER = '예금주: 조인호';
 
+function mgmtPayToken(siteId) {
+  return crypto.createHmac('sha256', TOKEN_SECRET).update('mgmt-pay:' + String(siteId || '')).digest('hex').slice(0, 20);
+}
+
+function mgmtPayUrl(site) {
+  const domain = String(site?.domain || '').trim().toLowerCase();
+  if (!domain) return '';
+  const k = mgmtPayToken(site.id);
+  return `https://${domain}/mgmt-pay?k=${k}`;
+}
+
+function isValidMgmtPayKey(siteId, key) {
+  const k = String(key || '').trim();
+  if (!k || !siteId) return false;
+  return k === mgmtPayToken(siteId);
+}
+
 /** 사이트 정지 시 — 공개 화면엔 안 보이게, 관리자 텔레그램으로만 안내 */
 async function notifySiteSuspendedByMgmtFee(site, reason = '미납') {
   if (!site || site.id === 'default') return;
   const fee = Math.max(0, parseInt(site.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
   const due = formatYmd(site.mgmt_fee_due);
+  const payUrl = mgmtPayUrl(site);
   const adminMsg =
     `⏸ <b>사이트 일시 정지</b>\n\n` +
     `🏷 <b>${site.name || ''}</b> (${site.domain || ''})\n` +
@@ -908,17 +926,145 @@ async function notifySiteSuspendedByMgmtFee(site, reason = '미납') {
     `💵 월 관리비 ₩${fee.toLocaleString('ko-KR')}\n` +
     (due ? `📅 납부 기한 ${due}\n` : '') +
     `\n💳 입금 계좌\n${MGMT_FEE_BANK}\n${MGMT_FEE_HOLDER}\n` +
-    `\n입금 후 담당자에게 알려 주시면 바로 다시 열어 드립니다.`;
+    (payUrl ? `\n📝 입금 후 아래 링크에서 <b>신청</b>해 주세요.\n${payUrl}\n` : '') +
+    `\n승인되면 사이트가 <b>바로 다시 열립니다</b>.`;
   const superMsg =
     `⏸ <b>관리비 · 사이트 정지</b>\n\n` +
     `🏷 <b>${site.name || ''}</b> (${site.domain || ''})\n` +
     `📌 ${reason}\n` +
     `💵 ₩${fee.toLocaleString('ko-KR')}` +
-    (due ? `\n📅 ${due}` : '');
+    (due ? `\n📅 ${due}` : '') +
+    (payUrl ? `\n🔗 ${payUrl}` : '');
   await sendTelegramToSuper(superMsg).catch(() => null);
   if (site.tg_token && site.tg_chat) {
     await sendTelegramRaw(site.tg_token, site.tg_chat, adminMsg).catch(() => null);
+  } else {
+    await sendTelegramToSuper(adminMsg).catch(() => null);
   }
+}
+
+function renderSuspendedCustomerPage(siteName, logo) {
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex"/>
+<title>${siteName} — 일시 중단</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:#0f0f12;color:#f2f2f5;padding:24px}
+  .box{max-width:400px;width:100%;text-align:center;background:#1a1a22;border:1px solid #2e2e3a;
+    border-radius:20px;padding:40px 28px}
+  .logo{font-size:42px;margin-bottom:12px}
+  h1{font-size:22px;margin:0 0 8px;font-weight:800}
+  p{margin:0;font-size:14px;line-height:1.65;color:#a8a8b8}
+  .badge{display:inline-block;margin-top:22px;padding:8px 14px;border-radius:999px;
+    background:#2a2a36;color:#c8c8d4;font-size:12px;font-weight:700}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">${logo}</div>
+    <h1>${siteName}</h1>
+    <p>현재 서비스를 <b style="color:#fff">일시 중단</b> 중입니다.<br>
+    빠른 시일 내에 정상화될 예정입니다.<br><br>
+    이용에 불편을 드려 죄송합니다.</p>
+    <div class="badge">TEMPORARY UNAVAILABLE</div>
+  </div>
+</body>
+</html>`;
+}
+
+function renderSuspendedPayPage(siteName, logo, feeLabel, payKey) {
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex"/>
+<title>${siteName} — 관리비 입금 신청</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:#0f0f12;color:#f2f2f5;padding:24px}
+  .box{max-width:440px;width:100%;text-align:center;background:#1a1a22;border:1px solid #2e2e3a;
+    border-radius:20px;padding:40px 28px}
+  .logo{font-size:42px;margin-bottom:12px}
+  h1{font-size:22px;margin:0 0 8px;font-weight:800}
+  p{margin:0;font-size:14px;line-height:1.65;color:#a8a8b8}
+  .pay{margin-top:22px;text-align:left;background:#121218;border:1px solid #2e2e3a;
+    border-radius:14px;padding:16px 18px}
+  .pay h2{margin:0 0 10px;font-size:13px;color:#ffb4c0;font-weight:700}
+  .pay .fee{font-size:28px;font-weight:800;color:#fff;margin:0 0 12px}
+  .pay .fee span{font-size:14px;font-weight:600;color:#a8a8b8;margin-left:4px}
+  .pay .bank{font-size:15px;font-weight:700;color:#e8e8f0;line-height:1.5}
+  .pay .holder{font-size:13px;color:#a8a8b8;margin-top:4px}
+  .pay .hint{margin-top:12px;font-size:12px;color:#8a8a9a;line-height:1.55}
+  .form{margin-top:18px;text-align:left}
+  .form label{display:block;font-size:12px;color:#a8a8b8;margin:10px 0 6px}
+  .form input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #2e2e3a;
+    background:#121218;color:#fff;font-size:14px}
+  .form button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;
+    background:linear-gradient(135deg,#ff6b81,#c9184a);color:#fff;font-size:15px;font-weight:800;cursor:pointer}
+  .form button:disabled{opacity:.55;cursor:not-allowed}
+  .msg{margin-top:12px;font-size:13px;line-height:1.5;color:#8AD4A8;display:none}
+  .msg.err{color:#ff8a9a}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">${logo}</div>
+    <h1>${siteName}</h1>
+    <p>관리비 입금 후 아래 신청을 남겨 주세요.<br>
+    확인·승인되면 사이트가 <b style="color:#fff">바로 다시 열립니다</b>.</p>
+    <div class="pay">
+      <h2>관리비 입금 안내</h2>
+      <div class="fee">₩${feeLabel}<span>/월</span></div>
+      <div class="bank">${MGMT_FEE_BANK}</div>
+      <div class="holder">${MGMT_FEE_HOLDER}</div>
+      <div class="hint">입금자명에 사이트명(또는 상호)을 적어 주세요.</div>
+    </div>
+    <div class="form">
+      <label>입금자명 *</label>
+      <input id="depositor" placeholder="통장 입금자명" maxlength="40"/>
+      <label>연락처 (선택)</label>
+      <input id="phone" placeholder="휴대폰 또는 카톡 ID" maxlength="30"/>
+      <label>메모 (선택)</label>
+      <input id="note" placeholder="입금 시각 등" maxlength="200"/>
+      <button type="button" id="btn">입금 완료 · 신청하기</button>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+<script>
+(function(){
+  var btn=document.getElementById('btn');
+  var msg=document.getElementById('msg');
+  var payKey=${JSON.stringify(payKey)};
+  btn.onclick=async function(){
+    var depositor=(document.getElementById('depositor').value||'').trim();
+    var phone=(document.getElementById('phone').value||'').trim();
+    var note=(document.getElementById('note').value||'').trim();
+    if(depositor.length<2){msg.className='msg err';msg.style.display='block';msg.textContent='입금자명을 입력해 주세요.';return}
+    btn.disabled=true;msg.style.display='none';
+    try{
+      var r=await fetch('/api/public/mgmt-fee-paid',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({depositor:depositor,phone:phone,note:note,k:payKey})});
+      var d=await r.json();
+      if(d.error){msg.className='msg err';msg.textContent=d.error;msg.style.display='block';btn.disabled=false;return}
+      msg.className='msg';msg.textContent=d.message||'신청이 접수되었습니다. 승인되면 바로 열립니다.';msg.style.display='block';
+      btn.textContent='신청 완료';
+    }catch(e){
+      msg.className='msg err';msg.textContent='전송 실패. 잠시 후 다시 시도해 주세요.';msg.style.display='block';btn.disabled=false;
+    }
+  };
+})();
+</script>
+</body>
+</html>`;
 }
 
 /**
@@ -1081,6 +1227,9 @@ app.post('/api/public/mgmt-fee-paid', async (req, res) => {
     const note = String(req.body?.note || '').trim().slice(0, 200);
     if (!depositor || depositor.length < 2) {
       return res.json({ error: '입금자명을 입력해 주세요' });
+    }
+    if (!isValidMgmtPayKey(req.site.id, req.body?.k)) {
+      return res.status(403).json({ error: '신청 링크가 올바르지 않습니다. 텔레그램 안내 링크로 다시 접속해 주세요.' });
     }
     const pending = await query(
       `SELECT id FROM mgmt_fee_requests WHERE site_id=$1 AND status='pending' LIMIT 1`,
@@ -9829,38 +9978,16 @@ app.get('*', async (req, res) => {
     if (req.siteSuspended) {
       const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
       const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
-      return res.status(503).type('html').send(`<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta name="robots" content="noindex"/>
-<title>${siteName} — 일시 중단</title>
-<style>
-  *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    background:#0f0f12;color:#f2f2f5;padding:24px}
-  .box{max-width:400px;width:100%;text-align:center;background:#1a1a22;border:1px solid #2e2e3a;
-    border-radius:20px;padding:40px 28px}
-  .logo{font-size:42px;margin-bottom:12px}
-  h1{font-size:22px;margin:0 0 8px;font-weight:800}
-  p{margin:0;font-size:14px;line-height:1.65;color:#a8a8b8}
-  .badge{display:inline-block;margin-top:22px;padding:8px 14px;border-radius:999px;
-    background:#2a2a36;color:#c8c8d4;font-size:12px;font-weight:700}
-</style>
-</head>
-<body>
-  <div class="box">
-    <div class="logo">${logo}</div>
-    <h1>${siteName}</h1>
-    <p>현재 서비스를 <b style="color:#fff">일시 중단</b> 중입니다.<br>
-    빠른 시일 내에 정상화될 예정입니다.<br><br>
-    이용에 불편을 드려 죄송합니다.</p>
-    <div class="badge">TEMPORARY UNAVAILABLE</div>
-  </div>
-</body>
-</html>`);
+      const pathOnly = String(req.path || '').split('?')[0];
+      const payKey = String(req.query?.k || '').trim();
+      // 관리자 전용 입금 신청 (텔레그램 링크) — 고객 일반 접속은 점검 화면만
+      if (pathOnly === '/mgmt-pay' && isValidMgmtPayKey(req.site.id, payKey)) {
+        const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
+        return res.status(200).type('html').send(
+          renderSuspendedPayPage(siteName, logo, feeKrw.toLocaleString('ko-KR'), payKey)
+        );
+      }
+      return res.status(503).type('html').send(renderSuspendedCustomerPage(siteName, logo));
     }
 
     // HTML 파일 매번 새로 읽기 (사이트 설정 변경 시 즉시 반영)
