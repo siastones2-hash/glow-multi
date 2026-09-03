@@ -173,7 +173,7 @@
         setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
       } catch (err) {
         runBtn.disabled = false;
-        setStatus("읽기는 끝났습니다. 「서류함에 다시 넣기」를 눌러 저장해 주세요.");
+        await downloadFolderZip(ready);
       }
     } else {
       setStatus("완료. 정리할 사진·PDF가 없습니다.");
@@ -271,6 +271,22 @@
     } catch (e) {}
   }
 
+  async function downloadFolderZip(ready) {
+    var zip = new JSZip();
+    var used = {};
+    ready.forEach(function (item) {
+      var name = uniqueName(used, item.folder, fileTitle(item));
+      zip.folder(item.folder).file(name, item.blob);
+    });
+    var blob = await zip.generateAsync({ type: "blob" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "서류함.zip";
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    setStatus("완료. 서류함.zip 이 받아졌습니다. 풀면 초본·등본 폴더와 파일이 각각 들어 있습니다.");
+  }
+
   async function writeFilesToDir(handle, ready) {
     var used = {};
     for (var i = 0; i < ready.length; i++) {
@@ -327,7 +343,7 @@
         setStatus("폴더 선택을 취소했습니다. 「서류함에 다시 넣기」를 누르면 됩니다.");
         return;
       }
-      setStatus("폴더에 넣지 못했습니다. 「서류함에 다시 넣기」를 다시 눌러 주세요.");
+      await downloadFolderZip(ready);
     }
   }
 
