@@ -166,8 +166,15 @@
     render();
     var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
     if (ready.length) {
-      setStatus("읽기 완료. 이 컴퓨터에 자동으로 저장하는 중…");
-      await saveToComputer(ready);
+      setStatus("읽기 완료. 서류함 폴더에 넣는 중…");
+      try {
+        await writeFilesToDir(dirHandle, ready);
+        runBtn.disabled = false;
+        setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
+      } catch (err) {
+        runBtn.disabled = false;
+        setStatus("읽기는 끝났습니다. 「서류함에 다시 넣기」를 눌러 저장해 주세요.");
+      }
     } else {
       setStatus("완료. 정리할 사진·PDF가 없습니다.");
     }
@@ -277,19 +284,40 @@
     }
   }
 
-  async function saveToComputer(ready) {
+  async function pickCabinetNow() {
     if (!window.showDirectoryPicker) {
-      setStatus("이 브라우저는 폴더 저장을 지원하지 않습니다. 크롬 또는 엣지를 사용해 주세요.");
-      runBtn.disabled = false;
+      throw new Error("no-picker");
+    }
+    if (dirHandle) {
+      try {
+        var perm = await dirHandle.queryPermission({ mode: "readwrite" });
+        if (perm !== "granted") perm = await dirHandle.requestPermission({ mode: "readwrite" });
+        if (perm === "granted") return dirHandle;
+      } catch (e) {}
+    }
+    dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+    await storeDirHandle(dirHandle);
+    return dirHandle;
+  }
+
+  async function startFromGesture(fileList) {
+    try {
+      setStatus("먼저 저장할 「서류함」 폴더를 선택하세요.");
+      await pickCabinetNow();
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        setStatus("서류함 폴더를 선택해야 저장됩니다. 다시 넣어 주세요.");
+        return;
+      }
+      setStatus("폴더를 열 수 없습니다. 크롬에서 다시 넣어 주세요.");
       return;
     }
+    await ingestFiles(fileList);
+  }
+
+  async function saveToComputer(ready) {
     try {
-      dirHandle = dirHandle || await loadDirHandle();
-      if (!dirHandle) {
-        setStatus("한 번만 「서류함」 폴더를 선택하세요. 이후에는 그 안에 폴더·파일별로 자동 저장됩니다.");
-        dirHandle = await window.showDirectoryPicker({ mode: "readwrite", startIn: "desktop" });
-        await storeDirHandle(dirHandle);
-      }
+      await pickCabinetNow();
       await writeFilesToDir(dirHandle, ready);
       runBtn.disabled = false;
       setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
@@ -299,7 +327,7 @@
         setStatus("폴더 선택을 취소했습니다. 「서류함에 다시 넣기」를 누르면 됩니다.");
         return;
       }
-      setStatus("폴더에 넣지 못했습니다. 크롬/엣지에서 다시 시도해 주세요.");
+      setStatus("폴더에 넣지 못했습니다. 「서류함에 다시 넣기」를 다시 눌러 주세요.");
     }
   }
 
@@ -311,10 +339,10 @@
   drop.addEventListener("drop", function (e) {
     e.preventDefault();
     drop.classList.remove("over");
-    if (!busy) ingestFiles(e.dataTransfer.files);
+    if (!busy) startFromGesture(e.dataTransfer.files);
   });
   filePick.addEventListener("change", function () {
-    if (!busy) ingestFiles(filePick.files);
+    if (!busy) startFromGesture(filePick.files);
     filePick.value = "";
   });
   runBtn.addEventListener("click", function () {
