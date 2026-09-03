@@ -47,6 +47,11 @@
 
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
   var SKIP_NAME = /(^|[\/\\])(\.|__macosx|thumbs\.db|desktop\.ini)/i;
+  var worker = null;
+
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  }
 
   function setStatus(text) {
     if (statusEl) statusEl.textContent = text;
@@ -106,6 +111,71 @@
 
   function classifyByName(name) {
     var hit = (window.DocClassify && DocClassify.classify(name)) || { folder: "기타", title: "기타" };
+    return { folder: hit.folder || "기타", title: hit.title || hit.folder || "기타", score: hit.score || 0 };
+  }
+
+  function nameLooksWeak(name) {
+    var stem = String(name || "").replace(/\.[^.]+$/, "").replace(/\s/g, "");
+    if (!stem) return true;
+    if (/^(img|dsc|photo|image|사진|캡처|screenshot|파일)[_-]?\d*$/i.test(stem)) return true;
+    if (/^[\d._\-()]+$/.test(stem)) return true;
+    return false;
+  }
+
+  async function ensureWorker() {
+    if (worker) return worker;
+    worker = await Tesseract.createWorker("kor+eng", 1, {
+      workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+      corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core.wasm.js",
+      langPath: "https://tessdata.projectnaptha.com/4.0.0"
+    });
+    return worker;
+  }
+
+  async function ocrBlob(src) {
+    var w = await ensureWorker();
+    var result = await w.recognize(src);
+    return (result && result.data && result.data.text) || "";
+  }
+
+  async function ocrPdf(bytes) {
+    var copy = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    var pdf = await pdfjsLib.getDocument({ data: copy }).promise;
+    var page = await pdf.getPage(1);
+    var viewport = page.getViewport({ scale: 2 });
+    var canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport: viewport }).promise;
+    var textContent = await page.getTextContent();
+    var embedded = textContent.items.map(function (it) { return it.str; }).join(" ");
+    if (window.DocClassify && DocClassify.normalize(embedded).length >= 20) return embedded;
+    return ocrBlob(canvas);
+  }
+
+  async function textFromXlsx(bytes) {
+    var zip = await JSZip.loadAsync(bytes);
+    var parts = [];
+    var files = Object.keys(zip.files);
+    for (var i = 0; i < files.length; i++) {
+      var fname = files[i];
+      if (fname.indexOf("xl/") === 0 && fname.slice(-4) === ".xml") {
+        parts.push(await zip.files[fname].async("string"));
+      }
+    }
+    return parts.join("\n").replace(/<[^>]+>/g, " ");
+  }
+
+  async function classifySmart(name, bytes) {
+    var ext = extOf(name);
+    var text = String(name || "");
+    try {
+      setStatus((name || "파일") + " 내용을 읽는 중…");
+      if (IMAGE_EXT[ext]) text = (await ocrBlob(new Blob([bytes]))) + "\n" + name;
+      else if (ext === "pdf") text = (await ocrPdf(bytes)) + "\n" + name;
+      else if (ext === "xlsx") text = (await textFromXlsx(bytes)) + "\n" + name;
+    } catch (e) {}
+    var hit = (window.DocClassify && DocClassify.classify(text)) || { folder: "기타", title: "기타" };
     return { folder: hit.folder || "기타", title: hit.title || hit.folder || "기타" };
   }
 
@@ -145,22 +215,22 @@
       if (isZipName(base || path)) {
         await ingestZip(new File([bytes], base || path), person);
       } else {
-        ingestOne(base || path, bytes, person);
+        await ingestOne(base || path, bytes, person);
       }
       found += 1;
     }
     if (!found) addSkip(file.name, "압축 안에 파일이 없습니다.", person);
   }
 
-  function ingestOne(name, bytes, person) {
+  async function ingestOne(name, bytes, person) {
     person = person || currentPerson();
     var ext = extOf(name);
     if (ext === "alz" || ext === "egg" || ext === "7z" || ext === "rar") {
       addSkip(name, "zip으로 다시 압축해 주세요.", person);
       return;
     }
-    var hit = classifyByName(name);
     var copy = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    var hit = await classifySmart(name, copy);
     queue.push({
       name: name,
       folder: hit.folder,
@@ -261,7 +331,7 @@
       var folder = await personDir.getDirectoryHandle(item.folder, { create: true });
       var origDir = await personDir.getDirectoryHandle("원본", { create: true });
       var original = uniqueName(used, person + "/원본", item.name || fileTitle(item));
-      var inFolder = uniqueName(used, person + "/" + item.folder, item.name || fileTitle(item));
+      var inFolder = uniqueName(used, person + "/" + item.folder, fileTitle(item));
       await writeBlob(folder, inFolder, item);
       await writeBlob(origDir, original, item);
     }
@@ -306,7 +376,7 @@
           await ingestZip(file, zipPerson);
         } else {
           var buf = await file.arrayBuffer();
-          ingestOne(file.name, new Uint8Array(buf), currentPerson());
+          await ingestOne(file.name, new Uint8Array(buf), currentPerson());
         }
       }
       var ready = queue.slice(startAt).filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
