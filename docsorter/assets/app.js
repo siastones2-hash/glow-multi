@@ -205,6 +205,7 @@
     if (!files.length) return;
     busy = true;
     if (runBtn) runBtn.disabled = true;
+    var startAt = queue.length;
     try {
       for (var i = 0; i < files.length; i++) {
         var file = files[i];
@@ -222,16 +223,15 @@
           ingestOne(file.name, file, currentPerson());
         }
       }
-      var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
+      var ready = queue.slice(startAt).filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
       if (!ready.length) {
         setStatus("정리할 사진·PDF가 없습니다. zip 안에 파일이 있는지 확인해 주세요.");
         return;
       }
       setStatus("분류 끝났습니다. 다운로드에 넣는 중…");
       var saved = await downloadFolderZip(ready);
-      queue = [];
       render();
-      setStatus("완료. 다운로드에서 " + saved + " 을 여세요. 다음 사람 알집을 놓으면 됩니다.");
+      setStatus("완료. 아래 목록은 그대로 둡니다. 다운로드에서 " + saved + " 을 여세요.");
     } catch (err) {
       setStatus("처리에 실패했습니다. zip을 다시 놓아 주세요.");
     } finally {
