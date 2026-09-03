@@ -42,6 +42,9 @@
   var incoming = [];
   var pumping = false;
   var lastSaved = null;
+  var personUsed = {};
+  var personUsed = {};
+  var zipUsed = {};
 
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
   var SKIP_NAME = /(^|[\/\\])(\.|__macosx|thumbs\.db|desktop\.ini)/i;
@@ -66,6 +69,21 @@
 
   function setPerson(name) {
     if (personInput && name) personInput.value = name;
+  }
+
+  function uniquePerson(name) {
+    var base = cleanPerson(name) || currentPerson();
+    if (!base) base = "이름없음";
+    personUsed[base] = (personUsed[base] || 0) + 1;
+    if (personUsed[base] === 1) return base;
+    return base + "_" + personUsed[base];
+  }
+
+  function uniqueZipName(person) {
+    var base = person + "_서류함";
+    zipUsed[base] = (zipUsed[base] || 0) + 1;
+    if (zipUsed[base] === 1) return base + ".zip";
+    return base + "_" + zipUsed[base] + ".zip";
   }
 
   function escapeHtml(s) {
@@ -127,7 +145,7 @@
       var bytes = await entry.async("uint8array");
       var blob = new Blob([bytes], { type: "application/octet-stream" });
       if (isZipName(base || path)) {
-        await ingestZip(new File([blob], base || path), cleanPerson(base) || person);
+        await ingestZip(new File([blob], base || path), person);
       } else {
         ingestOne(base || path, blob, person);
       }
@@ -188,7 +206,7 @@
     });
     var blob = await zip.generateAsync({ type: "blob" });
     var firstPerson = (ready[0] && ready[0].person) || currentPerson();
-    var fileName = firstPerson + "_서류함.zip";
+    var fileName = uniqueZipName(firstPerson);
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = fileName;
@@ -216,7 +234,7 @@
           continue;
         }
         if (isZipName(file.name) || file.type === "application/zip" || file.type === "application/x-zip-compressed") {
-          var zipPerson = cleanPerson(file.name) || currentPerson();
+          var zipPerson = uniquePerson(file.name);
           setPerson(zipPerson);
           await ingestZip(file, zipPerson);
         } else {
@@ -250,8 +268,6 @@
         extra.forEach(function (arr) { files = files.concat(arr); });
       } catch (e) {}
     }
-    var zipFile = files.filter(function (f) { return /\.zip$/i.test(f.name); })[0];
-    if (zipFile) setPerson(cleanPerson(zipFile.name));
     await ingestFiles(files);
   }
 
@@ -339,6 +355,8 @@
   clearBtn.addEventListener("click", function () {
     queue = [];
     lastSaved = null;
+    personUsed = {};
+    zipUsed = {};
     if (personInput) personInput.value = "";
     render();
     setStatus("다음 사람 알집을 놓으세요.");
