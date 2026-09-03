@@ -42,8 +42,8 @@
   var incoming = [];
   var pumping = false;
   var lastSaved = null;
+  var dirHandle = null;
   var personUsed = {};
-  var zipUsed = {};
 
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
   var SKIP_NAME = /(^|[\/\\])(\.|__macosx|thumbs\.db|desktop\.ini)/i;
@@ -71,18 +71,7 @@
   }
 
   function uniquePerson(name) {
-    var base = cleanPerson(name) || currentPerson();
-    if (!base) base = "이름없음";
-    personUsed[base] = (personUsed[base] || 0) + 1;
-    if (personUsed[base] === 1) return base;
-    return base + "_" + personUsed[base];
-  }
-
-  function uniqueZipName(person) {
-    var base = person + "_서류함";
-    zipUsed[base] = (zipUsed[base] || 0) + 1;
-    if (zipUsed[base] === 1) return base + ".zip";
-    return base + "_" + zipUsed[base] + ".zip";
+    return cleanPerson(name) || currentPerson() || "이름없음";
   }
 
   function escapeHtml(s) {
@@ -199,6 +188,58 @@
     return stem + "_" + used[key] + (ext ? "." + ext : "");
   }
 
+  function openHandleDb() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open("docsorter-cabinet", 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore("handles"); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  async function storeDirHandle(handle) {
+    try {
+      var db = await openHandleDb();
+      await new Promise(function (resolve, reject) {
+        var tx = db.transaction("handles", "readwrite");
+        tx.objectStore("handles").put(handle, "cabinet");
+        tx.oncomplete = resolve;
+        tx.onerror = function () { reject(tx.error); };
+      });
+      db.close();
+    } catch (e) {}
+  }
+
+  async function loadDirHandle() {
+    try {
+      var db = await openHandleDb();
+      var handle = await new Promise(function (resolve, reject) {
+        var tx = db.transaction("handles", "readonly");
+        var q = tx.objectStore("handles").get("cabinet");
+        q.onsuccess = function () { resolve(q.result || null); };
+        q.onerror = function () { reject(q.error); };
+      });
+      db.close();
+      return handle || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function ensureCabinetFromGesture() {
+    if (!window.showDirectoryPicker) throw new Error("no-picker");
+    if (!dirHandle) dirHandle = await loadDirHandle();
+    if (dirHandle) {
+      var perm = await dirHandle.queryPermission({ mode: "readwrite" });
+      if (perm !== "granted") perm = await dirHandle.requestPermission({ mode: "readwrite" });
+      if (perm === "granted") return dirHandle;
+    }
+    setStatus("처음 한 번만 바탕화면을 고르세요. 서류함이 거기에 생깁니다.");
+    dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+    await storeDirHandle(dirHandle);
+    return dirHandle;
+  }
+
   async function writeBlob(dir, name, item) {
     var file = await dir.getFileHandle(name, { create: true });
     var writable = await file.createWritable();
@@ -274,8 +315,11 @@
         return;
       }
       lastSaved = { ready: ready, person: (ready[0] && ready[0].person) || currentPerson() };
+      if (!dirHandle) throw new Error("no-cabinet");
+      setStatus("서류함에 넣는 중…");
+      await writeFilesToDir(dirHandle, ready);
       if (runBtn) runBtn.disabled = false;
-      setStatus("분류 끝났습니다. 「서류함에 넣기」를 누르고 바탕화면을 고르세요.");
+      setStatus("완료. 서류함 → " + lastSaved.person + " 폴더에 넣어 두었습니다. 다음 사람 알집을 놓으면 됩니다.");
     } catch (err) {
       setStatus("처리에 실패했습니다. zip을 다시 놓아 주세요.");
     } finally {
@@ -293,6 +337,16 @@
         var extra = await Promise.all(dirReads);
         extra.forEach(function (arr) { files = files.concat(arr); });
       } catch (e) {}
+    }
+    try {
+      await ensureCabinetFromGesture();
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        setStatus("바탕화면을 골라야 서류함에 들어갑니다. 다시 놓아 주세요.");
+        return;
+      }
+      setStatus("폴더를 열 수 없습니다. 크롬에서 다시 놓아 주세요.");
+      return;
     }
     await ingestFiles(files);
   }
@@ -347,23 +401,55 @@
   document.addEventListener("dragleave", function (e) {
     if (drop && (e.target === document || e.target === document.documentElement)) drop.classList.remove("over");
   }, true);
-  document.addEventListener("drop", function (e) {
+  document.addEventListener("drop", async function (e) {
     e.preventDefault();
     e.stopPropagation();
     if (drop) drop.classList.remove("over");
-    acceptFiles(snapshotDropped(e.dataTransfer));
+    var files = snapshotDropped(e.dataTransfer);
+    try {
+      await ensureCabinetFromGesture();
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        setStatus("바탕화면을 골라야 서류함에 들어갑니다. 다시 놓아 주세요.");
+        return;
+      }
+      setStatus("폴더를 열 수 없습니다. 크롬에서 다시 놓아 주세요.");
+      return;
+    }
+    acceptFiles(files);
   }, true);
 
-  filePick.addEventListener("change", function () {
+  filePick.addEventListener("change", async function () {
     var files = Array.prototype.slice.call(filePick.files || []);
     filePick.value = "";
+    try {
+      await ensureCabinetFromGesture();
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        setStatus("바탕화면을 골라야 서류함에 들어갑니다. 다시 골라 주세요.");
+        return;
+      }
+      setStatus("폴더를 열 수 없습니다. 크롬에서 다시 골라 주세요.");
+      return;
+    }
     acceptFiles(files);
   });
 
   runBtn.addEventListener("click", async function () {
     if (busy) return;
     var ready = (lastSaved && lastSaved.ready) || queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
-    if (ready.length) await saveToCabinet(ready);
+    if (!ready.length) return;
+    try {
+      await ensureCabinetFromGesture();
+      await writeFilesToDir(dirHandle, ready);
+      setStatus("완료. 서류함 → " + ((ready[0] && ready[0].person) || currentPerson()) + " 폴더에 넣어 두었습니다.");
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        setStatus("바탕화면을 골라야 서류함에 들어갑니다.");
+        return;
+      }
+      setStatus("서류함에 넣지 못했습니다. 「서류함에 넣기」를 다시 눌러 주세요.");
+    }
   });
 
   clearBtn.addEventListener("click", function () {

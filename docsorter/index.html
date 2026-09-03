@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>서류 자동분류</title>
-  <link rel="stylesheet" href="assets/app.css?v=20">
+  <link rel="stylesheet" href="assets/app.css?v=21">
 </head>
 <body>
   <div class="wrap">
     <h1>서류 자동분류</h1>
-    <p id="sub" class="sub">알집을 놓고, 끝나면 「서류함에 넣기」를 눌러 바탕화면을 고르면 됩니다. 크롬 다운로드는 쓰지 않습니다.</p>
+    <p id="sub" class="sub">알집을 놓으면 바로 서류함에 들어갑니다. 사람마다 폴더가 생깁니다.</p>
 
     <div id="gate" class="card-gate hidden">
       <p>지금은 사용할 수 없습니다.</p>
@@ -30,15 +30,15 @@
       <button id="clearBtn" class="ghost">비우기</button>
     </div>
 
-    <div id="status" class="status">사람 알집을 놓으세요. 끝나면 「서류함에 넣기」를 누르고 바탕화면을 고르면 됩니다.</div>
+    <div id="status" class="status">사람 알집을 놓으세요. 처음 한 번만 바탕화면을 고르면, 그다음부터는 자동으로 서류함에 들어갑니다.</div>
     <div id="list" class="list"></div>
-    <p class="note">한규숙, 아이센스(임미경), 레드포스(전한준)처럼 사람마다 폴더가 생깁니다. 다운로드 파일이 아니라 서류함 안에 바로 들어갑니다.</p>
+    <p class="note">처음 한 번 바탕화면을 고르면 됩니다. 그다음 한규숙.zip, 아이센스(임미경).zip 을 놓을 때마다 서류함 안에 그 사람 폴더가 생깁니다. 다운로드는 하지 않습니다.</p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-  <script src="assets/classify.js?v=20"></script>
-  <script src="assets/app.js?v=20"></script>
+  <script src="assets/classify.js?v=21"></script>
+  <script src="assets/app.js?v=21"></script>
 </body>
 </html>
