@@ -1096,7 +1096,7 @@ async function runMgmtFeeCycle() {
       `📅 납부 기한 <b>${due}</b>\n\n` +
       `기한까지 미입금 시 사이트가 <b>자동 정지</b>됩니다.\n\n` +
       `💳 입금 계좌\n${MGMT_FEE_BANK}\n${MGMT_FEE_HOLDER}\n` +
-      `\n입금 후 담당자에게 알려 주세요.`;
+      `\n정지 후 텔레그램으로 신청 링크가 옵니다.\n입금 → 신청 → 승인되면 바로 열립니다.`;
     const superMsg =
       `⏰ <b>관리비 D-3</b>\n\n` +
       `🏷 <b>${s.name || ''}</b> (${s.domain || ''})\n` +
