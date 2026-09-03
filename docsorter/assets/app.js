@@ -254,7 +254,7 @@
       var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
       if (ready.length) {
         runBtn.disabled = false;
-        await downloadFolderZip(ready);
+        setStatus("읽기 끝났습니다. 「내 컴퓨터에 폴더로 저장」을 누르세요. 지금 뜨는 창에서 바탕화면을 고르면 됩니다.");
       } else {
         setStatus("완료. 정리할 사진·PDF가 없습니다.");
       }
@@ -332,15 +332,34 @@
     var used = {};
     ready.forEach(function (item) {
       var name = uniqueName(used, item.folder, fileTitle(item));
-      zip.folder(item.folder).file(name, item.blob);
+      zip.folder("서류함").folder(item.folder).file(name, item.blob);
     });
     var blob = await zip.generateAsync({ type: "blob" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "서류함.zip";
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-    setStatus("완료. 서류함.zip 이 받아졌습니다. 풀면 초본·등본 폴더와 파일이 각각 들어 있습니다.");
+    setStatus("완료. 서류함.zip 이 받아졌습니다. 풀면 초본·등본 폴더가 들어 있습니다.");
+  }
+
+  async function writeFilesToDir(handle, ready) {
+    var root = handle;
+    if (handle.name !== "서류함") {
+      root = await handle.getDirectoryHandle("서류함", { create: true });
+    }
+    var used = {};
+    for (var i = 0; i < ready.length; i++) {
+      var item = ready[i];
+      var folder = await root.getDirectoryHandle(item.folder, { create: true });
+      var name = uniqueName(used, item.folder, fileTitle(item));
+      var file = await folder.getFileHandle(name, { create: true });
+      var writable = await file.createWritable();
+      await writable.write(item.blob);
+      await writable.close();
+    }
   }
 
   async function takeFiles(files, dirReads) {
@@ -357,7 +376,19 @@
 
   async function saveToComputer(ready) {
     runBtn.disabled = false;
-    await downloadFolderZip(ready);
+    setStatus("지금 뜨는 창에서 저장할 폴더를 고르세요. 알집이 아닙니다. 바탕화면을 선택하면 됩니다.");
+    try {
+      if (!window.showDirectoryPicker) throw new Error("no-picker");
+      var handle = await window.showDirectoryPicker({ mode: "readwrite" });
+      await writeFilesToDir(handle, ready);
+      setStatus("완료. 고른 위치에 「서류함」이 생겼고, 안에 초본·등본 폴더와 파일이 들어 있습니다.");
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        await downloadFolderZip(ready);
+        return;
+      }
+      await downloadFolderZip(ready);
+    }
   }
 
   document.addEventListener("dragover", function (e) {
