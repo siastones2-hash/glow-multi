@@ -148,42 +148,128 @@
     return { folder: hit.folder, title: hit.title || hit.folder, text: text };
   }
 
+  async function isZipBlob(file) {
+    var ext = extOf(file.name);
+    if (ext === "xlsx" || ext === "docx" || ext === "hwpx" || ext === "hwp") return false;
+    if (ext === "zip") return true;
+    if (file.type === "application/zip" || file.type === "application/x-zip-compressed") return true;
+    if (ext) return false;
+    try {
+      var buf = await file.slice(0, 4).arrayBuffer();
+      var u = new Uint8Array(buf);
+      return u[0] === 0x50 && u[1] === 0x4b && (u[2] === 0x03 || u[2] === 0x05 || u[2] === 0x07);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function readDirectoryEntry(entry) {
+    return new Promise(function (resolve) {
+      var out = [];
+      var reader = entry.createReader();
+      function next() {
+        reader.readEntries(function (entries) {
+          if (!entries.length) {
+            Promise.all(out).then(function (chunks) {
+              resolve(chunks.reduce(function (a, b) { return a.concat(b); }, []));
+            });
+            return;
+          }
+          entries.forEach(function (child) {
+            if (child.isDirectory) {
+              out.push(readDirectoryEntry(child));
+            } else {
+              out.push(new Promise(function (ok) {
+                child.file(function (f) { ok([f]); }, function () { ok([]); });
+              }));
+            }
+          });
+          next();
+        }, function () { resolve([]); });
+      }
+      next();
+    });
+  }
+
+  function snapshotDropped(dt) {
+    var files = [];
+    var dirReads = [];
+    if (dt && dt.items && dt.items.length) {
+      for (var i = 0; i < dt.items.length; i++) {
+        var item = dt.items[i];
+        if (item.kind !== "file") continue;
+        var entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+        if (entry && entry.isDirectory) {
+          dirReads.push(readDirectoryEntry(entry));
+        } else {
+          var f = item.getAsFile ? item.getAsFile() : null;
+          if (f) files.push(f);
+        }
+      }
+    }
+    if (!files.length && dt && dt.files && dt.files.length) {
+      files = Array.prototype.slice.call(dt.files);
+    }
+    return { files: files, dirReads: dirReads };
+  }
+
   async function ingestFiles(fileList) {
     var files = Array.prototype.slice.call(fileList || []);
-    if (!files.length) return;
+    if (!files.length) {
+      setStatus("파일이 들어오지 않았습니다. 알집 zip을 이 창에 다시 놓아 주세요.");
+      return;
+    }
     busy = true;
     runBtn.disabled = true;
-    for (var i = 0; i < files.length; i++) {
-      var file = files[i];
-      if (SKIP_NAME.test(file.name)) continue;
-      if (extOf(file.name) === "zip") {
-        await ingestZip(file);
-      } else {
-        await ingestOne(file.name, file);
+    try {
+      for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        if (SKIP_NAME.test(file.name)) continue;
+        var ext = extOf(file.name);
+        if (ext === "alz" || ext === "egg") {
+          addItem(file.name, "건너뜀", "알집 전용 형식입니다. zip으로 다시 압축해 주세요.");
+          continue;
+        }
+        if (await isZipBlob(file)) {
+          await ingestZip(file);
+        } else {
+          await ingestOne(file.name, file);
+        }
       }
+      render();
+      var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
+      if (ready.length) {
+        setStatus("읽기 완료. 서류함 폴더에 넣는 중…");
+        try {
+          await writeFilesToDir(dirHandle, ready);
+          runBtn.disabled = false;
+          setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
+        } catch (err) {
+          runBtn.disabled = false;
+          await downloadFolderZip(ready);
+        }
+      } else {
+        setStatus("완료. 정리할 사진·PDF가 없습니다.");
+      }
+    } catch (err) {
+      runBtn.disabled = false;
+      setStatus("압축을 풀지 못했습니다. zip 파일을 다시 놓아 주세요.");
     }
     busy = false;
     render();
-    var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
-    if (ready.length) {
-      setStatus("읽기 완료. 서류함 폴더에 넣는 중…");
-      try {
-        await writeFilesToDir(dirHandle, ready);
-        runBtn.disabled = false;
-        setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
-      } catch (err) {
-        runBtn.disabled = false;
-        await downloadFolderZip(ready);
-      }
-    } else {
-      setStatus("완료. 정리할 사진·PDF가 없습니다.");
-    }
   }
 
   async function ingestZip(file) {
     setStatus(file.name + " 압축을 푸는 중…");
-    var zip = await JSZip.loadAsync(file);
+    var zip;
+    try {
+      zip = await JSZip.loadAsync(file);
+    } catch (err) {
+      addItem(file.name, "건너뜀", "압축을 열 수 없습니다. zip으로 다시 묶어 주세요.");
+      return;
+    }
     var names = Object.keys(zip.files);
+    var found = 0;
     for (var i = 0; i < names.length; i++) {
       var path = names[i];
       var entry = zip.files[path];
@@ -191,7 +277,15 @@
       var base = path.split("/").pop();
       var blob = await entry.async("blob");
       blob = new Blob([blob], { type: blob.type || "application/octet-stream" });
-      await ingestOne(base || path, blob);
+      if (extOf(base || path) === "zip") {
+        await ingestZip(new File([blob], base || path));
+      } else {
+        await ingestOne(base || path, blob);
+      }
+      found += 1;
+    }
+    if (!found) {
+      addItem(file.name, "건너뜀", "압축 안에 사진·PDF가 없습니다.");
     }
   }
 
@@ -316,7 +410,8 @@
     return dirHandle;
   }
 
-  async function startFromGesture(fileList) {
+  async function startFromGesture(files, dirReads) {
+    files = Array.prototype.slice.call(files || []);
     try {
       setStatus("먼저 저장할 「서류함」 폴더를 선택하세요.");
       await pickCabinetNow();
@@ -328,7 +423,13 @@
       setStatus("폴더를 열 수 없습니다. 크롬에서 다시 넣어 주세요.");
       return;
     }
-    await ingestFiles(fileList);
+    if (dirReads && dirReads.length) {
+      try {
+        var extra = await Promise.all(dirReads);
+        extra.forEach(function (arr) { files = files.concat(arr); });
+      } catch (e) {}
+    }
+    await ingestFiles(files);
   }
 
   async function saveToComputer(ready) {
@@ -347,19 +448,30 @@
     }
   }
 
-  drop.addEventListener("dragover", function (e) {
-    e.preventDefault();
-    drop.classList.add("over");
-  });
-  drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
-  drop.addEventListener("drop", function (e) {
-    e.preventDefault();
-    drop.classList.remove("over");
-    if (!busy) startFromGesture(e.dataTransfer.files);
-  });
+  function bindDropTarget(el) {
+    el.addEventListener("dragover", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+      drop.classList.add("over");
+    });
+    el.addEventListener("dragleave", function (e) {
+      if (e.target === el) drop.classList.remove("over");
+    });
+    el.addEventListener("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      drop.classList.remove("over");
+      var snapped = snapshotDropped(e.dataTransfer);
+      if (!busy) startFromGesture(snapped.files, snapped.dirReads);
+    });
+  }
+  bindDropTarget(document);
+  bindDropTarget(drop);
   filePick.addEventListener("change", function () {
-    if (!busy) startFromGesture(filePick.files);
+    var files = Array.prototype.slice.call(filePick.files || []);
     filePick.value = "";
+    if (!busy) startFromGesture(files);
   });
   runBtn.addEventListener("click", function () {
     if (busy) return;
