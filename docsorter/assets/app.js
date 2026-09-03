@@ -43,7 +43,6 @@
   var pumping = false;
   var lastSaved = null;
   var personUsed = {};
-  var personUsed = {};
   var zipUsed = {};
 
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
@@ -355,8 +354,6 @@
   clearBtn.addEventListener("click", function () {
     queue = [];
     lastSaved = null;
-    personUsed = {};
-    zipUsed = {};
     if (personInput) personInput.value = "";
     render();
     setStatus("다음 사람 알집을 놓으세요.");
