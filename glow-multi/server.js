@@ -913,6 +913,20 @@ function isValidMgmtPayKey(siteId, key) {
   return k === mgmtPayToken(siteId);
 }
 
+/** 입금완료 신청 가능: 정지 중이거나 납부 기한 D-3~기한일(및 직후) */
+function canSubmitMgmtFee(site) {
+  if (!site || site.id === 'default') return false;
+  if (Number(site.active) !== 1) return true; // 정지 상태
+  const due = formatYmd(site.mgmt_fee_due);
+  if (!due) return false;
+  const today = kstTodayYmd();
+  const t = new Date(today + 'T00:00:00+09:00').getTime();
+  const d = new Date(due + 'T00:00:00+09:00').getTime();
+  const days = Math.round((d - t) / 86400000);
+  // 기한 3일 전부터 ~ 기한 경과 7일까지 신청 허용
+  return days <= 3 && days >= -7;
+}
+
 /** 사이트 정지 시 — 공개 화면엔 안 보이게, 관리자 텔레그램으로만 안내 */
 async function notifySiteSuspendedByMgmtFee(site, reason = '미납') {
   if (!site || site.id === 'default') return;
@@ -926,8 +940,9 @@ async function notifySiteSuspendedByMgmtFee(site, reason = '미납') {
     `💵 월 관리비 ₩${fee.toLocaleString('ko-KR')}\n` +
     (due ? `📅 납부 기한 ${due}\n` : '') +
     `\n💳 입금 계좌\n${MGMT_FEE_BANK}\n${MGMT_FEE_HOLDER}\n` +
-    (payUrl ? `\n📝 입금 후 아래 링크에서 <b>신청</b>해 주세요.\n${payUrl}\n` : '') +
-    `\n승인되면 사이트가 <b>바로 다시 열립니다</b>.`;
+    (payUrl
+      ? `\n입금 후 아래 링크에서 <b>입금 완료 · 신청하기</b>를 눌러 주세요.\n${payUrl}\n\n신청이 접수되면 운영자가 확인·승인 후 사이트가 다시 열립니다.`
+      : `\n입금 후 운영자에게 입금 완료를 신청해 주세요. 승인 후 사이트가 다시 열립니다.`);
   const superMsg =
     `⏸ <b>관리비 · 사이트 정지</b>\n\n` +
     `🏷 <b>${site.name || ''}</b> (${site.domain || ''})\n` +
@@ -1019,8 +1034,9 @@ function renderSuspendedPayPage(siteName, logo, feeLabel, payKey) {
   <div class="box">
     <div class="logo">${logo}</div>
     <h1>${siteName}</h1>
-    <p>관리비 입금 후 아래 신청을 남겨 주세요.<br>
-    확인·승인되면 사이트가 <b style="color:#fff">바로 다시 열립니다</b>.</p>
+    <p>관리비를 입금하신 뒤<br>
+    아래에서 <b style="color:#fff">입금 완료 · 신청하기</b>를 눌러 주세요.<br>
+    운영자 확인·승인 후 바로 처리됩니다.</p>
     <div class="pay">
       <h2>관리비 입금 안내</h2>
       <div class="fee">₩${feeLabel}<span>/월</span></div>
@@ -1055,7 +1071,7 @@ function renderSuspendedPayPage(siteName, logo, feeLabel, payKey) {
         body:JSON.stringify({depositor:depositor,phone:phone,note:note,k:payKey})});
       var d=await r.json();
       if(d.error){msg.className='msg err';msg.textContent=d.error;msg.style.display='block';btn.disabled=false;return}
-      msg.className='msg';msg.textContent=d.message||'신청이 접수되었습니다. 승인되면 바로 열립니다.';msg.style.display='block';
+      msg.className='msg';msg.textContent=d.message||'입금완료 신청이 접수되었습니다. 운영자 승인 후 처리됩니다.';msg.style.display='block';
       btn.textContent='신청 완료';
     }catch(e){
       msg.className='msg err';msg.textContent='전송 실패. 잠시 후 다시 시도해 주세요.';msg.style.display='block';btn.disabled=false;
@@ -1096,7 +1112,9 @@ async function runMgmtFeeCycle() {
       `📅 납부 기한 <b>${due}</b>\n\n` +
       `기한까지 미입금 시 사이트가 <b>자동 정지</b>됩니다.\n\n` +
       `💳 입금 계좌\n${MGMT_FEE_BANK}\n${MGMT_FEE_HOLDER}\n` +
-      `\n정지 후 텔레그램으로 신청 링크가 옵니다.\n입금 → 신청 → 승인되면 바로 열립니다.`;
+      (mgmtPayUrl(s)
+        ? `\n입금 후 아래 링크에서 <b>입금 완료 · 신청하기</b>를 눌러 주세요.\n${mgmtPayUrl(s)}\n\n신청이 접수되면 운영자가 확인·승인합니다.`
+        : `\n입금 후 운영자에게 입금 완료를 신청해 주세요.`);
     const superMsg =
       `⏰ <b>관리비 D-3</b>\n\n` +
       `🏷 <b>${s.name || ''}</b> (${s.domain || ''})\n` +
@@ -1122,6 +1140,10 @@ async function runMgmtFeeCycle() {
       AND COALESCE(active,1)=1
       AND mgmt_fee_due IS NOT NULL
       AND mgmt_fee_due <= (NOW() AT TIME ZONE 'Asia/Seoul')::date
+      AND NOT EXISTS (
+        SELECT 1 FROM mgmt_fee_requests r
+        WHERE r.site_id = sites.id AND r.status = 'pending'
+      )
     ORDER BY name
   `);
   for (const s of lockR.rows) {
@@ -1186,13 +1208,13 @@ async function tgMgmtFeeAlert(row) {
   const chat = await getGlobalSetting('tg_chat');
   if (!token || !chat) return false;
   const feeKrw = Math.max(0, parseInt(row.amount, 10) || 0);
-  let msg = `💰 <b>관리비 입금 신청</b>\n\n` +
+  let msg = `💰 <b>관리비 입금완료 신청</b>\n\n` +
     `🏷 <b>${row.site_name || ''}</b> (${row.domain || ''})\n` +
     `💵 ₩${feeKrw.toLocaleString('ko-KR')}\n` +
     `👤 입금자: <b>${row.depositor || ''}</b>\n`;
   if (row.phone) msg += `📞 ${row.phone}\n`;
   if (row.note) msg += `📝 ${row.note}\n`;
-  msg += `\n<b>✅ 승인</b> 누르면 사이트가 바로 열립니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`;
+  msg += `\n입금 확인 후 <b>✅ 승인</b>을 눌러 주세요.\n승인 시 사이트 재오픈(또는 이용 유지) 및 다음 기한 +30일 처리됩니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`;
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
@@ -1203,7 +1225,7 @@ async function tgMgmtFeeAlert(row) {
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [[
-            { text: '✅ 승인 · 재오픈', callback_data: `mfee_approve_${row.id}` },
+            { text: '✅ 승인', callback_data: `mfee_approve_${row.id}` },
             { text: '❌ 거절', callback_data: `mfee_reject_${row.id}` }
           ]]
         }
@@ -1216,11 +1238,14 @@ async function tgMgmtFeeAlert(row) {
   }
 }
 
-/** 정지 사이트 — 관리비 입금 신청 (텔레그램 알림 → 승인 시 즉시 재오픈) */
+/** 관리비 입금완료 신청 (텔레그램 → 운영자 승인 시 재오픈/기한 연장) */
 app.post('/api/public/mgmt-fee-paid', async (req, res) => {
   try {
-    if (!req.siteSuspended || !req.site || req.site.id === 'default') {
-      return res.status(400).json({ error: '정지된 파트너 사이트에서만 신청할 수 있습니다' });
+    if (!req.site || req.site.id === 'default') {
+      return res.status(400).json({ error: '파트너 사이트에서만 신청할 수 있습니다' });
+    }
+    if (!canSubmitMgmtFee(req.site)) {
+      return res.status(400).json({ error: '지금은 관리비 입금완료 신청 기간이 아닙니다' });
     }
     const depositor = String(req.body?.depositor || '').trim().slice(0, 40);
     const phone = String(req.body?.phone || '').trim().slice(0, 30);
@@ -1239,7 +1264,7 @@ app.post('/api/public/mgmt-fee-paid', async (req, res) => {
       return res.json({
         ok: true,
         already: true,
-        message: '이미 입금 신청이 접수되어 있습니다. 확인 후 사이트를 다시 열어 드립니다.'
+        message: '이미 입금완료 신청이 접수되어 있습니다. 운영자 확인·승인 후 처리됩니다.'
       });
     }
     const feeKrw = Math.max(0, parseInt(req.site.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
@@ -1258,7 +1283,7 @@ app.post('/api/public/mgmt-fee-paid', async (req, res) => {
       phone,
       note
     }).catch(() => null);
-    res.json({ ok: true, message: '입금 신청이 접수되었습니다. 확인 후 사이트를 다시 열어 드립니다.' });
+    res.json({ ok: true, message: '입금완료 신청이 접수되었습니다. 운영자 확인·승인 후 처리됩니다.' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -9974,19 +9999,30 @@ app.post('/api/admin/services/clean', requireSuperAdmin, async (req, res) => {
 // SPA - 사이트별 브랜딩을 서버사이드에서 삽입 (FOUC 완전 방지)
 app.get('*', async (req, res) => {
   try {
-    // 비활성(관리비 미납 등) 파트너 도메인 → 본사 GLOW로 넘어가지 않고 정지 안내
-    if (req.siteSuspended) {
-      const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
-      const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
+    // 관리자 입금완료 신청 페이지 (정지 전이라도 링크+키 있으면 허용)
+    {
       const pathOnly = String(req.path || '').split('?')[0];
       const payKey = String(req.query?.k || '').trim();
-      // 관리자 전용 입금 신청 (텔레그램 링크) — 고객 일반 접속은 점검 화면만
-      if (pathOnly === '/mgmt-pay' && isValidMgmtPayKey(req.site.id, payKey)) {
+      if (
+        pathOnly === '/mgmt-pay' &&
+        req.site &&
+        req.site.id !== 'default' &&
+        isValidMgmtPayKey(req.site.id, payKey) &&
+        canSubmitMgmtFee(req.site)
+      ) {
+        const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
+        const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
         const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
         return res.status(200).type('html').send(
           renderSuspendedPayPage(siteName, logo, feeKrw.toLocaleString('ko-KR'), payKey)
         );
       }
+    }
+
+    // 비활성(관리비 미납 등) 파트너 도메인 → 본사 GLOW로 넘어가지 않고 정지 안내
+    if (req.siteSuspended) {
+      const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
+      const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
       return res.status(503).type('html').send(renderSuspendedCustomerPage(siteName, logo));
     }
 
