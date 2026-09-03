@@ -124,12 +124,23 @@
     return extOf(name) === "zip";
   }
 
+  function decodeZipName(bytes) {
+    var arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    var utf8 = new TextDecoder("utf-8").decode(arr);
+    if (/[가-힣]/.test(utf8) && utf8.indexOf("\uFFFD") < 0) return utf8;
+    try {
+      var kr = new TextDecoder("euc-kr").decode(arr);
+      if (/[가-힣]/.test(kr)) return kr;
+    } catch (e) {}
+    return utf8;
+  }
+
   async function ingestZip(file, person) {
     person = person || cleanPerson(file.name) || currentPerson();
     setStatus(person + " 압축을 푸는 중…");
     var zip;
     try {
-      zip = await JSZip.loadAsync(file);
+      zip = await JSZip.loadAsync(file, { decodeFileName: decodeZipName });
     } catch (err) {
       addSkip(file.name, "압축을 열 수 없습니다. zip으로 다시 묶어 주세요.", person);
       return;
@@ -141,38 +152,33 @@
       var entry = zip.files[path];
       if (entry.dir || SKIP_NAME.test(path)) continue;
       var base = path.split("/").pop();
-      var bytes = await entry.async("uint8array");
-      var blob = new Blob([bytes], { type: "application/octet-stream" });
+      var bytes = new Uint8Array(await entry.async("uint8array"));
       if (isZipName(base || path)) {
-        await ingestZip(new File([blob], base || path), person);
+        await ingestZip(new File([bytes], base || path), person);
       } else {
-        ingestOne(base || path, blob, person);
+        ingestOne(base || path, bytes, person);
       }
       found += 1;
     }
     if (!found) addSkip(file.name, "압축 안에 파일이 없습니다.", person);
   }
 
-  function ingestOne(name, blob, person) {
+  function ingestOne(name, bytes, person) {
     person = person || currentPerson();
     var ext = extOf(name);
     if (ext === "alz" || ext === "egg" || ext === "7z" || ext === "rar") {
       addSkip(name, "zip으로 다시 압축해 주세요.", person);
       return;
     }
-    if (!IMAGE_EXT[ext] && ext !== "pdf" && ext !== "xlsx" && ext !== "hwp" && ext !== "hwpx" && ext !== "doc" && ext !== "docx" && ext !== "png" && ext !== "jpg") {
-      if (!ext) {
-        addSkip(name, "지원하지 않는 형식", person);
-        return;
-      }
-    }
     var hit = classifyByName(name);
+    var copy = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     queue.push({
       name: name,
       folder: hit.folder,
       title: hit.title,
       note: "",
-      blob: blob,
+      bytes: copy,
+      blob: new Blob([copy], { type: "application/octet-stream" }),
       person: person,
     });
     render();
@@ -200,8 +206,8 @@
       var person = item.person || currentPerson();
       var titled = uniqueName(used, person + "/" + item.folder, fileTitle(item));
       var original = uniqueName(used, person + "/원본", item.name || titled);
-      zip.folder("서류함").folder(person).folder(item.folder).file(titled, item.blob);
-      zip.folder("서류함").folder(person).folder("원본").file(original, item.blob);
+      zip.folder("서류함").folder(person).folder(item.folder).file(titled, item.bytes || item.blob);
+      zip.folder("서류함").folder(person).folder("원본").file(original, item.bytes || item.blob);
     });
     var blob = await zip.generateAsync({ type: "blob" });
     var firstPerson = (ready[0] && ready[0].person) || currentPerson();
@@ -237,7 +243,8 @@
           setPerson(zipPerson);
           await ingestZip(file, zipPerson);
         } else {
-          ingestOne(file.name, file, currentPerson());
+          var buf = await file.arrayBuffer();
+          ingestOne(file.name, new Uint8Array(buf), currentPerson());
         }
       }
       var ready = queue.slice(startAt).filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });

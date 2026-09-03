@@ -30,14 +30,24 @@
     ["매출자료", [["매출자료", 140], ["카드매출", 120], ["매출현황", 120], ["이용시간", 90], ["상품판매", 90], ["받을금액", 80], ["매출", 50]]],
     ["재직증명서", [["재직증명서", 140]]],
     ["임대차계약서", [["임대차계약", 140], ["부동산임대차", 120], ["임차인", 50], ["임대인", 50]]],
-    ["위임장", [["위임장", 130]]]
+    ["위임장", [["위임장", 130]]],
+    ["신분증", [["신분증", 140]]],
+    ["가맹계약서", [["가맹계약서", 150], ["가맹계약", 140]]],
+    ["사실증명원", [["사실증명원", 150], ["사실증명", 140]]]
   ];
 
   function classify(text) {
     var raw = String(text || "");
     var compact = normalize(raw);
 
-    if (compact.indexOf("세대별주민등록") !== -1) return finish("등본", 300, compact);
+    if (compact.indexOf("가맹계약") !== -1) return finish("가맹계약서", 300, compact);
+    if (compact.indexOf("사실증명") !== -1) return finish("사실증명원", 300, compact);
+    if (compact.indexOf("신분증") !== -1) return finish("신분증", 300, compact);
+    if (compact.indexOf("부동산등기") !== -1) return finish("부동산등기부등본", 300, compact);
+    if (compact.indexOf("초본") !== -1) return finish("초본", 300, compact);
+    if (compact.indexOf("등본") !== -1 && compact.indexOf("부동산") === -1 && compact.indexOf("법인") === -1) {
+      return finish("등본", 300, compact);
+    }
     if (compact.indexOf("주민등록표") !== -1 && compact.indexOf("초본") !== -1) return finish("초본", 300, compact);
     if (compact.indexOf("주민등록표") !== -1 && compact.indexOf("등본") !== -1) return finish("등본", 300, compact);
     if (compact.indexOf("소득금액") !== -1 && compact.indexOf("증명") !== -1) return finish("소득금액증명", 300, compact);
@@ -71,7 +81,8 @@
         var needle = item[0];
         if (raw.indexOf(needle) !== -1 || compact.indexOf(normalize(needle)) !== -1) score += item[1];
       });
-      if (folder === "등본" && (compact.indexOf("법인등기") !== -1 || compact.indexOf("부동산등기") !== -1)) score = 0;
+      if (folder === "등본" && (compact.indexOf("법인등기") !== -1 || compact.indexOf("부동산등기") !== -1 || compact.indexOf("초본") !== -1)) score = 0;
+      if (folder === "신분증" && compact.indexOf("사업자") !== -1) score = 0;
       if (folder === "납세증명서" && (compact.indexOf("지방세") !== -1 || compact.indexOf("세목별") !== -1)) score = 0;
       if (folder === "법인등기부등본" && (compact.indexOf("집합건물") !== -1 || compact.indexOf("토지") !== -1)) score = 0;
       if (folder === "주민등록증" && (compact.indexOf("주민등록표") !== -1 || compact.indexOf("초본") !== -1)) score = 0;
