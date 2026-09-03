@@ -20,10 +20,11 @@ body { padding: 28px; }
 h1 { font-size: 28px; margin: 0 0 6px; }
 .sub { color: var(--muted); margin: 0 0 20px; }
 .drop {
+  position: relative;
   border: 2px dashed var(--line);
   border-radius: 18px;
   background: var(--card);
-  min-height: 220px;
+  min-height: 240px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -31,6 +32,15 @@ h1 { font-size: 28px; margin: 0 0 6px; }
   text-align: center;
   padding: 28px;
   gap: 8px;
+}
+.drop-file {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 80px;
 }
 .drop.over { border-color: var(--accent); background: #eef5f8; }
 .drop strong { font-size: 20px; }

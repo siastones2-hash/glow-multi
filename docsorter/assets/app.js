@@ -191,6 +191,15 @@
     });
   }
 
+  function isArchiveName(name) {
+    var ext = extOf(name);
+    return ext === "zip" || ext === "alz" || ext === "egg" || ext === "7z" || ext === "rar";
+  }
+
+  function sameFile(a, b) {
+    return a && b && a.name === b.name && a.size === b.size;
+  }
+
   function snapshotDropped(dt) {
     var files = [];
     var dirReads = [];
@@ -198,17 +207,23 @@
       for (var i = 0; i < dt.items.length; i++) {
         var item = dt.items[i];
         if (item.kind !== "file") continue;
+        var f = item.getAsFile ? item.getAsFile() : null;
+        if (f && isArchiveName(f.name)) {
+          files.push(f);
+          continue;
+        }
         var entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
         if (entry && entry.isDirectory) {
           dirReads.push(readDirectoryEntry(entry));
-        } else {
-          var f = item.getAsFile ? item.getAsFile() : null;
-          if (f) files.push(f);
+        } else if (f) {
+          files.push(f);
         }
       }
     }
-    if (!files.length && dt && dt.files && dt.files.length) {
-      files = Array.prototype.slice.call(dt.files);
+    if (dt && dt.files && dt.files.length) {
+      Array.prototype.forEach.call(dt.files, function (file) {
+        if (!files.some(function (x) { return sameFile(x, file); })) files.push(file);
+      });
     }
     return { files: files, dirReads: dirReads };
   }
@@ -239,13 +254,16 @@
       render();
       var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
       if (ready.length) {
-        setStatus("읽기 완료. 서류함 폴더에 넣는 중…");
-        try {
-          await writeFilesToDir(dirHandle, ready);
-          runBtn.disabled = false;
-          setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
-        } catch (err) {
-          runBtn.disabled = false;
+        runBtn.disabled = false;
+        if (dirHandle) {
+          setStatus("읽기 완료. 서류함 폴더에 넣는 중…");
+          try {
+            await writeFilesToDir(dirHandle, ready);
+            setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
+          } catch (err) {
+            await downloadFolderZip(ready);
+          }
+        } else {
           await downloadFolderZip(ready);
         }
       } else {
@@ -410,19 +428,9 @@
     return dirHandle;
   }
 
-  async function startFromGesture(files, dirReads) {
+  async function takeFiles(files, dirReads) {
     files = Array.prototype.slice.call(files || []);
-    try {
-      setStatus("먼저 저장할 「서류함」 폴더를 선택하세요.");
-      await pickCabinetNow();
-    } catch (err) {
-      if (err && err.name === "AbortError") {
-        setStatus("서류함 폴더를 선택해야 저장됩니다. 다시 넣어 주세요.");
-        return;
-      }
-      setStatus("폴더를 열 수 없습니다. 크롬에서 다시 넣어 주세요.");
-      return;
-    }
+    setStatus(files.length ? (files[0].name + " 받는 중…") : "파일 받는 중…");
     if (dirReads && dirReads.length) {
       try {
         var extra = await Promise.all(dirReads);
@@ -441,37 +449,32 @@
     } catch (err) {
       runBtn.disabled = false;
       if (err && err.name === "AbortError") {
-        setStatus("폴더 선택을 취소했습니다. 「서류함에 다시 넣기」를 누르면 됩니다.");
+        setStatus("폴더 선택을 취소했습니다. 「내 컴퓨터 폴더로 넣기」를 누르면 됩니다.");
         return;
       }
       await downloadFolderZip(ready);
     }
   }
 
-  function bindDropTarget(el) {
-    el.addEventListener("dragover", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
-      drop.classList.add("over");
-    });
-    el.addEventListener("dragleave", function (e) {
-      if (e.target === el) drop.classList.remove("over");
-    });
-    el.addEventListener("drop", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      drop.classList.remove("over");
-      var snapped = snapshotDropped(e.dataTransfer);
-      if (!busy) startFromGesture(snapped.files, snapped.dirReads);
-    });
-  }
-  bindDropTarget(document);
-  bindDropTarget(drop);
+  document.addEventListener("dragover", function (e) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+    drop.classList.add("over");
+  }, true);
+  document.addEventListener("dragleave", function (e) {
+    if (e.target === document || e.target === document.documentElement) drop.classList.remove("over");
+  }, true);
+  document.addEventListener("drop", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    drop.classList.remove("over");
+    var snapped = snapshotDropped(e.dataTransfer);
+    if (!busy) takeFiles(snapped.files, snapped.dirReads);
+  }, true);
   filePick.addEventListener("change", function () {
     var files = Array.prototype.slice.call(filePick.files || []);
     filePick.value = "";
-    if (!busy) startFromGesture(files);
+    if (!busy) takeFiles(files);
   });
   runBtn.addEventListener("click", function () {
     if (busy) return;
