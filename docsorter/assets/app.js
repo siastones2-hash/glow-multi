@@ -88,7 +88,7 @@
       return (
         '<div class="item"><span class="tag">' +
         escapeHtml(item.person || currentPerson()) +
-        "</span><span class="tag">' +
+        '</span><span class="tag">' +
         escapeHtml(item.folder || "대기") +
         "</span><span><b>" +
         escapeHtml(item.title || item.folder || "") +
