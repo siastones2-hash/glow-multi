@@ -42,7 +42,6 @@
   var queue = [];
   var worker = null;
   var busy = false;
-  var dirHandle = null;
 
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
   var SKIP_NAME = /(^|[\/\\])(\.|__macosx|thumbs\.db|desktop\.ini)/i;
@@ -255,17 +254,7 @@
       var ready = queue.filter(function (x) { return x.blob && x.folder && x.folder !== "건너뜀"; });
       if (ready.length) {
         runBtn.disabled = false;
-        if (dirHandle) {
-          setStatus("읽기 완료. 서류함 폴더에 넣는 중…");
-          try {
-            await writeFilesToDir(dirHandle, ready);
-            setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
-          } catch (err) {
-            await downloadFolderZip(ready);
-          }
-        } else {
-          await downloadFolderZip(ready);
-        }
+        await downloadFolderZip(ready);
       } else {
         setStatus("완료. 정리할 사진·PDF가 없습니다.");
       }
@@ -338,51 +327,6 @@
     return stem + "_" + used[key] + (ext ? "." + ext : "");
   }
 
-  function openHandleDb() {
-    return new Promise(function (resolve, reject) {
-      var req = indexedDB.open("docsorter-cabinet", 1);
-      req.onupgradeneeded = function () {
-        req.result.createObjectStore("handles");
-      };
-      req.onsuccess = function () { resolve(req.result); };
-      req.onerror = function () { reject(req.error); };
-    });
-  }
-
-  async function loadDirHandle() {
-    try {
-      var db = await openHandleDb();
-      var handle = await new Promise(function (resolve, reject) {
-        var tx = db.transaction("handles", "readonly");
-        var q = tx.objectStore("handles").get("cabinet");
-        q.onsuccess = function () { resolve(q.result || null); };
-        q.onerror = function () { reject(q.error); };
-      });
-      db.close();
-      if (!handle) return null;
-      var perm = await handle.queryPermission({ mode: "readwrite" });
-      if (perm !== "granted") {
-        perm = await handle.requestPermission({ mode: "readwrite" });
-      }
-      return perm === "granted" ? handle : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  async function storeDirHandle(handle) {
-    try {
-      var db = await openHandleDb();
-      await new Promise(function (resolve, reject) {
-        var tx = db.transaction("handles", "readwrite");
-        tx.objectStore("handles").put(handle, "cabinet");
-        tx.oncomplete = resolve;
-        tx.onerror = function () { reject(tx.error); };
-      });
-      db.close();
-    } catch (e) {}
-  }
-
   async function downloadFolderZip(ready) {
     var zip = new JSZip();
     var used = {};
@@ -399,35 +343,6 @@
     setStatus("완료. 서류함.zip 이 받아졌습니다. 풀면 초본·등본 폴더와 파일이 각각 들어 있습니다.");
   }
 
-  async function writeFilesToDir(handle, ready) {
-    var used = {};
-    for (var i = 0; i < ready.length; i++) {
-      var item = ready[i];
-      var folder = await handle.getDirectoryHandle(item.folder, { create: true });
-      var name = uniqueName(used, item.folder, fileTitle(item));
-      var file = await folder.getFileHandle(name, { create: true });
-      var writable = await file.createWritable();
-      await writable.write(item.blob);
-      await writable.close();
-    }
-  }
-
-  async function pickCabinetNow() {
-    if (!window.showDirectoryPicker) {
-      throw new Error("no-picker");
-    }
-    if (dirHandle) {
-      try {
-        var perm = await dirHandle.queryPermission({ mode: "readwrite" });
-        if (perm !== "granted") perm = await dirHandle.requestPermission({ mode: "readwrite" });
-        if (perm === "granted") return dirHandle;
-      } catch (e) {}
-    }
-    dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
-    await storeDirHandle(dirHandle);
-    return dirHandle;
-  }
-
   async function takeFiles(files, dirReads) {
     files = Array.prototype.slice.call(files || []);
     setStatus(files.length ? (files[0].name + " 받는 중…") : "파일 받는 중…");
@@ -441,19 +356,8 @@
   }
 
   async function saveToComputer(ready) {
-    try {
-      await pickCabinetNow();
-      await writeFilesToDir(dirHandle, ready);
-      runBtn.disabled = false;
-      setStatus("완료. 서류함 안에 초본·등본 폴더가 생기고, 파일은 등본.jpg처럼 각각 저장됐습니다.");
-    } catch (err) {
-      runBtn.disabled = false;
-      if (err && err.name === "AbortError") {
-        setStatus("폴더 선택을 취소했습니다. 「내 컴퓨터 폴더로 넣기」를 누르면 됩니다.");
-        return;
-      }
-      await downloadFolderZip(ready);
-    }
+    runBtn.disabled = false;
+    await downloadFolderZip(ready);
   }
 
   document.addEventListener("dragover", function (e) {

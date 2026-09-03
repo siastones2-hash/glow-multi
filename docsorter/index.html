@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>서류 자동분류</title>
-  <link rel="stylesheet" href="assets/app.css?v=5">
+  <link rel="stylesheet" href="assets/app.css?v=6">
 </head>
 <body>
   <div class="wrap">
@@ -22,20 +22,20 @@
     </div>
 
     <div id="workRow" class="row">
-      <label class="filebtn" for="filePick">파일 고르기</label>
-      <button id="runBtn" disabled>내 컴퓨터 폴더로 넣기</button>
+      <label class="filebtn" for="filePick">알집 고르기</label>
+      <button id="runBtn" disabled>서류함 다시 받기</button>
       <button id="clearBtn" class="ghost">비우기</button>
     </div>
 
-    <div id="status" class="status">알집 zip을 상자 위에 놓으면 바로 읽기 시작합니다.</div>
+    <div id="status" class="status">한규숙.zip 같은 알집을 상자 위에 놓으세요. 폴더를 고르는 창은 뜨지 않습니다.</div>
     <div id="list" class="list"></div>
-    <p class="note">알집을 놓으면 바로 압축을 풉니다. 끝나면 초본·등본 폴더가 들어 있는 서류함.zip 이 받아집니다. 「내 컴퓨터 폴더로 넣기」를 누르면 폴더로도 저장됩니다.</p>
+    <p class="note">알집을 놓으면 바로 읽습니다. 끝나면 초본·등본 폴더가 들어 있는 서류함.zip 이 받아집니다. 그걸 풀면 됩니다.</p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-  <script src="assets/classify.js?v=5"></script>
-  <script src="assets/app.js?v=5"></script>
+  <script src="assets/classify.js?v=6"></script>
+  <script src="assets/app.js?v=6"></script>
 </body>
 </html>
