@@ -9502,6 +9502,15 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
       [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, activeVal, superMarginVal, mgmtFee, mgmtFeeDue, siteId]
     );
 
+    // 활성→정지: 관리자 TG만 안내 / 정지→활성: 납부 주기 +30일
+    const wasActive = Number(before.active) === 1;
+    if (wasActive && activeVal === 0 && siteId !== 'default') {
+      const locked = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
+      await notifySiteSuspendedByMgmtFee(locked.rows[0] || before, '수동 정지');
+    } else if (!wasActive && activeVal === 1 && siteId !== 'default') {
+      await extendMgmtFeeDue(siteId);
+    }
+
     const afterR = await query(`SELECT id, name, margin, super_margin, domain, active, mgmt_fee_krw, mgmt_fee_due FROM sites WHERE id=$1`, [siteId]);
     res.json({ ok: true, site: afterR.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
