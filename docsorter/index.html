@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>서류 자동분류</title>
-  <link rel="stylesheet" href="assets/app.css?v=24">
+  <link rel="stylesheet" href="assets/app.css?v=25">
 </head>
 <body>
   <div class="wrap">
@@ -17,7 +17,7 @@
 
     <div id="drop" class="drop">
       <input id="filePick" class="drop-file" type="file" multiple accept=".zip,application/zip">
-      <strong>알집을 여기에 놓으세요</strong>
+      <strong>반디집(zip)을 여기에 놓으세요</strong>
       <span>이름이 1.pdf 여도 내용을 읽고 등본.pdf 로 바꿉니다.</span>
     </div>
 
@@ -25,20 +25,21 @@
       <label class="namebox">이름
         <input id="personName" type="text" placeholder="한규숙" autocomplete="off">
       </label>
-      <label class="filebtn" for="filePick">알집 고르기</label>
+      <label class="filebtn" for="filePick">파일 고르기</label>
       <button id="runBtn" disabled>서류함에 넣기</button>
       <button id="clearBtn" class="ghost">비우기</button>
     </div>
 
-    <div id="status" class="status">사람 알집을 놓으세요. 처음 한 번만 바탕화면을 고르면, 그다음부터는 자동으로 서류함에 들어갑니다.</div>
+    <div id="status" class="status">사람 이름 압축파일을 놓으세요. 반디집에서 zip으로 저장한 파일이면 됩니다. 처음 한 번만 바탕화면을 고르면, 그다음부터는 자동으로 서류함에 들어갑니다.</div>
     <div id="list" class="list"></div>
     <p class="note">사진·PDF 안의 글자를 읽습니다. 등본 폴더에는 등본.pdf 로 저장하고, 원래 이름(1.pdf)은 원본 폴더에 남깁니다. 처음 한 번은 글자 인식 파일을 받아서 1~2분 걸릴 수 있고, 사진이 많으면 숫자가 올라가며 이어집니다. 숫자가 바뀌면 멈춘 게 아닙니다.</p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.7.62/dist/zip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-  <script src="assets/classify.js?v=24"></script>
-  <script src="assets/app.js?v=24"></script>
+  <script src="assets/classify.js?v=25"></script>
+  <script src="assets/app.js?v=25"></script>
 </body>
 </html>

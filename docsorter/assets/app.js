@@ -261,22 +261,74 @@
     return utf8;
   }
 
-  async function collectZipFiles(file, person, out) {
-    var zip;
+  async function collectZipFilesZipJs(file, person, out) {
+    if (!window.zip || !zip.ZipReader) throw new Error("no-zipjs");
+    zip.configure({ useWebWorkers: false });
+    var reader = new zip.ZipReader(new zip.BlobReader(file));
+    var entries;
     try {
-      zip = await JSZip.loadAsync(file, { decodeFileName: decodeZipName });
-    } catch (err) {
-      addSkip(file.name, "압축을 열 수 없습니다. zip으로 다시 묶어 주세요.", person);
-      return;
+      entries = await reader.getEntries({ filenameEncoding: "utf-8" });
+    } catch (e) {
+      entries = await reader.getEntries({ filenameEncoding: "cp437" });
     }
-    var names = Object.keys(zip.files);
     var found = 0;
+    for (var i = 0; i < entries.length; i++) {
+      var entry = entries[i];
+      if (entry.directory || SKIP_NAME.test(entry.filename || "")) continue;
+      var rawName = entry.filename || "";
+      if (!/[가-힣]/.test(rawName) && rawName.indexOf("\uFFFD") >= 0) {
+        rawName = decodeZipName(new TextEncoder().encode(entry.filename || ""));
+      }
+      var base = rawName.split("/").pop();
+      var data = await entry.getData(new zip.Uint8ArrayWriter());
+      var bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+      if (isZipName(base || rawName)) {
+        await collectZipFiles(new File([bytes], base || rawName), person, out);
+      } else {
+        out.push({ name: base || rawName, bytes: bytes, person: person });
+      }
+      found += 1;
+    }
+    await reader.close();
+    if (!found) addSkip(file.name, "압축 안에 파일이 없습니다.", person);
+  }
+
+  async function collectZipFiles(file, person, out) {
+    var zipObj;
+    try {
+      zipObj = await JSZip.loadAsync(file, { decodeFileName: decodeZipName });
+    } catch (err) {
+      try {
+        await collectZipFilesZipJs(file, person, out);
+        return;
+      } catch (e2) {
+        addSkip(file.name, "반디집에서 zip으로 다시 압축해 주세요. 7z·암호 파일은 안 됩니다.", person);
+        return;
+      }
+    }
+    var names = Object.keys(zipObj.files);
+    var found = 0;
+    var usedZipJs = false;
     for (var i = 0; i < names.length; i++) {
       var path = names[i];
-      var entry = zip.files[path];
+      var entry = zipObj.files[path];
       if (entry.dir || SKIP_NAME.test(path)) continue;
       var base = path.split("/").pop();
-      var bytes = new Uint8Array(await entry.async("uint8array"));
+      var bytes = null;
+      try {
+        bytes = new Uint8Array(await entry.async("uint8array"));
+      } catch (e) {
+        if (!usedZipJs) {
+          try {
+            await collectZipFilesZipJs(file, person, out);
+            usedZipJs = true;
+            return;
+          } catch (e2) {}
+        }
+        addSkip(base || path, "이 파일은 반디집 최고압축이라 열리지 않습니다. zip 일반압축으로 다시 묶어 주세요.", person);
+        found += 1;
+        continue;
+      }
       if (isZipName(base || path)) {
         await collectZipFiles(new File([bytes], base || path), person, out);
       } else {
@@ -304,7 +356,7 @@
     person = person || currentPerson();
     var ext = extOf(name);
     if (ext === "alz" || ext === "egg" || ext === "7z" || ext === "rar") {
-      addSkip(name, "zip으로 다시 압축해 주세요.", person);
+      addSkip(name, "반디집에서 zip으로 다시 압축해 주세요.", person);
       return;
     }
     var copy = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
@@ -416,14 +468,14 @@
   }
 
   async function saveToCabinet(ready) {
-    setStatus("지금 뜨는 창에서 바탕화면을 고르세요. 알집이 아닙니다.");
+    setStatus("지금 뜨는 창에서 바탕화면을 고르세요. 압축파일이 아닙니다.");
     try {
       if (!window.showDirectoryPicker) throw new Error("no-picker");
       var handle = await window.showDirectoryPicker({ mode: "readwrite" });
       await writeFilesToDir(handle, ready);
       var saved = (ready[0] && ready[0].person) || currentPerson();
       lastSaved = { person: saved, ready: ready };
-      setStatus("완료. 서류함 → " + saved + " 폴더에 넣어 두었습니다. 다음 사람 알집을 놓으면 됩니다.");
+      setStatus("완료. 서류함 → " + saved + " 폴더에 넣어 두었습니다. 다음 사람 압축파일을 놓으면 됩니다.");
     } catch (err) {
       if (err && err.name === "AbortError") {
         setStatus("폴더 선택을 취소했습니다. 「서류함에 넣기」를 다시 누르면 됩니다.");
@@ -445,8 +497,8 @@
         var file = files[i];
         if (SKIP_NAME.test(file.name)) continue;
         var ext = extOf(file.name);
-        if (ext === "alz" || ext === "egg") {
-          addSkip(file.name, "알집 전용 형식입니다. zip으로 다시 압축해 주세요.");
+        if (ext === "alz" || ext === "egg" || ext === "7z" || ext === "rar") {
+          addSkip(file.name, "반디집에서 zip으로 다시 압축해 주세요. 7z·알집은 안 됩니다.");
           continue;
         }
         if (isZipName(file.name) || file.type === "application/zip" || file.type === "application/x-zip-compressed") {
@@ -470,7 +522,7 @@
       setStatus("서류함에 넣는 중…");
       await writeFilesToDir(dirHandle, ready);
       if (runBtn) runBtn.disabled = false;
-      setStatus("완료. 서류함 → " + lastSaved.person + " 폴더에 넣어 두었습니다. 다음 사람 알집을 놓으면 됩니다.");
+      setStatus("완료. 서류함 → " + lastSaved.person + " 폴더에 넣어 두었습니다. 다음 사람 압축파일을 놓으면 됩니다.");
     } catch (err) {
       setStatus("처리에 실패했습니다. zip을 다시 놓아 주세요.");
     } finally {
@@ -506,11 +558,11 @@
     files = Array.prototype.slice.call(files || []);
     dirReads = dirReads || [];
     if (!files.length && !dirReads.length) {
-      if (!busy && !pumping) setStatus("파일이 안 들어왔습니다. 「알집 고르기」로 선택해 주세요.");
+      if (!busy && !pumping) setStatus("파일이 안 들어왔습니다. 「파일 고르기」로 선택해 주세요.");
       return;
     }
     incoming.push({ files: files, dirReads: dirReads });
-    if (busy || pumping) setStatus("지금 정리 중입니다. 방금 넣은 알집은 끝나면 이어서 합니다.");
+    if (busy || pumping) setStatus("지금 정리 중입니다. 방금 넣은 파일은 끝나면 이어서 합니다.");
     pumpIncoming();
   }
 
@@ -608,7 +660,7 @@
     lastSaved = null;
     if (personInput) personInput.value = "";
     render();
-    setStatus("다음 사람 알집을 놓으세요.");
+    setStatus("다음 사람 압축파일을 놓으세요.");
   });
 
   window.__docsorterAccept = acceptFiles;
