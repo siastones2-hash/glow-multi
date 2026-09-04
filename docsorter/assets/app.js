@@ -48,13 +48,24 @@
   var IMAGE_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, bmp: 1, gif: 1, tif: 1, tiff: 1 };
   var SKIP_NAME = /(^|[\/\\])(\.|__macosx|thumbs\.db|desktop\.ini)/i;
   var worker = null;
+  var progress = { done: 0, total: 0, person: "" };
+  var OCR_MS = 25000;
 
   if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
   }
 
   function setStatus(text) {
-    if (statusEl) statusEl.textContent = text;
+    if (statusEl) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle("working", /중|받는|넣|준비/.test(String(text || "")));
+    }
+  }
+
+  function progressLabel(name, extra) {
+    var who = progress.person ? progress.person + " · " : "";
+    var count = progress.total ? progress.done + "/" + progress.total + " · " : "";
+    return who + count + (extra || ((name || "파일") + " 읽는 중…"));
   }
 
   function extOf(name) {
@@ -122,19 +133,66 @@
     return false;
   }
 
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function (_, reject) {
+        setTimeout(function () { reject(new Error("timeout")); }, ms);
+      })
+    ]);
+  }
+
   async function ensureWorker() {
     if (worker) return worker;
+    setStatus("글자 인식 파일을 받는 중… 처음 한 번만 1~2분 걸립니다. 멈춘 게 아닙니다.");
     worker = await Tesseract.createWorker("kor+eng", 1, {
       workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
       corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core.wasm.js",
-      langPath: "https://tessdata.projectnaptha.com/4.0.0"
+      langPath: "https://tessdata.projectnaptha.com/4.0.0",
+      logger: function (m) {
+        if (!m || !m.status) return;
+        if (String(m.status).indexOf("loading language") >= 0) {
+          var pct = m.progress ? Math.round(m.progress * 100) : 0;
+          setStatus("글자 인식 파일을 받는 중… " + (pct ? pct + "%" : "처음 한 번만 1~2분") + ". 멈춘 게 아닙니다.");
+        }
+      }
     });
     return worker;
   }
 
+  function shrinkImage(src) {
+    return new Promise(function (resolve) {
+      var blob = src instanceof Blob ? src : new Blob([src]);
+      var url = URL.createObjectURL(blob);
+      var img = new Image();
+      img.onload = function () {
+        var max = 1280;
+        var w = img.naturalWidth || img.width;
+        var h = img.naturalHeight || img.height;
+        if (w > max || h > max) {
+          var scale = max / Math.max(w, h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, w);
+        canvas.height = Math.max(1, h);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (out) { resolve(out || blob); }, "image/jpeg", 0.82);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        resolve(blob);
+      };
+      img.src = url;
+    });
+  }
+
   async function ocrBlob(src) {
     var w = await ensureWorker();
-    var result = await w.recognize(src);
+    var small = await shrinkImage(src);
+    var result = await withTimeout(w.recognize(small), OCR_MS);
     return (result && result.data && result.data.text) || "";
   }
 
@@ -142,7 +200,9 @@
     var copy = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     var pdf = await pdfjsLib.getDocument({ data: copy }).promise;
     var page = await pdf.getPage(1);
-    var viewport = page.getViewport({ scale: 2 });
+    var base = page.getViewport({ scale: 1 });
+    var scale = Math.min(1.6, 1280 / Math.max(base.width, 1));
+    var viewport = page.getViewport({ scale: scale });
     var canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -167,14 +227,21 @@
   }
 
   async function classifySmart(name, bytes) {
+    var byName = classifyByName(name);
+    if (!nameLooksWeak(name) && byName.folder !== "기타" && (byName.score || 0) >= 70) {
+      setStatus(progressLabel(name, (name || "파일") + " → " + byName.folder));
+      return { folder: byName.folder, title: byName.title };
+    }
     var ext = extOf(name);
     var text = String(name || "");
     try {
-      setStatus((name || "파일") + " 내용을 읽는 중…");
+      setStatus(progressLabel(name));
       if (IMAGE_EXT[ext]) text = (await ocrBlob(new Blob([bytes]))) + "\n" + name;
       else if (ext === "pdf") text = (await ocrPdf(bytes)) + "\n" + name;
       else if (ext === "xlsx") text = (await textFromXlsx(bytes)) + "\n" + name;
-    } catch (e) {}
+    } catch (e) {
+      return { folder: byName.folder || "기타", title: byName.title || "기타" };
+    }
     var hit = (window.DocClassify && DocClassify.classify(text)) || { folder: "기타", title: "기타" };
     return { folder: hit.folder || "기타", title: hit.title || hit.folder || "기타" };
   }
@@ -194,9 +261,7 @@
     return utf8;
   }
 
-  async function ingestZip(file, person) {
-    person = person || cleanPerson(file.name) || currentPerson();
-    setStatus(person + " 압축을 푸는 중…");
+  async function collectZipFiles(file, person, out) {
     var zip;
     try {
       zip = await JSZip.loadAsync(file, { decodeFileName: decodeZipName });
@@ -213,13 +278,26 @@
       var base = path.split("/").pop();
       var bytes = new Uint8Array(await entry.async("uint8array"));
       if (isZipName(base || path)) {
-        await ingestZip(new File([bytes], base || path), person);
+        await collectZipFiles(new File([bytes], base || path), person, out);
       } else {
-        await ingestOne(base || path, bytes, person);
+        out.push({ name: base || path, bytes: bytes, person: person });
       }
       found += 1;
     }
     if (!found) addSkip(file.name, "압축 안에 파일이 없습니다.", person);
+  }
+
+  async function ingestZip(file, person) {
+    person = person || cleanPerson(file.name) || currentPerson();
+    progress.person = person;
+    setStatus(person + " 압축을 푸는 중… 파일이 많으면 잠시 걸립니다.");
+    var items = [];
+    await collectZipFiles(file, person, items);
+    progress.total += items.length;
+    for (var i = 0; i < items.length; i++) {
+      progress.done += 1;
+      await ingestOne(items[i].name, items[i].bytes, items[i].person);
+    }
   }
 
   async function ingestOne(name, bytes, person) {
@@ -361,6 +439,7 @@
     busy = true;
     if (runBtn) runBtn.disabled = true;
     var startAt = queue.length;
+    progress = { done: 0, total: 0, person: currentPerson() };
     try {
       for (var i = 0; i < files.length; i++) {
         var file = files[i];
@@ -375,6 +454,8 @@
           setPerson(zipPerson);
           await ingestZip(file, zipPerson);
         } else {
+          progress.total += 1;
+          progress.done += 1;
           var buf = await file.arrayBuffer();
           await ingestOne(file.name, new Uint8Array(buf), currentPerson());
         }

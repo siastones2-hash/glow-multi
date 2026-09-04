@@ -85,6 +85,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   padding: 14px 16px;
   min-height: 52px;
 }
+.status.working {
+  border-color: var(--accent);
+  animation: status-pulse 1.6s ease-in-out infinite;
+}
+@keyframes status-pulse {
+  0%, 100% { background: var(--card); }
+  50% { background: #eef5f8; }
+}
 .list { margin-top: 16px; }
 .item {
   display: flex;
