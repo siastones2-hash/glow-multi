@@ -3513,10 +3513,21 @@ function glowRateForTargetMultiple(supplierUsd, marginMult, targetMult = SMMKING
 }
 
 async function ensureSmmkingsSeedServices() {
+  await ensureSmmkingsCatalogLoaded().catch(() => null);
   const marginMult = await getDefaultSellMarginMult();
   let n = 0;
   for (const s of SMMKINGS_CURATED_SEEDS) {
-    const rate = await glowRateForSmmkingsSeed(s, marginMult);
+    // 카탈로그에 있으면 실원가·min/max를 최신으로 반영 (고정 sellKrw 시드는 cost만 갱신)
+    const remote = smmkingsCatalogCache.get(String(s.api_id));
+    const seed = { ...s };
+    if (remote) {
+      const liveCost = parseFloat(remote.rate);
+      if (Number.isFinite(liveCost) && liveCost > 0) seed.cost = liveCost;
+      seed.min = Math.max(1, parseInt(remote.min, 10) || s.min || 1);
+      seed.max = parseInt(remote.max, 10) || s.max || 1000000;
+      if (peakerrServiceHasRefill(remote)) seed.refill = 1;
+    }
+    const rate = await glowRateForSmmkingsSeed(seed, marginMult);
     await query(`
       INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'smmkings')
@@ -3525,13 +3536,210 @@ async function ensureSmmkingsSeedServices() {
         description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
         refill_guaranteed=EXCLUDED.refill_guaranteed, provider='smmkings',
         inactive_note='', replace_service_id=NULL
-    `, [s.id, s.name, s.pl, rate, s.min, s.max, s.description, s.api_id, s.refill ? 1 : 0]);
-    await linkServiceToAllSites(s.id);
+    `, [seed.id, seed.name, seed.pl, rate, seed.min, seed.max, seed.description, seed.api_id, seed.refill ? 1 : 0]);
+    await linkServiceToAllSites(seed.id);
     n++;
   }
   await applyDisabledSeedMeta().catch(() => null);
   if (n > 0) console.log(`✅ 연동 B 큐레이션 ${n}개 등록 (기본×${SMMKINGS_TARGET_MULT}/고정가, marginMult=${marginMult.toFixed(2)})`);
   return n;
+}
+
+const SMMKINGS_KR_IMPORT_PLATFORMS = ['instagram', 'youtube', 'tiktok', 'threads', 'twitter', 'facebook', 'telegram'];
+const SMMKINGS_KR_USEFUL_TYPES = new Set([
+  '팔로워', '좋아요', '조회수', '릴스 조회수', '릴스 좋아요', '구독자', '댓글', '저장', '공유',
+  '스토리 조회수', '쇼츠 조회수', '쇼츠 좋아요', '시청시간', '노출'
+]);
+
+function scoreSmmkingsKoreaService(s) {
+  const name = (s.name || '').toLowerCase();
+  const cat = (s.category || '').toLowerCase();
+  const full = `${name} ${cat} ${s.type || ''}`.toLowerCase();
+  if (BAD_SERVICE_NAME.test(full)) return -1;
+  if (!isKoreanMarketService(`${s.name || ''} ${s.category || ''} ${s.type || ''}`)) return -1;
+  let score = scorePeakerrService(s);
+  if (score < 0) return -1;
+  // 연동 B 한국 전용 가산점
+  if (/\buhq\b|ultra\s*hq|논드롭|non[- ]?drop/.test(full)) score += 40;
+  if (/\breal\b|리얼/.test(full)) score += 35;
+  if (/\bhq\b|high quality|premium|프리미엄/.test(full)) score += 25;
+  if (peakerrServiceHasRefill(s) || /refill|보장|guarantee/.test(full)) score += 30;
+  if (/age|gender|male|female|남성|여성|연령/.test(full)) score += 15;
+  // 트래픽·백링크는 이미 sktr/skseo 큐레이션 — 자동 수입 제외
+  if (/traffic|visit|backlink|seo\b|dofollow|guest\s*post/.test(full) && !/instagram|youtube|tiktok|threads|twitter|facebook|telegram/.test(full)) {
+    return -1;
+  }
+  return score;
+}
+
+function formatSmmkingsKoreaName(s, pl, typeKo) {
+  const raw = String(s.name || '').trim();
+  if (/[\uAC00-\uD7AF]/.test(raw)) return raw.substring(0, 120);
+  const plLabel = PL_DISPLAY_KO[pl] || pl;
+  const type = typeKo && typeKo !== '서비스' ? typeKo : detectServiceTypeKo(raw);
+  const bits = [];
+  const low = raw.toLowerCase();
+  if (/\buhq\b/.test(low)) bits.push('UHQ');
+  else if (/\bhq\b|high quality/.test(low)) bits.push('HQ');
+  if (/\breal\b/.test(low)) bits.push('리얼');
+  if (/non[- ]?drop|no drop/.test(low)) bits.push('논드롭');
+  if (/male|men\b|남성/.test(low) && !/female|women|여성/.test(low)) bits.push('남성');
+  if (/female|women|여성/.test(low)) bits.push('여성');
+  if (/age\s*[±+]?\s*20|±\s*20|연령.?20/.test(low)) bits.push('연령±20');
+  if (/age\s*[±+]?\s*30|±\s*30|연령.?30/.test(low)) bits.push('연령±30');
+  if (/90\s*day|90일/.test(low)) bits.push('90일');
+  else if (/30\s*day|30일/.test(low)) bits.push('30일');
+  else if (/refill|guarantee|보장/.test(low)) bits.push('보장');
+  const qual = bits.length ? ` — 한국 ${bits.join('·')}` : ' — 한국';
+  const star = (/\buhq\b|\breal\b/.test(low) && (peakerrServiceHasRefill(s) || /refill|guarantee|보장/.test(low))) ? ' ⭐' : '';
+  return `${plLabel} ${type}${qual}${star}`.substring(0, 120);
+}
+
+function smmkingsKoreaImportDescription(pl, typeKo) {
+  const base = koreanImportDescription(pl, typeKo);
+  return `${base} 연동 B(SMMKings) 한국 전용 큐레이션입니다.`;
+}
+
+/** 연동 B 카탈로그 — 한국 HQ·Real·리필 등 고품질 후보 */
+async function listSmmkingsKoreaCandidates(opts = {}) {
+  const apiKey = await getSmmkingsApiKey();
+  if (!apiKey) return { error: '연동 B API 키가 없습니다', candidates: [], catalog: 0 };
+
+  let services;
+  if (smmkingsCatalogCache.size > 0 && !opts.forceRefresh) {
+    services = [...smmkingsCatalogCache.values()];
+  } else {
+    const resp = await panelFetch('smmkings', { key: apiKey, action: 'services' }, { timeoutMs: 90000 });
+    services = await resp.json();
+    if (!Array.isArray(services)) return { error: '연동 B 카탈로그 응답 오류', candidates: [], catalog: 0 };
+    const map = new Map();
+    services.forEach(s => map.set(String(s.service), s));
+    smmkingsCatalogCache = map;
+  }
+
+  const existingR = await query(`SELECT api_id, id, name, active FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  const existingByApi = new Map(existingR.rows.map(r => [String(r.api_id), r]));
+  const curatedApis = new Set(SMMKINGS_CURATED_SEEDS.map(s => String(s.api_id)));
+
+  const candidates = [];
+  for (const s of services) {
+    const score = scoreSmmkingsKoreaService(s);
+    if (score < 80) continue;
+    const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+    const pl = detectPlat(full);
+    if (!SMMKINGS_KR_IMPORT_PLATFORMS.includes(pl)) continue;
+    const typeKo = detectServiceTypeKo(full);
+    if (!SMMKINGS_KR_USEFUL_TYPES.has(typeKo)) continue;
+    if (!hasImportQualitySignal(full, score) && score < 150) continue;
+    const apiId = String(s.service);
+    const existing = existingByApi.get(apiId);
+    candidates.push({
+      apiId,
+      name: String(s.name || '').slice(0, 140),
+      category: String(s.category || '').slice(0, 80),
+      rate: parseFloat(s.rate || 0),
+      min: parseInt(s.min, 10) || 0,
+      max: parseInt(s.max, 10) || 0,
+      refill: peakerrServiceHasRefill(s),
+      pl,
+      typeKo,
+      score,
+      inCurated: curatedApis.has(apiId),
+      inDb: !!existing,
+      dbId: existing?.id || null,
+      dbActive: existing ? parseInt(existing.active, 10) : null,
+      displayName: formatSmmkingsKoreaName(s, pl, typeKo),
+    });
+  }
+  candidates.sort((a, b) => {
+    if (a.inCurated !== b.inCurated) return a.inCurated ? 1 : -1;
+    if (a.inDb !== b.inDb) return a.inDb ? 1 : -1;
+    if (a.refill !== b.refill) return a.refill ? -1 : 1;
+    return b.score - a.score || a.rate - b.rate;
+  });
+  return { ok: true, catalog: services.length, candidates, count: candidates.length };
+}
+
+async function insertSmmkingsKoreaImport(s, displayName, pl, description) {
+  const id = `skn_${s.service}`;
+  const marginMult = await getDefaultSellMarginMult();
+  const cost = parseFloat(s.rate || 0);
+  const targetMult = await smmkingsTargetMultForCost(cost);
+  const rate = await glowRateForTargetMultiple(cost, marginMult, targetMult);
+  const hasRefill = peakerrServiceHasRefill(s) ? 1 : 0;
+  await query(`
+    INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'smmkings')
+    ON CONFLICT(id) DO UPDATE SET
+      name=EXCLUDED.name, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max,
+      description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
+      refill_guaranteed=EXCLUDED.refill_guaranteed, provider='smmkings',
+      inactive_note='', replace_service_id=NULL
+  `, [
+    id, displayName, pl, rate,
+    Math.max(1, parseInt(s.min, 10) || 10),
+    parseInt(s.max, 10) || 1000000,
+    description, String(s.service), hasRefill,
+  ]);
+  await linkServiceToAllSites(id);
+  return { id, name: displayName, pl, rate, apiId: String(s.service), cost, refill: !!hasRefill };
+}
+
+/** 연동 B — 한국 타겟 HQ·Real 등 (큐레이션에 없는 신규만) */
+async function importSmmkingsKoreaServices(opts = {}) {
+  const maxPerBucket = opts.maxPerBucket ?? 2;
+  const dryRun = !!opts.dryRun;
+  const notify = opts.notify !== false;
+  const includeExisting = !!opts.includeExisting;
+
+  const listed = await listSmmkingsKoreaCandidates({ forceRefresh: true });
+  if (listed.error) return { error: listed.error, added: [], count: 0, candidates: 0 };
+
+  const byBucket = {};
+  for (const c of listed.candidates) {
+    if (c.inCurated) continue;
+    if (c.inDb && !includeExisting) continue;
+    const key = `${c.pl}:${c.typeKo}`;
+    if (!byBucket[key]) byBucket[key] = [];
+    byBucket[key].push(c);
+  }
+
+  const picked = [];
+  for (const list of Object.values(byBucket)) {
+    list.sort((a, b) => b.score - a.score || (b.refill ? 1 : 0) - (a.refill ? 1 : 0) || a.rate - b.rate);
+    picked.push(...list.slice(0, maxPerBucket));
+  }
+  picked.sort((a, b) => b.score - a.score);
+
+  if (dryRun) {
+    return {
+      ok: true, dryRun: true, added: [], count: 0,
+      candidates: listed.count, wouldAdd: picked, catalog: listed.catalog
+    };
+  }
+
+  const added = [];
+  for (const c of picked) {
+    const remote = smmkingsCatalogCache.get(String(c.apiId));
+    if (!remote) continue;
+    const row = await insertSmmkingsKoreaImport(
+      remote,
+      c.displayName,
+      c.pl,
+      smmkingsKoreaImportDescription(c.pl, c.typeKo)
+    );
+    added.push(row);
+  }
+
+  if (notify && added.length) {
+    await notifyAdminsNewServices('🇰🇷 <b>연동 B 한국 프리미엄 추가</b>', added).catch(() => null);
+  }
+  if (added.length) console.log(`🇰🇷 연동 B 한국 상품 ${added.length}개 추가`);
+  return {
+    ok: true, added, count: added.length,
+    candidates: listed.count, catalog: listed.catalog,
+    summary: `연동 B 한국 ${added.length}개`
+  };
 }
 
 /** 공급 카탈로그에서 Facebook 조회수 시드(pfb10) 자동 등록 */
@@ -8766,21 +8974,73 @@ app.post('/api/super/import-vietnam', requireSuperAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🇰🇷 슈퍼관리자: 한국 타겟 + Pinterest HQ 상품 (Peakerr 실존 시만)
-app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) => {
+// 🇰🇷 슈퍼관리자: 연동 B 한국 HQ 미리보기
+app.get('/api/super/smmkings-korea-preview', requireSuperAdmin, async (req, res) => {
   try {
-    const { maxKrPerPlatform, maxPinterest, dryRun } = req.body || {};
-    const result = await importKoreanAndPinterestServices({
-      maxKrPerPlatform: maxKrPerPlatform || 4,
-      maxPinterest: maxPinterest || 5,
+    const result = await listSmmkingsKoreaCandidates({ forceRefresh: true });
+    if (result.error) return res.json({ error: result.error });
+    const fresh = (result.candidates || []).filter(c => !c.inCurated && !c.inDb);
+    const known = (result.candidates || []).filter(c => c.inCurated || c.inDb);
+    res.json({
+      ok: true,
+      catalog: result.catalog,
+      count: result.count,
+      freshCount: fresh.length,
+      fresh: fresh.slice(0, 80),
+      known: known.slice(0, 40),
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 🇰🇷 슈퍼관리자: 연동 B 한국 HQ·Real 자동 추가
+app.post('/api/super/import-smmkings-korea', requireSuperAdmin, async (req, res) => {
+  try {
+    const { maxPerBucket, dryRun } = req.body || {};
+    const result = await importSmmkingsKoreaServices({
+      maxPerBucket: maxPerBucket || 2,
       dryRun: !!dryRun,
-      notify: !dryRun
+      notify: !dryRun,
     });
     if (result.error) return res.json({ error: result.error });
-    const msg = result.count > 0
-      ? `한국 ${result.korean}개 · Pinterest ${result.pinterest}개 추가`
-      : '추가할 한국·Pinterest HQ 상품 없음 (이미 등록 또는 공급 목록 미제공)';
+    const msg = result.dryRun
+      ? `미리보기: 추가 후보 ${result.wouldAdd?.length || 0}개 (전체 한국 HQ ${result.candidates}개)`
+      : (result.count > 0
+        ? `연동 B 한국 ${result.count}개 추가`
+        : '추가할 연동 B 한국 HQ 상품 없음 (이미 등록 또는 품질 기준 미달)');
     res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 🇰🇷 슈퍼관리자: 연동 B 한국 + Peakerr Pinterest (Peakerr 한국 자동수입은 품질 이슈로 중단)
+app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) => {
+  try {
+    const { maxKrPerPlatform, maxPinterest, maxPerBucket, dryRun } = req.body || {};
+    const sk = await importSmmkingsKoreaServices({
+      maxPerBucket: maxPerBucket || maxKrPerPlatform || 2,
+      dryRun: !!dryRun,
+      notify: !dryRun,
+    });
+    const pin = await importKoreanAndPinterestServices({
+      maxKrPerPlatform: 0,
+      maxPinterest: maxPinterest || 5,
+      dryRun: !!dryRun,
+      notify: !dryRun,
+    });
+    if (sk.error && pin.error) return res.json({ error: sk.error || pin.error });
+    const skN = sk.count || 0;
+    const pinN = pin.pinterest || pin.count || 0;
+    const msg = (skN + pinN) > 0
+      ? `연동 B 한국 ${skN}개 · Pinterest ${pinN}개 추가`
+      : '추가할 한국(연동B)·Pinterest HQ 상품 없음 (이미 등록 또는 공급 목록 미제공)';
+    res.json({
+      ok: true,
+      message: msg,
+      smmkingsKorea: sk,
+      pinterest: pin,
+      count: skN + pinN,
+      korean: skN,
+      pinterestCount: pinN,
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -10252,9 +10512,13 @@ app.listen(PORT, async () => {
     await runCatalogHealthCheck(true).catch(() => {});
     const niche = await importNichePeakerrServices({ notify: false }).catch(e => ({ error: e.message, count: 0 }));
     if (niche.count > 0) console.log(`🛒 이커머스·보너스 상품 ${niche.count}개 추가`);
+    const skKr = await importSmmkingsKoreaServices({ notify: true, maxPerBucket: 2 }).catch(e => ({ error: e.message, count: 0 }));
+    if (skKr.count > 0) console.log(`🇰🇷 연동 B 한국 ${skKr.count}개 추가`);
+    else if (!skKr.error) console.log('🇰🇷 연동 B 한국: 추가할 HQ 상품 없음');
+    else console.log('🇰🇷 연동 B 한국 스캔:', skKr.error);
     const krPin = await importKoreanAndPinterestServices({ notify: true }).catch(e => ({ error: e.message, count: 0 }));
-    if (krPin.count > 0) console.log(`🇰🇷 한국·Pinterest ${krPin.count}개 추가 (한국 ${krPin.korean || 0} / 핀 ${krPin.pinterest || 0})`);
-    else if (!krPin.error) console.log('🇰🇷 한국·Pinterest: Peakerr에 추가할 HQ 상품 없음');
+    if (krPin.count > 0) console.log(`📌 Pinterest ${krPin.count}개 추가 (핀 ${krPin.pinterest || 0})`);
+    else if (!krPin.error) console.log('📌 Pinterest: Peakerr에 추가할 HQ 상품 없음');
     const vn = await importVietnamInstagramTiktokServices({ notify: true }).catch(e => ({ error: e.message, count: 0 }));
     if (vn.count > 0) console.log(`🇻🇳 베트남 IG·TT ${vn.count}개 추가 (인스타 ${vn.instagram || 0} / 틱톡 ${vn.tiktok || 0})`);
     else if (!vn.error) console.log('🇻🇳 베트남 Instagram·TikTok: Peakerr에 추가할 상품 없음');
