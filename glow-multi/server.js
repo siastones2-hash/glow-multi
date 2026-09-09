@@ -465,15 +465,18 @@ async function initDB() {
       {id:'pyt8',name:'YouTube 쇼츠 조회수 — 프리미엄 글로벌 (드롭 보상)',pl:'youtube',rate:1.68,min:100,max:1000000,description:'전 세계 실계정 기반으로 제공되는 고품질 YouTube 쇼츠 조회수 서비스입니다. 유튜브에서 지금 가장 빠르게 성장하는 쇼츠 포맷의 조회수를 늘립니다. 초기 조회수가 빠르게 쌓이면 쇼츠 피드 알고리즘의 바이럴 루프에 진입하여 수백만 조회수까지 자연 성장이 가능합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'27924'},
       {id:'pyt9',name:'YouTube 조회수 — 아랍 타겟',pl:'youtube',rate:4.69,min:500,max:100000,description:'아랍 기반 고품질 YouTube 조회수 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 영상 업로드 직후 조회수를 빠르게 채워 유튜브 알고리즘에 강한 신호를 보냅니다. 초기 조회수가 빠를수록 추천·홈피드 배포 확률이 높아지며 실제 사용자 패턴으로 처리되어 계정 안전성이 보장됩니다.',api_id:'2866'},
       {id:'pig11',name:'Instagram 노출 — 한국 타겟',pl:'instagram',rate:12.54,min:5,max:10000,description:'한국 기반 고품질 Instagram 노출 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다.',api_id:'29158'},
-      {id:'pig17',name:'Instagram 좋아요 — 한국 타겟',pl:'instagram',rate:1.19,min:10,max:20000,description:'한국 기반 고품질 Instagram 좋아요 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 게시물은 알고리즘이 인기 게시물로 분류하여 팔로워 외 사용자의 탐색 탭에도 대규모 노출됩니다. 유기적 도달 범위를 빠르게 확장하는 가장 효과적인 방법입니다.',api_id:'30710'},
-      {id:'pig6',name:'Instagram 팔로워 — 한국 타겟',pl:'instagram',rate:40.32,min:10,max:20000,description:'한국 기반 고품질 Instagram 팔로워 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다.',api_id:'28308'},
-      {id:'pkr1',name:'Instagram 팔로워 — 한국 (30일 드롭보상) ⭐',pl:'instagram',rate:59.6409,min:10,max:20000,description:'한국인 실계정 기반 Instagram 팔로워 프리미엄 서비스로, 30일간 드롭 발생 시 자동 보상이 제공됩니다. 국내 타겟 마케팅의 핵심 자산인 한국인 팔로워는 브랜드 협찬 단가와 국내 소비자 대상 마케팅 효율을 크게 높여주며, 30일 리필 보장으로 장기적인 계정 신뢰도를 안정적으로 유지할 수 있습니다.',api_id:'27334'},
-      {id:'pkr2',name:'Instagram 팔로워 — 한국 (슬로우 속도)',pl:'instagram',rate:59.6409,min:10,max:50000,description:'한국인 실계정 Instagram 팔로워를 일 1천명 슬로우 속도로 자연스럽게 증가시킵니다. 빠른 증가가 부담스러운 신규 계정이나 알고리즘 페널티를 피하고 싶은 계정에 최적화된 서비스입니다. 느린 속도로 쌓여 실제 유기적 성장처럼 보이며 장기 안정성이 가장 뛰어납니다.',api_id:'27334'},
-      {id:'pkr3',name:'Instagram 좋아요 — 한국 (드롭보상)',pl:'instagram',rate:1.4,min:10,max:20000,description:'한국인 실계정 기반 Instagram 좋아요 서비스로, 30일간 드롭 보상이 제공됩니다. 국내 타겟 게시물의 탐색 탭 노출을 강화하며, 한국인 좋아요 비율이 높을수록 인스타그램이 국내 사용자에게 우선 노출시켜 실제 국내 고객 유입으로 이어집니다.',api_id:'30711'},
-      {id:'pkr4',name:'Instagram 좋아요 — 한국 (저가형)',pl:'instagram',rate:2.38,min:50,max:1000,description:'한국인 계정 기반 Instagram 좋아요를 저렴한 가격으로 제공합니다. 국내 타겟 소규모 게시물이나 여러 게시물에 분산 주문할 때 유용하며, 한국 IP 기반 계정에서 좋아요가 발생하여 국내 탐색 탭 노출 알고리즘에 긍정적 신호를 전달합니다.',api_id:'27077'},
-      {id:'pkr5',name:'Instagram 좋아요 — 한국 프리미엄 (365일 보상)',pl:'instagram',rate:1.4,min:10,max:1000000,description:'한국 기반 Instagram 좋아요 프리미엄 서비스로, 무려 365일간 드롭 보상이 제공됩니다. 1년 내 좋아요가 빠지면 자동으로 보충되어 장기적인 게시물 가치를 유지합니다. 브랜드 계정, 인플루언서 주요 게시물, 이벤트 게시물 등 장기 노출이 중요한 콘텐츠에 최적입니다.',api_id:'30711'},
-      {id:'pkr6',name:'Instagram 댓글 — 한국 리얼 액티브 (10개)',pl:'instagram',rate:4.73,min:10,max:10,description:'한국 실계정 활성 사용자 10명이 자연스러운 한국어 댓글을 달아드립니다. 2시간 내 빠르게 처리되며, 실제 한국인이 다는 댓글이라 자연어 품질이 매우 높고 인스타그램 알고리즘도 국내 참여 신호로 강하게 인식합니다. 신제품 출시, 이벤트 게시물의 초기 댓글 확보에 가장 강력한 효과를 발휘합니다.',api_id:'29271'},
-      {id:'pkr7',name:'Instagram 댓글 — 한국 리얼 액티브 (20개)',pl:'instagram',rate:7.45,min:20,max:20,description:'한국 실계정 활성 사용자 20명이 자연스러운 한국어 댓글을 작성합니다. 2시간 내 처리되며, 국내 인플루언서 마케팅에서 가장 중요한 "초기 댓글 군집 효과"를 만들어냅니다. 댓글 간 자연스러운 대화 흐름까지 연출되어 알고리즘이 화제의 게시물로 인식하게 만드는 프리미엄 서비스입니다.',api_id:'29272'},
+      {id:'pig17',name:'Instagram 좋아요 — 한국 타겟',pl:'instagram',rate:1.02,min:20,max:200000,description:'한국 타겟 Instagram 좋아요입니다. 국내 탐색·인기 노출 신호용으로, 게시물·릴스 URL을 입력하세요.',api_id:'30710'},
+      {id:'pig6',name:'Instagram 팔로워 — 한국 타겟 (구SKU 중단)',pl:'instagram',rate:40.32,min:10,max:20000,description:'[판매 중단] 구 Peakerr 한국 팔로워. 대체: pkr9(한국 HQ 1년 리필) 또는 skg1.',api_id:'28308',active:0},
+      {id:'pkr1',name:'Instagram 팔로워 — 한국 (구SKU 중단)',pl:'instagram',rate:59.6409,min:10,max:20000,description:'[판매 중단] 구 Peakerr 한국 팔로워. 대체: pkr9.',api_id:'27334',active:0},
+      {id:'pkr2',name:'Instagram 팔로워 — 한국 슬로우 (구SKU 중단)',pl:'instagram',rate:59.6409,min:10,max:50000,description:'[판매 중단] 구 Peakerr 한국 팔로워. 대체: pkr9.',api_id:'27334',active:0},
+      {id:'pkr3',name:'Instagram 좋아요 — 한국 (365일 보상) ⭐',pl:'instagram',rate:1.2,min:20,max:1000000,description:'한국 타겟 Instagram 좋아요 · 365일 드롭 보상입니다. 브랜드·이벤트 게시물의 장기 참여 유지에 적합합니다. 게시물·릴스 URL을 입력하세요.',api_id:'30711'},
+      {id:'pkr4',name:'Instagram 좋아요 — 한국 리얼 MQ',pl:'instagram',rate:2.04,min:20,max:1000000,description:'100% Real Korean Accounts 표기 Instagram 좋아요(MQ)입니다. 국내 타겟 참여용. 게시물·릴스 URL을 입력하세요.',api_id:'27077'},
+      {id:'pkr5',name:'Instagram 좋아요 — 한국 Real Exclusive (30일)',pl:'instagram',rate:6.912,min:10,max:20000,description:'한국 Real Exclusive 좋아요 · 30일 리필 표기입니다. 고품질 국내 참여용. 게시물·릴스 URL을 입력하세요.',api_id:'33845'},
+      {id:'pkr6',name:'Instagram 댓글 — 한국 랜덤 프리미엄',pl:'instagram',rate:55.296,min:5,max:1000,description:'한국 프리미엄 랜덤 댓글입니다. 게시물 초기 참여·국내 신호용으로 사용하세요. 게시물 URL을 입력하세요.',api_id:'36371'},
+      {id:'pkr7',name:'Instagram 댓글 — 한국 맞춤 HQ',pl:'instagram',rate:92.736,min:1,max:2000,description:'한국 맞춤(Custom) HQ 댓글입니다. 원하는 문구로 국내 계정 댓글을 달 때 사용하세요. 게시물 URL을 입력하세요.',api_id:'35464'},
+      {id:'pkr9',name:'Instagram 팔로워 — 한국 HQ (1년 리필) ⭐',pl:'instagram',rate:17.2224,min:30,max:1000,description:'한국 HQ 팔로워 · 1년 리필 표기(일 약 100명 슬로우)입니다. 구 SKU(외국인 유입)와 다른 신규 상품입니다. 프로필 링크를 입력하세요.',api_id:'35465'},
+      {id:'pkr10',name:'Instagram 팔로워 — 한국 (30일 리필)',pl:'instagram',rate:45.444,min:5,max:50000,description:'한국 팔로워 · 30일 리필 표기입니다. 국내 마케팅용 신규 Peakerr SKU입니다. 프로필 링크를 입력하세요.',api_id:'35485'},
+      {id:'pyt17',name:'YouTube 조회수 — 한국 Native (평생) ⭐',pl:'youtube',rate:3.8708,min:1000,max:1000000,description:'South Korean Native Views · Lifetime 보장 표기입니다. 국내 시청 지표·추천 신호용. watch?v= 또는 youtu.be 링크를 입력하세요.',api_id:'34592'},
       {id:'pig1',name:'Instagram 댓글 — 프리미엄 글로벌',pl:'instagram',rate:10.0,min:10,max:10000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 댓글 서비스입니다. 댓글이 많은 게시물은 알고리즘이 높은 참여도로 인식해 탐색 탭 노출을 늘립니다. 긍정적 댓글은 브랜드 이미지를 강화하고, 질문형 댓글은 추가 참여를 유발하는 연쇄 효과를 만듭니다.',api_id:'2544'},
       {id:'pig10',name:'Instagram 노출 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.41,min:10,max:300000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 노출 서비스입니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'17506'},
       {id:'pig12',name:'Instagram 노출 — 미국 타겟 (드롭 보상)',pl:'instagram',rate:0.35,min:10,max:20000,description:'미국 기반 고품질 Instagram 노출 서비스로, 미국 광고 RPM이 세계 최고 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29617'},
@@ -554,11 +557,18 @@ async function initDB() {
       const refill = glowServicePromisesRefill(s.name, s.description) ? 1 : 0;
       await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id,
+          active=EXCLUDED.active,
+          inactive_note=CASE WHEN EXCLUDED.active=1 THEN '' ELSE COALESCE(services.inactive_note,'') END,
+          replace_service_id=CASE WHEN EXCLUDED.active=1 THEN NULL ELSE services.replace_service_id END,
           refill_guaranteed=GREATEST(COALESCE(services.refill_guaranteed,0), EXCLUDED.refill_guaranteed)`,
         [s.id, s.name, s.pl, s.rate, s.min, s.max, s.description||'', s.api_id||null, active, refill]);
       if (active === 0) {
         await query(`UPDATE services SET active=0 WHERE id=$1`, [s.id]);
       }
+    }
+    // Peakerr 한국 신규·재오픈 시드만 전 사이트 연결 (파트너가 끈 상품을 전부 강제 ON 하지 않음)
+    for (const id of ['pig17', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pkr10', 'pyt17']) {
+      try { await linkServiceToAllSites(id); } catch (_) {}
     }
   }
 
@@ -2243,32 +2253,26 @@ const DISABLED_SEED_META = {
     replaceHint: 'TikTok 조회수 — 브라질 타겟 (드롭 보상)'
   },
   pig11: { note: 'Peakerr에서 한국 Instagram 노출 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pig10' },
-  pkr6: { note: 'Peakerr에서 한국 Instagram 댓글 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pig1' },
-  pkr7: { note: 'Peakerr에서 한국 Instagram 댓글 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pig1' },
   pkr8: { note: 'Peakerr에서 한국 YouTube 좋아요 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pyt4' },
   pfb1: { note: 'Peakerr에서 브라질 Facebook 댓글 상품이 삭제되어 판매를 중단했습니다.', replaceId: null },
   pfb3: { note: 'Peakerr에서 브라질 Facebook 팔로워 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pfb4' },
   pfb6: { note: 'Peakerr에서 브라질 Facebook 좋아요 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'pfb8' },
   ptr4: { note: 'Peakerr에서 해당 트래픽 상품이 삭제되어 판매를 중단했습니다.', replaceId: 'ptr1' },
   // Peakerr "Korean Followers" 실측: 외국인 계정만 유입 (2026-07-31 테스트 O1785464742025)
+  // 구 API 28308·27334 만 영구 중단. 신규 HQ(pkr9·pkr10)는 별도 판매.
   pig6: {
-    note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
-    replaceId: 'skg1',
-    replaceHint: 'Instagram 팔로워 — 한국 HQ'
+    note: 'Peakerr 구 한국 팔로워(28308)가 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
+    replaceId: 'pkr9',
+    replaceHint: 'Instagram 팔로워 — 한국 HQ (1년 리필)'
   },
   pkr1: {
-    note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
-    replaceId: 'skg1',
+    note: 'Peakerr 구 한국 팔로워(27334)가 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
+    replaceId: 'pkr9',
   },
   pkr2: {
-    note: 'Peakerr 한국 팔로워 상품이 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
-    replaceId: 'skg1',
+    note: 'Peakerr 구 한국 팔로워(27334)가 실제로는 외국인 계정을 보내 판매를 중단했습니다.',
+    replaceId: 'pkr9',
   },
-  // Peakerr 한국 타겟 전체 — 팔로워 실측 불량으로 한국 SKU 판매 중단 (검증 전 재오픈 금지)
-  pig17: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
-  pkr3: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
-  pkr4: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
-  pkr5: { note: 'Peakerr 한국 타겟 품질이 검증되지 않아 판매를 중단했습니다.', replaceId: 'skg3' },
   // pyt13은 pyt2와 동일 SKU(27905) — 중복 판매 방지
   pyt13: {
     note: '동일 공급 SKU 상품과 통합되어 판매를 중단했습니다.',
@@ -2445,8 +2449,11 @@ async function reactivateCuratedSeedServices() {
     const prov = serviceProvider(row);
     const catalog = catalogCacheFor(prov);
     if (catalog.size === 0 || !catalog.has(String(row.api_id))) continue;
-    const u = await query(`UPDATE services SET active=1 WHERE id=$1 AND active=0 RETURNING id`, [row.id]);
-    if (u.rowCount) n++;
+    const u = await query(`UPDATE services SET active=1, inactive_note='', replace_service_id=NULL WHERE id=$1 AND active=0 RETURNING id`, [row.id]);
+    if (u.rowCount) {
+      await linkServiceToAllSites(row.id);
+      n++;
+    }
   }
   if (n > 0) console.log(`✅ 검증 시드 상품 ${n}개 재활성화`);
   return n;
@@ -9234,22 +9241,27 @@ const CURATED_SEED_API_LOCK = {
   // Instagram 팔로워
   pig4: { api_id: '28284', rate: 2.4192 },  // 브라질 (구 29691 삭제)
   pig5: { api_id: '30505', rate: 0.57 },
-  pig6: { api_id: '28308', rate: 40.32 },   // 한국
+  pig6: { api_id: '28308', rate: 40.32 },   // 한국 구SKU (판매중단)
   pig8: { api_id: '29835', rate: 34.02 },   // 터키 (구 30054 삭제)
   pig9: { api_id: '22628', rate: 48.91 },
-  pkr1: { api_id: '27334', rate: 59.6409 }, // 한국 30일 (구 28309 삭제)
-  pkr2: { api_id: '27334', rate: 59.6409 }, // 한국 슬로우 → 동일 KR refill SKU
+  pkr1: { api_id: '27334', rate: 59.6409 }, // 한국 구SKU (판매중단)
+  pkr2: { api_id: '27334', rate: 59.6409 },
+  pkr9: { api_id: '35465', rate: 17.2224 }, // 한국 HQ 1년 리필
+  pkr10: { api_id: '35485', rate: 45.444 }, // 한국 30일 리필
   // Instagram 좋아요
   pig13: { api_id: '28283', rate: 0.62 },
   pig15: { api_id: '31244', rate: 0.09 },
   pig16: { api_id: '17541', rate: 0.6855 }, // 인도 (구 29539 삭제)
-  pig17: { api_id: '30710', rate: 1.19 },   // 한국 (구 28306 삭제)
+  pig17: { api_id: '30710', rate: 1.02 },   // 한국
   pig18: { api_id: '29759', rate: 1.72 },
   pig19: { api_id: '30040', rate: 0.7 },
   pig20: { api_id: '22626', rate: 18.77 },
-  pkr3: { api_id: '30711', rate: 1.4 },     // 한국 드롭 → 365 refill KR
-  pkr4: { api_id: '27077', rate: 2.38 },
-  pkr5: { api_id: '30711', rate: 1.4 },
+  pkr3: { api_id: '30711', rate: 1.2 },     // 한국 365 refill
+  pkr4: { api_id: '27077', rate: 2.04 },    // 한국 Real MQ
+  pkr5: { api_id: '33845', rate: 6.912 },   // 한국 Real Exclusive
+  pkr6: { api_id: '36371', rate: 55.296 },  // 한국 랜덤 댓글
+  pkr7: { api_id: '35464', rate: 92.736 },  // 한국 맞춤 댓글
+  pyt17: { api_id: '34592', rate: 3.8708 }, // 한국 Native Views
   // Instagram 기타
   pig25: { api_id: '31255', rate: 0.56 },   // 공유 Worldwide
   // TikTok
