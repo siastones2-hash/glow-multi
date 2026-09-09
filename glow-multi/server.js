@@ -9054,6 +9054,7 @@ app.get('/api/super/smmkings-korea-preview', requireSuperAdmin, async (req, res)
 app.post('/api/super/import-smmkings-korea', requireSuperAdmin, async (req, res) => {
   try {
     const { maxPerBucket, dryRun } = req.body || {};
+    const seeded = dryRun ? 0 : await ensureSmmkingsSeedServices().catch(() => 0);
     const result = await importSmmkingsKoreaServices({
       maxPerBucket: maxPerBucket || 2,
       dryRun: !!dryRun,
@@ -9063,9 +9064,9 @@ app.post('/api/super/import-smmkings-korea', requireSuperAdmin, async (req, res)
     const msg = result.dryRun
       ? `미리보기: 추가 후보 ${result.wouldAdd?.length || 0}개 (전체 한국 HQ ${result.candidates}개)`
       : (result.count > 0
-        ? `연동 B 한국 ${result.count}개 추가`
-        : '추가할 연동 B 한국 HQ 상품 없음 (이미 등록 또는 품질 기준 미달)');
-    res.json({ ok: true, message: msg, ...result });
+        ? `연동 B 큐레이션 ${seeded}개 갱신 · 한국 신규 ${result.count}개 추가`
+        : `연동 B 큐레이션 ${seeded}개 갱신 · 추가할 신규 HQ 없음`);
+    res.json({ ok: true, message: msg, seeded, ...result });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -9073,6 +9074,7 @@ app.post('/api/super/import-smmkings-korea', requireSuperAdmin, async (req, res)
 app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) => {
   try {
     const { maxKrPerPlatform, maxPinterest, maxPerBucket, dryRun } = req.body || {};
+    const seeded = dryRun ? 0 : await ensureSmmkingsSeedServices().catch(() => 0);
     const sk = await importSmmkingsKoreaServices({
       maxPerBucket: maxPerBucket || maxKrPerPlatform || 2,
       dryRun: !!dryRun,
@@ -9088,11 +9090,12 @@ app.post('/api/super/import-kr-pinterest', requireSuperAdmin, async (req, res) =
     const skN = sk.count || 0;
     const pinN = pin.pinterest || pin.count || 0;
     const msg = (skN + pinN) > 0
-      ? `연동 B 한국 ${skN}개 · Pinterest ${pinN}개 추가`
-      : '추가할 한국(연동B)·Pinterest HQ 상품 없음 (이미 등록 또는 공급 목록 미제공)';
+      ? `연동 B 큐레이션 ${seeded}개 갱신 · 한국 신규 ${skN}개 · Pinterest ${pinN}개`
+      : `연동 B 큐레이션 ${seeded}개 갱신 · 추가할 한국·Pinterest HQ 없음`;
     res.json({
       ok: true,
       message: msg,
+      seeded,
       smmkingsKorea: sk,
       pinterest: pin,
       count: skN + pinN,
