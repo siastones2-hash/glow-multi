@@ -1484,6 +1484,7 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
     <div class="dhdr">
       <div style="font-size:15px;font-weight:800" id="dhTitle">대시보드</div>
       <div style="display:flex;align-items:center;gap:8px">
+        <div id="hdrSmmkingsChip" style="display:none;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.35);padding:7px 14px;border-radius:100px;font-size:12px;font-weight:700;color:#059669;cursor:default" title="연동 B 잔액 (슈퍼관리자 전용)">B <span id="hSmmkingsBal">$-</span></div>
         <div onclick="goTab('charge')" id="hdrBalChip" style="background:rgba(114,9,183,.08);border:1px solid var(--bd2);padding:7px 16px;border-radius:100px;font-size:13px;font-weight:700;color:var(--p2);cursor:pointer">✨ <span id="hBal">₩0</span></div>
         <button class="bp bsm" id="hdrChargeBtn" style="padding:8px 16px" onclick="goTab('charge')">충전</button>
       </div>
@@ -1928,9 +1929,12 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
           <div style="font-size:18px;font-weight:800">👑 슈퍼관리자</div>
           <span class="super-badge">SUPER 관리자</span>
-          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:#f5f0ff;border:1px solid var(--bd2);padding:6px 14px;border-radius:100px;cursor:pointer" onclick="toggleSecureMode()" id="secureModeBtn">
-            <span id="secureModeIcon">🔓</span>
-            <span style="font-size:12px;font-weight:700" id="secureModeText">보안 모드 OFF</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div id="superSmmkingsChip" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.35);padding:6px 14px;border-radius:100px;font-size:12px;font-weight:700;color:#059669" title="연동 B 잔액">연동 B <span id="sSmmkingsBalTop">$-</span> <span id="sSmmkingsLock" style="font-size:9px;color:#10B981;display:none">🔒</span></div>
+            <div style="display:flex;align-items:center;gap:8px;background:#f5f0ff;border:1px solid var(--bd2);padding:6px 14px;border-radius:100px;cursor:pointer" onclick="toggleSecureMode()" id="secureModeBtn">
+              <span id="secureModeIcon">🔓</span>
+              <span style="font-size:12px;font-weight:700" id="secureModeText">보안 모드 OFF</span>
+            </div>
           </div>
         </div>
         <!-- 전체 현황 -->
@@ -1943,7 +1947,8 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
           <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">💰 전체 크레딧 잔액</div><div style="font-size:22px;font-weight:800;color:#10B981" id="sTotalCreditBal" class="amount-mask">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">고객 충전 승인합</div><div style="font-size:22px;font-weight:800;color:#2563eb" id="sTotalChargeAp" class="amount-mask">₩0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">크레딧 지급합</div><div style="font-size:22px;font-weight:800;color:#c2410c" id="sTotalCreditRecv" class="amount-mask">₩0</div></div>
-          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">🔑 API 잔액 <span id="sApiLock" style="font-size:9px;color:#10B981;display:none">🔒잠금</span></div><div style="font-size:22px;font-weight:800;color:#10B981" id="sApiBalance">-</div></div>
+          <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">🔑 연동 A 잔액 <span id="sApiLock" style="font-size:9px;color:#10B981;display:none">🔒잠금</span></div><div style="font-size:22px;font-weight:800;color:#10B981" id="sApiBalance">-</div></div>
+          <div class="sc" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;border-radius:12px"><div style="font-size:10px;letter-spacing:.1em;color:#065F46;font-weight:700;text-transform:uppercase;margin-bottom:5px">🔑 연동 B 잔액 <span id="sSmmkingsLockCard" style="font-size:9px;color:#059669;display:none">🔒잠금</span></div><div style="font-size:22px;font-weight:800;color:#059669" id="sSmmkingsBalance">-</div></div>
         </div>
 
         <div class="admtabs">
@@ -2393,6 +2398,8 @@ function applyAuthMenus(){
   ge('bni-admin').style.display=isAdmin?'flex':'none';
   ge('si-super').style.display=isSuper?'flex':'none';
   ge('bni-super').style.display=isSuper?'flex':'none';
+  var skChip=ge('hdrSmmkingsChip');
+  if(skChip)skChip.style.display=isSuper?'':'none';
   applyPartnerAdminChrome();
   var admHead=ge('admPanelHead');if(admHead&&!isPartnerSiteAdmin())admHead.style.display='none';
   window._adminCreditOnly=SITE_CONFIG&&!SITE_CONFIG.isDefault&&(CUR.role==='admin'||CUR.role==='partner');
@@ -2682,6 +2689,15 @@ function formatApiBalance(d){
   }
   return '-';
 }
+function formatSmmkingsBalance(d){
+  if(d&&d.smmkingsBalance!=null&&d.smmkingsBalance!=='')return '$'+parseFloat(d.smmkingsBalance).toFixed(2);
+  if(d&&d.smmkingsBalanceError){
+    if(String(d.smmkingsBalanceError).indexOf('미설정')>=0)return '⚠️ 키 미설정';
+    if(String(d.smmkingsBalanceError).indexOf('연결')>=0)return '⚠️ 연결 실패';
+    return '⚠️ '+String(d.smmkingsBalanceError).substring(0,24);
+  }
+  return '-';
+}
 function applyApiBalanceDisplay(d,prefix){
   var el=ge(prefix||'sApiBalance');
   if(!el)return;
@@ -2689,6 +2705,20 @@ function applyApiBalanceDisplay(d,prefix){
   el.title=(d&&d.apiBalanceError)?d.apiBalanceError:'';
   if(d&&d.apiBalanceError)el.style.color='#EF4444';
   else el.style.color='#10B981';
+}
+function applySmmkingsBalanceDisplay(d){
+  var txt=formatSmmkingsBalance(d);
+  var err=!!(d&&d.smmkingsBalanceError&&(d.smmkingsBalance==null||d.smmkingsBalance===''));
+  ['sSmmkingsBalance','sSmmkingsBalTop','hSmmkingsBal'].forEach(function(id){
+    var el=ge(id);if(!el)return;
+    el.textContent=txt;
+    el.title=(d&&d.smmkingsBalanceError)?d.smmkingsBalanceError:'연동 B 잔액';
+    if(id==='sSmmkingsBalance')el.style.color=err?'#EF4444':'#059669';
+  });
+  var locked=!!(d&&d.smmkingsLocked);
+  ['sSmmkingsLock','sSmmkingsLockCard'].forEach(function(id){
+    var el=ge(id);if(el)el.style.display=locked?'inline':'none';
+  });
 }
 function badge(s){
   var m={pending:'background:#FEF3C7;color:#F59E0B',processing:'background:rgba(114,9,183,.1);color:#B5179E',completed:'background:#D1FAE5;color:#10B981',cancelled:'background:#FEE2E2;color:#EF4444',canceled:'background:#FEE2E2;color:#EF4444',refunded:'background:#DBEAFE;color:#3B82F6',partial_refunded:'background:#FEF3C7;color:#F59E0B',failed:'background:#FEE2E2;color:#EF4444',approved:'background:#D1FAE5;color:#10B981',rejected:'background:#FEE2E2;color:#EF4444',reversed:'background:#FEE2E2;color:#EF4444'};
@@ -4878,6 +4908,7 @@ async function loadSuperDash(){
   if(ge('sTotalChargeAp'))ge('sTotalChargeAp').textContent=gf(d.totalChargeApprovedKrw||0);
   if(ge('sTotalCreditRecv'))ge('sTotalCreditRecv').textContent=gf(d.totalCreditReceivedKrw||0);
   if(ge('sApiBalance'))applyApiBalanceDisplay(d,'sApiBalance');
+  applySmmkingsBalanceDisplay(d);
   var lockEl=ge('sApiLock');
   if(lockEl){
     if(d.peakerrLocked){
