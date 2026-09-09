@@ -3347,6 +3347,31 @@ const SMMKINGS_CURATED_SEEDS = [
     description: '한국 Unique Viewer 기반 YouTube 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
   },
   {
+    id: 'sky3', pl: 'youtube', api_id: '5162', cost: 15.00, min: 1000, max: 100000, refill: 0,
+    name: 'YouTube 조회수 — 한국 Unique·수익화 ⭐',
+    description: '한국 Real·Active Unique 조회수입니다. 수익화(Monetization) 성격 조회로, 국내 노출·시청 지표에 유리합니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'sky4', pl: 'youtube', api_id: '4146', cost: 9.60, min: 500, max: 100000, refill: 0,
+    name: 'YouTube 조회수 — 한국 Unique Titan',
+    description: '한국 Unique Viewer(Titan) 조회수입니다. 고모네타 성격 타겟 조회로 국내 시청 지표를 올릴 때 씁니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'sky5', pl: 'youtube', api_id: '7305', cost: 9.00, min: 1000, max: 1000000, refill: 0,
+    name: 'YouTube 조회수 — 한국 모바일 Ads',
+    description: '한국 모바일·Ads-Enabled 조회수입니다. 광고 재생 성격 모바일 조회로 국내 지표용입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'sky6', pl: 'youtube', api_id: '4540', cost: 1.80, min: 10, max: 5000, refill: 0,
+    name: 'YouTube 좋아요 — 한국 (쇼츠·영상)',
+    description: '한국 타겟 YouTube 쇼츠·영상 좋아요입니다. 쇼츠 또는 일반 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'sky7', pl: 'youtube', api_id: '6327', cost: 6.72, min: 500, max: 500000, refill: 0,
+    name: 'YouTube 자동 조회수 — 한국 (신규 영상)',
+    description: '채널에 올라오는 새 영상에 한국 타겟 조회수가 자동으로 들어갑니다. 채널 URL 또는 대표 영상 링크를 입력하세요. (구독자 증가 상품 아님)'
+  },
+  {
     id: 'skt1', pl: 'tiktok', api_id: '3693', cost: 4.13, min: 10, max: 1000000, refill: 1,
     name: 'TikTok 팔로워 — HQ (30일 보장)',
     description: '고품질 TikTok 팔로워입니다. 프로필 링크를 입력하세요.'
@@ -3355,6 +3380,21 @@ const SMMKINGS_CURATED_SEEDS = [
     id: 'skt2', pl: 'tiktok', api_id: '3734', cost: 0.38, min: 50, max: 200000, refill: 1,
     name: 'TikTok 좋아요 — HQ (30일 보장)',
     description: '고품질 TikTok 좋아요입니다. 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'skt3', pl: 'tiktok', api_id: '4778', cost: 0.15, min: 500, max: 5000000, refill: 0,
+    name: 'TikTok 조회수 — 한국 Instant ⭐',
+    description: '한국 타겟 TikTok 조회수(즉시 시작)입니다. 국내 노출 지표를 빠르게 올릴 때 사용하세요. 영상 링크를 입력하세요.'
+  },
+  {
+    id: 'skx1', pl: 'twitter', api_id: '6189', cost: 0.57, min: 500, max: 1000000, refill: 0,
+    name: 'X 조회·노출 — 한국 Instant',
+    description: '한국 타겟 X(트위터) 게시물 조회수+노출입니다. 국내 도달 지표용입니다. 게시물 링크를 입력하세요.'
+  },
+  {
+    id: 'skx2', pl: 'twitter', api_id: '4907', cost: 0.09, min: 500, max: 100000000, refill: 0,
+    name: 'X 영상 조회·노출 — 한국',
+    description: '한국 타겟 X 영상 조회수+노출입니다. 영상 게시물 링크를 입력하세요.'
   },
   // —— 한국 트래픽 카테고리 (Instant · 링크+수량 · 판매≈원가×10, 타 상품 배수와 무관) ——
   {
@@ -3565,6 +3605,7 @@ function scoreSmmkingsKoreaService(s) {
   if (/\bhq\b|high quality|premium|프리미엄/.test(full)) score += 25;
   if (peakerrServiceHasRefill(s) || /refill|보장|guarantee/.test(full)) score += 30;
   if (/age|gender|male|female|남성|여성|연령/.test(full)) score += 15;
+  if (/monetiz|ads-?enabled|unique\s*view/.test(full)) score += 20;
   // 트래픽·백링크는 이미 sktr/skseo 큐레이션 — 자동 수입 제외
   if (/traffic|visit|backlink|seo\b|dofollow|guest\s*post/.test(full) && !/instagram|youtube|tiktok|threads|twitter|facebook|telegram/.test(full)) {
     return -1;
@@ -3572,17 +3613,32 @@ function scoreSmmkingsKoreaService(s) {
   return score;
 }
 
+/** 상품명 우선 타입 판별 (카테고리 Shorts/Subscription 오탐 방지) */
+function detectSmmkingsKoreaType(s) {
+  const name = String(s.name || '');
+  const cat = String(s.category || '');
+  let t = detectServiceTypeKo(name);
+  if (t === '서비스') t = detectServiceTypeKo(`${name} ${cat} ${s.type || ''}`);
+  if (/쇼츠/.test(t) && !/shorts|쇼츠/i.test(name) && /\bviews?\b|\bviewers?\b/i.test(name)) {
+    return /like/i.test(name) ? '좋아요' : '조회수';
+  }
+  if (t === '구독자' && /\bauto\s+video\s+views?\b/i.test(name)) return '조회수';
+  return t;
+}
+
 function formatSmmkingsKoreaName(s, pl, typeKo) {
   const raw = String(s.name || '').trim();
   if (/[\uAC00-\uD7AF]/.test(raw)) return raw.substring(0, 120);
   const plLabel = PL_DISPLAY_KO[pl] || pl;
-  const type = typeKo && typeKo !== '서비스' ? typeKo : detectServiceTypeKo(raw);
+  const type = typeKo && typeKo !== '서비스' ? typeKo : detectSmmkingsKoreaType(s);
   const bits = [];
   const low = raw.toLowerCase();
   if (/\buhq\b/.test(low)) bits.push('UHQ');
   else if (/\bhq\b|high quality/.test(low)) bits.push('HQ');
   if (/\breal\b/.test(low)) bits.push('리얼');
   if (/non[- ]?drop|no drop/.test(low)) bits.push('논드롭');
+  if (/\bauto\s+video\s+views?\b/.test(low)) bits.push('자동');
+  if (/monetiz|ads-?enabled|수익/.test(low)) bits.push('수익화');
   if (/male|men\b|남성/.test(low) && !/female|women|여성/.test(low)) bits.push('남성');
   if (/female|women|여성/.test(low)) bits.push('여성');
   if (/age\s*[±+]?\s*20|±\s*20|연령.?20/.test(low)) bits.push('연령±20');
@@ -3591,7 +3647,7 @@ function formatSmmkingsKoreaName(s, pl, typeKo) {
   else if (/30\s*day|30일/.test(low)) bits.push('30일');
   else if (/refill|guarantee|보장/.test(low)) bits.push('보장');
   const qual = bits.length ? ` — 한국 ${bits.join('·')}` : ' — 한국';
-  const star = (/\buhq\b|\breal\b/.test(low) && (peakerrServiceHasRefill(s) || /refill|guarantee|보장/.test(low))) ? ' ⭐' : '';
+  const star = (/\buhq\b|\breal\b|monetiz/.test(low) && (peakerrServiceHasRefill(s) || /refill|guarantee|보장|monetiz/.test(low))) ? ' ⭐' : '';
   return `${plLabel} ${type}${qual}${star}`.substring(0, 120);
 }
 
@@ -3628,7 +3684,7 @@ async function listSmmkingsKoreaCandidates(opts = {}) {
     const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
     const pl = detectPlat(full);
     if (!SMMKINGS_KR_IMPORT_PLATFORMS.includes(pl)) continue;
-    const typeKo = detectServiceTypeKo(full);
+    const typeKo = detectSmmkingsKoreaType(s);
     if (!SMMKINGS_KR_USEFUL_TYPES.has(typeKo)) continue;
     if (!hasImportQualitySignal(full, score) && score < 150) continue;
     const apiId = String(s.service);
@@ -5478,7 +5534,9 @@ function detectServiceTypeKo(full) {
   if (/\bsaves?\b|bookmark/.test(n)) return '저장';
   if (/impression|reach|\bexpose/.test(n)) return '노출';
   if (/member|group member/.test(n)) return '멤버';
-  if (/subscriber|subscription|\bsubs?\b/.test(n)) return '구독자';
+  // AUTO Video Views [Subscription] = 신규영상 자동조회 (구독자 아님). \bsubs?\b 는 Subscription에 오탐.
+  if (/\bauto\s+video\s+views?\b/.test(n)) return '조회수';
+  if (/subscribers?/.test(n) && !/\bviews?\b|\bviewers?\b/.test(n)) return '구독자';
   // Like가 상품명에 있으면 카테고리 Followers보다 우선 (예: "Twitter Arab Like" + category Followers)
   if (/\blikes?\b/.test(n) && !/\bfollowers?\b/.test(n.split('|')[0] || n)) return '좋아요';
   if (/\blikes?\b/.test(n) && /arab like|korea like|brazil like|usa like|turkish like|india like/i.test(n)) return '좋아요';
@@ -5486,7 +5544,7 @@ function detectServiceTypeKo(full) {
   if (/follower|\bfollow\b/.test(n)) return '팔로워';
   if (/like/.test(n)) return '좋아요';
   if (/review|rating|\bstars?\b|\[\d+\s*star\]|google map|gmb\b|maps custom/.test(n)) return '리뷰';
-  if (/\bviews?\b|\bplay\b|\bwatch\b/.test(n)) return '조회수';
+  if (/\bviews?\b|\bviewers?\b|\bplay\b|\bwatch\b/.test(n)) return '조회수';
   if (/seo|search|organic|keyword/.test(n)) return '검색 유입';
   if (/profile visit|profile view/.test(n)) return '프로필 방문';
   if (/stream|listen|play count|monthly listener/.test(n)) return '재생';
