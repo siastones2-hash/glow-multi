@@ -3321,8 +3321,11 @@ async function loadSiteConfig(){
       nb.style.display='block';
     });
     fillOpsDigestModal(noticeText, od);
-    var hint=ge('opsDigestHomeHint');if(hint)hint.style.display='block';
-    if(!isOpsDigestHiddenToday()){
+    var hint=ge('opsDigestHomeHint');
+    var quiet=!!(od&&od.quiet);
+    if(hint)hint.style.display=quiet?'none':'block';
+    // 변동 있을 때만 자동 팝업 — 변동 없으면 띠배너 날짜만
+    if(!quiet&&!isOpsDigestHiddenToday()){
       setTimeout(function(){openOpsDigestPopup(false)},450);
     }
   }else{
@@ -5688,8 +5691,22 @@ function fillOpsDigestModal(noticeText, od){
   var odb=ge('opsDigestBody'), odd=ge('opsDigestDate'), odi=ge('opsDigestIntro');
   var ods=ge('opsDigestStats'), oda=ge('opsDigestAdded'), odr=ge('opsDigestRemoved');
   var odab=ge('opsDigestAddedBox'), odrb=ge('opsDigestRemovedBox');
-  if(odd)odd.textContent=(od&&od.today)||(String(noticeText||'').match(/(\d{4}-\d{2}-\d{2})/)||[])[1]||kstTodayYmdClient();
-  if(odi)odi.textContent=(od&&od.intro)||'문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.';
+  var titleEl=document.querySelector('#mOpsDigest .ops-modal-title');
+  var quiet=!!(od&&od.quiet);
+  var day=(od&&od.today)||(String(noticeText||'').match(/(\d{4}-\d{2}-\d{2})/)||[])[1]||kstTodayYmdClient();
+  if(odd)odd.textContent=day;
+  if(titleEl)titleEl.textContent=quiet?('상품 점검 · '+day):'오늘 상품 점검을 반영했습니다';
+  if(odi){
+    if(quiet){odi.style.display='none';odi.textContent='';}
+    else{odi.style.display='block';odi.textContent=(od&&od.intro)||'문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.';}
+  }
+  if(quiet){
+    if(ods){ods.classList.remove('on');ods.style.display='none';ods.innerHTML=''}
+    if(odab)odab.style.display='none';
+    if(odrb)odrb.style.display='none';
+    if(odb)odb.textContent='';
+    return;
+  }
   if(od&&ods){
     var chips=[];
     if(od.totalActive!=null)chips.push('주문 가능 '+od.totalActive+'개');
@@ -5698,18 +5715,17 @@ function fillOpsDigestModal(noticeText, od){
     ods.classList.toggle('on',chips.length>0);
     ods.style.display=chips.length?'flex':'none';
   }else if(ods){ods.classList.remove('on');ods.style.display='none';ods.innerHTML=''}
-  function fillList(el,box,items,emptyTxt){
+  function fillList(el,box,items){
     if(!el||!box)return;
     var arr=Array.isArray(items)?items:[];
+    if(!arr.length){box.style.display='none';el.textContent='';return}
     box.style.display='block';
     el.style.whiteSpace='pre-line';
-    el.textContent=arr.length
-      ? arr.map(function(n){return '· '+String(n)}).join('\n')
-      : ('· '+emptyTxt);
+    el.textContent=arr.map(function(n){return '· '+String(n)}).join('\n');
   }
   if(od){
-    fillList(oda,odab,od.added,od.baseline?'오늘은 기준일입니다. 내일부터 추가·중단 내역이 표시됩니다.':'없음 — 검증된 목록을 그대로 유지합니다.');
-    fillList(odr,odrb,od.removed,'없음 — 추가로 중단할 상품이 없었습니다.');
+    fillList(oda,odab,od.added);
+    fillList(odr,odrb,od.removed);
     if(odb){
       if(od.highlights&&od.highlights.length){
         odb.textContent='지금 많이 찾는 상품\n'+od.highlights.slice(0,4).map(function(h){

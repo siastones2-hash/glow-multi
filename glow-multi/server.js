@@ -1279,28 +1279,38 @@ async function buildMemberOpsDigest() {
   const highlights = await pickLiveHighlightServices();
   const added = (changes.added || []).map(n => shortenSvcName(n, 40));
   const removed = (changes.removed || []).map(n => shortenSvcName(n, 40));
+  const quiet = !added.length && !removed.length;
 
-  // 회원용 — 자랑 문구보다 “오늘 무엇을 점검·반영했는지”로 신뢰
+  // 변동 없으면 날짜만 — 쓸데없이 길게 쓰지 않음
+  if (quiet) {
+    const text = `상품 점검 · ${today}`;
+    const payload = {
+      today,
+      totalActive,
+      activeKr,
+      qualityHeld,
+      added: [],
+      removed: [],
+      baseline: !!changes.baseline,
+      highlights: [],
+      quiet: true,
+      headline: text,
+      intro: '',
+    };
+    return { text, changes, today, totalActive, activeKr, highlights: [], qualityHeld, payload, quiet: true };
+  }
+
+  // 변동 있을 때만 상세 — 오늘 무엇을 열고/멈췄는지
   const lines = [
-    `오늘도 판매 상품을 점검해 반영했습니다. (${today})`,
+    `오늘 상품 점검을 반영했습니다. (${today})`,
     `문제가 확인된 상품은 바로 판매를 중단하고, 목록에는 점검 통과분만 남깁니다.`,
     `• 지금 주문 가능 ${totalActive}개` + (activeKr ? ` · 한국·프리미엄 ${activeKr}개` : ''),
     ``,
     `오늘 새로 열린 상품`,
   ];
-  if (added.length) {
-    for (const n of added) lines.push(`· ${n}`);
-  } else {
-    lines.push(changes.baseline
-      ? `· 오늘은 기준일입니다. 내일부터 추가·중단 내역이 표시됩니다.`
-      : `· 없음 — 검증된 목록을 그대로 유지합니다.`);
-  }
+  for (const n of added) lines.push(`· ${n}`);
   lines.push(``, `오늘 판매를 멈춘 상품`);
-  if (removed.length) {
-    for (const n of removed) lines.push(`· ${n}`);
-  } else {
-    lines.push(`· 없음 — 추가로 중단할 상품이 없었습니다.`);
-  }
+  for (const n of removed) lines.push(`· ${n}`);
   if (highlights.length) {
     lines.push(``, `지금 많이 찾는 상품`);
     for (const h of highlights) {
@@ -1318,10 +1328,11 @@ async function buildMemberOpsDigest() {
     removed,
     baseline: !!changes.baseline,
     highlights: (highlights || []).map(h => ({ name: h.name, snip: h.snip })),
+    quiet: false,
     headline: `오늘 상품 점검 반영 · ${today}`,
     intro: '문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.',
   };
-  return { text: lines.join('\n'), changes, today, totalActive, activeKr, highlights, qualityHeld, payload };
+  return { text: lines.join('\n'), changes, today, totalActive, activeKr, highlights, qualityHeld, payload, quiet: false };
 }
 
 /** 공지 배너(notice)에 운영 요약 반영 — default만 / 전체 활성 사이트 */
@@ -1361,26 +1372,32 @@ async function applyOpsDigestToSites(opts = {}) {
   if (opts.notifyTg !== false && scope === 'active') {
     const addN = built.changes?.added?.length || 0;
     const rmN = built.changes?.removed?.length || 0;
+    const quiet = !!(built.quiet || built.payload?.quiet || (!addN && !rmN));
     // 파트너 관리자용 — 멀티테넌트/갱신 건수 등 운영 메타 넣지 않음
-    let msg =
-      `✅ <b>오늘 상품 점검 반영</b>\n\n` +
-      `📅 ${built.today || kstTodayYmd()}\n` +
-      `📦 주문 가능 ${built.totalActive ?? '—'}개` +
-      (built.activeKr != null ? ` · 한국·프리미엄 ${built.activeKr}개` : '') +
-      `\n➕ 신규 ${addN} · ⏸ 중단 ${rmN}`;
-    if (built.highlights?.length) {
-      msg += `\n\n<b>많이 찾는 상품</b>`;
-      for (const h of built.highlights.slice(0, 3)) {
-        msg += `\n· ${shortenSvcName(h.name, 36)}`;
+    let msg;
+    if (quiet) {
+      msg = `✅ 상품 점검 · ${built.today || kstTodayYmd()}\n오늘 변동 없음`;
+    } else {
+      msg =
+        `✅ <b>오늘 상품 점검 반영</b>\n\n` +
+        `📅 ${built.today || kstTodayYmd()}\n` +
+        `📦 주문 가능 ${built.totalActive ?? '—'}개` +
+        (built.activeKr != null ? ` · 한국·프리미엄 ${built.activeKr}개` : '') +
+        `\n➕ 신규 ${addN} · ⏸ 중단 ${rmN}`;
+      if (built.highlights?.length) {
+        msg += `\n\n<b>많이 찾는 상품</b>`;
+        for (const h of built.highlights.slice(0, 3)) {
+          msg += `\n· ${shortenSvcName(h.name, 36)}`;
+        }
       }
+      if (addN) {
+        msg += `\n\n<b>오늘 새로 열림</b>\n` + built.changes.added.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+      }
+      if (rmN) {
+        msg += `\n\n<b>오늘 판매 중단</b>\n` + built.changes.removed.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+      }
+      msg += `\n\n회원 화면에 오늘 점검 결과가 반영되었습니다.`;
     }
-    if (addN) {
-      msg += `\n\n<b>오늘 새로 열림</b>\n` + built.changes.added.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
-    }
-    if (rmN) {
-      msg += `\n\n<b>오늘 판매 중단</b>\n` + built.changes.removed.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
-    }
-    msg += `\n\n회원 화면에 오늘 점검 결과가 반영되었습니다.`;
     tg = await broadcastToAdminTelegrams(msg);
   }
 
