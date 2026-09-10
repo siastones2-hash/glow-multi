@@ -614,6 +614,18 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
 .mk-prod-body h3{font-size:18px;color:var(--light-text);margin-bottom:8px;}
 .mk-prod-body p{font-size:13px;line-height:1.7;margin-bottom:16px;}
 .mk-prod-more{font-family:'IBM Plex Mono';font-size:11px;color:var(--light-text);font-weight:600;}
+.mk-prod-price{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:#8B6914;margin:10px 0 12px;}
+.mk-prod-price.inquiry{font-size:14px;font-weight:600;color:var(--light-muted);}
+.mk-prod-actions{display:flex;gap:8px;margin-top:4px;}
+.mk-prod-actions .btn{flex:1;padding:10px 8px;font-size:11px;min-height:38px;}
+.mk-shop-block{background:var(--light);padding:clamp(48px,6vw,72px) 0 var(--section-y);}
+.mk-shop-block h2{color:var(--light-text);}
+.mk-shop-block .shop-chip{border-color:rgba(0,0,0,.12);background:#fff;color:var(--light-muted);}
+.mk-shop-block .shop-chip.active,.mk-shop-block .shop-chip:hover{border-color:var(--gold-dim);color:#8B6914;background:rgba(212,175,55,.08);}
+.mk-shop-block .shop-card{background:#fff;border-color:rgba(0,0,0,.08);}
+.mk-shop-block .shop-body h3{color:var(--light-text);}
+.mk-shop-block .shop-body p{color:var(--light-muted);}
+.mk-shop-block .shop-count{color:var(--light-muted);}
 .mk-story{position:relative;min-height:clamp(360px,50vw,520px);display:flex;align-items:center;background-size:cover;background-position:center;}
 .mk-story::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.72),rgba(0,0,0,.35));}
 .mk-story-inner{position:relative;z-index:2;display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;padding:var(--section-y) 0;}
@@ -838,15 +850,14 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
 <div class="mouse-glow" id="mouseGlow"></div>
 <div class="m-backdrop" id="mBackdrop" onclick="closeMenu()"></div>
 <div class="m-drawer" id="mDrawer">
-  <a onclick="navGo('home')">쇼핑몰</a>
-  <a onclick="navGo('products')">전체상품</a>
-  <a onclick="shopFilter('driver');navGo('home')">드라이버</a>
-  <a onclick="shopFilter('iron');navGo('home')">아이언</a>
-  <a onclick="shopFilter('wedge');navGo('home')">웨지</a>
+  <a onclick="homeScroll('home-products')">제품소개</a>
+  <a onclick="homeScroll('shopMain')">쇼핑</a>
+  <a onclick="navGo('nigodemo')">스토리</a>
+  <a onclick="homeScroll('home-fitting')">피팅</a>
   <a onclick="navGo('magnificat')">골프화</a>
   <a onclick="openCart()">장바구니</a>
   <a onclick="navGo('partners')">고객센터</a>
-  <a onclick="productInquiry()">구매문의</a>
+  <a onclick="productInquiry()">제품문의</a>
 </div>
 
 <nav id="nav" class="intro-wait">
@@ -856,59 +867,101 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
       <div class="brand-text">인터네셔널<br>무사시 634 그룹</div>
     </div>
     <div class="nav-links" id="navLinks">
-      <a data-page="home" onclick="navGo('home')">쇼핑몰</a>
-      <a data-page="products" onclick="navGo('products')">전체상품</a>
-      <a onclick="shopFilter('driver');navGo('home')">드라이버</a>
-      <a onclick="shopFilter('iron');navGo('home')">아이언</a>
-      <a onclick="shopFilter('wedge');navGo('home')">웨지</a>
+      <a data-page="home" onclick="navGo('home');homeScroll('home-products')">제품소개</a>
+      <a onclick="homeScroll('shopMain')">쇼핑</a>
+      <a onclick="navGoIron('musashi-634','cps-graphene-7i')">기술력</a>
+      <a onclick="homeScroll('home-fitting')">피팅</a>
+      <a data-page="nigodemo" onclick="navGo('nigodemo')">스토리</a>
       <a data-page="magnificat" class="mag-nav" onclick="navGo('magnificat')">골프화</a>
       <a data-page="partners" onclick="navGo('partners')">고객센터</a>
       <span class="nav-divider"></span>
       <a class="nav-cart" onclick="openCart()">장바구니 <span class="cart-badge" id="cartBadge">0</span></a>
       <div class="nav-util">
-        <button class="btn-nav-inq btn-inq-fill" onclick="productInquiry()">구매문의</button>
+        <button class="btn-nav-inq btn-inq-outline" onclick="productInquiry()">제품문의</button>
+        <button class="btn-nav-inq btn-inq-fill" onclick="homeScroll('home-fitting')">피팅문의</button>
       </div>
     </div>
     <button class="hamburger" onclick="toggleMenu()" aria-label="메뉴"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
-<!-- HOME · SHOP -->
+<!-- HOME · Mockup + Shop -->
 <div id="page-home" class="page active">
-  <section class="shop-banner" id="homeHero">
-    <img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="">
-    <div class="shop-banner-inner">
-      <p class="mk-hero-kicker" style="color:var(--gold-light);">MUSASHI 634 OFFICIAL SHOP</p>
-      <h1>무사시634 공식몰</h1>
-      <p>모세의 기적 드라이버 · CPS 그래핀 7아이언 · Magnificat 골프화 — 장바구니 담기 후 구매 문의로 주문하세요.</p>
-      <div class="mk-hero-btns" style="margin-top:20px;">
-        <button class="btn btn-primary" onclick="document.getElementById('shopMain').scrollIntoView({behavior:'smooth'})">쇼핑 시작 →</button>
-        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.35);color:#fff;" onclick="productInquiry()">구매 문의</button>
+  <section class="mk-hero" id="homeHero">
+    <div class="mk-hero-slide active" style="background-image:url('assets/nigodemo/jehovah-nissi-luxury.jpg')"></div>
+    <div class="mk-hero-slide" style="background-image:url('assets/irons/cps-graphene/hero.jpg');background-position:center 30%;"></div>
+    <div class="mk-hero-slide" style="background-image:url('assets/series-showcase.jpg')"></div>
+    <div class="mk-hero-arrows"><button type="button" onclick="heroSlide(-1)" aria-label="이전">‹</button><button type="button" onclick="heroSlide(1)" aria-label="다음">›</button></div>
+    <div class="mk-scroll-side">SCROLL</div>
+    <div class="mk-hero-inner">
+      <p class="mk-hero-kicker" id="mkHeroKicker">JAPANESE CRAFTSMANSHIP · SINCE 1956</p>
+      <h1 id="mkHeroTitle">MUSASHI 634<br>PRECISION FORGED GOLF CLUB</h1>
+      <p class="mk-hero-lead" id="mkHeroLead">일본 장인의 혼이 담긴 프리미엄 골프클럽. 모세의 기적 드라이버 · CPS 그래핀 7아이언 · 장바구니 후 구매 문의.</p>
+      <div class="mk-hero-btns">
+        <button class="btn btn-primary" onclick="homeScroll('shopMain')">제품 보기 →</button>
+        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.35);color:#fff;" onclick="navGo('nigodemo')">브랜드 스토리 →</button>
       </div>
     </div>
+    <div class="mk-hero-nav"><span id="mkHeroCounter">01</span><div class="mk-hero-dots" id="mkHeroDots"></div></div>
   </section>
 
-  <section class="shop-trust"><div class="wrap shop-trust-inner">
-    <span>✓ 특허 CPS 아이언</span><span>✓ 일본·한국 정품</span><span>✓ 피팅·스펙 상담</span><span>✓ 이메일 구매 문의</span>
+  <section class="mk-light mk-values"><div class="wrap">
+    <div class="mk-values-grid reveal">
+      <div class="mk-val-item"><div class="mk-val-icon">⛩</div><h4>JAPANESE CRAFTSMANSHIP</h4><p>일본식 단조·장인 정신 프리미엄 골프클럽</p></div>
+      <div class="mk-val-item"><div class="mk-val-icon">⚒</div><h4>FORGED TECHNOLOGY</h4><p>니고데모 · CPS 그래핀 특허 기술</p></div>
+      <div class="mk-val-item"><div class="mk-val-icon">◎</div><h4>PRECISION DESIGN</h4><p>스윙·임팩트 정밀 설계</p></div>
+      <div class="mk-val-item"><div class="mk-val-icon">📐</div><h4>FITTING</h4><p>맞춤 피팅·스펙 상담</p></div>
+    </div>
   </div></section>
 
-  <section class="pad" id="shopMain"><div class="wrap">
-    <div class="shop-chips reveal" id="shopChipsHome"></div>
-    <div class="shop-layout reveal">
-      <aside class="shop-side">
-        <h3>카테고리</h3>
-        <ul class="shop-cat-list" id="shopCatsHome"></ul>
-        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.65;">※ 가격은 참고가입니다. 강도·구성별 상이 — 장바구니 후 문의 주세요.</p>
-      </aside>
-      <div>
-        <div class="shop-toolbar">
-          <h2 id="shopTitleHome">전체 상품</h2>
-          <span class="shop-count" id="shopCountHome"></span>
-        </div>
-        <div class="shop-grid" id="shopGridHome"></div>
-      </div>
+  <section class="mk-light pad" id="home-products"><div class="wrap reveal">
+    <div class="mk-products-head">
+      <div><div class="sec-label">Products</div><h2>제품소개</h2><p style="margin-top:10px;">카테고리별 대표 라인 · 클릭 또는 장바구니 담기</p></div>
+      <button class="mk-products-link" onclick="homeScroll('shopMain')">전체 상품 보기 →</button>
     </div>
-  </section>
+    <div class="mk-prod-grid">
+      <article class="mk-prod-card" onclick="navGo('nigodemo')">
+        <img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="드라이버">
+        <div class="mk-prod-body"><div class="mk-prod-en">DRIVER</div><h3>드라이버</h3><p>THE MIRACLE OF MOSES · 495cc · 250~260g</p><div class="mk-prod-price inquiry">가격 문의</div><div class="mk-prod-actions"><button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation();addToCart('moses-driver')">담기</button><button type="button" class="btn btn-ghost btn-sm" style="border-color:rgba(0,0,0,.15);color:var(--light-text);" onclick="event.stopPropagation();navGo('nigodemo')">상세</button></div></div>
+      </article>
+      <article class="mk-prod-card mk-iron" onclick="navGoIron('musashi-634','cps-graphene-7i')">
+        <img src="assets/irons/cps-graphene/hero.jpg" alt="CPS 그래핀 7아이언">
+        <div class="mk-prod-body"><div class="mk-prod-en">IRON</div><h3>아이언</h3><p>CPS 그래핀 7아이언 · #5~SW · 특허</p><div class="mk-prod-price">₩ 1,890,000</div><div class="mk-prod-actions"><button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation();addToCart('cps-iron')">담기</button><button type="button" class="btn btn-ghost btn-sm" style="border-color:rgba(0,0,0,.15);color:var(--light-text);" onclick="event.stopPropagation();navGoIron('musashi-634','cps-graphene-7i')">상세</button></div></div>
+      </article>
+      <article class="mk-prod-card" onclick="navGoProduct('nicodemus')">
+        <img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="웨지">
+        <div class="mk-prod-body"><div class="mk-prod-en">WEDGE</div><h3>웨지</h3><p>NICODEMUS 단조 웨지 48°~60°</p><div class="mk-prod-price inquiry">가격 문의</div><div class="mk-prod-actions"><button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation();addToCart('nicodemus-wedge')">담기</button><button type="button" class="btn btn-ghost btn-sm" style="border-color:rgba(0,0,0,.15);color:var(--light-text);" onclick="event.stopPropagation();navGoProduct('nicodemus')">상세</button></div></div>
+      </article>
+      <article class="mk-prod-card" onclick="navGoProduct('mla')">
+        <img src="assets/series-showcase.jpg" alt="퍼터">
+        <div class="mk-prod-body"><div class="mk-prod-en">PUTTER</div><h3>퍼터</h3><p>MLA 퍼터 · 말렛/블레이드</p><div class="mk-prod-price inquiry">가격 문의</div><div class="mk-prod-actions"><button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation();addToCart('mla-putter')">담기</button><button type="button" class="btn btn-ghost btn-sm" style="border-color:rgba(0,0,0,.15);color:var(--light-text);" onclick="event.stopPropagation();navGoProduct('mla')">상세</button></div></div>
+      </article>
+    </div>
+  </div></section>
+
+  <section class="mk-shop-block" id="shopMain"><div class="wrap">
+    <div class="shop-toolbar reveal">
+      <div><div class="sec-label">Shop</div><h2 id="shopTitleHome">인기 상품</h2><p style="margin-top:8px;font-size:14px;color:var(--light-muted);">참고가 · VAT 포함 · 장바구니 후 구매 문의</p></div>
+      <span class="shop-count" id="shopCountHome"></span>
+    </div>
+    <div class="shop-chips reveal" id="shopChipsHome"></div>
+    <div class="shop-grid reveal" id="shopGridHome"></div>
+  </div></section>
+
+  <section class="mk-fitting" id="home-fitting"><div class="wrap">
+    <div class="mk-fitting-head reveal">
+      <div class="sec-label" style="color:var(--gold-light);">Fitting</div>
+      <h2>MUSASHI 634 FITTING</h2>
+      <p>정확한 데이터로 가장 잘 맞는 클럽을 — 드라이버 · CPS 아이언 · 웨지 스펙·강도·길이 맞춤 상담</p>
+      <button class="btn btn-primary" style="margin-top:24px;" onclick="productInquiry()">피팅 상담 신청 →</button>
+    </div>
+    <div class="mk-fit-steps reveal">
+      <div class="mk-fit-step"><div class="mk-fit-num">01</div><h4>상담</h4><p>현재 클럽·스윙 특성·목표 확인</p></div>
+      <div class="mk-fit-step"><div class="mk-fit-num">02</div><h4>측정</h4><p>헤드스피드·런치·스핀 데이터</p></div>
+      <div class="mk-fit-step"><div class="mk-fit-num">03</div><h4>분석</h4><p>드라이버·아이언·웨지 조합 제안</p></div>
+      <div class="mk-fit-step"><div class="mk-fit-num">04</div><h4>맞춤</h4><p>강도·길이·로프트 맞춤 안내</p></div>
+    </div>
+  </div></section>
 
   <section class="pad" style="padding-top:0;"><div class="wrap reveal">
     <div class="band-cta-banner">
@@ -1766,7 +1819,7 @@ function renderShopGrid(gridId,countId,titleId){
   const cnt=document.getElementById(countId);
   if(cnt)cnt.textContent=list.length+'개 상품';
   const title=document.getElementById(titleId);
-  if(title)title.textContent=SHOP_CAT_LABELS[shopFilt]||'전체 상품';
+  if(title)title.textContent=titleId==='shopTitleHome'&&shopFilt==='all'?'인기 상품':(SHOP_CAT_LABELS[shopFilt]||'전체 상품');
 }
 function renderShopCats(sideId,chipsId){
   const mkBtn=(cat,cls)=>`<button type="button" class="${cls}${shopFilt===cat?' active':''}" onclick="shopFilter('${cat}')">${SHOP_CAT_LABELS[cat]}</button>`;
@@ -1777,14 +1830,14 @@ function renderShopCats(sideId,chipsId){
 }
 function shopFilter(cat){
   shopFilt=cat;
-  renderShopCats('shopCatsHome','shopChipsHome');
+  renderShopCats(null,'shopChipsHome');
   renderShopCats('shopCatsProducts','shopChipsProducts');
   renderShopGrid('shopGridHome','shopCountHome','shopTitleHome');
   renderShopGrid('shopGridProducts','shopCountProducts',null);
   const main=document.getElementById('shopMain');
   if(main&&document.getElementById('page-home').classList.contains('active'))main.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function initShop(){renderShopCats('shopCatsHome','shopChipsHome');renderShopCats('shopCatsProducts','shopChipsProducts');shopFilter(shopFilt);updateCartUI();}
+function initShop(){renderShopCats(null,'shopChipsHome');renderShopCats('shopCatsProducts','shopChipsProducts');shopFilter(shopFilt);updateCartUI();}
 function ironCardHtml(p,i){
   const cls=i.featured?'iron-card featured':'iron-card';
   const price=i.price?`<div class="ic-price">₩ ${i.price} ${i.priceOrig?`<span style="color:var(--muted);font-size:11px;text-decoration:line-through;margin-left:6px;">₩${i.priceOrig}</span>`:''}</div>`:'';
