@@ -1280,34 +1280,34 @@ async function buildMemberOpsDigest() {
   const added = (changes.added || []).map(n => shortenSvcName(n, 40));
   const removed = (changes.removed || []).map(n => shortenSvcName(n, 40));
 
-  // 회원 홈용 — 매일 관리 결과(추가·중단)를 분명히 보여 신뢰 강화
+  // 회원용 — 자랑 문구보다 “오늘 무엇을 점검·반영했는지”로 신뢰
   const lines = [
-    `좋은 상품만 판매합니다. 매일 품질·연동을 점검한 뒤 반영합니다. (${today})`,
-    `• 지금 판매 중 ${totalActive}개 · 한국·프리미엄 ${activeKr}개`,
-    `• 품질 관리(판매중단) 누적 ${qualityHeld}개`,
+    `오늘도 판매 상품을 점검해 반영했습니다. (${today})`,
+    `문제가 확인된 상품은 바로 판매를 중단하고, 목록에는 점검 통과분만 남깁니다.`,
+    `• 지금 주문 가능 ${totalActive}개` + (activeKr ? ` · 한국·프리미엄 ${activeKr}개` : ''),
     ``,
-    `➕ 오늘 추가`,
+    `오늘 새로 열린 상품`,
   ];
   if (added.length) {
     for (const n of added) lines.push(`· ${n}`);
   } else {
     lines.push(changes.baseline
-      ? `· (첫 점검 기준 저장 · 내일부터 추가 목록 표시)`
-      : `· 없음 — 기존 검증 상품 유지`);
+      ? `· 오늘은 기준일입니다. 내일부터 추가·중단 내역이 표시됩니다.`
+      : `· 없음 — 검증된 목록을 그대로 유지합니다.`);
   }
-  lines.push(``, `⏸ 오늘 판매 중단`);
+  lines.push(``, `오늘 판매를 멈춘 상품`);
   if (removed.length) {
     for (const n of removed) lines.push(`· ${n}`);
   } else {
-    lines.push(`· 없음 — 문제 상품 없음`);
+    lines.push(`· 없음 — 추가로 중단할 상품이 없었습니다.`);
   }
   if (highlights.length) {
-    lines.push(``, `지금 이용 가능한 상품 예시`);
+    lines.push(``, `지금 많이 찾는 상품`);
     for (const h of highlights) {
       lines.push(`· ${h.name} — ${h.snip}`);
     }
   }
-  lines.push(``, `자세한 목록은 「서비스 주문」에서 확인해 주세요.`);
+  lines.push(``, `전체 목록은 「서비스 주문」에서 확인해 주세요.`);
 
   const payload = {
     today,
@@ -1318,7 +1318,8 @@ async function buildMemberOpsDigest() {
     removed,
     baseline: !!changes.baseline,
     highlights: (highlights || []).map(h => ({ name: h.name, snip: h.snip })),
-    headline: `매일 품질 점검 · ${today}`,
+    headline: `오늘 상품 점검 반영 · ${today}`,
+    intro: '문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.',
   };
   return { text: lines.join('\n'), changes, today, totalActive, activeKr, highlights, qualityHeld, payload };
 }
@@ -1349,6 +1350,7 @@ async function applyOpsDigestToSites(opts = {}) {
     removed: built.changes?.removed || [],
     highlights: (built.highlights || []).map(h => ({ name: h.name, snip: h.snip })),
     headline: `매일 품질 점검 · ${built.today || kstTodayYmd()}`,
+    intro: '문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.',
   };
   await setGlobalSetting('ops_digest_payload', JSON.stringify(payload));
   if (built.changes?.snapshot) {
@@ -1361,25 +1363,24 @@ async function applyOpsDigestToSites(opts = {}) {
     const rmN = built.changes?.removed?.length || 0;
     // 파트너 관리자용 — 멀티테넌트/갱신 건수 등 운영 메타 넣지 않음
     let msg =
-      `✅ <b>오늘 품질 점검 완료</b> — 좋은 상품만 유지\n\n` +
+      `✅ <b>오늘 상품 점검 반영</b>\n\n` +
       `📅 ${built.today || kstTodayYmd()}\n` +
-      `📦 판매 중 ${built.totalActive ?? '—'}개` +
+      `📦 주문 가능 ${built.totalActive ?? '—'}개` +
       (built.activeKr != null ? ` · 한국·프리미엄 ${built.activeKr}개` : '') +
-      (built.qualityHeld != null ? `\n🛡 품질 관리(판매중단) ${built.qualityHeld}개` : '') +
       `\n➕ 신규 ${addN} · ⏸ 중단 ${rmN}`;
     if (built.highlights?.length) {
-      msg += `\n\n<b>판매 중 예시</b>`;
+      msg += `\n\n<b>많이 찾는 상품</b>`;
       for (const h of built.highlights.slice(0, 3)) {
         msg += `\n· ${shortenSvcName(h.name, 36)}`;
       }
     }
     if (addN) {
-      msg += `\n\n<b>오늘 추가</b>\n` + built.changes.added.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+      msg += `\n\n<b>오늘 새로 열림</b>\n` + built.changes.added.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
     }
     if (rmN) {
-      msg += `\n\n<b>오늘 중단</b>\n` + built.changes.removed.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+      msg += `\n\n<b>오늘 판매 중단</b>\n` + built.changes.removed.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
     }
-    msg += `\n\n회원 홈·상단 공지에 “좋은 상품만 판매” 안내가 반영되었습니다.`;
+    msg += `\n\n회원 화면에 오늘 점검 결과가 반영되었습니다.`;
     tg = await broadcastToAdminTelegrams(msg);
   }
 
