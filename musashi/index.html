@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>인터네셔널 무사시 634 그룹 · 무사시골프채</title>
+<title>무사시634 공식몰 · MUSASHI 634 SHOP</title>
 <meta name="description" content="인터네셔널 무사시 634 그룹 · 일본식 단조 프리미엄 골프클럽 JEHOVAH NISHI, NICODEMUS, PASSOVER 등 10시리즈">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MUSASHI 634">
@@ -645,6 +645,69 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
 .mk-home-sub{padding:var(--section-y) 0;}
 @media(max-width:1024px){.mk-prod-grid,.mk-feature-grid,.mk-fit-steps{grid-template-columns:repeat(2,1fr);}.mk-values-grid{grid-template-columns:repeat(2,1fr);}.mk-story-inner{grid-template-columns:1fr;}.nav-util{display:none;}}
 @media(max-width:640px){.mk-prod-grid,.mk-feature-grid,.mk-fit-steps,.mk-values-grid{grid-template-columns:1fr;}.mk-hero h1{font-size:30px;}.mk-scroll-side{display:none;}.mk-hero-arrows{display:none;}}
+/* —— Shop mall —— */
+.shop-trust{background:var(--surface);border-bottom:1px solid var(--glass-bd);padding:14px 0;}
+.shop-trust-inner{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 24px;font-size:12px;color:var(--muted);}
+.shop-trust-inner span{color:var(--gold-light);}
+.shop-layout{display:grid;grid-template-columns:200px 1fr;gap:28px;align-items:start;padding:var(--section-y) 0;}
+.shop-side{position:sticky;top:calc(var(--nav-h) + 16px);background:var(--surface);border:1px solid var(--glass-bd);border-radius:12px;padding:18px;}
+.shop-side h3{font-size:13px;margin-bottom:14px;color:var(--heading);}
+.shop-cat-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
+.shop-cat-list button{width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;font-size:14px;transition:.2s;}
+.shop-cat-list button:hover,.shop-cat-list button.active{background:rgba(212,175,55,.1);color:var(--gold-light);font-weight:600;}
+.shop-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+.shop-toolbar h2{font-size:clamp(22px,3vw,32px);margin:0;}
+.shop-count{font-size:13px;color:var(--muted);}
+.shop-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.shop-chip{padding:8px 14px;border-radius:100px;border:1px solid var(--glass-bd);background:var(--surface);color:var(--muted);font-size:12px;cursor:pointer;transition:.2s;}
+.shop-chip.active,.shop-chip:hover{border-color:var(--gold);color:var(--gold-light);background:rgba(212,175,55,.08);}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;}
+.shop-card{background:var(--surface);border:1px solid var(--glass-bd);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:.3s;}
+.shop-card:hover{border-color:rgba(212,175,55,.35);transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+.shop-thumb{position:relative;aspect-ratio:1/1;background:#111;cursor:pointer;overflow:hidden;}
+.shop-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+.shop-card:hover .shop-thumb img{transform:scale(1.04);}
+.shop-thumb.contain img{object-fit:contain;padding:12px;background:#ece8e0;}
+.shop-badge{position:absolute;top:10px;left:10px;background:var(--gold);color:var(--navy);font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;font-family:'IBM Plex Mono';}
+.shop-badge.patent{background:#1e293b;color:var(--gold-light);border:1px solid rgba(212,175,55,.4);}
+.shop-body{padding:16px 16px 18px;display:flex;flex-direction:column;flex:1;gap:8px;}
+.shop-cat{font-family:'IBM Plex Mono';font-size:10px;color:var(--gold-dim);letter-spacing:.12em;}
+.shop-body h3{font-size:15px;line-height:1.45;cursor:pointer;color:var(--heading);}
+.shop-body p{font-size:12px;color:var(--muted);line-height:1.65;flex:1;}
+.shop-price-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.shop-price{font-size:18px;font-weight:700;color:var(--gold-light);font-family:'Sora',sans-serif;}
+.shop-price del{font-size:12px;color:var(--muted);font-weight:400;text-decoration:line-through;margin-right:4px;}
+.shop-price.inquiry{font-size:15px;color:var(--text);}
+.shop-actions{display:flex;gap:8px;margin-top:10px;}
+.shop-actions .btn{flex:1;padding:10px 8px;font-size:12px;min-height:40px;}
+.shop-banner{position:relative;min-height:320px;background:#0a0a0a;display:flex;align-items:flex-end;overflow:hidden;}
+.shop-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;}
+.shop-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.75),rgba(0,0,0,.2));}
+.shop-banner-inner{position:relative;z-index:2;padding:48px clamp(20px,4vw,40px);max-width:1280px;margin:0 auto;width:100%;}
+.shop-banner-inner h1{font-size:clamp(28px,4.5vw,44px);color:#fff;text-align:left;margin:0;}
+.shop-banner-inner p{color:rgba(255,255,255,.8);margin-top:12px;max-width:520px;line-height:1.75;}
+.nav-cart{position:relative;display:inline-flex;align-items:center;gap:6px;padding:8px 14px!important;border-radius:8px;border:1px solid var(--glass-bd)!important;}
+.cart-badge{min-width:18px;height:18px;padding:0 5px;border-radius:100px;background:var(--gold);color:var(--navy);font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';}
+.cart-drawer{position:fixed;top:0;right:0;width:min(400px,92vw);height:100vh;background:var(--surface);border-left:1px solid var(--glass-bd);z-index:200;transform:translateX(100%);transition:.35s;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);}
+.cart-drawer.open{transform:none;}
+.cart-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:199;opacity:0;visibility:hidden;transition:.3s;}
+.cart-backdrop.open{opacity:1;visibility:visible;}
+.cart-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid var(--glass-bd);}
+.cart-head h3{font-size:17px;}
+.cart-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;}
+.cart-list{flex:1;overflow:auto;padding:16px 22px;}
+.cart-empty{color:var(--muted);text-align:center;padding:48px 16px;font-size:14px;line-height:1.75;}
+.cart-item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;padding:14px 0;border-bottom:1px solid var(--glass-bd);align-items:start;}
+.cart-item img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--glass-bd);background:#111;}
+.cart-item h4{font-size:13px;line-height:1.45;margin-bottom:4px;}
+.cart-item .cp{font-size:12px;color:var(--gold-light);}
+.cart-item button{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;margin-top:6px;}
+.cart-foot{padding:18px 22px;border-top:1px solid var(--glass-bd);background:rgba(15,23,42,.5);}
+.cart-total{display:flex;justify-content:space-between;margin-bottom:14px;font-size:14px;}
+.cart-total strong{color:var(--gold-light);font-size:18px;}
+.shop-buy-bar{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 20px;margin-top:28px;background:var(--surface);border:1px solid var(--glass-bd);border-radius:12px;box-shadow:var(--shadow-lg);}
+.shop-buy-bar .shop-price{font-size:22px;}
+@media(max-width:900px){.shop-layout{grid-template-columns:1fr;}.shop-side{position:static;}.shop-cat-list{flex-direction:row;flex-wrap:wrap;}.shop-cat-list button{width:auto;}}
 .band-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
 .band-meta span{font-family:'IBM Plex Mono';font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid var(--glass-bd);color:var(--muted);}
 .quote-box{border-left:3px solid var(--gold);padding:20px 24px;margin:36px 0;background:rgba(212,175,55,.05);border-radius:0 12px 12px 0;color:var(--muted);font-size:14px;line-height:1.85;}
@@ -775,16 +838,15 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
 <div class="mouse-glow" id="mouseGlow"></div>
 <div class="m-backdrop" id="mBackdrop" onclick="closeMenu()"></div>
 <div class="m-drawer" id="mDrawer">
-  <a onclick="navGo('home')">홈</a>
-  <a onclick="navGo('products')">제품소개</a>
-  <a onclick="navGo('nigodemo')">스토리 · 드라이버</a>
-  <a onclick="homeScroll('home-fitting')">피팅서비스</a>
-  <a onclick="navGo('magnificat')">Magnificat</a>
+  <a onclick="navGo('home')">쇼핑몰</a>
+  <a onclick="navGo('products')">전체상품</a>
+  <a onclick="shopFilter('driver');navGo('home')">드라이버</a>
+  <a onclick="shopFilter('iron');navGo('home')">아이언</a>
+  <a onclick="shopFilter('wedge');navGo('home')">웨지</a>
+  <a onclick="navGo('magnificat')">골프화</a>
+  <a onclick="openCart()">장바구니</a>
   <a onclick="navGo('partners')">고객센터</a>
-  <a onclick="productInquiry()">제품문의</a>
-  <hr style="border:none;border-top:1px solid var(--glass-bd);margin:8px 0;">
-  <a onclick="navGo('trinity')">Trinity 제품</a>
-  <a onclick="navGo('franchise')">Trinity 가맹</a>
+  <a onclick="productInquiry()">구매문의</a>
 </div>
 
 <nav id="nav" class="intro-wait">
@@ -794,141 +856,60 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
       <div class="brand-text">인터네셔널<br>무사시 634 그룹</div>
     </div>
     <div class="nav-links" id="navLinks">
-      <a data-page="home" onclick="homeScroll('home-story')">브랜드</a>
-      <a data-page="products" onclick="navGo('products')">제품소개</a>
-      <a onclick="homeScroll('home-tech')">기술력</a>
-      <a onclick="homeScroll('home-fitting')">피팅서비스</a>
-      <a data-page="nigodemo" onclick="navGo('nigodemo')">스토리</a>
-      <a onclick="homeScroll('home-gallery')">갤러리</a>
+      <a data-page="home" onclick="navGo('home')">쇼핑몰</a>
+      <a data-page="products" onclick="navGo('products')">전체상품</a>
+      <a onclick="shopFilter('driver');navGo('home')">드라이버</a>
+      <a onclick="shopFilter('iron');navGo('home')">아이언</a>
+      <a onclick="shopFilter('wedge');navGo('home')">웨지</a>
+      <a data-page="magnificat" class="mag-nav" onclick="navGo('magnificat')">골프화</a>
       <a data-page="partners" onclick="navGo('partners')">고객센터</a>
       <span class="nav-divider"></span>
-      <a data-page="magnificat" class="mag-nav" onclick="navGo('magnificat')">Magnificat</a>
-      <a data-page="trinity" class="trinity-nav" onclick="navGo('trinity')">Trinity</a>
+      <a class="nav-cart" onclick="openCart()">장바구니 <span class="cart-badge" id="cartBadge">0</span></a>
       <div class="nav-util">
-        <button class="btn-nav-inq btn-inq-outline" onclick="productInquiry()">제품문의</button>
-        <button class="btn-nav-inq btn-inq-fill" onclick="homeScroll('home-fitting')">피팅문의</button>
+        <button class="btn-nav-inq btn-inq-fill" onclick="productInquiry()">구매문의</button>
       </div>
     </div>
     <button class="hamburger" onclick="toggleMenu()" aria-label="메뉴"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
-<!-- HOME · MUSASHI ONLY -->
+<!-- HOME · SHOP -->
 <div id="page-home" class="page active">
-  <section class="mk-hero" id="homeHero">
-    <div class="mk-hero-slide active" style="background-image:url('assets/nigodemo/jehovah-nissi-luxury.jpg')"></div>
-    <div class="mk-hero-slide" style="background-image:url('assets/irons/cps-graphene/hero.jpg');background-position:center 30%;"></div>
-    <div class="mk-hero-slide" style="background-image:url('assets/series-showcase.jpg')"></div>
-    <div class="mk-hero-arrows"><button type="button" onclick="heroSlide(-1)" aria-label="이전">‹</button><button type="button" onclick="heroSlide(1)" aria-label="다음">›</button></div>
-    <div class="mk-scroll-side">SCROLL</div>
-    <div class="mk-hero-inner">
-      <p class="mk-hero-kicker" id="mkHeroKicker">JAPANESE CRAFTSMANSHIP · SINCE 1956</p>
-      <h1 id="mkHeroTitle">MUSASHI 634<br>PRECISION FORGED GOLF CLUB</h1>
-      <p class="mk-hero-lead" id="mkHeroLead">일본 장인의 혼이 담긴 단 하나의 클럽, 무사시 634. THE MIRACLE OF MOSES 드라이버 · CPS 그래핀 7아이언.</p>
-      <div class="mk-hero-btns">
-        <button class="btn btn-primary" onclick="navGo('products')">제품 보기 →</button>
-        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.35);color:#fff;" onclick="homeScroll('home-story')">브랜드 스토리 →</button>
+  <section class="shop-banner" id="homeHero">
+    <img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="">
+    <div class="shop-banner-inner">
+      <p class="mk-hero-kicker" style="color:var(--gold-light);">MUSASHI 634 OFFICIAL SHOP</p>
+      <h1>무사시634 공식몰</h1>
+      <p>모세의 기적 드라이버 · CPS 그래핀 7아이언 · Magnificat 골프화 — 장바구니 담기 후 구매 문의로 주문하세요.</p>
+      <div class="mk-hero-btns" style="margin-top:20px;">
+        <button class="btn btn-primary" onclick="document.getElementById('shopMain').scrollIntoView({behavior:'smooth'})">쇼핑 시작 →</button>
+        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.35);color:#fff;" onclick="productInquiry()">구매 문의</button>
       </div>
     </div>
-    <div class="mk-hero-nav"><span id="mkHeroCounter">01</span><div class="mk-hero-dots" id="mkHeroDots"></div></div>
   </section>
 
-  <section class="mk-light mk-values"><div class="wrap">
-    <div class="mk-values-grid reveal">
-      <div class="mk-val-item"><div class="mk-val-icon">⛩</div><h4>JAPANESE CRAFTSMANSHIP</h4><p>일본식 단조·장인 정신으로 완성한 프리미엄 골프클럽</p></div>
-      <div class="mk-val-item"><div class="mk-val-icon">⚒</div><h4>FORGED TECHNOLOGY</h4><p>니고데모 단조·CPS 그래핀 기술로 비거리와 타구감 균형</p></div>
-      <div class="mk-val-item"><div class="mk-val-icon">◎</div><h4>PRECISION DESIGN</h4><p>스윙·임팩트를 고려한 정밀 설계 · 특허 헤드 기술</p></div>
-      <div class="mk-val-item"><div class="mk-val-icon">📐</div><h4>FITTING</h4><p>개인 맞춤 피팅·스펙 상담으로 최적의 클럽 매칭</p></div>
-    </div>
+  <section class="shop-trust"><div class="wrap shop-trust-inner">
+    <span>✓ 특허 CPS 아이언</span><span>✓ 일본·한국 정품</span><span>✓ 피팅·스펙 상담</span><span>✓ 이메일 구매 문의</span>
   </div></section>
 
-  <section class="mk-light pad" id="home-products"><div class="wrap reveal">
-    <div class="mk-products-head">
-      <div><div class="sec-label">Products</div><h2>제품소개</h2><p style="margin-top:10px;">무사시 634의 주요 라인업 · 아이언은 CPS 그래핀 7아이언만</p></div>
-      <button class="mk-products-link" onclick="navGo('products')">전체 제품 보기 →</button>
-    </div>
-    <div class="mk-prod-grid">
-      <div class="mk-prod-card" onclick="navGo('nigodemo')">
-        <img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="드라이버">
-        <div class="mk-prod-body"><div class="mk-prod-en">DRIVER</div><h3>드라이버</h3><p>THE MIRACLE OF MOSES · 니고데모 초고반발 · 495cc</p><span class="mk-prod-more">자세히 보기 →</span></div>
-      </div>
-      <div class="mk-prod-card mk-iron" onclick="navGoIron('musashi-634','cps-graphene-7i')">
-        <img src="assets/irons/cps-graphene/hero.jpg" alt="CPS 그래핀 7아이언">
-        <div class="mk-prod-body"><div class="mk-prod-en">IRON</div><h3>아이언</h3><p>CPS 그래핀 7아이언 · JEHOVAH NISSI III · #5~SW</p><span class="mk-prod-more">자세히 보기 →</span></div>
-      </div>
-      <div class="mk-prod-card" onclick="navGoProduct('nicodemus')">
-        <img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="웨지">
-        <div class="mk-prod-body"><div class="mk-prod-en">WEDGE</div><h3>웨지</h3><p>NICODEMUS 단조 웨지 48°~60° · FST125 샤프트</p><span class="mk-prod-more">자세히 보기 →</span></div>
-      </div>
-      <div class="mk-prod-card" onclick="navGoProduct('mla')">
-        <img src="assets/series-showcase.jpg" alt="퍼터">
-        <div class="mk-prod-body"><div class="mk-prod-en">PUTTER</div><h3>퍼터</h3><p>MLA 퍼터 · 입문·퍼팅 특화 · 말렛/블레이드</p><span class="mk-prod-more">자세히 보기 →</span></div>
-      </div>
-    </div>
-  </div></section>
-
-  <section class="mk-story" id="home-story" style="background-image:url('assets/series-showcase.jpg')"><div class="wrap mk-story-inner">
-    <div class="mk-story-copy reveal">
-      <div class="sec-label" style="color:var(--gold-light);">Brand Story</div>
-      <h2>무사시 634,<br>그 이름에 담긴 의미</h2>
-      <p>1956년부터 이어온 일본식 단조 기법. JEHOVAH NISSI · SOLI DEO GLORIA 각인과 함께, 장인의 기술과 제작 철학이 담긴 프리미엄 골프클럽을 국내에 유통합니다.</p>
-    </div>
-    <ul class="mk-story-menu reveal">
-      <li onclick="homeScroll('home-story')"><span>①</span> 무사시 634의 의미</li>
-      <li onclick="navGo('products')"><span>②</span> 10시리즈 브랜드 역사</li>
-      <li onclick="homeScroll('home-tech')"><span>③</span> 제조 · 특허 기술</li>
-      <li onclick="navGo('nigodemo')"><span>④</span> 제품에 담긴 뜻 · 모세의 기적</li>
-    </ul>
-  </div></section>
-
-  <div class="mk-craft" style="background-image:url('assets/musashi-products-wall.png')" role="img" aria-label="무사시 제품 벽면"></div>
-
-  <section class="pad" id="home-tech"><div class="wrap">
-    <div class="sec-label reveal">Explore</div>
-    <h2 class="reveal">무사시 634 <span class="grad">핵심</span></h2>
-    <div class="mk-feature-grid reveal" id="home-gallery">
-      <button class="mk-feat-tile" onclick="navGoIron('musashi-634','cps-graphene-7i')"><img src="assets/irons/cps-graphene/detail-3.jpg" alt="기술력"><div class="mk-feat-cap"><div class="en">TECHNOLOGY</div><h4>기술력 · CPS 특허</h4></div></button>
-      <button class="mk-feat-tile" onclick="homeScroll('home-fitting')"><img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="피팅"><div class="mk-feat-cap"><div class="en">FITTING SERVICE</div><h4>피팅서비스</h4></div></button>
-      <button class="mk-feat-tile" onclick="navGo('partners')"><img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="선택하는 이유"><div class="mk-feat-cap"><div class="en">WHY MUSASHI</div><h4>선택하는 이유</h4></div></button>
-      <button class="mk-feat-tile" onclick="navGo('nigodemo')"><img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="갤러리"><div class="mk-feat-cap"><div class="en">GALLERY</div><h4>갤러리 · 드라이버</h4></div></button>
-    </div>
-  </div></section>
-
-  <section class="mk-fitting" id="home-fitting"><div class="wrap">
-    <div class="mk-fitting-head reveal">
-      <div class="sec-label" style="color:var(--gold-light);">Fitting</div>
-      <h2>정확한 데이터로<br>가장 잘 맞는 클럽을</h2>
-      <p>드라이버 · CPS 아이언 · 웨지 — 스펙·강도·길이 맞춤 상담. 공식 밴드와 그룹 문의를 통해 피팅·구매 안내를 받으실 수 있습니다.</p>
-      <button class="btn btn-primary" style="margin-top:24px;" onclick="productInquiry()">피팅 상담 신청 →</button>
-    </div>
-    <div class="mk-fit-steps reveal">
-      <div class="mk-fit-step"><div class="mk-fit-num">01</div><h4>상담</h4><p>현재 클럽·스윙 특성·목표 비거리 확인</p></div>
-      <div class="mk-fit-step"><div class="mk-fit-num">02</div><h4>측정</h4><p>헤드스피드·런치·스핀 등 데이터 측정</p></div>
-      <div class="mk-fit-step"><div class="mk-fit-num">03</div><h4>분석</h4><p>드라이버·아이언·웨지 최적 조합 제안</p></div>
-      <div class="mk-fit-step"><div class="mk-fit-num">04</div><h4>맞춤</h4><p>강도·길이·로프트 맞춤 · 구성 안내</p></div>
-    </div>
-  </div></section>
-
-  <section class="pad mk-home-sub"><div class="wrap reveal">
-    <div class="sec-label">Flagship</div>
-    <h2>대표 <span class="grad">제품</span></h2>
-    <p style="color:var(--muted);margin-top:12px;line-height:1.75;">CPS 그래핀 7아이언 · 모세의 기적 드라이버 · Magnificat 골프화</p>
-    <div class="flagship-grid" id="homeFlagship"></div>
-    <div class="ip-block ip-hero-block" id="home-patent">
-      <div class="ip-cert"><img src="assets/ip/patent-iron-head.png" alt="골프 클럽 헤드 특허증 — 클릭하여 확대" onclick="openLightbox(this.src)"></div>
+  <section class="pad" id="shopMain"><div class="wrap">
+    <div class="shop-chips reveal" id="shopChipsHome"></div>
+    <div class="shop-layout reveal">
+      <aside class="shop-side">
+        <h3>카테고리</h3>
+        <ul class="shop-cat-list" id="shopCatsHome"></ul>
+        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.65;">※ 가격은 참고가입니다. 강도·구성별 상이 — 장바구니 후 문의 주세요.</p>
+      </aside>
       <div>
-        <div class="sec-label" style="margin-bottom:10px;">Patent · Iron</div>
-        <h3 style="font-size:22px;margin-bottom:10px;">CPS 아이언 <span class="grad">특허등록</span></h3>
-        <p style="color:var(--muted);line-height:1.85;margin-bottom:14px;">「골프 클럽 헤드 및 그 제조 방법」— CPS 그래핀 7아이언 헤드 설계·제조 기술 특허 (지식재산처)</p>
-        <table class="ip-table">
-          <tr><th>특허번호</th><td><strong style="color:var(--heading)">제 10-2961654 호</strong></td></tr>
-          <tr><th>출원번호</th><td>제 10-2025-0150866 호</td></tr>
-          <tr><th>등록일</th><td>2026.04.30</td></tr>
-        </table>
-        <button class="btn btn-primary btn-sm" style="margin-top:18px;" onclick="navGoIron('musashi-634','cps-graphene-7i')">CPS 아이언 상세 →</button>
+        <div class="shop-toolbar">
+          <h2 id="shopTitleHome">전체 상품</h2>
+          <span class="shop-count" id="shopCountHome"></span>
+        </div>
+        <div class="shop-grid" id="shopGridHome"></div>
       </div>
     </div>
-  </div></section>
+  </section>
+
   <section class="pad" style="padding-top:0;"><div class="wrap reveal">
     <div class="band-cta-banner">
       <div>
@@ -940,97 +921,6 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
         <a class="btn btn-band" href="https://band.us/@634nicodemus" target="_blank" rel="noopener">밴드 가입하기 →</a>
         <button class="btn btn-ghost" onclick="navGo('nigodemo')">니고데모 라인업</button>
       </div>
-    </div>
-  </div></section>
-  <section class="pad"><div class="wrap reveal">
-    <div class="sec-label">Company</div>
-    <h2>634 <span class="grad">MUSASHI</span></h2>
-    <div class="group-intro">
-      <div>
-        <p style="color:var(--muted);line-height:1.85;font-size:15px;margin-bottom:16px;"><strong style="color:var(--text)">주식회사 인터네셔널무사시634</strong> (인터네셔널 무사시 634 그룹)은 일본식 단조 기법으로 프리미엄 골프클럽을 개발·생산합니다. JEHOVAH NISHI, NICODEMUS, PASSOVER 등 각 시리즈명과 제품 슬로건에는 제작 철학과 뜻이 담겨 있으며, 장인의 기술과 그 정신이 함께합니다.</p>
-      </div>
-      <div class="group-intro-visual">
-        <img class="main" src="assets/series-showcase.jpg" alt="무사시 634 CPS 아이언 · JEHOVAH NISSI 드라이버" onclick="openLightbox(this.src)">
-        <div class="group-intro-cap">
-          <img src="assets/musashi-logo-light.png" alt="MUSASHI 634">
-          <p>INTERNATIONAL MUSASHI 634 GROUP</p>
-        </div>
-      </div>
-    </div>
-  </div></section>
-  <section class="pad"><div class="wrap reveal">
-    <div class="sec-label">Brand · IP</div>
-    <h2>상표등록 · <span class="grad">아이언 특허</span></h2>
-    <p style="color:var(--muted);max-width:720px;margin-top:12px;line-height:1.85;">「MUSASHI 634」브랜드 상표등록과 CPS 그래핀 아이언 헤드 특허를 보유합니다. JEHOVAH NISSI 시리즈는 SOLI DEO GLORIA · The Miracle of Moses 각인과 함께 프리미엄 라인을 대표합니다.</p>
-    <div class="ip-dual">
-      <div class="ip-teaser">
-        <div>
-          <p class="mag-patent" style="margin-top:0;">상표등록증 · MUSASHI 634</p>
-          <table class="ip-table">
-            <tr><th>등록번호</th><td>제 40-2392870 호</td></tr>
-            <tr><th>등록일</th><td>2025.07.24</td></tr>
-            <tr><th>지정상품</th><td>제35류 — 골프가방 소매업 등</td></tr>
-          </table>
-          <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="navGo('nigodemo')">상표 상세 →</button>
-        </div>
-        <img src="assets/ip/trademark-musashi634.jpg" alt="MUSASHI 634 상표등록증" onclick="openLightbox(this.src)">
-      </div>
-      <div class="ip-teaser">
-        <div>
-          <p class="mag-patent" style="margin-top:0;">특허증 · 골프 클럽 헤드</p>
-          <table class="ip-table">
-            <tr><th>특허번호</th><td>제 10-2961654 호</td></tr>
-            <tr><th>발명의 명칭</th><td>골프 클럽 헤드 및 그 제조 방법</td></tr>
-            <tr><th>등록일</th><td>2026.04.30</td></tr>
-          </table>
-          <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="navGoIron('musashi-634','cps-graphene-7i')">CPS 아이언 상세 →</button>
-        </div>
-        <img src="assets/ip/patent-iron-head.png" alt="골프 클럽 헤드 특허증" onclick="openLightbox(this.src)">
-      </div>
-    </div>
-    <div class="ng-gallery" style="margin-top:24px;">
-      <img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="JEHOVAH NISSI 드라이버" onclick="openLightbox(this.src)">
-      <img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="JEHOVAH NISSI 드라이버 필드" onclick="openLightbox(this.src)">
-      <img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="JEHOVAH NISSI 드라이버 클로즈업" onclick="openLightbox(this.src)">
-    </div>
-  </div></section>
-  <section class="pad"><div class="wrap">
-    <div class="sec-label">Lineup</div>
-    <h2>무사시골프채 <span class="grad">10시리즈</span></h2>
-    <p style="color:var(--muted);margin:12px 0 8px;line-height:1.75;">벽면 라인업 순서 · 클릭하면 브랜드 상세</p>
-    <div class="series-wall-wrap reveal" id="homeSeriesWall"></div>
-    <div style="text-align:center;margin-top:32px;"><button class="btn btn-primary" onclick="navGo('products')">전체 라인업 보기 →</button></div>
-  </div></section>
-  <section class="pad"><div class="wrap reveal">
-    <div class="sec-label">Associations</div>
-    <h2>무사시가 설립한 <span class="grad">골프 협회</span></h2>
-    <p style="color:var(--muted);max-width:620px;margin:12px 0 0;line-height:1.85;">인터네셔널 무사시 634 그룹 회장님이 설립·운영하는 한국골프산업협회(KGIA) 및 코리아프로페셔널골프 관련 단체입니다. <span style="color:var(--muted);font-size:13px;">※ 한국프로골프협회(KPGA, kpga.co.kr)와는 별개 기관입니다.</span></p>
-    <div class="assoc-grid">
-      <div class="assoc-card">
-        <div class="assoc-visual assoc-badge"><img src="assets/assoc/kgia.svg" alt="한국골프산업협회 KGIA"></div>
-        <div class="assoc-body"><div class="en">KGIA</div><h3>한국골프산업협회</h3><p>Korea Golf Industry Association. 국내 골프산업 발전과 회원사·관련 기업 협력.</p></div>
-      </div>
-      <div class="assoc-card">
-        <div class="assoc-visual assoc-badge"><img src="assets/assoc/kpg-assoc.svg" alt="코리아프로페셔널골프협회"></div>
-        <div class="assoc-body"><div class="en">KPG Association</div><h3>공익법인 (사) 코리아프로페셔널골프협회</h3><p>2024년 8월 출범 · 2025년 공익법인. 엄재용 이사장. 골프 대중화·문화관광·인식개선.</p></div>
-      </div>
-      <div class="assoc-card">
-        <div class="assoc-visual assoc-badge"><img src="assets/assoc/gpg-corp.svg" alt="주식회사 코리아프로페셔널골프"></div>
-        <div class="assoc-body"><div class="en">GPG</div><h3>주식회사 코리아프로페셔널골프</h3><p>Korea Professional Golf. 골프장·교육·운영 사업. 사회공헌·대회 후원 참여.</p></div>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:32px;"><button class="btn btn-ghost" onclick="navGo('partners')">협회 자세히 보기 →</button></div>
-  </div></section>
-  <section class="pad"><div class="wrap reveal">
-    <div class="sec-label">634 Group · Footwear</div>
-    <h2><span class="grad" style="background:linear-gradient(120deg,var(--gold-light),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Magnificat</span> 명품 골프화</h2>
-    <div class="mag-teaser">
-      <div>
-        <p><strong style="color:var(--text)">마니피카트(Magnificat)</strong> — 「맨발로 걷는 슈즈 &amp; 골프화」. 한·미·일·독 특허 기술이 적용된 수제 명품 골프화. 26개 스프링·어싱·자바라 캡슐로 18홀 피로를 줄입니다.</p>
-        <p style="font-size:13px;margin-top:-8px;">one more step · Made in Korea · ₩1,580,000</p>
-        <button class="btn btn-mag" onclick="navGo('magnificat')">Magnificat 상세 보기 →</button>
-      </div>
-      <img src="assets/magnificat/cover.png" alt="Magnificat 명품 골프화" onclick="openLightbox(this.src)">
     </div>
   </div></section>
 </div>
@@ -1052,8 +942,10 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
             <span>JEHOVAH NISSI</span>
           </div>
           <div class="hero-btns">
-            <a class="btn btn-band" href="https://band.us/@634nicodemus" target="_blank" rel="noopener">공식 밴드 가입 →</a>
-            <button class="btn btn-ghost" onclick="document.getElementById('ng-spec').scrollIntoView({behavior:'smooth'})">스펙 · 기술 보기</button>
+            <button class="btn btn-primary" onclick="addToCart('moses-driver')">장바구니 담기</button>
+            <button class="btn btn-ghost" onclick="shopBuyNow('moses-driver')">구매 문의</button>
+            <a class="btn btn-band" href="https://band.us/@634nicodemus" target="_blank" rel="noopener">공식 밴드</a>
+            <button class="btn btn-ghost" onclick="document.getElementById('ng-spec').scrollIntoView({behavior:'smooth'})">스펙 보기</button>
           </div>
           <div class="nigodemo-hero-stats">
             <div class="ng-stat"><div class="ng-stat-val">495cc</div><div class="ng-stat-label">헤드 볼륨</div></div>
@@ -1309,53 +1201,25 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
   </div></section>
 </div>
 
-<!-- PRODUCTS -->
+<!-- PRODUCTS · full catalog -->
 <div id="page-products" class="page">
   <section class="pad"><div class="wrap">
-    <div class="sec-label">Musashi Golf Clubs</div>
-    <h2>무사시골프채 <span class="grad">10시리즈</span></h2>
-    <p style="color:var(--muted);margin-top:12px;max-width:680px;line-height:1.75;">일본 제조 <strong style="color:var(--text)">골프클럽 10시리즈</strong> · 클럽 종류별로 구분 · Magnificat 골프화는 별도 브랜드</p>
-    <div class="series-showcase reveal" style="margin-top:32px;margin-bottom:8px;">
-      <img src="assets/series-showcase.jpg" alt="무사시 10시리즈" onclick="openLightbox(this.src)">
-      <div class="series-showcase-cap"><span>10 SERIES · JAPAN FORGED</span><p>CPS 그래핀 7아이언 · JEHOVAH NISSI · NICODEMUS · PASSOVER</p></div>
+    <div class="shop-toolbar reveal" style="margin-bottom:8px;">
+      <div><div class="sec-label">Shop</div><h2>전체 상품</h2><p style="color:var(--muted);margin-top:8px;font-size:14px;">판매 가능 제품 · 10시리즈 브랜드 카탈로그</p></div>
+      <span class="shop-count" id="shopCountProducts"></span>
     </div>
-    <div class="filter-row reveal" style="margin-top:28px;">
-      <button onclick="filterProducts('all')" class="filter-btn btn btn-primary btn-sm" data-cat="all">전체 10</button>
-      <button onclick="filterProducts('flagship')" class="filter-btn btn btn-ghost btn-sm" data-cat="flagship">플래그십</button>
-      <button onclick="filterProducts('driver')" class="filter-btn btn btn-ghost btn-sm" data-cat="driver">드라이버</button>
-      <button onclick="filterProducts('iron')" class="filter-btn btn btn-ghost btn-sm" data-cat="iron">아이언·세트</button>
-      <button onclick="filterProducts('putter')" class="filter-btn btn btn-ghost btn-sm" data-cat="putter">퍼터·입문</button>
-      <button onclick="filterProducts('women')" class="filter-btn btn btn-ghost btn-sm" data-cat="women">우먼스</button>
-      <button onclick="filterProducts('forged')" class="filter-btn btn btn-ghost btn-sm" data-cat="forged">단조·프리미엄</button>
-      <button onclick="filterProducts('limited')" class="filter-btn btn btn-ghost btn-sm" data-cat="limited">한정·에디션</button>
-      <button onclick="filterProducts('collector')" class="filter-btn btn btn-ghost btn-sm" data-cat="collector">수집·마스터</button>
-      <button onclick="filterProducts('goods')" class="filter-btn btn btn-ghost btn-sm" data-cat="goods">용품</button>
-    </div>
-    <div class="prod-cat-grid reveal" id="productCategoryGroups"></div>
-    <div class="product-cards reveal" id="productCards"></div>
-    <p class="products-note reveal">※ <strong style="color:var(--text)">Magnificat</strong> 명품 골프화는 무사시골프채 10시리즈와 별개 브랜드입니다. → <a onclick="navGo('magnificat')">Magnificat 페이지</a></p>
-    <div class="table-scroll reveal">
-    <table class="prod-table" id="productsTable">
-      <thead><tr><th>No</th><th>브랜드</th><th>분류</th><th>제품군</th><th>설명</th></tr></thead>
-      <tbody id="productsTableBody"></tbody>
-    </table>
-    </div>
-    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px;">브랜드 클릭 → 상세 · <strong style="color:var(--text)">MUSASHI 634</strong> → CPS 그래핀 7아이언 상세</p>
-    <div class="iron-section reveal" style="margin-top:32px;border-top:none;padding-top:0;">
-      <h3 style="font-size:18px;margin-bottom:12px;">대표 아이언 <span class="grad">CPS 그래핀</span></h3>
-      <div class="iron-grid" id="featuredIron"></div>
-      <div class="ip-teaser reveal" style="margin-top:28px;">
-        <div>
-          <p class="mag-patent" style="margin-top:0;">특허증 · 골프 클럽 헤드 및 그 제조 방법</p>
-          <table class="ip-table">
-            <tr><th>특허번호</th><td>제 10-2961654 호</td></tr>
-            <tr><th>출원번호</th><td>제 10-2025-0150866 호</td></tr>
-            <tr><th>등록일</th><td>2026.04.30</td></tr>
-          </table>
-        </div>
-        <img src="assets/ip/patent-iron-head.png" alt="CPS 아이언 헤드 특허증" onclick="openLightbox(this.src)">
+    <div class="shop-chips reveal" id="shopChipsProducts"></div>
+    <div class="shop-grid reveal" id="shopGridProducts"></div>
+    <details class="reveal" style="margin-top:48px;border:1px solid var(--glass-bd);border-radius:12px;padding:20px 24px;background:var(--surface);">
+      <summary style="cursor:pointer;font-weight:600;color:var(--heading);">10시리즈 브랜드 목록 (참고)</summary>
+      <div class="filter-row" style="margin-top:20px;">
+        <button onclick="filterProducts('all')" class="filter-btn btn btn-primary btn-sm" data-cat="all">전체</button>
+        <button onclick="filterProducts('driver')" class="filter-btn btn btn-ghost btn-sm" data-cat="driver">드라이버</button>
+        <button onclick="filterProducts('iron')" class="filter-btn btn btn-ghost btn-sm" data-cat="iron">아이언</button>
+        <button onclick="filterProducts('putter')" class="filter-btn btn btn-ghost btn-sm" data-cat="putter">퍼터</button>
       </div>
-    </div>
+      <div class="product-cards" id="productCards" style="margin-top:20px;"></div>
+    </details>
   </div></section>
 </div>
 
@@ -1799,6 +1663,16 @@ body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A
   <div class="copy">개인정보관리책임자 이현석 · © 주식회사 인터네셔널무사시634</div>
 </div></footer>
 
+<div class="cart-backdrop" id="cartBackdrop" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cartDrawer" aria-label="장바구니">
+  <div class="cart-head"><h3>장바구니</h3><button class="cart-close" type="button" onclick="closeCart()" aria-label="닫기">&times;</button></div>
+  <div class="cart-list" id="cartList"></div>
+  <div class="cart-foot">
+    <div class="cart-total"><span>합계 (참고)</span><strong id="cartTotal">₩ 0</strong></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="checkoutInquiry()">구매 문의하기</button>
+    <p style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center;line-height:1.6;">이메일로 선택 상품 목록이 전달됩니다. 스펙·재고는 담당자가 안내합니다.</p>
+  </div>
+</div>
 <div class="site-toast" id="siteToast"></div>
 <div class="lightbox" id="lightbox" onclick="closeLightbox()"><button class="lightbox-close" onclick="closeLightbox()">&times;</button><img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()"></div>
 
@@ -1825,6 +1699,92 @@ const products=[
 let filt='all';
 let currentProduct=null;
 let currentIron=null;
+const SHOP_CAT_LABELS={all:'전체 상품',driver:'드라이버',iron:'아이언',wedge:'웨지',putter:'퍼터',shoes:'골프화'};
+const SHOP_CAT_ORDER=['all','driver','iron','wedge','putter','shoes'];
+let shopFilt='all';
+const SHOP_ITEMS=[
+  {id:'moses-driver',cat:'driver',catLabel:'DRIVER',name:'THE MIRACLE OF MOSES 드라이버',short:'495cc · 250~260g · Graphene · SCF',price:null,priceText:'가격 문의',img:'assets/nigodemo/jehovah-nissi-luxury.jpg',badge:'BEST',link:'nigodemo'},
+  {id:'cps-iron',cat:'iron',catLabel:'IRON',name:'CPS 그래핀 7아이언 세트',short:'#5~SW · JEHOVAH NISSI III · 특허',price:1890000,priceOrig:2490000,img:'assets/irons/cps-graphene/hero.jpg',badge:'특허',badgeClass:'patent',link:'iron',pid:'musashi-634',iid:'cps-graphene-7i'},
+  {id:'nigo-105',cat:'driver',catLabel:'DRIVER',name:'634 NICODEMUS 니고데모 10.5°',short:'R / SR / S · 일본 정품',price:null,priceText:'가격 문의',img:'assets/nigodemo/jehovah-nissi-studio.jpg',link:'nigodemo'},
+  {id:'nigo2',cat:'driver',catLabel:'DRIVER',name:'니고데모2 드라이버 9°·10°',short:'495cc · 헤드 180g · SCF',price:null,priceText:'가격 문의',img:'assets/nigodemo/jehovah-nissi-course.jpg',link:'nigodemo'},
+  {id:'women-11',cat:'driver',catLabel:'DRIVER · WOMEN',name:'여성용 11° L 드라이버',short:'634 NICODEMUS · 초고반발',price:null,priceText:'가격 문의',img:'assets/nigodemo/jehovah-nissi-course.jpg',link:'nigodemo'},
+  {id:'nicodemus-wedge',cat:'wedge',catLabel:'WEDGE',name:'NICODEMUS 니고데모 웨지',short:'48°~60° · FST125 · 단조',price:null,priceText:'가격 문의',img:'assets/nigodemo/jehovah-nissi-studio.jpg',link:'product',pid:'nicodemus'},
+  {id:'mla-putter',cat:'putter',catLabel:'PUTTER',name:'MLA 퍼터',short:'말렛/블레이드 · 입문·퍼팅 특화',price:null,priceText:'가격 문의',img:'assets/series-showcase.jpg',link:'product',pid:'mla'},
+  {id:'magnificat',cat:'shoes',catLabel:'FOOTWEAR',name:'Magnificat 명품 골프화',short:'수제 · 특허 · one more step',price:1580000,img:'assets/magnificat/cover.png',thumbClass:'contain',badge:'NEW',link:'magnificat'},
+  {id:'cps-mid',cat:'iron',catLabel:'IRON',name:'CPS 미드·숏 아이언 단품',short:'#6~SW · 세트 보강용',price:null,priceText:'가격 문의',img:'assets/irons/cps-graphene/detail-3.jpg',link:'iron',pid:'jehovah-nishi',iid:'mid-short'}
+];
+const CART_KEY='musashi634_cart';
+function getShopItem(id){return SHOP_ITEMS.find(s=>s.id===id);}
+function formatWon(n){return'₩ '+n.toLocaleString('ko-KR');}
+function loadCart(){try{return JSON.parse(localStorage.getItem(CART_KEY)||'[]');}catch(e){return[];}}
+function saveCart(c){localStorage.setItem(CART_KEY,JSON.stringify(c));updateCartUI();}
+function addToCart(id){const item=getShopItem(id);if(!item)return;const c=loadCart();if(!c.find(x=>x.id===id))c.push({id:item.id,name:item.name,price:item.price,priceText:item.priceText||null});saveCart(c);toast(item.name+' — 장바구니에 담았습니다');}
+function removeFromCart(id){saveCart(loadCart().filter(x=>x.id!==id));}
+function updateCartUI(){
+  const c=loadCart(),badge=document.getElementById('cartBadge');
+  if(badge)badge.textContent=c.length;
+  const list=document.getElementById('cartList'),totalEl=document.getElementById('cartTotal');
+  if(!list)return;
+  if(!c.length){list.innerHTML='<div class="cart-empty">장바구니가 비어 있습니다.<br>상품을 담고 구매 문의해 주세요.</div>';if(totalEl)totalEl.textContent='₩ 0';return;}
+  let sum=0;
+  list.innerHTML=c.map(x=>{
+    const si=getShopItem(x.id),img=si?si.img:'assets/musashi-logo-light.png';
+    const p=x.price?(sum+=x.price,formatWon(x.price)):(x.priceText||'문의');
+    return`<div class="cart-item"><img src="${img}" alt=""><div><h4>${x.name}</h4><div class="cp">${p}</div><button type="button" onclick="removeFromCart('${x.id}')">삭제</button></div></div>`;
+  }).join('');
+  if(totalEl)totalEl.textContent=sum?formatWon(sum):'문의';
+}
+function openCart(){closeMenu();document.getElementById('cartDrawer').classList.add('open');document.getElementById('cartBackdrop').classList.add('open');document.body.classList.add('menu-open');updateCartUI();}
+function closeCart(){document.getElementById('cartDrawer').classList.remove('open');document.getElementById('cartBackdrop').classList.remove('open');document.body.classList.remove('menu-open');}
+function checkoutInquiry(){
+  const c=loadCart();
+  if(!c.length){toast('장바구니에 상품을 담아 주세요');return;}
+  const lines=c.map(x=>{const p=x.price?formatWon(x.price):(x.priceText||'가격 문의');return'- '+x.name+' ('+p+')';});
+  const body='선택 상품:\n'+lines.join('\n')+'\n\n스펙·강도·배송 문의드립니다.';
+  window.location.href='mailto:paullew@hanmail.net?subject='+encodeURIComponent('무사시634 구매 문의')+'&body='+encodeURIComponent(body);
+}
+function shopBuyNow(id){addToCart(id);setTimeout(checkoutInquiry,120);}
+function shopOpenItem(id){
+  const s=getShopItem(id);if(!s)return;
+  if(s.link==='iron')navGoIron(s.pid,s.iid);
+  else if(s.link==='product')navGoProduct(s.pid);
+  else navGo(s.link);
+}
+function shopPriceHtml(s){
+  if(s.price)return`<div class="shop-price-row"><span class="shop-price">${s.priceOrig?`<del>${formatWon(s.priceOrig)}</del>`:''}${formatWon(s.price)}</span></div>`;
+  return`<div class="shop-price-row"><span class="shop-price inquiry">${s.priceText||'가격 문의'}</span></div>`;
+}
+function shopCardHtml(s){
+  const badge=s.badge?`<span class="shop-badge ${s.badgeClass||''}">${s.badge}</span>`:'';
+  const thumbCls=s.thumbClass?' '+s.thumbClass:'';
+  return`<article class="shop-card"><div class="shop-thumb${thumbCls}" onclick="shopOpenItem('${s.id}')"><img src="${s.img}" alt="${s.name}">${badge}</div><div class="shop-body"><div class="shop-cat">${s.catLabel}</div><h3 onclick="shopOpenItem('${s.id}')">${s.name}</h3><p>${s.short}</p>${shopPriceHtml(s)}<div class="shop-actions"><button type="button" class="btn btn-ghost" onclick="event.stopPropagation();addToCart('${s.id}')">담기</button><button type="button" class="btn btn-primary" onclick="event.stopPropagation();shopOpenItem('${s.id}')">상세</button></div></div></article>`;
+}
+function renderShopGrid(gridId,countId,titleId){
+  const list=shopFilt==='all'?SHOP_ITEMS:SHOP_ITEMS.filter(s=>s.cat===shopFilt);
+  const grid=document.getElementById(gridId);
+  if(grid)grid.innerHTML=list.map(shopCardHtml).join('');
+  const cnt=document.getElementById(countId);
+  if(cnt)cnt.textContent=list.length+'개 상품';
+  const title=document.getElementById(titleId);
+  if(title)title.textContent=SHOP_CAT_LABELS[shopFilt]||'전체 상품';
+}
+function renderShopCats(sideId,chipsId){
+  const mkBtn=(cat,cls)=>`<button type="button" class="${cls}${shopFilt===cat?' active':''}" onclick="shopFilter('${cat}')">${SHOP_CAT_LABELS[cat]}</button>`;
+  const side=document.getElementById(sideId);
+  if(side)side.innerHTML=SHOP_CAT_ORDER.map(c=>`<li>${mkBtn(c,'')}</li>`).join('');
+  const chips=document.getElementById(chipsId);
+  if(chips)chips.innerHTML=SHOP_CAT_ORDER.map(c=>mkBtn(c,'shop-chip')).join('');
+}
+function shopFilter(cat){
+  shopFilt=cat;
+  renderShopCats('shopCatsHome','shopChipsHome');
+  renderShopCats('shopCatsProducts','shopChipsProducts');
+  renderShopGrid('shopGridHome','shopCountHome','shopTitleHome');
+  renderShopGrid('shopGridProducts','shopCountProducts',null);
+  const main=document.getElementById('shopMain');
+  if(main&&document.getElementById('page-home').classList.contains('active'))main.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function initShop(){renderShopCats('shopCatsHome','shopChipsHome');renderShopCats('shopCatsProducts','shopChipsProducts');shopFilter(shopFilt);updateCartUI();}
 function ironCardHtml(p,i){
   const cls=i.featured?'iron-card featured':'iron-card';
   const price=i.price?`<div class="ic-price">₩ ${i.price} ${i.priceOrig?`<span style="color:var(--muted);font-size:11px;text-decoration:line-through;margin-left:6px;">₩${i.priceOrig}</span>`:''}</div>`:'';
@@ -1849,7 +1809,9 @@ function renderIronDetail(){
   const detailGallery=i.detailGallery&&i.detailGallery.length?`<div class="iron-detail-panel reveal on"><div class="iron-detail-gallery">${i.detailGallery.map((src,idx)=>`<img src="${src}" alt="${i.name} 상세 ${idx+1}" onclick="openLightbox(this.src)">`).join('')}</div></div>`:'';
   const clubTable=i.clubs?ironTableHtml(i.clubs,'클럽별 스펙 (로프트 · 라이 · 길이 · 중량)'):'';
   const shaftTable=i.shafts?ironTableHtml(i.shafts,'CPS 그래핀 샤프트 스펙'):'';
-  document.getElementById('idetailRoot').innerHTML=`<div class="pdetail-wrap reveal on"><span class="back" onclick="navGoProduct('${p.id}')">← ${p.n}으로</span><div class="sec-label">${p.n} · IRON${i.featured?' · FLAGSHIP':''}</div><div class="pdetail-top"><div class="pdetail-visual">${hero}</div><div class="pdetail-summary"><h1>${i.name}</h1><div class="pdetail-meta"><span class="pdetail-tag">${i.compose}</span><span class="pdetail-tag">${i.loft}</span><span class="pdetail-tag">${i.shaft}</span></div>${price}${markings}${bullets}<p class="pdetail-lead">${i.desc}</p></div></div><div class="pdetail-grid"><div class="pdetail-box"><h3>Features</h3><ul>${i.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${i.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div><div class="pdetail-spec-stack">${clubTable}${shaftTable}${detailImg}${detailGallery}</div>${i.featured?IRON_PATENT_HTML:''}<div class="touch-stack"><button class="btn btn-ghost" onclick="navGoProduct('${p.id}')">브랜드 상세</button><button class="btn btn-ghost" onclick="navGo('products')">라인업</button></div></div>`;
+  const shopId=i.id==='cps-graphene-7i'?'cps-iron':(i.id==='mid-short'?'cps-mid':null);
+  const buyBar=shopId?`<div class="shop-buy-bar"><div>${price||'<span class="shop-price inquiry">가격 문의</span>'}<p style="font-size:12px;color:var(--muted);margin-top:6px;">장바구니 담기 후 이메일 구매 문의</p></div><button class="btn btn-ghost" onclick="addToCart('${shopId}')">장바구니</button><button class="btn btn-primary" onclick="shopBuyNow('${shopId}')">구매 문의</button></div>`:'';
+  document.getElementById('idetailRoot').innerHTML=`<div class="pdetail-wrap reveal on"><span class="back" onclick="navGo('home')">← 쇼핑몰</span><div class="sec-label">${p.n} · IRON${i.featured?' · FLAGSHIP':''}</div><div class="pdetail-top"><div class="pdetail-visual">${hero}</div><div class="pdetail-summary"><h1>${i.name}</h1><div class="pdetail-meta"><span class="pdetail-tag">${i.compose}</span><span class="pdetail-tag">${i.loft}</span><span class="pdetail-tag">${i.shaft}</span></div>${price}${markings}${bullets}<p class="pdetail-lead">${i.desc}</p>${buyBar}</div></div><div class="pdetail-grid"><div class="pdetail-box"><h3>Features</h3><ul>${i.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${i.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div><div class="pdetail-spec-stack">${clubTable}${shaftTable}${detailImg}${detailGallery}</div>${i.featured?IRON_PATENT_HTML:''}</div>`;
 }
 function navGoProduct(id){currentProduct=products.find(p=>p.id===id);if(!currentProduct){navGo('products');return;}renderProductDetail();showPage('pdetail');}
 function navGoIron(pid,iid){
@@ -1938,7 +1900,8 @@ function renderProducts(){
     cards.style.display=filt==='all'?'none':'grid';
     cards.innerHTML=list.map(p=>`<div class="product-card" onclick="navGoProduct('${p.id}')"><div class="pc-no">${String(p.no).padStart(2,'0')}</div><h4>${p.n}</h4><div class="pc-cat">${p.catLabel}</div><p>${p.items}</p></div>`).join('');
   }
-  document.getElementById('productsTableBody').innerHTML=list.map(p=>`<tr class="click" onclick="navGoProduct('${p.id}')"><td>${String(p.no).padStart(2,'0')}</td><td class="name">${p.n}</td><td class="cat">${p.catLabel}</td><td>${p.items}</td><td style="color:var(--muted)">${p.desc}</td></tr>`).join('');
+  const tbody=document.getElementById('productsTableBody');
+  if(tbody)tbody.innerHTML=list.map(p=>`<tr class="click" onclick="navGoProduct('${p.id}')"><td>${String(p.no).padStart(2,'0')}</td><td class="name">${p.n}</td><td class="cat">${p.catLabel}</td><td>${p.items}</td><td style="color:var(--muted)">${p.desc}</td></tr>`).join('');
 }
 function renderSeriesWall(){
   const el=document.getElementById('homeSeriesWall');
@@ -1966,7 +1929,7 @@ function filterProducts(t){
   });
   renderProducts();
 }
-renderProducts();renderSeriesWall();renderFlagship();renderFeaturedIron();
+initShop();renderProducts();
 function toast(msg){const t=document.getElementById('siteToast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
 function handleSubmit(e,brand){e.preventDefault();toast('문의가 접수되었습니다. 담당자가 연락드리겠습니다.');e.target.reset();}
 function toggleMenu(){const open=document.getElementById('nav').classList.toggle('menu-open');document.getElementById('mDrawer').classList.toggle('open');document.getElementById('mBackdrop').classList.toggle('open');document.body.classList.toggle('menu-open',open);}
@@ -2028,7 +1991,7 @@ runIntro();
 window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',scrollY>40));
 function openLightbox(src){document.getElementById('lightboxImg').src=src;document.getElementById('lightbox').classList.add('open');}
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLightbox();closeCart();}});
 </script>
 </body>
 </html>
