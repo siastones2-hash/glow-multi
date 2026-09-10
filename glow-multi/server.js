@@ -1183,11 +1183,14 @@ async function getTodayServiceChanges() {
   }
   const added = [];
   const removed = [];
-  for (const [id, name] of curActive) {
-    if (!prev[id]) added.push(name);
-  }
-  for (const [id, name] of Object.entries(prev)) {
-    if (!curActive.has(id)) removed.push(name);
+  const hasPrev = Object.keys(prev).length > 0;
+  if (hasPrev) {
+    for (const [id, name] of curActive) {
+      if (!prev[id]) added.push(name);
+    }
+    for (const [id, name] of Object.entries(prev)) {
+      if (!curActive.has(id)) removed.push(name);
+    }
   }
   try {
     const stopR = await query(`
@@ -1207,6 +1210,7 @@ async function getTodayServiceChanges() {
     added: added.slice(0, 6),
     removed: removed.slice(0, 6),
     snapshot: Object.fromEntries(curActive),
+    baseline: !hasPrev,
   };
 }
 
@@ -1286,7 +1290,9 @@ async function buildMemberOpsDigest() {
     lines.push(`• 오늘 품질 이슈로 중단: ${changes.removed.map(n => shortenSvcName(n, 28)).join(' · ')}`);
   }
   if (!changes.added.length && !changes.removed.length) {
-    lines.push(`• 오늘은 큰 변경 없이 품질 점검만 완료`);
+    lines.push(changes.baseline
+      ? `• 품질 기준 점검 완료 · 판매 목록은 검증된 상품만 유지`
+      : `• 오늘은 큰 변경 없이 품질 점검만 완료`);
   }
   if (highlights.length) {
     lines.push(`지금 이용 가능한 상품 예시:`);
