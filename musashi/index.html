@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>인터네셔널 무사시 634 그룹 · 무사시골프채</title>
+<meta name="description" content="인터네셔널 무사시 634 그룹 · 일본식 단조 프리미엄 골프클럽 JEHOVAH NISHI, NICODEMUS, PASSOVER 등 10시리즈">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MUSASHI 634">
+<meta property="og:url" content="https://musashi634.co.kr/">
+<meta property="og:title" content="인터네셔널 무사시 634 그룹 · 무사시골프채">
+<meta property="og:description" content="일본식 단조 기법의 프리미엄 골프클럽 · JEHOVAH NISHI · NICODEMUS · PASSOVER · 10시리즈 라인업">
+<meta property="og:image" content="https://musashi634.co.kr/assets/og-share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MUSASHI 634 로고">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://musashi634.co.kr/assets/og-share.png">
+<link rel="icon" href="assets/musashi-logo-light.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/og-share.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -92,7 +106,7 @@ body.magnificat-theme .grad{background:linear-gradient(120deg,var(--gold-light),
 .prod-table{width:100%;border-collapse:collapse;margin-top:28px;font-size:14px;}
 .prod-table th,.prod-table td{padding:14px 16px;border-bottom:1px solid var(--glass-bd);text-align:left;vertical-align:top;}
 .prod-table th{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:500;}
-.prod-table tr:hover td{background:rgba(255,255,255,.02);}
+.prod-table tr:hover td{background:rgba(212,175,55,.04);}
 .prod-table .name{font-weight:700;font-size:15px;color:var(--text);}
 .prod-table .cat{color:var(--gold-light);font-size:12px;font-family:'IBM Plex Mono';}
 .prod-cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px;}
@@ -101,7 +115,11 @@ body.magnificat-theme .grad{background:linear-gradient(120deg,var(--gold-light),
 .prod-cat-block ul{list-style:none;}
 .prod-cat-block li{padding:10px 0;border-top:1px solid var(--glass-bd);font-size:14px;}
 .prod-cat-block li strong{display:block;font-size:15px;margin-bottom:3px;}
-.prod-cat-block li span{color:var(--muted);font-size:12px;}
+.prod-cat-block li{cursor:pointer;transition:.2s;}
+.prod-cat-block li:hover{color:var(--gold);}
+.series-col li .series-cat{display:block;font-family:'IBM Plex Mono';font-size:9px;color:var(--gold);letter-spacing:.08em;margin-bottom:4px;font-weight:500;}
+.products-note{margin-top:16px;padding:14px 18px;border-radius:12px;border:1px solid var(--glass-bd);background:rgba(212,175,55,.05);font-size:13px;color:var(--muted);line-height:1.75;}
+.products-note a{color:var(--gold);cursor:pointer;}
 @media(max-width:900px){.prod-cat-grid{grid-template-columns:1fr;}.nav-divider{display:none;}}
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;background:var(--bg);}
@@ -159,6 +177,12 @@ nav.scrolled{background:rgba(15,23,42,.96);}
 .asset-frame img{width:100%;display:block;}
 .asset-frame.no-overlay::after{display:none;}
 .group-intro{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin-top:40px;}
+.group-intro-visual{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--glass-bd);box-shadow:var(--shadow-lg);background:var(--surface);}
+.group-intro-visual img.main{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;cursor:pointer;transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.group-intro-visual:hover img.main{transform:scale(1.04);}
+.group-intro-cap{padding:20px 24px 24px;text-align:center;border-top:1px solid var(--glass-bd);background:linear-gradient(180deg,rgba(30,41,59,.6),var(--surface));}
+.group-intro-cap img{height:52px;width:auto;margin:0 auto;display:block;}
+.group-intro-cap p{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);letter-spacing:.1em;margin-top:12px;}
 @media(max-width:900px){.group-intro{grid-template-columns:1fr;}}
 .nav-links{display:flex;gap:6px;align-items:center;}
 .nav-links a{color:var(--muted);font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer;letter-spacing:0;transition:.2s;}
@@ -206,7 +230,6 @@ section.pad{padding:var(--section-y) 0;position:relative;z-index:2;}
 .marquee{transform:translateY(24px);opacity:0;transition:transform .9s cubic-bezier(.16,1,.3,1) .15s,opacity .9s ease .15s;}
 body.hero-ready .marquee{transform:none;opacity:1;}
 .marquee.marquee-2{border-top:none;background:rgba(15,23,42,.35);}
-.marquee.marquee-2 .track{animation-direction:reverse;animation-duration:34s;font-size:12px;opacity:.85;}
 .hero-aurora{position:absolute;inset:-20% -10% auto -10%;height:140%;z-index:0;pointer-events:none;opacity:.5;
   background:radial-gradient(42% 52% at 18% 28%,rgba(212,175,55,.18),transparent 70%),radial-gradient(48% 55% at 82% 22%,rgba(232,201,105,.12),transparent 70%),radial-gradient(50% 48% at 55% 72%,rgba(30,41,59,.35),transparent 70%);
   filter:blur(24px);animation:aurora 18s ease-in-out infinite;}
@@ -225,7 +248,7 @@ body.hero-ready .marquee{transform:none;opacity:1;}
 .hs-dot{width:22px;height:36px;border:1px solid var(--glass-bd);border-radius:14px;position:relative;}
 .hs-dot::before{content:"";position:absolute;top:6px;left:50%;transform:translateX(-50%);width:4px;height:7px;border-radius:3px;background:var(--gold);box-shadow:0 0 8px var(--gold-glow);animation:scroll-dot 1.8s ease-in-out infinite;}
 @keyframes scroll-dot{0%{opacity:0;transform:translate(-50%,0);}40%{opacity:1;}80%{opacity:0;transform:translate(-50%,14px);}100%{opacity:0;}}
-.marquee{border-top:1px solid var(--glass-bd);border-bottom:1px solid var(--glass-bd);padding:15px 0;overflow:hidden;white-space:nowrap;background:rgba(15,23,42,.55);position:relative;z-index:2;}
+.marquee{border-top:1px solid var(--glass-bd);border-bottom:1px solid var(--glass-bd);padding:15px 0;overflow:hidden;white-space:nowrap;background:rgba(255,255,255,.75);position:relative;z-index:2;}
 .marquee .track{display:inline-flex;gap:44px;animation:marquee-scroll 40s linear infinite;font-family:'IBM Plex Mono';font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--muted);}
 .marquee b{color:var(--gold);font-weight:700;}
 .marquee .hi{color:var(--gold-light);text-shadow:0 0 16px var(--gold-glow);}
@@ -276,14 +299,19 @@ body.hero-ready .marquee{transform:none;opacity:1;}
 .prod-cat-block{background:var(--surface);border:1px solid var(--card-border);border-radius:14px;padding:24px;box-shadow:var(--shadow);}
 .pdetail-box,.iron-card,.nigodemo-card,.community-box,.assoc-card,.franchise-card,.prod-card,.flagship-card,.product-card,.stat-card,.pdetail-box,.iron-spec-block{border-color:var(--card-border);}
 footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relative;z-index:2;background:var(--bg);}
-.site-toast{background:rgba(30,41,59,.98);border:1px solid rgba(212,175,55,.35);color:var(--text);box-shadow:var(--shadow-lg);}
+.site-toast{background:rgba(255,255,255,.98);border:1px solid rgba(212,175,55,.35);color:var(--text);box-shadow:var(--shadow-lg);}
 .flagship-card img{background:var(--surface);}
 .img-clean img{object-fit:contain;background:var(--surface);}
 .iron-hero-img{background:var(--surface);}
 .band-cta-banner{background:linear-gradient(135deg,rgba(6,182,110,.08),rgba(212,175,55,.06));border:1px solid var(--card-border);}
-.series-wall-wrap{display:grid;grid-template-columns:1fr 1fr;gap:var(--block-gap);align-items:center;margin-top:40px;}
-.series-wall-photo{border-radius:16px;overflow:hidden;border:1px solid var(--glass-bd);box-shadow:var(--shadow-lg);background:var(--surface);}
-.series-wall-photo img{width:100%;display:block;}
+.series-wall-wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:var(--block-gap);align-items:center;margin-top:40px;}
+.series-showcase{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--glass-bd);box-shadow:var(--shadow-lg);background:var(--surface);}
+.series-showcase img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;cursor:pointer;transition:.35s;}
+.series-showcase:hover img{transform:scale(1.03);}
+.series-showcase img{transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.series-showcase-cap{position:absolute;bottom:0;left:0;right:0;padding:28px 32px;background:linear-gradient(180deg,transparent 0%,rgba(15,23,42,.55) 35%,rgba(15,23,42,.94) 100%);pointer-events:none;}
+.series-showcase-cap span{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.28em;color:var(--gold);}
+.series-showcase-cap p{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.5;}
 .series-wall-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
 .series-col{list-style:none;}
 .series-col.left{text-align:right;}
@@ -315,14 +343,14 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 .img-grid.g2{grid-template-columns:repeat(2,1fr);}
 .img-grid.g3{grid-template-columns:repeat(3,1fr);}
 .img-grid.g4{grid-template-columns:repeat(4,1fr);}
-.img-frame{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--glass-bd);background:#0d0e14;aspect-ratio:16/10;}
-.img-frame::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,11,16,.88) 0%,rgba(10,11,16,.12) 24%,rgba(10,11,16,.1) 76%,rgba(10,11,16,.85) 100%);pointer-events:none;z-index:1;}
+.img-frame{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--glass-bd);background:#F1F5F9;aspect-ratio:16/10;}
+.img-frame::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(248,250,252,.75) 0%,rgba(248,250,252,.08) 24%,rgba(248,250,252,.06) 76%,rgba(248,250,252,.65) 100%);pointer-events:none;z-index:1;}
 .img-frame img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s;position:relative;z-index:0;}
 .img-frame:hover img{transform:scale(1.03);}
-.img-frame .cap{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;background:linear-gradient(transparent,rgba(10,11,16,.92));font-size:12px;color:var(--text);}
-.img-frame .brand-tag{position:absolute;top:12px;left:12px;font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.15em;padding:5px 10px;border-radius:6px;background:rgba(10,11,16,.75);border:1px solid rgba(57,230,255,.4);color:var(--cyan);}
+.img-frame .cap{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;background:linear-gradient(transparent,rgba(248,250,252,.92));font-size:12px;color:var(--heading);}
+.img-frame .brand-tag{position:absolute;top:12px;left:12px;font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.15em;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,.88);border:1px solid rgba(201,162,39,.35);color:var(--gold);}
 .img-frame.ratio-auto{aspect-ratio:auto;}
-.img-frame.ratio-auto img{height:auto;object-fit:contain;background:#080910;}
+.img-frame.ratio-auto img{height:auto;object-fit:contain;background:#F8FAFC;}
 .img-frame.ratio-portrait{aspect-ratio:3/4;}
 .compare-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
 .compare-row .lbl{font-family:'IBM Plex Mono';font-size:10px;color:var(--cyan);text-align:center;margin-bottom:8px;letter-spacing:1px;}
@@ -347,7 +375,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 .promo-box,.membership-box{background:linear-gradient(135deg,rgba(77,124,255,.08),rgba(165,91,255,.06));border:1px solid var(--glass-bd);border-radius:18px;padding:48px 32px;text-align:center;margin:48px 0;}
 .membership-box{background:var(--glass);}
 .membership-perks{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0;text-align:left;}
-.membership-perks div{background:rgba(255,255,255,.03);border:1px solid var(--glass-bd);border-radius:12px;padding:20px;}
+.membership-perks div{background:rgba(248,250,252,.9);border:1px solid var(--glass-bd);border-radius:12px;padding:20px;}
 .membership-perks h4{font-size:13px;color:var(--cyan);font-family:'IBM Plex Mono';margin-bottom:6px;}
 .membership-perks p{font-size:13px;color:var(--muted);line-height:1.65;}
 .partner-card{background:var(--glass);border:1px solid var(--glass-bd);border-radius:14px;padding:36px;text-align:center;transition:.3s;cursor:pointer;}
@@ -357,8 +385,9 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 .assoc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:36px;}
 .assoc-card{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;overflow:hidden;transition:.3s;}
 .assoc-card:hover{border-color:rgba(212,175,55,.32);transform:translateY(-4px);}
-.assoc-visual{aspect-ratio:5/3;background:linear-gradient(180deg,rgba(30,41,59,.6),rgba(15,23,42,.4));border-bottom:1px solid var(--glass-bd);display:flex;align-items:center;justify-content:center;padding:20px;}
-.assoc-visual img{width:100%;max-width:280px;height:auto;display:block;border-radius:8px;}
+.assoc-visual{aspect-ratio:16/10;background:#0F172A;border-bottom:1px solid var(--glass-bd);overflow:hidden;}
+.assoc-badge{display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(212,175,55,.12),#0F172A 70%);}
+.assoc-visual img,.assoc-badge img{width:100%;height:100%;object-fit:cover;display:block;max-width:none;border-radius:0;}
 .assoc-body{padding:22px 24px 26px;}
 .assoc-card .en{font-family:'IBM Plex Mono';font-size:10px;color:var(--gold-light);letter-spacing:.12em;margin-bottom:6px;text-transform:uppercase;}
 .assoc-card h3{font-size:16px;margin-bottom:8px;line-height:1.4;}
@@ -371,7 +400,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 .contact-card .tel{color:var(--cyan);font-size:20px;font-weight:700;display:block;margin-top:8px;}
 .form-box{background:linear-gradient(135deg,rgba(77,124,255,.08),rgba(165,91,255,.06));border:1px solid var(--glass-bd);border-radius:16px;padding:36px;}
 .form-box label{display:block;font-size:11px;color:var(--cyan);font-weight:700;letter-spacing:1px;margin-bottom:8px;font-family:'IBM Plex Mono';}
-.form-box input,.form-box select,.form-box textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--glass-bd);color:var(--text);padding:12px 14px;border-radius:9px;font-family:inherit;font-size:16px;margin-bottom:16px;-webkit-appearance:none;appearance:none;}
+.form-box input,.form-box select,.form-box textarea{width:100%;background:#FFFFFF;border:1px solid var(--glass-bd);color:var(--text);padding:12px 14px;border-radius:9px;font-family:inherit;font-size:16px;margin-bottom:16px;-webkit-appearance:none;appearance:none;}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
 .table-scroll::-webkit-scrollbar{height:6px;}
 .table-scroll::-webkit-scrollbar-thumb{background:var(--glass-bd);border-radius:3px;}
@@ -381,7 +410,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 body.menu-open{overflow:hidden;}
 .form-box textarea{min-height:100px;resize:vertical;}
 .form-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6;}
-.site-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);z-index:300;background:rgba(30,41,59,.98);border:1px solid rgba(212,175,55,.35);color:var(--text);padding:16px 24px;border-radius:12px;font-size:14px;box-shadow:var(--shadow-lg);transition:.4s;max-width:90vw;text-align:center;}
+.site-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);z-index:300;background:rgba(255,255,255,.98);border:1px solid rgba(212,175,55,.35);color:var(--text);padding:16px 24px;border-radius:12px;font-size:14px;box-shadow:var(--shadow-lg);transition:.4s;max-width:90vw;text-align:center;}
 .site-toast.show{transform:translateX(-50%) translateY(0);}
 .lightbox{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;padding:24px;}
 .lightbox.open{display:flex;}
@@ -405,8 +434,11 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 .foot-col a:hover{color:var(--gold);}
 .foot-col .foot-tel{color:var(--cyan);font-weight:600;}
 .foot-col .foot-region{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:4px;}
-.foot-legal{font-size:11px;color:var(--muted);line-height:1.85;margin-top:14px;}
-.copy{margin-top:40px;padding-top:22px;border-top:1px solid var(--glass-bd);font-size:11px;color:var(--muted);text-align:center;line-height:1.85;}
+.foot-legal{font-size:11px;color:var(--muted);line-height:1.85;margin-top:36px;padding-top:24px;border-top:1px solid var(--glass-bd);}
+.foot-legal p{margin:0 0 6px;}
+.foot-legal a{color:var(--gold);text-decoration:none;}
+.foot-legal a:hover{text-decoration:underline;}
+.copy{margin-top:20px;padding-top:0;border-top:none;font-size:11px;color:var(--muted);text-align:center;line-height:1.85;}
 .brand-card{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;margin:40px 0;}
 .brand-card img{width:100%;border-radius:14px;border:1px solid var(--glass-bd);}
 .brand-card .info p{color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:8px;}
@@ -440,10 +472,191 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 .nigodemo-spec-table{width:100%;border-collapse:collapse;font-size:14px;}
 .nigodemo-spec-table th,.nigodemo-spec-table td{padding:12px 14px;border-bottom:1px solid var(--glass-bd);text-align:left;vertical-align:top;}
 .nigodemo-spec-table th{color:var(--muted);font-family:'IBM Plex Mono';font-size:11px;width:130px;font-weight:500;}
+.ng-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;margin-top:36px;}
+.ng-detail-copy p{color:var(--muted);font-size:14px;line-height:1.85;margin-top:16px;}
+.ng-detail-panel{background:var(--glass);border:1px solid var(--glass-bd);border-radius:16px;padding:28px;}
+.ng-detail-panel h3{font-size:13px;font-family:'IBM Plex Mono';letter-spacing:.12em;color:var(--gold-light);margin-bottom:18px;text-transform:uppercase;}
+.ng-detail-spec{width:100%;border-collapse:collapse;font-size:14px;}
+.ng-detail-spec th,.ng-detail-spec td{padding:11px 0;border-bottom:1px solid var(--glass-bd);text-align:left;vertical-align:top;line-height:1.65;}
+.ng-detail-spec th{color:var(--muted);font-family:'IBM Plex Mono';font-size:11px;width:108px;font-weight:500;}
+.ng-detail-spec tr:last-child th,.ng-detail-spec tr:last-child td{border-bottom:none;}
+.ng-detail-meaning{margin-top:20px;padding:18px 20px;border-radius:12px;border:1px solid rgba(212,175,55,.2);background:rgba(212,175,55,.05);}
+.ng-detail-meaning strong{display:block;font-size:14px;color:var(--heading);margin-bottom:6px;}
+.ng-detail-meaning span{font-size:13px;color:var(--muted);line-height:1.75;}
+@media(max-width:900px){.ng-detail-grid{grid-template-columns:1fr;}}
+.ng-markings{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.ng-markings span{font-family:'IBM Plex Mono';font-size:10px;padding:6px 12px;border-radius:6px;border:1px solid rgba(212,175,55,.28);color:var(--gold-light);}
+.ng-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;}
+.ng-gallery img{width:100%;border-radius:14px;border:1px solid var(--glass-bd);cursor:pointer;aspect-ratio:4/3;object-fit:cover;transition:.3s;display:block;}
+.ng-gallery img:hover{border-color:rgba(212,175,55,.42);transform:translateY(-3px);}
+.ip-block{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:32px;align-items:start;margin-top:36px;}
+.ip-cert{background:#fff;border-radius:14px;border:1px solid var(--glass-bd);overflow:hidden;cursor:pointer;box-shadow:var(--shadow);}
+.ip-cert img{width:100%;display:block;}
+.ip-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;}
+.ip-table th,.ip-table td{padding:11px 0;border-bottom:1px solid var(--glass-bd);text-align:left;vertical-align:top;line-height:1.7;}
+.ip-table th{color:var(--muted);font-family:'IBM Plex Mono';font-size:11px;width:118px;font-weight:500;}
+.ip-note{font-size:12px;color:var(--muted);line-height:1.75;margin-top:14px;}
+.ip-teaser{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;margin-top:28px;padding:28px;background:var(--surface);border:1px solid var(--glass-bd);border-radius:18px;box-shadow:var(--shadow);}
+.ip-teaser img{width:100%;max-width:220px;border-radius:10px;border:1px solid var(--glass-bd);cursor:pointer;background:#fff;}
+.ip-dual{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:28px;}
+.ip-dual .ip-teaser{margin-top:0;}
+.ip-dual .ip-teaser img,.ip-block .ip-cert img{max-width:100%;width:100%;}
+.ip-hero-block{margin-top:28px;}
+@media(max-width:900px){.ip-block,.ip-teaser,.ip-dual{grid-template-columns:1fr;}.ng-gallery{grid-template-columns:1fr;}}
+.nigodemo-hero{position:relative;min-height:clamp(520px,78vh,720px);padding:clamp(100px,11vw,128px) 0 clamp(56px,7vw,72px);overflow:hidden;text-align:left;}
+.nigodemo-hero::before{content:'';position:absolute;inset:0;background:url('assets/nigodemo/jehovah-nissi-course.jpg') center 35%/cover no-repeat;opacity:.28;transform:scale(1.04);}
+.nigodemo-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(108deg,rgba(15,23,42,.97) 0%,rgba(15,23,42,.9) 46%,rgba(15,23,42,.78) 100%);}
+.nigodemo-hero-glow{position:absolute;top:18%;left:-8%;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,.14),transparent 68%);pointer-events:none;z-index:1;}
+.nigodemo-hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr minmax(260px,400px);gap:clamp(28px,4vw,52px);align-items:center;}
+.nigodemo-hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.28);padding:8px 16px;border-radius:100px;font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.22em;color:var(--gold-light);margin-bottom:22px;}
+.nigodemo-hero-badge i{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite;}
+.nigodemo-hero h1{text-align:left;font-size:clamp(38px,5.2vw,58px);line-height:1.08;margin:0;}
+.nigodemo-hero-lead{color:var(--text);font-size:clamp(15px,1.6vw,17px);max-width:520px;margin:22px 0 0;line-height:1.85;}
+.nigodemo-hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+.nigodemo-hero-chips span{font-family:'IBM Plex Mono';font-size:10px;padding:6px 12px;border-radius:6px;border:1px solid rgba(212,175,55,.24);color:var(--gold-light);}
+.nigodemo-hero .hero-btns{justify-content:flex-start;margin-top:28px;}
+.nigodemo-hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:28px;max-width:420px;}
+.ng-stat{background:var(--glass);border:1px solid var(--glass-bd);border-radius:12px;padding:14px 12px;text-align:center;}
+.ng-stat-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold-light);line-height:1.1;}
+.ng-stat-label{font-family:'IBM Plex Mono';font-size:9px;color:var(--muted);letter-spacing:.06em;margin-top:6px;}
+.nigodemo-hero-visual{display:flex;flex-direction:column;gap:12px;}
+.nigodemo-hero-frame{position:relative;border-radius:20px;overflow:hidden;border:1px solid rgba(212,175,55,.32);box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 0 1px rgba(212,175,55,.08);background:var(--surface);}
+.nigodemo-hero-frame img{width:100%;display:block;aspect-ratio:4/5;object-fit:cover;cursor:pointer;transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.nigodemo-hero-frame:hover img{transform:scale(1.03);}
+.nigodemo-hero-caption{position:absolute;left:0;right:0;bottom:0;padding:20px 22px;background:linear-gradient(180deg,transparent,rgba(15,23,42,.92));pointer-events:none;}
+.nigodemo-hero-caption span{display:block;font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.18em;color:var(--gold);}
+.nigodemo-hero-caption strong{display:block;font-size:15px;color:var(--heading);margin-top:6px;}
+.nigodemo-hero-thumbs{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.nigodemo-hero-thumbs img{width:100%;border-radius:12px;border:1px solid var(--glass-bd);aspect-ratio:16/10;object-fit:cover;cursor:pointer;transition:.3s;display:block;}
+.nigodemo-hero-thumbs img:hover{border-color:rgba(212,175,55,.4);transform:translateY(-2px);}
+.nigodemo-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:-28px;position:relative;z-index:3;}
+.ng-quick-card{background:var(--surface);border:1px solid var(--glass-bd);border-radius:14px;padding:20px 22px;cursor:pointer;transition:.3s;box-shadow:var(--shadow);}
+.ng-quick-card:hover{border-color:rgba(212,175,55,.35);transform:translateY(-3px);}
+.ng-quick-card .ng-tag{font-family:'IBM Plex Mono';font-size:10px;color:var(--gold);margin-bottom:8px;}
+.ng-quick-card h4{font-size:15px;margin-bottom:6px;color:var(--heading);}
+.ng-quick-card p{font-size:13px;color:var(--muted);line-height:1.65;}
+.nigodemo-marquee{border-top:1px solid var(--glass-bd);border-bottom:1px solid var(--glass-bd);background:rgba(15,23,42,.6);}
+.moses-spec-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:20px;}
+.moses-spec-table th,.moses-spec-table td{padding:13px 16px;border:1px solid var(--glass-bd);text-align:left;vertical-align:top;}
+.moses-spec-table th{width:160px;font-family:'IBM Plex Mono';font-size:11px;color:var(--gold-light);background:rgba(212,175,55,.06);font-weight:500;}
+.moses-feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:28px;}
+.moses-feat-card{background:var(--glass);border:1px solid var(--glass-bd);border-radius:14px;padding:22px 24px;}
+.moses-feat-card h4{font-size:15px;color:var(--gold-light);margin-bottom:10px;line-height:1.5;}
+.moses-feat-card p{color:var(--muted);font-size:14px;line-height:1.85;}
+.moses-spec-chips{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 28px;}
+.moses-spec-chips span{font-family:'IBM Plex Mono';font-size:11px;padding:8px 14px;border-radius:8px;border:1px solid rgba(212,175,55,.28);color:var(--gold-light);background:rgba(212,175,55,.05);}
+.moses-theory-list{display:flex;flex-direction:column;gap:16px;margin-top:24px;}
+.moses-theory-item{background:var(--glass);border:1px solid var(--glass-bd);border-radius:14px;padding:22px 24px;}
+.moses-theory-item h4{font-size:16px;color:var(--heading);margin-bottom:10px;line-height:1.45;}
+.moses-theory-item p{color:var(--muted);font-size:14px;line-height:1.85;}
+.moses-theory-item em{color:var(--gold-light);font-style:normal;}
+.moses-closing{margin-top:32px;padding:24px 28px;border-radius:14px;border:1px solid rgba(212,175,55,.25);background:linear-gradient(135deg,rgba(212,175,55,.08),rgba(15,23,42,.4));font-size:15px;line-height:1.9;color:var(--text);}
+.moses-myth{background:rgba(212,175,55,.04);border:1px solid var(--glass-bd);border-radius:14px;padding:22px 24px;margin-top:20px;}
+.moses-myth p{color:var(--muted);font-size:14px;line-height:1.85;margin-top:10px;}
+@media(max-width:900px){
+  .moses-feat-grid{grid-template-columns:1fr;}
+  .moses-spec-table th{width:110px;font-size:10px;}
+  .nigodemo-hero{min-height:auto;padding-top:96px;}
+  .nigodemo-hero-grid{grid-template-columns:1fr;}
+  .nigodemo-hero-visual{order:-1;max-width:360px;margin:0 auto;}
+  .nigodemo-hero h1,.nigodemo-hero-lead{text-align:center;margin-left:auto;margin-right:auto;}
+  .nigodemo-hero-badge{margin-left:auto;margin-right:auto;}
+  .nigodemo-hero-chips,.nigodemo-hero .hero-btns{justify-content:center;}
+  .nigodemo-hero-stats{max-width:none;margin-left:auto;margin-right:auto;}
+  .nigodemo-quick{grid-template-columns:1fr;margin-top:24px;}
+}
+/* —— Mockup-style home layout —— */
+body:not(.trinity-theme):not(.magnificat-theme){--light:#F4F1EA;--light-text:#1A1510;--light-muted:#6B6358;}
+.nav-util{display:flex;align-items:center;gap:8px;margin-left:8px;}
+.nav-util .btn-nav-inq{padding:9px 16px;font-size:12px;border-radius:6px;font-weight:600;cursor:pointer;transition:.25s;white-space:nowrap;}
+.btn-inq-outline{background:transparent;border:1px solid rgba(212,175,55,.55);color:var(--gold-light);}
+.btn-inq-outline:hover{background:rgba(212,175,55,.1);border-color:var(--gold);}
+.btn-inq-fill{background:var(--gold);border:1px solid var(--gold);color:var(--navy);}
+.btn-inq-fill:hover{background:var(--gold-light);}
+.mk-hero{position:relative;min-height:clamp(520px,78vh,760px);display:flex;align-items:flex-end;background:#0A0A0A;overflow:hidden;}
+.mk-hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .9s ease;pointer-events:none;}
+.mk-hero-slide.active{opacity:1;pointer-events:auto;}
+.mk-hero-slide::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.78) 0%,rgba(0,0,0,.45) 42%,rgba(0,0,0,.15) 100%),linear-gradient(0deg,rgba(0,0,0,.55),transparent 40%);}
+.mk-hero-inner{position:relative;z-index:2;width:100%;max-width:1280px;margin:0 auto;padding:clamp(100px,12vw,140px) clamp(20px,4vw,40px) clamp(48px,6vw,72px);}
+.mk-hero-kicker{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.32em;color:rgba(212,175,55,.9);margin-bottom:18px;}
+.mk-hero h1{font-family:'Playfair Display',serif;font-size:clamp(34px,5.5vw,58px);line-height:1.12;text-align:left;max-width:720px;color:#fff;margin:0;}
+.mk-hero-lead{color:rgba(255,255,255,.82);font-size:clamp(15px,2vw,17px);line-height:1.85;max-width:560px;margin:22px 0 32px;text-align:left;}
+.mk-hero-btns{display:flex;gap:14px;flex-wrap:wrap;}
+.mk-hero-btns .btn{min-width:148px;}
+.mk-hero-nav{position:absolute;bottom:clamp(28px,4vw,48px);left:clamp(20px,4vw,40px);z-index:3;display:flex;align-items:center;gap:16px;font-family:'IBM Plex Mono';font-size:12px;color:rgba(255,255,255,.55);}
+.mk-hero-dots{display:flex;gap:8px;}
+.mk-hero-dots button{width:28px;height:2px;border:none;background:rgba(255,255,255,.25);cursor:pointer;padding:0;transition:.25s;}
+.mk-hero-dots button.active{background:var(--gold);width:36px;}
+.mk-hero-arrows{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);z-index:3;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none;}
+.mk-hero-arrows button{pointer-events:auto;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;font-size:20px;cursor:pointer;transition:.25s;backdrop-filter:blur(6px);}
+.mk-hero-arrows button:hover{border-color:var(--gold);color:var(--gold);}
+.mk-scroll-side{position:absolute;right:24px;bottom:120px;z-index:3;writing-mode:vertical-rl;font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.28em;color:rgba(255,255,255,.4);}
+.mk-light{background:var(--light);color:var(--light-text);position:relative;z-index:2;}
+.mk-light .sec-label{color:var(--gold-dim);}
+.mk-light h2{color:var(--light-text);}
+.mk-light p{color:var(--light-muted);}
+.mk-values{padding:clamp(36px,5vw,52px) 0;border-bottom:1px solid rgba(0,0,0,.06);}
+.mk-values-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center;}
+.mk-val-icon{font-size:28px;margin-bottom:12px;opacity:.85;}
+.mk-val-item h4{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.14em;color:var(--light-text);margin-bottom:8px;font-weight:600;}
+.mk-val-item p{font-size:13px;line-height:1.75;color:var(--light-muted);}
+.mk-products-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:36px;}
+.mk-products-head h2{margin:0;}
+.mk-products-link{font-family:'IBM Plex Mono';font-size:12px;color:var(--gold-dim);cursor:pointer;border:none;background:none;padding:0;font-weight:600;}
+.mk-products-link:hover{color:var(--gold);}
+.mk-prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+.mk-prod-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:4px;overflow:hidden;cursor:pointer;transition:.35s;box-shadow:0 8px 28px rgba(0,0,0,.06);}
+.mk-prod-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.12);}
+.mk-prod-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#111;}
+.mk-prod-card.mk-iron img{object-fit:contain;background:#ece8e0;padding:12px;}
+.mk-prod-body{padding:20px 22px 24px;}
+.mk-prod-en{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.2em;color:var(--gold-dim);margin-bottom:6px;}
+.mk-prod-body h3{font-size:18px;color:var(--light-text);margin-bottom:8px;}
+.mk-prod-body p{font-size:13px;line-height:1.7;margin-bottom:16px;}
+.mk-prod-more{font-family:'IBM Plex Mono';font-size:11px;color:var(--light-text);font-weight:600;}
+.mk-story{position:relative;min-height:clamp(360px,50vw,520px);display:flex;align-items:center;background-size:cover;background-position:center;}
+.mk-story::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.72),rgba(0,0,0,.35));}
+.mk-story-inner{position:relative;z-index:2;display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;padding:var(--section-y) 0;}
+.mk-story-copy h2{color:#fff;text-align:left;font-size:clamp(28px,4vw,42px);}
+.mk-story-copy p{color:rgba(255,255,255,.78);line-height:1.85;margin-top:16px;font-size:15px;}
+.mk-story-menu{list-style:none;display:flex;flex-direction:column;gap:0;}
+.mk-story-menu li{display:flex;align-items:center;gap:14px;padding:18px 0;border-bottom:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.85);font-size:14px;cursor:pointer;transition:.2s;}
+.mk-story-menu li:hover{color:var(--gold-light);padding-left:6px;}
+.mk-story-menu li span:first-child{font-size:18px;width:28px;text-align:center;opacity:.9;}
+.mk-craft{width:100%;aspect-ratio:21/7;min-height:200px;background-size:cover;background-position:center;position:relative;}
+.mk-craft::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.25);}
+.mk-feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px;}
+.mk-feat-tile{position:relative;border-radius:6px;overflow:hidden;min-height:220px;cursor:pointer;border:none;padding:0;text-align:left;background:#111;}
+.mk-feat-tile img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transition:transform .5s;}
+.mk-feat-tile:hover img{transform:scale(1.05);}
+.mk-feat-tile::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.15));}
+.mk-feat-cap{position:absolute;left:0;right:0;bottom:0;padding:22px 20px;z-index:1;}
+.mk-feat-cap .en{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.18em;color:var(--gold-light);}
+.mk-feat-cap h4{color:#fff;font-size:16px;margin-top:6px;}
+.mk-fitting{background:#111;color:#fff;padding:var(--section-y) 0;}
+.mk-fitting-head{text-align:center;max-width:640px;margin:0 auto 48px;}
+.mk-fitting-head h2{color:#fff;}
+.mk-fitting-head p{color:rgba(255,255,255,.65);margin-top:14px;line-height:1.85;}
+.mk-fit-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+.mk-fit-step{text-align:center;padding:28px 20px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.03);}
+.mk-fit-num{font-family:'Playfair Display',serif;font-size:36px;color:var(--gold);line-height:1;margin-bottom:14px;}
+.mk-fit-step h4{font-size:15px;color:#fff;margin-bottom:10px;}
+.mk-fit-step p{font-size:13px;color:rgba(255,255,255,.6);line-height:1.75;}
+.mk-home-sub{padding:var(--section-y) 0;}
+@media(max-width:1024px){.mk-prod-grid,.mk-feature-grid,.mk-fit-steps{grid-template-columns:repeat(2,1fr);}.mk-values-grid{grid-template-columns:repeat(2,1fr);}.mk-story-inner{grid-template-columns:1fr;}.nav-util{display:none;}}
+@media(max-width:640px){.mk-prod-grid,.mk-feature-grid,.mk-fit-steps,.mk-values-grid{grid-template-columns:1fr;}.mk-hero h1{font-size:30px;}.mk-scroll-side{display:none;}.mk-hero-arrows{display:none;}}
 .band-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
 .band-meta span{font-family:'IBM Plex Mono';font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid var(--glass-bd);color:var(--muted);}
 .quote-box{border-left:3px solid var(--gold);padding:20px 24px;margin:36px 0;background:rgba(212,175,55,.05);border-radius:0 12px 12px 0;color:var(--muted);font-size:14px;line-height:1.85;}
-.community-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--block-gap);margin-top:40px;align-items:start;}
+.community-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--block-gap);margin-top:40px;align-items:stretch;}
+.community-visual{display:grid;grid-template-rows:1.15fr 1fr;gap:12px;min-height:100%;}
+.community-visual img{width:100%;height:100%;min-height:150px;border-radius:14px;border:1px solid var(--glass-bd);object-fit:cover;cursor:pointer;transition:.3s;display:block;box-shadow:var(--shadow);}
+.community-visual img:hover{border-color:rgba(212,175,55,.4);transform:translateY(-2px);}
+.community-visual-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.band-gallery{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-top:20px;}
+.band-gallery img{width:100%;border-radius:14px;border:1px solid var(--glass-bd);aspect-ratio:16/10;object-fit:cover;cursor:pointer;display:block;transition:.3s;box-shadow:var(--shadow);}
+.band-gallery img:hover{border-color:rgba(6,182,110,.45);transform:translateY(-2px);}
+@media(max-width:900px){.band-gallery{grid-template-columns:1fr;}.community-visual{grid-template-rows:auto;}}
 .community-box{background:var(--glass);border:1px solid var(--glass-bd);border-radius:14px;padding:28px;}
 .community-box h3{font-size:17px;margin-bottom:12px;}
 .community-box p{color:var(--muted);font-size:14px;line-height:1.85;margin-bottom:16px;}
@@ -562,11 +775,13 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 <div class="mouse-glow" id="mouseGlow"></div>
 <div class="m-backdrop" id="mBackdrop" onclick="closeMenu()"></div>
 <div class="m-drawer" id="mDrawer">
-  <a onclick="navGo('home')">634 그룹</a>
-  <a onclick="navGo('products')">무사시골프채</a>
-  <a onclick="navGo('nigodemo')">니고데모</a>
+  <a onclick="navGo('home')">홈</a>
+  <a onclick="navGo('products')">제품소개</a>
+  <a onclick="navGo('nigodemo')">스토리 · 드라이버</a>
+  <a onclick="homeScroll('home-fitting')">피팅서비스</a>
   <a onclick="navGo('magnificat')">Magnificat</a>
-  <a onclick="navGo('partners')">협회</a>
+  <a onclick="navGo('partners')">고객센터</a>
+  <a onclick="productInquiry()">제품문의</a>
   <hr style="border:none;border-top:1px solid var(--glass-bd);margin:8px 0;">
   <a onclick="navGo('trinity')">Trinity 제품</a>
   <a onclick="navGo('franchise')">Trinity 가맹</a>
@@ -579,14 +794,20 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
       <div class="brand-text">인터네셔널<br>무사시 634 그룹</div>
     </div>
     <div class="nav-links" id="navLinks">
-      <a data-page="home" onclick="navGo('home')">그룹</a>
-      <a data-page="products" onclick="navGo('products')">골프채</a>
-      <a data-page="nigodemo" onclick="navGo('nigodemo')">니고데모</a>
-      <a data-page="magnificat" class="mag-nav" onclick="navGo('magnificat')">Magnificat</a>
-      <a data-page="partners" onclick="navGo('partners')">협회</a>
+      <a data-page="home" onclick="homeScroll('home-story')">브랜드</a>
+      <a data-page="products" onclick="navGo('products')">제품소개</a>
+      <a onclick="homeScroll('home-tech')">기술력</a>
+      <a onclick="homeScroll('home-fitting')">피팅서비스</a>
+      <a data-page="nigodemo" onclick="navGo('nigodemo')">스토리</a>
+      <a onclick="homeScroll('home-gallery')">갤러리</a>
+      <a data-page="partners" onclick="navGo('partners')">고객센터</a>
       <span class="nav-divider"></span>
+      <a data-page="magnificat" class="mag-nav" onclick="navGo('magnificat')">Magnificat</a>
       <a data-page="trinity" class="trinity-nav" onclick="navGo('trinity')">Trinity</a>
-      <a data-page="franchise" class="trinity-nav" onclick="navGo('franchise')">가맹</a>
+      <div class="nav-util">
+        <button class="btn-nav-inq btn-inq-outline" onclick="productInquiry()">제품문의</button>
+        <button class="btn-nav-inq btn-inq-fill" onclick="homeScroll('home-fitting')">피팅문의</button>
+      </div>
     </div>
     <button class="hamburger" onclick="toggleMenu()" aria-label="메뉴"><span></span><span></span><span></span></button>
   </div>
@@ -594,46 +815,119 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 
 <!-- HOME · MUSASHI ONLY -->
 <div id="page-home" class="page active">
-  <section class="hero" id="homeHero">
-    <div class="hero-watermark" aria-hidden="true">634</div>
-    <div class="hero-burst" aria-hidden="true"></div>
-    <div class="hero-beams" aria-hidden="true"></div>
-    <div class="hero-aurora"></div>
-    <div class="hero-orbit"><span></span><span></span><span></span></div>
-    <div class="hero-particles" id="heroParticles"></div>
-    <div class="hero-spot" id="heroSpot"></div>
-    <div class="wrap">
-      <div class="reveal hero-pop intro-wait" style="display:inline-flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--glass-bd);padding:8px 18px;border-radius:100px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono';margin-bottom:28px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite;"></span> SINCE 1956</div>
-      <h1 class="hero-title">
-        <span class="hero-tline reveal hero-pop intro-wait">인터네셔널</span>
-        <span class="hero-tline reveal hero-pop intro-wait">무사시 634 <span class="grad gleam">그룹</span></span>
-      </h1>
-      <p class="reveal hero-pop intro-wait">70년 전통의 프리미엄 골프채 브랜드. 일본 제조 무사시골프채 10개 시리즈를 선보입니다.</p>
-      <div class="hero-btns reveal hero-pop intro-wait">
-        <button class="btn btn-primary" onclick="navGo('products')">골프채 라인업 →</button>
-        <button class="btn btn-ghost" onclick="navGo('nigodemo')">니고데모 드라이버</button>
-      </div>
-      <div class="stat-grid reveal hero-pop intro-wait" style="margin-top:48px;">
-        <div class="stat-card"><div class="sc-label">역사</div><div class="sc-val" data-target="70">0</div><div class="sc-delta">1956—2026</div></div>
-        <div class="stat-card"><div class="sc-label">브랜드</div><div class="sc-val" data-target="10">0</div><div class="sc-delta">골프채 시리즈</div></div>
-        <div class="stat-card"><div class="sc-label">제조</div><div class="sc-val" style="font-size:22px;">일본</div><div class="sc-delta">단조 · 장인 정신</div></div>
+  <section class="mk-hero" id="homeHero">
+    <div class="mk-hero-slide active" style="background-image:url('assets/nigodemo/jehovah-nissi-luxury.jpg')"></div>
+    <div class="mk-hero-slide" style="background-image:url('assets/irons/cps-graphene/hero.jpg');background-position:center 30%;"></div>
+    <div class="mk-hero-slide" style="background-image:url('assets/series-showcase.jpg')"></div>
+    <div class="mk-hero-arrows"><button type="button" onclick="heroSlide(-1)" aria-label="이전">‹</button><button type="button" onclick="heroSlide(1)" aria-label="다음">›</button></div>
+    <div class="mk-scroll-side">SCROLL</div>
+    <div class="mk-hero-inner">
+      <p class="mk-hero-kicker" id="mkHeroKicker">JAPANESE CRAFTSMANSHIP · SINCE 1956</p>
+      <h1 id="mkHeroTitle">MUSASHI 634<br>PRECISION FORGED GOLF CLUB</h1>
+      <p class="mk-hero-lead" id="mkHeroLead">일본 장인의 혼이 담긴 단 하나의 클럽, 무사시 634. THE MIRACLE OF MOSES 드라이버 · CPS 그래핀 7아이언.</p>
+      <div class="mk-hero-btns">
+        <button class="btn btn-primary" onclick="navGo('products')">제품 보기 →</button>
+        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.35);color:#fff;" onclick="homeScroll('home-story')">브랜드 스토리 →</button>
       </div>
     </div>
-    <div class="hero-scroll intro-wait"><span class="hs-dot"></span>SCROLL</div>
+    <div class="mk-hero-nav"><span id="mkHeroCounter">01</span><div class="mk-hero-dots" id="mkHeroDots"></div></div>
   </section>
-  <div class="marquee"><div class="track">
-    <span><i class="wh">SINCE 1956</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JAPAN FORGED</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MUSASHI 634</i>&nbsp;<b>·</b>&nbsp;<i class="hi">CPS GRAPHENE</i>&nbsp;<b>·</b>&nbsp;<i class="wh">NIGODEMO</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MAGNIFICAT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">10 SERIES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JEHOVAH NISSI III</i>&nbsp;<b>·</b>&nbsp;<i class="wh">FORGED IRONS</i>&nbsp;<b>·</b>&nbsp;<i class="hi">SOLI DEO GLORIA</i>&nbsp;<b>·</b>&nbsp;</span>
-    <span><i class="wh">SINCE 1956</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JAPAN FORGED</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MUSASHI 634</i>&nbsp;<b>·</b>&nbsp;<i class="hi">CPS GRAPHENE</i>&nbsp;<b>·</b>&nbsp;<i class="wh">NIGODEMO</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MAGNIFICAT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">10 SERIES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">JEHOVAH NISSI III</i>&nbsp;<b>·</b>&nbsp;<i class="wh">FORGED IRONS</i>&nbsp;<b>·</b>&nbsp;<i class="hi">SOLI DEO GLORIA</i>&nbsp;<b>·</b>&nbsp;</span>
-  </div></div>
-  <div class="marquee marquee-2"><div class="track">
-    <span><i class="hi">FORGED IN JAPAN</i>&nbsp;<b>·</b>&nbsp;<i class="wh">634 CPS IRON</i>&nbsp;<b>·</b>&nbsp;<i class="hi">NICODEMUS DRIVER</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MAGNIFICAT SHOES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">ARTISAN SPIRIT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">PREMIUM GOLF</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MUSASHI GOLF CLUBS</i>&nbsp;<b>·</b>&nbsp;</span>
-    <span><i class="hi">FORGED IN JAPAN</i>&nbsp;<b>·</b>&nbsp;<i class="wh">634 CPS IRON</i>&nbsp;<b>·</b>&nbsp;<i class="hi">NICODEMUS DRIVER</i>&nbsp;<b>·</b>&nbsp;<i class="wh">MAGNIFICAT SHOES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">ARTISAN SPIRIT</i>&nbsp;<b>·</b>&nbsp;<i class="wh">PREMIUM GOLF</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MUSASHI GOLF CLUBS</i>&nbsp;<b>·</b>&nbsp;</span>
-  </div></div>
-  <section class="pad" style="padding-top:0;"><div class="wrap reveal">
+
+  <section class="mk-light mk-values"><div class="wrap">
+    <div class="mk-values-grid reveal">
+      <div class="mk-val-item"><div class="mk-val-icon">⛩</div><h4>JAPANESE CRAFTSMANSHIP</h4><p>일본식 단조·장인 정신으로 완성한 프리미엄 골프클럽</p></div>
+      <div class="mk-val-item"><div class="mk-val-icon">⚒</div><h4>FORGED TECHNOLOGY</h4><p>니고데모 단조·CPS 그래핀 기술로 비거리와 타구감 균형</p></div>
+      <div class="mk-val-item"><div class="mk-val-icon">◎</div><h4>PRECISION DESIGN</h4><p>스윙·임팩트를 고려한 정밀 설계 · 특허 헤드 기술</p></div>
+      <div class="mk-val-item"><div class="mk-val-icon">📐</div><h4>FITTING</h4><p>개인 맞춤 피팅·스펙 상담으로 최적의 클럽 매칭</p></div>
+    </div>
+  </div></section>
+
+  <section class="mk-light pad" id="home-products"><div class="wrap reveal">
+    <div class="mk-products-head">
+      <div><div class="sec-label">Products</div><h2>제품소개</h2><p style="margin-top:10px;">무사시 634의 주요 라인업 · 아이언은 CPS 그래핀 7아이언만</p></div>
+      <button class="mk-products-link" onclick="navGo('products')">전체 제품 보기 →</button>
+    </div>
+    <div class="mk-prod-grid">
+      <div class="mk-prod-card" onclick="navGo('nigodemo')">
+        <img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="드라이버">
+        <div class="mk-prod-body"><div class="mk-prod-en">DRIVER</div><h3>드라이버</h3><p>THE MIRACLE OF MOSES · 니고데모 초고반발 · 495cc</p><span class="mk-prod-more">자세히 보기 →</span></div>
+      </div>
+      <div class="mk-prod-card mk-iron" onclick="navGoIron('musashi-634','cps-graphene-7i')">
+        <img src="assets/irons/cps-graphene/hero.jpg" alt="CPS 그래핀 7아이언">
+        <div class="mk-prod-body"><div class="mk-prod-en">IRON</div><h3>아이언</h3><p>CPS 그래핀 7아이언 · JEHOVAH NISSI III · #5~SW</p><span class="mk-prod-more">자세히 보기 →</span></div>
+      </div>
+      <div class="mk-prod-card" onclick="navGoProduct('nicodemus')">
+        <img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="웨지">
+        <div class="mk-prod-body"><div class="mk-prod-en">WEDGE</div><h3>웨지</h3><p>NICODEMUS 단조 웨지 48°~60° · FST125 샤프트</p><span class="mk-prod-more">자세히 보기 →</span></div>
+      </div>
+      <div class="mk-prod-card" onclick="navGoProduct('mla')">
+        <img src="assets/series-showcase.jpg" alt="퍼터">
+        <div class="mk-prod-body"><div class="mk-prod-en">PUTTER</div><h3>퍼터</h3><p>MLA 퍼터 · 입문·퍼팅 특화 · 말렛/블레이드</p><span class="mk-prod-more">자세히 보기 →</span></div>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="mk-story" id="home-story" style="background-image:url('assets/series-showcase.jpg')"><div class="wrap mk-story-inner">
+    <div class="mk-story-copy reveal">
+      <div class="sec-label" style="color:var(--gold-light);">Brand Story</div>
+      <h2>무사시 634,<br>그 이름에 담긴 의미</h2>
+      <p>1956년부터 이어온 일본식 단조 기법. JEHOVAH NISSI · SOLI DEO GLORIA 각인과 함께, 장인의 기술과 제작 철학이 담긴 프리미엄 골프클럽을 국내에 유통합니다.</p>
+    </div>
+    <ul class="mk-story-menu reveal">
+      <li onclick="homeScroll('home-story')"><span>①</span> 무사시 634의 의미</li>
+      <li onclick="navGo('products')"><span>②</span> 10시리즈 브랜드 역사</li>
+      <li onclick="homeScroll('home-tech')"><span>③</span> 제조 · 특허 기술</li>
+      <li onclick="navGo('nigodemo')"><span>④</span> 제품에 담긴 뜻 · 모세의 기적</li>
+    </ul>
+  </div></section>
+
+  <div class="mk-craft" style="background-image:url('assets/musashi-products-wall.png')" role="img" aria-label="무사시 제품 벽면"></div>
+
+  <section class="pad" id="home-tech"><div class="wrap">
+    <div class="sec-label reveal">Explore</div>
+    <h2 class="reveal">무사시 634 <span class="grad">핵심</span></h2>
+    <div class="mk-feature-grid reveal" id="home-gallery">
+      <button class="mk-feat-tile" onclick="navGoIron('musashi-634','cps-graphene-7i')"><img src="assets/irons/cps-graphene/detail-3.jpg" alt="기술력"><div class="mk-feat-cap"><div class="en">TECHNOLOGY</div><h4>기술력 · CPS 특허</h4></div></button>
+      <button class="mk-feat-tile" onclick="homeScroll('home-fitting')"><img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="피팅"><div class="mk-feat-cap"><div class="en">FITTING SERVICE</div><h4>피팅서비스</h4></div></button>
+      <button class="mk-feat-tile" onclick="navGo('partners')"><img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="선택하는 이유"><div class="mk-feat-cap"><div class="en">WHY MUSASHI</div><h4>선택하는 이유</h4></div></button>
+      <button class="mk-feat-tile" onclick="navGo('nigodemo')"><img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="갤러리"><div class="mk-feat-cap"><div class="en">GALLERY</div><h4>갤러리 · 드라이버</h4></div></button>
+    </div>
+  </div></section>
+
+  <section class="mk-fitting" id="home-fitting"><div class="wrap">
+    <div class="mk-fitting-head reveal">
+      <div class="sec-label" style="color:var(--gold-light);">Fitting</div>
+      <h2>정확한 데이터로<br>가장 잘 맞는 클럽을</h2>
+      <p>드라이버 · CPS 아이언 · 웨지 — 스펙·강도·길이 맞춤 상담. 공식 밴드와 그룹 문의를 통해 피팅·구매 안내를 받으실 수 있습니다.</p>
+      <button class="btn btn-primary" style="margin-top:24px;" onclick="productInquiry()">피팅 상담 신청 →</button>
+    </div>
+    <div class="mk-fit-steps reveal">
+      <div class="mk-fit-step"><div class="mk-fit-num">01</div><h4>상담</h4><p>현재 클럽·스윙 특성·목표 비거리 확인</p></div>
+      <div class="mk-fit-step"><div class="mk-fit-num">02</div><h4>측정</h4><p>헤드스피드·런치·스핀 등 데이터 측정</p></div>
+      <div class="mk-fit-step"><div class="mk-fit-num">03</div><h4>분석</h4><p>드라이버·아이언·웨지 최적 조합 제안</p></div>
+      <div class="mk-fit-step"><div class="mk-fit-num">04</div><h4>맞춤</h4><p>강도·길이·로프트 맞춤 · 구성 안내</p></div>
+    </div>
+  </div></section>
+
+  <section class="pad mk-home-sub"><div class="wrap reveal">
     <div class="sec-label">Flagship</div>
     <h2>대표 <span class="grad">제품</span></h2>
-    <p style="color:var(--muted);margin-top:12px;line-height:1.75;">무사시 634 그룹 대표 라인 — CPS 아이언 · 니고데모 · Magnificat</p>
+    <p style="color:var(--muted);margin-top:12px;line-height:1.75;">CPS 그래핀 7아이언 · 모세의 기적 드라이버 · Magnificat 골프화</p>
     <div class="flagship-grid" id="homeFlagship"></div>
+    <div class="ip-block ip-hero-block" id="home-patent">
+      <div class="ip-cert"><img src="assets/ip/patent-iron-head.png" alt="골프 클럽 헤드 특허증 — 클릭하여 확대" onclick="openLightbox(this.src)"></div>
+      <div>
+        <div class="sec-label" style="margin-bottom:10px;">Patent · Iron</div>
+        <h3 style="font-size:22px;margin-bottom:10px;">CPS 아이언 <span class="grad">특허등록</span></h3>
+        <p style="color:var(--muted);line-height:1.85;margin-bottom:14px;">「골프 클럽 헤드 및 그 제조 방법」— CPS 그래핀 7아이언 헤드 설계·제조 기술 특허 (지식재산처)</p>
+        <table class="ip-table">
+          <tr><th>특허번호</th><td><strong style="color:var(--heading)">제 10-2961654 호</strong></td></tr>
+          <tr><th>출원번호</th><td>제 10-2025-0150866 호</td></tr>
+          <tr><th>등록일</th><td>2026.04.30</td></tr>
+        </table>
+        <button class="btn btn-primary btn-sm" style="margin-top:18px;" onclick="navGoIron('musashi-634','cps-graphene-7i')">CPS 아이언 상세 →</button>
+      </div>
+    </div>
   </div></section>
   <section class="pad" style="padding-top:0;"><div class="wrap reveal">
     <div class="band-cta-banner">
@@ -653,12 +947,51 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
     <h2>634 <span class="grad">MUSASHI</span></h2>
     <div class="group-intro">
       <div>
-        <p style="color:var(--muted);line-height:1.85;font-size:15px;margin-bottom:16px;"><strong style="color:var(--text)">인터네셔널 무사시 634 그룹</strong>은 일본식 단조 기법으로 프리미엄 골프클럽을 개발·생산합니다. JEHOVAH NISHI, NICODEMUS, PASSOVER 등 각 시리즈명과 제품 슬로건에는 제작 철학과 뜻이 담겨 있으며, 장인의 기술과 그 정신이 함께합니다.</p>
+        <p style="color:var(--muted);line-height:1.85;font-size:15px;margin-bottom:16px;"><strong style="color:var(--text)">주식회사 인터네셔널무사시634</strong> (인터네셔널 무사시 634 그룹)은 일본식 단조 기법으로 프리미엄 골프클럽을 개발·생산합니다. JEHOVAH NISHI, NICODEMUS, PASSOVER 등 각 시리즈명과 제품 슬로건에는 제작 철학과 뜻이 담겨 있으며, 장인의 기술과 그 정신이 함께합니다.</p>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--glass-bd);border-radius:20px;padding:40px;text-align:center;box-shadow:var(--shadow-lg);">
-        <img src="assets/musashi-logo-light.png" alt="MUSASHI 634" class="musashi-logo-img hero" width="300" height="158">
-        <p style="font-family:'IBM Plex Mono';font-size:12px;color:var(--muted);letter-spacing:.08em;margin-top:16px;">INTERNATIONAL MUSASHI 634 GROUP</p>
+      <div class="group-intro-visual">
+        <img class="main" src="assets/series-showcase.jpg" alt="무사시 634 CPS 아이언 · JEHOVAH NISSI 드라이버" onclick="openLightbox(this.src)">
+        <div class="group-intro-cap">
+          <img src="assets/musashi-logo-light.png" alt="MUSASHI 634">
+          <p>INTERNATIONAL MUSASHI 634 GROUP</p>
+        </div>
       </div>
+    </div>
+  </div></section>
+  <section class="pad"><div class="wrap reveal">
+    <div class="sec-label">Brand · IP</div>
+    <h2>상표등록 · <span class="grad">아이언 특허</span></h2>
+    <p style="color:var(--muted);max-width:720px;margin-top:12px;line-height:1.85;">「MUSASHI 634」브랜드 상표등록과 CPS 그래핀 아이언 헤드 특허를 보유합니다. JEHOVAH NISSI 시리즈는 SOLI DEO GLORIA · The Miracle of Moses 각인과 함께 프리미엄 라인을 대표합니다.</p>
+    <div class="ip-dual">
+      <div class="ip-teaser">
+        <div>
+          <p class="mag-patent" style="margin-top:0;">상표등록증 · MUSASHI 634</p>
+          <table class="ip-table">
+            <tr><th>등록번호</th><td>제 40-2392870 호</td></tr>
+            <tr><th>등록일</th><td>2025.07.24</td></tr>
+            <tr><th>지정상품</th><td>제35류 — 골프가방 소매업 등</td></tr>
+          </table>
+          <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="navGo('nigodemo')">상표 상세 →</button>
+        </div>
+        <img src="assets/ip/trademark-musashi634.jpg" alt="MUSASHI 634 상표등록증" onclick="openLightbox(this.src)">
+      </div>
+      <div class="ip-teaser">
+        <div>
+          <p class="mag-patent" style="margin-top:0;">특허증 · 골프 클럽 헤드</p>
+          <table class="ip-table">
+            <tr><th>특허번호</th><td>제 10-2961654 호</td></tr>
+            <tr><th>발명의 명칭</th><td>골프 클럽 헤드 및 그 제조 방법</td></tr>
+            <tr><th>등록일</th><td>2026.04.30</td></tr>
+          </table>
+          <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="navGoIron('musashi-634','cps-graphene-7i')">CPS 아이언 상세 →</button>
+        </div>
+        <img src="assets/ip/patent-iron-head.png" alt="골프 클럽 헤드 특허증" onclick="openLightbox(this.src)">
+      </div>
+    </div>
+    <div class="ng-gallery" style="margin-top:24px;">
+      <img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="JEHOVAH NISSI 드라이버" onclick="openLightbox(this.src)">
+      <img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="JEHOVAH NISSI 드라이버 필드" onclick="openLightbox(this.src)">
+      <img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="JEHOVAH NISSI 드라이버 클로즈업" onclick="openLightbox(this.src)">
     </div>
   </div></section>
   <section class="pad"><div class="wrap">
@@ -674,15 +1007,15 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
     <p style="color:var(--muted);max-width:620px;margin:12px 0 0;line-height:1.85;">인터네셔널 무사시 634 그룹 회장님이 설립·운영하는 한국골프산업협회(KGIA) 및 코리아프로페셔널골프 관련 단체입니다. <span style="color:var(--muted);font-size:13px;">※ 한국프로골프협회(KPGA, kpga.co.kr)와는 별개 기관입니다.</span></p>
     <div class="assoc-grid">
       <div class="assoc-card">
-        <div class="assoc-visual"><img src="assets/assoc/kgia.svg" alt="한국골프산업협회 KGIA"></div>
+        <div class="assoc-visual assoc-badge"><img src="assets/assoc/kgia.svg" alt="한국골프산업협회 KGIA"></div>
         <div class="assoc-body"><div class="en">KGIA</div><h3>한국골프산업협회</h3><p>Korea Golf Industry Association. 국내 골프산업 발전과 회원사·관련 기업 협력.</p></div>
       </div>
       <div class="assoc-card">
-        <div class="assoc-visual"><img src="assets/assoc/kpg-assoc.svg" alt="코리아프로페셔널골프협회"></div>
+        <div class="assoc-visual assoc-badge"><img src="assets/assoc/kpg-assoc.svg" alt="코리아프로페셔널골프협회"></div>
         <div class="assoc-body"><div class="en">KPG Association</div><h3>공익법인 (사) 코리아프로페셔널골프협회</h3><p>2024년 8월 출범 · 2025년 공익법인. 엄재용 이사장. 골프 대중화·문화관광·인식개선.</p></div>
       </div>
       <div class="assoc-card">
-        <div class="assoc-visual"><img src="assets/assoc/gpg-corp.svg" alt="주식회사 코리아프로페셔널골프"></div>
+        <div class="assoc-visual assoc-badge"><img src="assets/assoc/gpg-corp.svg" alt="주식회사 코리아프로페셔널골프"></div>
         <div class="assoc-body"><div class="en">GPG</div><h3>주식회사 코리아프로페셔널골프</h3><p>Korea Professional Golf. 골프장·교육·운영 사업. 사회공헌·대회 후원 참여.</p></div>
       </div>
     </div>
@@ -704,32 +1037,206 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 
 <!-- NIGODEMO · Band content -->
 <div id="page-nigodemo" class="page">
-  <section class="hero"><div class="wrap">
-    <div class="sec-label">634 · Nigo Demo</div>
-    <h1>니고데모<br><span class="grad">드라이버</span></h1>
-    <p>비거리·방향성의 고민을 한방에 — 634 NICODEMUS 니고데모(Nigo Demo) 라인. 일본 무사시 단조·초고반발 기술을 적용했습니다.</p>
-    <div class="hero-btns">
-      <a class="btn btn-band" href="https://band.us/@634nicodemus" target="_blank" rel="noopener">공식 밴드 가입 →</a>
+  <section class="nigodemo-hero">
+    <div class="nigodemo-hero-glow" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="nigodemo-hero-grid reveal">
+        <div class="nigodemo-hero-copy">
+          <div class="nigodemo-hero-badge"><i></i>MUSASHI634 · THE MIRACLE OF MOSES</div>
+          <h1>모세의 기적<br><span class="grad">드라이버</span></h1>
+          <p class="nigodemo-hero-lead">THE MIRACLE OF MOSES — 전체 무게 250~260g 최경량 드라이버. 495cc 초광폭 헤드 · Musashi634 Graphene 샤프트 · SCF(Self Control Flex). 비거리의 해답은 '속도의 제곱'에 있습니다.</p>
+          <div class="nigodemo-hero-chips">
+            <span>495CC</span>
+            <span>GRAPHENE SHAFT</span>
+            <span>180g HEAD</span>
+            <span>JEHOVAH NISSI</span>
+          </div>
+          <div class="hero-btns">
+            <a class="btn btn-band" href="https://band.us/@634nicodemus" target="_blank" rel="noopener">공식 밴드 가입 →</a>
+            <button class="btn btn-ghost" onclick="document.getElementById('ng-spec').scrollIntoView({behavior:'smooth'})">스펙 · 기술 보기</button>
+          </div>
+          <div class="nigodemo-hero-stats">
+            <div class="ng-stat"><div class="ng-stat-val">495cc</div><div class="ng-stat-label">헤드 볼륨</div></div>
+            <div class="ng-stat"><div class="ng-stat-val">9~10°</div><div class="ng-stat-label">로프트</div></div>
+            <div class="ng-stat"><div class="ng-stat-val">250~260g</div><div class="ng-stat-label">전체 무게</div></div>
+          </div>
+        </div>
+        <div class="nigodemo-hero-visual">
+          <div class="nigodemo-hero-frame">
+            <img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="JEHOVAH NISSI The Miracle of Moses 드라이버" onclick="openLightbox(this.src)">
+            <div class="nigodemo-hero-caption"><span>THE MIRACLE OF MOSES</span><strong>MUSASHI634 Driver</strong></div>
+          </div>
+          <div class="nigodemo-hero-thumbs">
+            <img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="니고데모 드라이버 클로즈업" onclick="openLightbox(this.src)">
+            <img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="니고데모 필드" onclick="openLightbox(this.src)">
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="band-meta reveal" style="justify-content:center;margin-top:32px;">
-      <span>멤버 924</span>
-      <span>2017.02 개설</span>
-      <span>band.us/@634nicodemus</span>
+  </section>
+  <section class="pad" style="padding-top:0;padding-bottom:32px;"><div class="wrap">
+    <div class="nigodemo-quick reveal">
+      <div class="ng-quick-card" onclick="document.getElementById('ng-spec').scrollIntoView({behavior:'smooth'})">
+        <div class="ng-tag">SPEC</div>
+        <h4>Specifications</h4>
+        <p>495cc · 9~10° · Graphene Shaft · SCF</p>
+      </div>
+      <div class="ng-quick-card" onclick="document.getElementById('ng-tech').scrollIntoView({behavior:'smooth'})">
+        <div class="ng-tag">TECHNOLOGY</div>
+        <h4>헤드 · 페이스 기술</h4>
+        <p>최경량화 · VTF · CNC 밀링 · MOI</p>
+      </div>
+      <div class="ng-quick-card" onclick="document.getElementById('ng-science').scrollIntoView({behavior:'smooth'})">
+        <div class="ng-tag">SCIENCE</div>
+        <h4>4가지 과학 이론</h4>
+        <p>운동에너지 · 500cc · 그래핀 · 생체역학</p>
+      </div>
     </div>
   </div></section>
-  <section class="pad"><div class="wrap reveal">
-    <div class="sec-label">Philosophy</div>
-    <h2>비거리야, <span class="grad">물러갈라</span></h2>
-    <p style="color:var(--muted);max-width:680px;line-height:1.85;margin-top:12px;">공식 밴드 리더 MUSASHI CPS IRON의 슬로건. 니고데모 드라이버는 비거리와 방향성을 동시에 잡는 초고반발 헤드 설계로, 아마추어·실력 골퍼의 고민을 해결하는 대표 모델입니다.</p>
-    <blockquote class="quote-box">내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라. <span style="color:var(--gold-light);font-family:'IBM Plex Mono';font-size:12px;">— 빌립보서 4:13</span></blockquote>
+  <div class="marquee nigodemo-marquee"><div class="track">
+    <span><i class="wh">THE MIRACLE OF MOSES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">495CC</i>&nbsp;<b>·</b>&nbsp;<i class="wh">GRAPHENE SHAFT</i>&nbsp;<b>·</b>&nbsp;<i class="hi">250~260g</i>&nbsp;<b>·</b>&nbsp;<i class="wh">SCF</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MUSASHI634</i>&nbsp;<b>·</b>&nbsp;</span>
+    <span><i class="wh">THE MIRACLE OF MOSES</i>&nbsp;<b>·</b>&nbsp;<i class="hi">495CC</i>&nbsp;<b>·</b>&nbsp;<i class="wh">GRAPHENE SHAFT</i>&nbsp;<b>·</b>&nbsp;<i class="hi">250~260g</i>&nbsp;<b>·</b>&nbsp;<i class="wh">SCF</i>&nbsp;<b>·</b>&nbsp;<i class="hi">MUSASHI634</i>&nbsp;<b>·</b>&nbsp;</span>
+  </div></div>
+  <section class="pad" id="ng-spec"><div class="wrap reveal">
+    <div class="sec-label">Specifications</div>
+    <h2>모세의 기적 <span class="grad">드라이버 스펙</span></h2>
+    <div class="table-scroll">
+      <table class="moses-spec-table">
+        <tr><th>BRAND</th><td>MUSASHI634</td></tr>
+        <tr><th>MODEL</th><td><strong style="color:var(--heading)">THE MIRACLE OF MOSES</strong></td></tr>
+        <tr><th>VOLUME</th><td>495cc</td></tr>
+        <tr><th>LOFT (DEGREE)</th><td>9~10°</td></tr>
+        <tr><th>SHAFT</th><td>Musashi634 Graphene Shaft</td></tr>
+        <tr><th>SHAFT STRENGTH</th><td>SCF [SELF CONTROL FLEX]</td></tr>
+        <tr><th>COUNTRY OF ORIGIN</th><td>HEAD / CHINA · SHAFT / KOREA · GRIP / KOREA &amp; CHINA</td></tr>
+        <tr><th>MANUFACTURER</th><td>INTERNATIONAL MUSASHI634</td></tr>
+        <tr><th>전체 무게</th><td>250g ~ 260g (최경량 최적화)</td></tr>
+        <tr><th>헤드 무게</th><td>180g대 초중반</td></tr>
+        <tr><th>샤프트 중량</th><td>30g ~ 55g (그래핀 샤프트)</td></tr>
+        <tr><th>그립</th><td>25g ~ 40g</td></tr>
+      </table>
+    </div>
+  </div></section>
+  <section class="pad" id="ng-tech"><div class="wrap reveal">
+    <div class="sec-label">Technology</div>
+    <h2>헤드 · 페이스 <span class="grad">핵심 기술</span></h2>
+    <div class="moses-feat-grid">
+      <div class="moses-feat-card">
+        <h4>헤드 무게 최경량화 실현</h4>
+        <p>과학적으로 크라운 부분의 무게를 한계치까지 줄입니다. 확보한 잉여 중량을 솔의 가장 낮고 깊은 곳으로 재배치합니다. 무게 중심이 페이스에서 멀어지고 바닥으로 내려갈수록, 임팩트 시 기어 효과(Gear Effect)로 불필요한 백스핀이 억제되어 공을 쉽게 띄울 수 있게 설계했습니다.</p>
+      </div>
+      <div class="moses-feat-card">
+        <h4>반발 면적 확대를 위한 페이스 정밀가공</h4>
+        <p>페이스 VTF 설계(가변두께 페이스). 페이스 뒷면을 정밀한 CNC 밀링 패턴으로 가공해 미세한 두께 편차를 잡아내어, 유효 타구 면적이 넓어져 조금 빗맞아도 비거리를 보장합니다.</p>
+      </div>
+      <div class="moses-feat-card">
+        <h4>고비중 소재의 전략적 배치</h4>
+        <p>토우와 힐 쪽에 무게추를 배분해 관성 모멘트(MOI)를 높입니다. 스윙을 최대한 편하게 하면서 방향성을 확보합니다.</p>
+      </div>
+      <div class="moses-feat-card">
+        <h4>심리적 안정감 및 스피드</h4>
+        <p>어드레스 시 투영 면적을 넓게 설계해 시각적으로 커 보이게 만들어 안정감을 줍니다. 스윙 궤도에서 공기 저항을 최소화합니다.</p>
+      </div>
+    </div>
+  </div></section>
+  <section class="pad" id="ng-jehovah"><div class="wrap reveal">
+    <div class="sec-label">JEHOVAH NISSI</div>
+    <h2>The Miracle of <span class="grad">Moses</span></h2>
+    <p style="color:var(--muted);max-width:720px;line-height:1.85;margin-top:12px;">JEHOVAH NISSI(「여호와는 나의 깃발」) 프리미엄 드라이버. 골드 미러 솔 · SOLI DEO GLORIA · The Miracle of Moses 각인.</p>
+    <div class="ng-detail-grid">
+      <div class="ng-detail-copy">
+        <div class="ng-markings">
+          <span>JEHOVAH NISSI</span>
+          <span>SOLI DEO GLORIA</span>
+          <span>THE LORD IS MY BANNER</span>
+          <span>THE MIRACLE OF MOSES</span>
+        </div>
+        <div class="ng-detail-meaning">
+          <strong>여호와는 나의 깃발 (JEHOVAH NISSI)</strong>
+          <span>출애굽기 17:15 — 이스라엘이 아말렉과의 전투에서 승리한 후 모세가 세운 제단 이름. 「승리의 깃발」이라는 뜻을 담아, 드라이버의 방향성·비거리 철학과 연결됩니다.</span>
+        </div>
+        <blockquote class="quote-box" style="margin-top:20px;margin-bottom:0;">내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라. <span style="color:var(--gold-light);font-family:'IBM Plex Mono';font-size:12px;">— 빌립보서 4:13</span></blockquote>
+      </div>
+      <div class="ng-detail-panel">
+        <h3>Brand · Engraving</h3>
+        <table class="ng-detail-spec">
+          <tr><th>브랜드</th><td>MUSASHI634</td></tr>
+          <tr><th>모델</th><td>THE MIRACLE OF MOSES</td></tr>
+          <tr><th>각인</th><td>SOLI DEO GLORIA · The Miracle of Moses</td></tr>
+          <tr><th>솔</th><td>골드 미러 · 초고반발</td></tr>
+          <tr><th>슬로건</th><td>비거리야, 물러갈라</td></tr>
+        </table>
+      </div>
+    </div>
+  </div></section>
+  <section class="pad" id="ng-science"><div class="wrap reveal">
+    <div class="sec-label">Core Points</div>
+    <h2>무사시634 모세의 기적 <span class="grad">핵심 포인트</span></h2>
+    <p style="color:var(--muted);max-width:720px;line-height:1.85;margin-top:12px;">전체 무게 250g~260g의 최경량으로 최적화된 드라이버. 골프 장비는 공산품이 아니라 <strong style="color:var(--text)">진정한 과학</strong>입니다.</p>
+    <div class="moses-spec-chips">
+      <span>① 헤드 180g대</span>
+      <span>② 볼륨 495cc</span>
+      <span>③ 샤프트 30~55g 그래핀</span>
+      <span>④ 그립 25~40g</span>
+    </div>
+    <div class="moses-myth">
+      <strong style="color:var(--heading)">[아마추어 골퍼들이 가진 잘못된 편견]</strong>
+      <p>일반적인 피팅 이론은 F(힘) = m(질량) × a(속도)의 제곱입니다. 무거운 헤드가 강한 힘을 낸다는 것은 「골퍼가 그 무게를 완벽히 통제하고 최고의 스피드로 휘두를 수 있다」는 전제하에만 성립합니다. 근력과 유연성이 떨어지는 대다수 아마추어·시니어 골퍼에게 무거운 클럽은 스피드를 갉아먹는 족쇄가 됩니다.</p>
+    </div>
+    <h3 style="font-size:18px;margin:36px 0 8px;">4가지 핵심 <span class="grad">과학 이론</span></h3>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:8px;">MUSASHI634 THE MIRACLE OF MOSES 드라이버 기준</p>
+    <div class="moses-theory-list">
+      <div class="moses-theory-item">
+        <h4>1. 비거리의 절대 법칙 — 운동 에너지 공식 (Ek = ½mv²)</h4>
+        <p>골프 스윙에서 공에 전달되는 파워는 단순히 힘(F)이 아니라 <em>운동 에너지(Ek)</em>입니다. 질량(m)은 에너지에 비례하지만, 속도(v, 헤드 스피드)는 <em>제곱</em>으로 비례합니다. 무게를 10% 줄여 헤드 스피드가 10% 늘어난다면, 비거리를 결정하는 에너지는 기하급수적으로 증가합니다. 근력이 부족한 골퍼가 가벼운 클럽으로 잃어버린 헤드 스피드를 되찾는 순간, 스윙 에너지는 무거운 클럽을 억지로 휘두를 때보다 훨씬 커집니다.</p>
+      </div>
+      <div class="moses-theory-item">
+        <h4>2. 495cc 초광폭 헤드 — 가벼우면 날린다는 편견을 깨다</h4>
+        <p>180g대의 가벼운 헤드는 자칫 MOI가 떨어져 방향성을 잃을 수 있습니다. 이 클럽은 495cc 초대형 체적으로 이 문제를 해결했습니다. <em>초경량 180g 헤드의 에너지를 495cc 거대한 체적 안에 최적 밸런스로 배분</em>했습니다. 스위트 스팟이 극대화되고, 중심을 벗어난 타격에서도 헤드가 뒤틀리지 않아 슬라이스를 잡고 직진성을 보장합니다.</p>
+      </div>
+      <div class="moses-theory-item">
+        <h4>3. 그래핀(Graphene) 샤프트 — 방향성 제어</h4>
+        <p>30g~40g대 초경량 샤프트의 약점은 임팩트 순간의 강한 휨과 뒤틀림(Torque)입니다. 강철보다 200배 강한 인장 강도의 그래핀으로 극복했습니다. <em>「초경량의 스피드에 강철의 뼈대를 입혔습니다.」</em> 스윙 스피드는 극대화하면서, 그래핀 구조가 임팩트 충격을 버텨 페이스가 열리거나 닫히는 것을 방어합니다.</p>
+      </div>
+      <div class="moses-theory-item">
+        <h4>4. 생체역학적 황금 밸런스</h4>
+        <p>초경량 풀 라인업 조립은 골퍼의 신체적 부담을 제로(0)에 가깝게 만듭니다. <em>「스윙이 편안해지면, 몸통 회전이 살아나고 클럽 페이스는 정확히 공을 타격합니다.」</em> 캐스팅(풀림 현상)이 사라지고 자연스러운 헤드 턴으로 정타율이 상승합니다. 무거워야 멀리 간다는 옛 물리 법칙을 버리십시오. 비거리의 해답은 속도의 제곱에 있습니다.</p>
+      </div>
+    </div>
+    <div class="moses-closing">≪ 495cc의 압도적인 관용성, 첨단 그래핀 소재가 완성한 30g대 초경량 샤프트가 당신의 잃어버린 스윙 스피드를 폭발시켜, 시니어·아마추어도 상상 이상의 200m 스트레이트 비거리를 완성합니다. ≫</div>
   </div></section>
   <section class="pad"><div class="wrap reveal">
+    <div class="sec-label">Trademark</div>
+    <h2>MUSASHI 634 <span class="grad">상표등록</span></h2>
+    <p style="color:var(--muted);max-width:680px;line-height:1.85;margin-top:12px;">특허청(KIPO)에 「MUSASHI 634」상표가 등록되었습니다. 골프용품·유통 브랜드로 공식 사용을 보호합니다.</p>
+    <div class="ip-block">
+      <div class="ip-cert"><img src="assets/ip/trademark-musashi634.jpg" alt="MUSASHI 634 상표등록증" onclick="openLightbox(this.src)"></div>
+      <div>
+        <table class="ip-table">
+          <tr><th>표장</th><td><strong style="color:var(--heading)">MUSASHI 634</strong></td></tr>
+          <tr><th>등록번호</th><td>제 40-2392870 호</td></tr>
+          <tr><th>출원번호</th><td>제 40-2024-0053216 호</td></tr>
+          <tr><th>출원일</th><td>2024.03.22</td></tr>
+          <tr><th>등록일</th><td>2025.07.24</td></tr>
+          <tr><th>상표권자</th><td>유종철</td></tr>
+          <tr><th>지정상품</th><td>제35류 — 골프가방 소매업 등 10건</td></tr>
+        </table>
+        <p class="ip-note">※ Magnificat 골프화는 별도 한·미·일·독 특허 기술이 적용됩니다. <a onclick="navGo('magnificat')" style="color:var(--gold);cursor:pointer;">Magnificat 특허 보기 →</a></p>
+      </div>
+    </div>
+  </div></section>
+  <section class="pad" id="ng-lineup"><div class="wrap reveal">
     <div class="sec-label">Lineup</div>
     <h2>니고데모 <span class="grad">제품군</span></h2>
-    <p style="color:var(--muted);margin-top:12px;line-height:1.75;">공식 밴드 기준 주요 모델 (구성·재고는 문의 안내)</p>
+    <p style="color:var(--muted);margin-top:12px;line-height:1.75;">드라이버·웨지 중심 라인업 · <strong style="color:var(--text)">아이언은 CPS 그래핀 7아이언만</strong> (특허)</p>
     <div class="nigodemo-grid">
       <div class="nigodemo-card">
-        <div class="ng-tag">FLAGSHIP</div>
+        <div class="ng-tag">FLAGSHIP · MOSES</div>
+        <h4>THE MIRACLE OF MOSES</h4>
+        <p>모세의 기적 드라이버 · 495cc · 9~10° · 250~260g · Musashi634 Graphene Shaft · SCF</p>
+      </div>
+      <div class="nigodemo-card">
+        <div class="ng-tag">NICODEMUS</div>
         <h4>634 NICODEMUS 니고데모 드라이버</h4>
         <p>남성용 · 오른손 · 2017 정품 라인. 로프트 10.5°, 길이 45인치(114cm). R / SR / S 강도별 샤프트 구성.</p>
       </div>
@@ -748,28 +1255,28 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
         <h4>NICODEMUS 니고데모 웨지</h4>
         <p>단조(Forged) 웨지 48°~60°. FST125 웨지 전용 샤프트. 634 블랙 125S 52·56·58° 세트 구성.</p>
       </div>
-      <div class="nigodemo-card">
-        <div class="ng-tag">IRON</div>
-        <h4>니고데모 아이언</h4>
-        <p>단품·세트 구성. 니고데모 단조 공법 기반 아이언 라인. 풀세트·피스 구성 문의.</p>
+      <div class="nigodemo-card" onclick="navGoIron('musashi-634','cps-graphene-7i')">
+        <div class="ng-tag">IRON · CPS</div>
+        <h4>CPS 그래핀 7아이언</h4>
+        <p>634 대표 아이언 · JEHOVAH NISSI III · #5~SW · 특허 제10-2961654호 (니고데모 아이언 없음)</p>
       </div>
       <div class="nigodemo-card">
         <div class="ng-tag">SET</div>
         <h4>니고데모 풀세트</h4>
-        <p>드라이버부터 웨지·퍼터까지 원스톱 구성. 입문~중급자 맞춤 세트 상담 가능.</p>
+        <p>드라이버·웨지·퍼터 원스톱 구성. 아이언은 CPS 그래핀 7아이언 별도 매칭 · 문의.</p>
       </div>
     </div>
     <div class="nigodemo-spec-wrap reveal">
-      <h3 style="font-size:18px;margin-bottom:4px;">니고데모 드라이버 <span class="grad">표준 스펙</span></h3>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:8px;">634 NICODEMUS 니고데모 드라이버 (정품) · 등록 2017.02</p>
+      <h3 style="font-size:18px;margin-bottom:4px;">THE MIRACLE OF MOSES <span class="grad">표준 스펙</span></h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:8px;">모세의 기적 드라이버 · MUSASHI634 · INTERNATIONAL MUSASHI634</p>
       <table class="nigodemo-spec-table">
-        <tr><th>분류</th><td>드라이버 · 남성용 · 오른손</td></tr>
-        <tr><th>로프트</th><td>10.5° (표준) / 니고데모2: 9° · 10°</td></tr>
-        <tr><th>길이</th><td>45인치 (114cm)</td></tr>
-        <tr><th>샤프트 R</th><td>중량 49g · 토크 4.5°</td></tr>
-        <tr><th>샤프트 SR</th><td>중량 53g · 토크 4.2°</td></tr>
-        <tr><th>샤프트 S</th><td>중량 55g · 토크 4.2°</td></tr>
-        <tr><th>제조</th><td>무사시634 · 일본</td></tr>
+        <tr><th>모델</th><td>THE MIRACLE OF MOSES</td></tr>
+        <tr><th>볼륨</th><td>495cc</td></tr>
+        <tr><th>로프트</th><td>9° ~ 10°</td></tr>
+        <tr><th>전체 무게</th><td>250g ~ 260g</td></tr>
+        <tr><th>샤프트</th><td>Musashi634 Graphene Shaft · SCF [SELF CONTROL FLEX]</td></tr>
+        <tr><th>원산지</th><td>HEAD/CHINA · SHAFT/KOREA · GRIP/KOREA&amp;CHINA</td></tr>
+        <tr><th>제조</th><td>INTERNATIONAL MUSASHI634</td></tr>
       </table>
     </div>
   </div></section>
@@ -790,6 +1297,13 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
           <a class="btn btn-band" href="https://band.us/@634nicodemus" target="_blank" rel="noopener">밴드 가입하기 →</a>
         </div>
       </div>
+      <div class="community-visual">
+        <img src="assets/nigodemo/jehovah-nissi-course.jpg" alt="니고데모 JEHOVAH NISSI 드라이버" onclick="openLightbox(this.src)">
+        <div class="community-visual-row">
+          <img src="assets/nigodemo/jehovah-nissi-studio.jpg" alt="니고데모 드라이버" onclick="openLightbox(this.src)">
+          <img src="assets/nigodemo/jehovah-nissi-luxury.jpg" alt="JEHOVAH NISSI The Miracle of Moses" onclick="openLightbox(this.src)">
+        </div>
+      </div>
     </div>
     <p style="color:var(--muted);font-size:12px;margin-top:24px;line-height:1.75;">※ 밴드 게시글은 멤버 전용입니다. 가입 후 최신 소식·사진·영상을 확인하세요. 홈페이지는 공개 안내용이며, 상세 스펙·재고는 문의 시 안내합니다.</p>
   </div></section>
@@ -800,17 +1314,26 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
   <section class="pad"><div class="wrap">
     <div class="sec-label">Musashi Golf Clubs</div>
     <h2>무사시골프채 <span class="grad">10시리즈</span></h2>
-    <p style="color:var(--muted);margin-top:12px;max-width:620px;line-height:1.75;">일본 제조 10개 브랜드 · 대표 제품 CPS 그래핀 7아이언</p>
-    <div class="product-cards reveal" id="productCards"></div>
-    <div class="filter-row">
-      <button onclick="filterProducts('all')" class="filter-btn btn btn-primary btn-sm">전체</button>
-      <button onclick="filterProducts('premium')" class="filter-btn btn btn-ghost btn-sm">프리미엄</button>
-      <button onclick="filterProducts('iron')" class="filter-btn btn btn-ghost btn-sm">아이언·세트</button>
-      <button onclick="filterProducts('wedge')" class="filter-btn btn btn-ghost btn-sm">웨지·스페셜</button>
-      <button onclick="filterProducts('women')" class="filter-btn btn btn-ghost btn-sm">우먼스</button>
-      <button onclick="filterProducts('beginner')" class="filter-btn btn btn-ghost btn-sm">입문·퍼터</button>
-      <button onclick="filterProducts('goods')" class="filter-btn btn btn-ghost btn-sm">용품·액세서리</button>
+    <p style="color:var(--muted);margin-top:12px;max-width:680px;line-height:1.75;">일본 제조 <strong style="color:var(--text)">골프클럽 10시리즈</strong> · 클럽 종류별로 구분 · Magnificat 골프화는 별도 브랜드</p>
+    <div class="series-showcase reveal" style="margin-top:32px;margin-bottom:8px;">
+      <img src="assets/series-showcase.jpg" alt="무사시 10시리즈" onclick="openLightbox(this.src)">
+      <div class="series-showcase-cap"><span>10 SERIES · JAPAN FORGED</span><p>CPS 그래핀 7아이언 · JEHOVAH NISSI · NICODEMUS · PASSOVER</p></div>
     </div>
+    <div class="filter-row reveal" style="margin-top:28px;">
+      <button onclick="filterProducts('all')" class="filter-btn btn btn-primary btn-sm" data-cat="all">전체 10</button>
+      <button onclick="filterProducts('flagship')" class="filter-btn btn btn-ghost btn-sm" data-cat="flagship">플래그십</button>
+      <button onclick="filterProducts('driver')" class="filter-btn btn btn-ghost btn-sm" data-cat="driver">드라이버</button>
+      <button onclick="filterProducts('iron')" class="filter-btn btn btn-ghost btn-sm" data-cat="iron">아이언·세트</button>
+      <button onclick="filterProducts('putter')" class="filter-btn btn btn-ghost btn-sm" data-cat="putter">퍼터·입문</button>
+      <button onclick="filterProducts('women')" class="filter-btn btn btn-ghost btn-sm" data-cat="women">우먼스</button>
+      <button onclick="filterProducts('forged')" class="filter-btn btn btn-ghost btn-sm" data-cat="forged">단조·프리미엄</button>
+      <button onclick="filterProducts('limited')" class="filter-btn btn btn-ghost btn-sm" data-cat="limited">한정·에디션</button>
+      <button onclick="filterProducts('collector')" class="filter-btn btn btn-ghost btn-sm" data-cat="collector">수집·마스터</button>
+      <button onclick="filterProducts('goods')" class="filter-btn btn btn-ghost btn-sm" data-cat="goods">용품</button>
+    </div>
+    <div class="prod-cat-grid reveal" id="productCategoryGroups"></div>
+    <div class="product-cards reveal" id="productCards"></div>
+    <p class="products-note reveal">※ <strong style="color:var(--text)">Magnificat</strong> 명품 골프화는 무사시골프채 10시리즈와 별개 브랜드입니다. → <a onclick="navGo('magnificat')">Magnificat 페이지</a></p>
     <div class="table-scroll reveal">
     <table class="prod-table" id="productsTable">
       <thead><tr><th>No</th><th>브랜드</th><th>분류</th><th>제품군</th><th>설명</th></tr></thead>
@@ -821,6 +1344,17 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
     <div class="iron-section reveal" style="margin-top:32px;border-top:none;padding-top:0;">
       <h3 style="font-size:18px;margin-bottom:12px;">대표 아이언 <span class="grad">CPS 그래핀</span></h3>
       <div class="iron-grid" id="featuredIron"></div>
+      <div class="ip-teaser reveal" style="margin-top:28px;">
+        <div>
+          <p class="mag-patent" style="margin-top:0;">특허증 · 골프 클럽 헤드 및 그 제조 방법</p>
+          <table class="ip-table">
+            <tr><th>특허번호</th><td>제 10-2961654 호</td></tr>
+            <tr><th>출원번호</th><td>제 10-2025-0150866 호</td></tr>
+            <tr><th>등록일</th><td>2026.04.30</td></tr>
+          </table>
+        </div>
+        <img src="assets/ip/patent-iron-head.png" alt="CPS 아이언 헤드 특허증" onclick="openLightbox(this.src)">
+      </div>
     </div>
   </div></section>
 </div>
@@ -1182,7 +1716,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
     <p style="color:var(--muted);max-width:620px;margin-top:16px;line-height:1.85;">회장님이 무사시 그룹에서 설립한 협회·법인입니다. 골프산업 발전, 대중화, 사회공헌 대회까지 한국 골프 생태계를 이끕니다. <span style="font-size:13px;">※ 1968년 설립 한국프로골프협회(KPGA)와는 별개 기관입니다.</span></p>
     <div class="assoc-grid reveal">
       <div class="assoc-card">
-        <div class="assoc-visual"><img src="assets/assoc/kgia.svg" alt="한국골프산업협회 KGIA"></div>
+        <div class="assoc-visual assoc-badge"><img src="assets/assoc/kgia.svg" alt="한국골프산업협회 KGIA"></div>
         <div class="assoc-body">
           <div class="en">KGIA</div>
           <h3>한국골프산업협회</h3>
@@ -1191,7 +1725,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
         </div>
       </div>
       <div class="assoc-card">
-        <div class="assoc-visual"><img src="assets/assoc/kpg-assoc.svg" alt="코리아프로페셔널골프협회"></div>
+        <div class="assoc-visual assoc-badge"><img src="assets/assoc/kpg-assoc.svg" alt="코리아프로페셔널골프협회"></div>
         <div class="assoc-body">
           <div class="en">KPG</div>
           <h3>공익법인 (사) 코리아프로페셔널골프협회</h3>
@@ -1202,7 +1736,7 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
         </div>
       </div>
       <div class="assoc-card">
-        <div class="assoc-visual"><img src="assets/assoc/gpg-corp.svg" alt="주식회사 코리아프로페셔널골프"></div>
+        <div class="assoc-visual assoc-badge"><img src="assets/assoc/gpg-corp.svg" alt="주식회사 코리아프로페셔널골프"></div>
         <div class="assoc-body">
           <div class="en">GPG</div>
           <h3>주식회사 코리아프로페셔널골프</h3>
@@ -1257,7 +1791,12 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
       </div>
     </div>
   </div>
-  <div class="copy">개인정보관리책임자 이현석</div>
+  <div class="foot-legal">
+    <p><strong style="color:var(--text)">주식회사 인터네셔널무사시634</strong> · 대표자 최종숙 · 사업자등록번호 507-86-01178 · 법인등록번호 134911-0082056</p>
+    <p>인천광역시 서구 파랑로 495, 2동 906호 (청라동, 에이스하이테크시티청라지식산업센터)</p>
+    <p>업태 도소매·제조업 · 종목 골프용품·인터넷전자상거래 · <a href="mailto:paullew@hanmail.net">paullew@hanmail.net</a> · 상표등록 40-2392870</p>
+  </div>
+  <div class="copy">개인정보관리책임자 이현석 · © 주식회사 인터네셔널무사시634</div>
 </div></footer>
 
 <div class="site-toast" id="siteToast"></div>
@@ -1267,19 +1806,21 @@ footer{border-top:1px solid var(--glass-bd);padding:64px 0 32px;position:relativ
 const pages=['home','products','pdetail','idetail','nigodemo','magnificat','trinity','franchise','partners'];
 const trinityPages=['trinity','franchise'];
 const magnificatPages=['magnificat'];
-const productCats={premium:'프리미엄',iron:'아이언·세트',wedge:'웨지·스페셜',women:'우먼스',beginner:'입문·퍼터',goods:'용품·액세서리'};
-const CPS_IRON={id:'cps-graphene-7i',featured:true,name:'[비거리 전용] 634 CPS 그래핀 그라파이트 7아이언',compose:'#5 · #6 · #7 · #8 · #9 · PW · SW',loft:'24° ~ 55°',shaft:'CPS 그래핀 100% · R / SR / S',desc:'무사시 634 대표 비거리 아이언. JEHOVAH NISSI III · HYPER SPEED TECHNOLOGY 적용. 남녀공용 나노 그래핀 샤프트 7pc 세트.',price:'1,890,000',priceOrig:'2,490,000',hero:'assets/irons/cps-graphene/hero.jpg',detailImg:'assets/irons/cps-graphene/spec-banner.jpg',detailGallery:['assets/irons/cps-graphene/detail-1.jpg','assets/irons/cps-graphene/detail-2.jpg','assets/irons/cps-graphene/detail-3.jpg','assets/irons/cps-graphene/detail-4.jpg','assets/irons/cps-graphene/detail-5.jpg'],bullets:['비거리 절대 보장','인생 최고의 비거리','초경량 · 가장 쉬운 아이언'],markings:['JEHOVAH NISSI III','HYPER SPEED TECHNOLOGY','SOLI DEO GLORIA','MUSASHI 634'],features:['CPS(Nano Product System) 100% 그래핀 샤프트 — Self Control Flex','초경량 헤드 + 고탄성 샤프트로 비거리·이지 스윙','페이스 하단 이중 홈 — 볼 스피드·관용성 향상','샤프트 컬러: 오렌지 · 라임 · 실버 그라데이션','Musashi 블랙 그립 · 캐비티백 골드 포인트'],specs:[['품명','무사시 634 CPS 그래핀 그라파이트 7아이언'],['성별','남녀공용'],['구성','#5~SW 7pc 세트'],['재질','금속 + 그래핀'],['제조국','대한민국'],['출시','2025년'],['제조','무사시 634 / ㈜씨엔씨인터내셔널']],clubs:[['클럽','로프트','라이','길이','헤드중량'],['#5','24°','61°','38"','358g'],['#6','27°','61.5°','37.5"','365g'],['#7','31°','62°','37"','372g'],['#8','35°','62.5°','36.5"','379g'],['#9','40°','63°','36"','386g'],['PW','45°','63.5°','35.5"','393g'],['SW','55°','64°','35.25"','400g']],shafts:[['플렉스','중량','토크','CPM','킥포인트'],['R','48g','4.2','245','Low/Mid'],['SR','50g','4.0','255','Low/Mid'],['S','52g','3.8','265','Low/Mid']]};
+const productCats={flagship:'그룹 플래그십',driver:'드라이버·니고데모',iron:'아이언·세트',putter:'퍼터·입문',women:'우먼스',forged:'단조·프리미엄',limited:'한정·에디션',collector:'수집·마스터피스',goods:'용품·액세서리'};
+const catOrder=['flagship','driver','iron','putter','women','forged','limited','collector','goods'];
+const IRON_PATENT_HTML=`<div class="ip-block reveal on" style="margin-top:36px;"><div class="ip-cert"><img src="assets/ip/patent-iron-head.png" alt="골프 클럽 헤드 특허증" onclick="openLightbox(this.src)"></div><div><p class="mag-patent" style="margin-top:0;">특허증 · 골프 클럽 헤드 및 그 제조 방법</p><table class="ip-table"><tr><th>특허번호</th><td>제 10-2961654 호</td></tr><tr><th>출원번호</th><td>제 10-2025-0150866 호</td></tr><tr><th>출원일</th><td>2025.10.17</td></tr><tr><th>등록일</th><td>2026.04.30</td></tr><tr><th>발명의 명칭</th><td>골프 클럽 헤드 및 그 제조 방법<br><span style="font-size:12px;color:var(--muted)">Golf club head and manufacturing method thereof</span></td></tr></table><p class="ip-note">CPS 그래핀 7아이언 헤드 설계·제조 기술에 적용된 지식재산권입니다.</p></div></div>`;
+const CPS_IRON={id:'cps-graphene-7i',featured:true,name:'[비거리 전용] 634 CPS 그래핀 그라파이트 7아이언',compose:'#5 · #6 · #7 · #8 · #9 · PW · SW',loft:'24° ~ 55°',shaft:'CPS 그래핀 100% · R / SR / S',desc:'무사시 634 대표 비거리 아이언. JEHOVAH NISSI III · HYPER SPEED TECHNOLOGY 적용. 남녀공용 나노 그래핀 샤프트 7pc 세트.',price:'1,890,000',priceOrig:'2,490,000',hero:'assets/irons/cps-graphene/hero.jpg',detailImg:'assets/irons/cps-graphene/spec-banner.jpg',bullets:['비거리 절대 보장','인생 최고의 비거리','초경량 · 가장 쉬운 아이언'],markings:['JEHOVAH NISSI III','HYPER SPEED TECHNOLOGY','SOLI DEO GLORIA','MUSASHI 634'],features:['CPS(Nano Product System) 100% 그래핀 샤프트 — Self Control Flex','초경량 헤드 + 고탄성 샤프트로 비거리·이지 스윙','페이스 하단 이중 홈 — 볼 스피드·관용성 향상','샤프트 컬러: 오렌지 · 라임 · 실버 그라데이션','Musashi 블랙 그립 · 캐비티백 골드 포인트'],specs:[['품명','무사시 634 CPS 그래핀 그라파이트 7아이언'],['성별','남녀공용'],['구성','#5~SW 7pc 세트'],['재질','금속 + 그래핀'],['특허','제 10-2961654 호'],['제조국','대한민국'],['출시','2025년'],['제조','무사시 634 / ㈜씨엔씨인터내셔널']],clubs:[['클럽','로프트','라이','길이','헤드중량'],['#5','24°','61°','38"','358g'],['#6','27°','61.5°','37.5"','365g'],['#7','31°','62°','37"','372g'],['#8','35°','62.5°','36.5"','379g'],['#9','40°','63°','36"','386g'],['PW','45°','63.5°','35.5"','393g'],['SW','55°','64°','35.25"','400g']],shafts:[['플렉스','중량','토크','CPM','킥포인트'],['R','48g','4.2','245','Low/Mid'],['SR','50g','4.0','255','Low/Mid'],['S','52g','3.8','265','Low/Mid']]};
 const products=[
-  {id:'heroeszipangu',no:1,n:'HEROESZIPANGU',cat:'premium',catLabel:'프리미엄',items:'아이언 · 웨지 · 유틸리티',desc:'일본 전통 단조와 현대 기술의 플래그십 라인',origin:'일본',material:'소프트아이언 단조',target:'중·상급자 · 컬렉터',features:['전통 단조 공법 기반 프리미엄 헤드','아트워크·한정 컬렉션 컨셉','의미를 담은 시리즈 네이밍'],specs:[['제조국','일본'],['헤드','단조'],['라인','프리미엄'],['구성','시리즈별 상이 — 문의 안내']],irons:[{id:'forged-set',name:'단조 아이언 풀세트',compose:'#4~PW',loft:'#4 24° ~ PW 48°',shaft:'950S / DG · 문의',desc:'소프트아이언 단조 바디. 컬렉터·상급자용 정통 필.',features:['일본식 단조 공법','얇은 톱라인·클래식 실루엣','시리즈 아트워크 각인'],specs:[['헤드','소프트아이언 단조'],['구성','#4~PW 7pc'],['샤프트','Steel — 강도별'],['특징','프리미엄 · 한정']]},{id:'utility',name:'유틸리티 · 롱아이언',compose:'#3U · #4U',loft:'19° · 22°',shaft:'Graphite / Hybrid',desc:'아이언 세트와 매칭되는 유틸리티.',features:['아이언 라인 디자인 통일','관용성·비거리 보완'],specs:[['분류','유틸리티'],['로프트','19° · 22°'],['구성','단품·세트 연계']]}]},
-  {id:'jehovah-nishi',no:2,n:'JEHOVAH NISHI',cat:'iron',catLabel:'아이언·세트',items:'CPS 그래핀 아이언 · 풀세트',desc:'「여호와는 나의 깃발」— JEHOVAH NISSI III · 비거리 특화 CPS 그래핀 아이언',origin:'대한민국',material:'캐비티백 · CPS 그래핀',target:'비거리·입문~중급 · 남녀공용',features:['JEHOVAH NISSI III · HYPER SPEED TECHNOLOGY','SOLI DEO GLORIA 호젤 각인','CPS 100% 그래핀 샤프트 — Self Control Flex','비거리 절대 보장 컨셉'],specs:[['제조국','대한민국'],['분류','CPS 그래핀 7아이언'],['구성','#5~SW 7pc'],['출시','2025년']],irons:[CPS_IRON,{id:'mid-short',name:'미드·숏 아이언 단품',compose:'#6~SW',loft:'#6 31° ~ SW 55°',shaft:'CPS 그래핀 · R/SR/S',desc:'세트 후반부 단품·보강 구성.',features:['CPS 세트 매칭 샤프트','그린 주변 안정성'],specs:[['구성','단품'],['용도','세트 보강 · 교체']]}]},
-  {id:'carbite',no:3,n:'CARBITE',cat:'iron',catLabel:'아이언·세트',items:'아이언 · 하이브리드',desc:'탄소·경량 소재 적용, 비거리와 관용성 균형',origin:'일본',material:'경량 소재 · 카본 요소',target:'비거리·관용성 동시 추구',features:['경량화 설계로 헤드 스피드 보조','탄소 계열 소재로 무게 배분 최적화','아이언·하이브리드 복합 라인'],specs:[['제조국','일본'],['분류','아이언·하이브리드'],['특징','경량·고반발'],['구성','시리즈별 — 문의']],irons:[{id:'iron-set',name:'CARBITE 아이언 세트',compose:'#5~PW',loft:'#5 26° ~ PW 46°',shaft:'Light Steel / Graphite',desc:'경량·고반발 아이언. 헤드 스피드 보조.',features:['카본 요소 경량화','넓은 관용성','비거리·탄도 균형'],specs:[['구성','#5~PW'],['특징','경량·고반발'],['샤프트','Light Steel / Graphite']]},{id:'hybrid',name:'CARBITE 하이브리드',compose:'#3H · #4H · #5H',loft:'19° · 22° · 25°',shaft:'Graphite R / SR',desc:'아이언 대체·롱아이언 보완.',features:['아이언 세트와 무게감 매칭','높은 관용성'],specs:[['분류','하이브리드'],['로프트','19°~25°'],['구성','단품·세트']]}]},
-  {id:'woss',no:4,n:'WOSS',cat:'women',catLabel:'우먼스',items:'우먼스 풀세트',desc:'여성 체형·스윙에 맞춘 전용 설계',origin:'일본',material:'여성용 경량 샤프트 호환',target:'여성 골퍼 · L/Lite 플렉스',features:['여성 스윙 스피드에 맞춘 무게·길이','초고반발 드라이버·아이언 구성','풀세트 원스톱 구성'],specs:[['제조국','일본'],['분류','우먼스'],['플렉스','L / Lite'],['구성','드라이버~퍼터 풀세트 — 문의']],irons:[{id:'women-set',name:'우먼스 아이언 세트',compose:'#7~SW',loft:'#7 34° ~ SW 56°',shaft:'Lite · L · 여성용 Graphite',desc:'여성 스윙에 맞춘 경량·짧은 길이 아이언.',features:['가벼운 헤드·샤프트','높은 런치·캐리','풀세트 연계'],specs:[['구성','#7~SW'],['플렉스','L / Lite'],['타깃','여성 · 시니어']]}]},
-  {id:'mla',no:5,n:'MLA',cat:'beginner',catLabel:'입문·퍼터',items:'퍼터 · 입문 세트',desc:'입문자·시니어를 위한 쉬운 조작과 퍼팅 라인',origin:'일본',material:'스테인리스 · 말렛/블레이드',target:'입문자 · 퍼팅 특화',features:['말렛·블레이드 퍼터 라인','안정적 롤과 에이밍 보조','입문 세트 연계 구성'],specs:[['분류','퍼터 · 입문'],['길이','33~34인치'],['헤드','말렛 / 블레이드'],['구성','단품·세트 — 문의']]},
-  {id:'musashi-634',no:6,n:'MUSASHI 634',cat:'premium',catLabel:'프리미엄',items:'CPS 아이언 · 니고데모 드라이버 · 웨지',desc:'그룹 대표 플래그십. CPS 그래핀 비거리 아이언 · 니고데모 드라이버',origin:'일본/한국',material:'CPS 그래핀 · 니고데모',target:'프로·상급·입문',band:true,features:['CPS 그래핀 7아이언 — 비거리 전용','니고데모 드라이버 · 니고데모2 9°·10°','634 블랙/골드 니고데모 웨지 · 연철 퍼터'],specs:[['제조국','일본 / 대한민국'],['아이언','CPS 그래핀 7pc'],['드라이버','10.5° / 9°·10°'],['샤프트','R · SR · S — 문의']],irons:[CPS_IRON,{id:'nigo-iron',name:'634 니고데모 아이언',compose:'#5~PW · 단품',loft:'#5 28° ~ PW 46°',shaft:'950S / 125S',desc:'니고데모 단조·포지드 아이언. 드라이버·웨지 세트 매칭.',features:['니고데모(Nigo Demo) 공법','634 블랙/골드','단품·풀세트'],specs:[['공법','니고데모 단조'],['구성','#5~PW · 단품'],['샤프트','950S / 125S']]}]},
-  {id:'nicodemus',no:7,n:'NICODEMUS',cat:'wedge',catLabel:'웨지·스페셜',items:'니고데모 드라이버 · 웨지 · 아이언',desc:'634 NICODEMUS — 비거리·방향성을 위한 니고데모(Nigo Demo) 대표 라인',origin:'일본',material:'니고데모 단조',target:'드라이버·숏게임 플레이어',band:true,features:['공식 밴드 대표 모델 — 니고데모 드라이버','NICODEMUS 단조 웨지 48~60°','FST125 웨지 전용 샤프트','니고데모2 초고반발 · 골드/블루 헤드'],specs:[['제조국','일본'],['드라이버 로프트','10.5° / 9°·10° (니고데모2)'],['웨지 각도','48°~60°'],['샤프트','FST125 · 125S 등 — 문의']],irons:[{id:'nigo-set',name:'NICODEMUS 니고데모 아이언',compose:'#5~PW · 단품',loft:'#5 27° ~ PW 45°',shaft:'FST125 · Steel S',desc:'드라이버·웨지와 같은 니고데모 라인 아이언.',features:['니고데모 단조 헤드','드라이버·웨지 세트 매칭','단품 5번~S 중 선택 가능'],specs:[['브랜드','634 NICODEMUS'],['구성','단품 · 세트'],['샤프트','FST125 / Steel'],['연계','니고데모 풀세트']]}]},
-  {id:'secretariat',no:8,n:'SECRETARIAT',cat:'goods',catLabel:'용품·액세서리',items:'캐디백 · 헤드커버 · 파우치',desc:'프리미엄 골프 백·액세서리 라인',origin:'일본',material:'합성가죽 · 나일론',target:'전 연령 · 용품 구매',features:['캐디백 · 스탠드백 라인','헤드커버 · 볼 파우치','634 브랜드 아이덴티티 디자인'],specs:[['분류','용품·액세서리'],['품목','백 · 커버 · 파우치'],['색상','블랙 · 골드 등 — 문의'],['구성','단품·세트']]},
-  {id:'passover',no:9,n:'PASSOVER',cat:'wedge',catLabel:'웨지·스페셜',items:'시즌 한정 · 기념 모델',desc:'뜻을 담은 시즌·기념 한정 에디션',origin:'일본',material:'한정 생산',target:'수집·기념 구매',features:['시즌별 한정 색상·스펙','기념·의미를 담은 에디션','소량 생산 컬렉션'],specs:[['분류','한정 · 시즌'],['생산','소량'],['구성','모델별 상이'],['문의','재고·입고 일정 안내']]},
-  {id:'benkei',no:10,n:'BENKEI',cat:'premium',catLabel:'프리미엄',items:'한정 · 수집형',desc:'마스터피스·수집가용 한정 시리즈',origin:'일본',material:'수제 단조',target:'수집가 · 하이엔드',features:['초한정 생산 마스터피스 라인','수집가·애호가 대상','634 프리미엄 최상위 티어'],specs:[['분류','수집·한정'],['생산','초한정'],['구성','세트·단품 — 문의'],['가격','별도 문의']],irons:[{id:'master',name:'BENKEI 마스터피스 아이언',compose:'한정 세트',loft:'시리즈별 상이',shaft:'수제 맞춤 · 문의',desc:'초한정 수제 단조 아이언. 수집가용.',features:['수제 단조 · 초한정','634 최상위 티어','컬렉션'],specs:[['생산','초한정'],['구성','세트·단품'],['가격','별도 문의']]}]}
+  {id:'heroeszipangu',no:1,n:'HEROESZIPANGU',cat:'forged',catLabel:'단조·프리미엄',items:'단조 아이언 · 웨지 · 유틸리티',desc:'일본 전통 단조와 현대 기술의 플래그십 라인',origin:'일본',material:'소프트아이언 단조',target:'중·상급자 · 컬렉터',features:['전통 단조 공법 기반 프리미엄 헤드','아트워크·한정 컬렉션 컨셉','의미를 담은 시리즈 네이밍'],specs:[['제조국','일본'],['헤드','단조'],['라인','프리미엄'],['구성','시리즈별 상이 — 문의 안내']],irons:[{id:'forged-set',name:'단조 아이언 풀세트',compose:'#4~PW',loft:'#4 24° ~ PW 48°',shaft:'950S / DG · 문의',desc:'소프트아이언 단조 바디. 컬렉터·상급자용 정통 필.',features:['일본식 단조 공법','얇은 톱라인·클래식 실루엣','시리즈 아트워크 각인'],specs:[['헤드','소프트아이언 단조'],['구성','#4~PW 7pc'],['샤프트','Steel — 강도별'],['특징','프리미엄 · 한정']]},{id:'utility',name:'유틸리티 · 롱아이언',compose:'#3U · #4U',loft:'19° · 22°',shaft:'Graphite / Hybrid',desc:'아이언 세트와 매칭되는 유틸리티.',features:['아이언 라인 디자인 통일','관용성·비거리 보완'],specs:[['분류','유틸리티'],['로프트','19° · 22°'],['구성','단품·세트 연계']]}]},
+  {id:'jehovah-nishi',no:2,n:'JEHOVAH NISHI',cat:'iron',catLabel:'아이언·세트',items:'CPS 그래핀 7아이언 · 풀세트',desc:'「여호와는 나의 깃발」— JEHOVAH NISSI III · 비거리 특화 CPS 그래핀 아이언',origin:'대한민국',material:'캐비티백 · CPS 그래핀',target:'비거리·입문~중급 · 남녀공용',features:['JEHOVAH NISSI III · HYPER SPEED TECHNOLOGY','SOLI DEO GLORIA 호젤 각인','CPS 100% 그래핀 샤프트 — Self Control Flex','비거리 절대 보장 컨셉'],specs:[['제조국','대한민국'],['분류','CPS 그래핀 7아이언'],['구성','#5~SW 7pc'],['출시','2025년']],irons:[CPS_IRON,{id:'mid-short',name:'미드·숏 아이언 단품',compose:'#6~SW',loft:'#6 31° ~ SW 55°',shaft:'CPS 그래핀 · R/SR/S',desc:'세트 후반부 단품·보강 구성.',features:['CPS 세트 매칭 샤프트','그린 주변 안정성'],specs:[['구성','단품'],['용도','세트 보강 · 교체']]}]},
+  {id:'carbite',no:3,n:'CARBITE',cat:'iron',catLabel:'아이언·세트',items:'경량 아이언 · 하이브리드',desc:'탄소·경량 소재 적용, 비거리와 관용성 균형',origin:'일본',material:'경량 소재 · 카본 요소',target:'비거리·관용성 동시 추구',features:['경량화 설계로 헤드 스피드 보조','탄소 계열 소재로 무게 배분 최적화','아이언·하이브리드 복합 라인'],specs:[['제조국','일본'],['분류','아이언·하이브리드'],['특징','경량·고반발'],['구성','시리즈별 — 문의']],irons:[{id:'iron-set',name:'CARBITE 아이언 세트',compose:'#5~PW',loft:'#5 26° ~ PW 46°',shaft:'Light Steel / Graphite',desc:'경량·고반발 아이언. 헤드 스피드 보조.',features:['카본 요소 경량화','넓은 관용성','비거리·탄도 균형'],specs:[['구성','#5~PW'],['특징','경량·고반발'],['샤프트','Light Steel / Graphite']]},{id:'hybrid',name:'CARBITE 하이브리드',compose:'#3H · #4H · #5H',loft:'19° · 22° · 25°',shaft:'Graphite R / SR',desc:'아이언 대체·롱아이언 보완.',features:['아이언 세트와 무게감 매칭','높은 관용성'],specs:[['분류','하이브리드'],['로프트','19°~25°'],['구성','단품·세트']]}]},
+  {id:'woss',no:4,n:'WOSS',cat:'women',catLabel:'우먼스',items:'여성용 드라이버 · 아이언 풀세트',desc:'여성 체형·스윙에 맞춘 전용 설계',origin:'일본',material:'여성용 경량 샤프트',target:'여성 골퍼 · L/Lite 플렉스',features:['여성 스윙 스피드에 맞춘 무게·길이','초고반발 드라이버·아이언 구성','풀세트 원스톱 구성'],specs:[['제조국','일본'],['분류','우먼스'],['플렉스','L / Lite'],['구성','드라이버~퍼터 풀세트 — 문의']],irons:[{id:'women-set',name:'우먼스 아이언 세트',compose:'#7~SW',loft:'#7 34° ~ SW 56°',shaft:'Lite · L · 여성용 Graphite',desc:'여성 스윙에 맞춘 경량·짧은 길이 아이언.',features:['가벼운 헤드·샤프트','높은 런치·캐리','풀세트 연계'],specs:[['구성','#7~SW'],['플렉스','L / Lite'],['타깃','여성 · 시니어']]}]},
+  {id:'mla',no:5,n:'MLA',cat:'putter',catLabel:'퍼터·입문',items:'퍼터 · 입문 세트',desc:'입문자·시니어를 위한 쉬운 조작과 퍼팅 라인',origin:'일본',material:'스테인리스 · 말렛/블레이드',target:'입문자 · 퍼팅 특화',features:['말렛·블레이드 퍼터 라인','안정적 롤과 에이밍 보조','입문 세트 연계 구성'],specs:[['분류','퍼터 · 입문'],['길이','33~34인치'],['헤드','말렛 / 블레이드'],['구성','단품·세트 — 문의']]},
+  {id:'musashi-634',no:6,n:'MUSASHI 634',cat:'flagship',catLabel:'그룹 플래그십',items:'CPS 아이언 · 니고데모 드라이버 · 웨지',desc:'634 그룹 대표 브랜드. CPS 그래핀 비거리 아이언 · 니고데모 드라이버 · 웨지',origin:'일본/한국',material:'CPS 그래핀 · 니고데모',target:'프로·상급·입문',band:true,features:['CPS 그래핀 7아이언 — 비거리 전용','니고데모 드라이버 · 니고데모2 9°·10°','634 블랙/골드 니고데모 웨지 · 연철 퍼터'],specs:[['제조국','일본 / 대한민국'],['아이언','CPS 그래핀 7pc'],['드라이버','10.5° / 9°·10°'],['샤프트','R · SR · S — 문의']],irons:[CPS_IRON]},
+  {id:'nicodemus',no:7,n:'NICODEMUS',cat:'driver',catLabel:'드라이버·니고데모',items:'니고데모 드라이버 · 웨지',desc:'634 NICODEMUS — 비거리·방향성 니고데모(Nigo Demo) 드라이버 대표 라인',origin:'일본',material:'니고데모 단조',target:'드라이버·숏게임 플레이어',band:true,features:['공식 밴드 대표 — 니고데모 드라이버','NICODEMUS 단조 웨지 48~60°','FST125 웨지 전용 샤프트','니고데모2 초고반발 · 골드/블루 헤드'],specs:[['제조국','일본'],['드라이버 로프트','10.5° / 9°·10° (니고데모2)'],['웨지 각도','48°~60°'],['샤프트','FST125 · 125S 등 — 문의'],['아이언','CPS 그래핀 7아이언 — 별도 라인']]},
+  {id:'secretariat',no:8,n:'SECRETARIAT',cat:'goods',catLabel:'용품·액세서리',items:'캐디백 · 헤드커버 · 파우치',desc:'프리미엄 골프 백·액세서리 라인 (클럽 아님)',origin:'일본',material:'합성가죽 · 나일론',target:'전 연령 · 용품 구매',features:['캐디백 · 스탠드백 라인','헤드커버 · 볼 파우치','634 브랜드 아이덴티티 디자인'],specs:[['분류','용품·액세서리'],['품목','백 · 커버 · 파우치'],['색상','블랙 · 골드 등 — 문의'],['구성','단품·세트']]},
+  {id:'passover',no:9,n:'PASSOVER',cat:'limited',catLabel:'한정·에디션',items:'시즌 한정 · 기념 모델',desc:'뜻을 담은 시즌·기념 한정 에디션 클럽',origin:'일본',material:'한정 생산',target:'수집·기념 구매',features:['시즌별 한정 색상·스펙','기념·의미를 담은 에디션','소량 생산 컬렉션'],specs:[['분류','한정 · 시즌'],['생산','소량'],['구성','모델별 상이'],['문의','재고·입고 일정 안내']]},
+  {id:'benkei',no:10,n:'BENKEI',cat:'collector',catLabel:'수집·마스터피스',items:'한정 · 수제 단조 수집형',desc:'마스터피스·수집가용 초한정 단조 시리즈',origin:'일본',material:'수제 단조',target:'수집가 · 하이엔드',features:['초한정 생산 마스터피스 라인','수집가·애호가 대상','634 프리미엄 최상위 티어'],specs:[['분류','수집·한정'],['생산','초한정'],['구성','세트·단품 — 문의'],['가격','별도 문의']],irons:[{id:'master',name:'BENKEI 마스터피스 아이언',compose:'한정 세트',loft:'시리즈별 상이',shaft:'수제 맞춤 · 문의',desc:'초한정 수제 단조 아이언. 수집가용.',features:['수제 단조 · 초한정','634 최상위 티어','컬렉션'],specs:[['생산','초한정'],['구성','세트·단품'],['가격','별도 문의']]}]}
 ];
 let filt='all';
 let currentProduct=null;
@@ -1308,7 +1849,7 @@ function renderIronDetail(){
   const detailGallery=i.detailGallery&&i.detailGallery.length?`<div class="iron-detail-panel reveal on"><div class="iron-detail-gallery">${i.detailGallery.map((src,idx)=>`<img src="${src}" alt="${i.name} 상세 ${idx+1}" onclick="openLightbox(this.src)">`).join('')}</div></div>`:'';
   const clubTable=i.clubs?ironTableHtml(i.clubs,'클럽별 스펙 (로프트 · 라이 · 길이 · 중량)'):'';
   const shaftTable=i.shafts?ironTableHtml(i.shafts,'CPS 그래핀 샤프트 스펙'):'';
-  document.getElementById('idetailRoot').innerHTML=`<div class="pdetail-wrap reveal on"><span class="back" onclick="navGoProduct('${p.id}')">← ${p.n}으로</span><div class="sec-label">${p.n} · IRON${i.featured?' · FLAGSHIP':''}</div><div class="pdetail-top"><div class="pdetail-visual">${hero}</div><div class="pdetail-summary"><h1>${i.name}</h1><div class="pdetail-meta"><span class="pdetail-tag">${i.compose}</span><span class="pdetail-tag">${i.loft}</span><span class="pdetail-tag">${i.shaft}</span></div>${price}${markings}${bullets}<p class="pdetail-lead">${i.desc}</p></div></div><div class="pdetail-grid"><div class="pdetail-box"><h3>Features</h3><ul>${i.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${i.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div><div class="pdetail-spec-stack">${clubTable}${shaftTable}${detailImg}${detailGallery}</div><div class="touch-stack"><button class="btn btn-ghost" onclick="navGoProduct('${p.id}')">브랜드 상세</button><button class="btn btn-ghost" onclick="navGo('products')">라인업</button></div></div>`;
+  document.getElementById('idetailRoot').innerHTML=`<div class="pdetail-wrap reveal on"><span class="back" onclick="navGoProduct('${p.id}')">← ${p.n}으로</span><div class="sec-label">${p.n} · IRON${i.featured?' · FLAGSHIP':''}</div><div class="pdetail-top"><div class="pdetail-visual">${hero}</div><div class="pdetail-summary"><h1>${i.name}</h1><div class="pdetail-meta"><span class="pdetail-tag">${i.compose}</span><span class="pdetail-tag">${i.loft}</span><span class="pdetail-tag">${i.shaft}</span></div>${price}${markings}${bullets}<p class="pdetail-lead">${i.desc}</p></div></div><div class="pdetail-grid"><div class="pdetail-box"><h3>Features</h3><ul>${i.features.map(f=>`<li>${f}</li>`).join('')}</ul></div><div class="pdetail-box"><h3>Specs</h3><table class="pdetail-spec">${i.specs.map(s=>`<tr><th>${s[0]}</th><td>${s[1]}</td></tr>`).join('')}</table></div></div><div class="pdetail-spec-stack">${clubTable}${shaftTable}${detailImg}${detailGallery}</div>${i.featured?IRON_PATENT_HTML:''}<div class="touch-stack"><button class="btn btn-ghost" onclick="navGoProduct('${p.id}')">브랜드 상세</button><button class="btn btn-ghost" onclick="navGo('products')">라인업</button></div></div>`;
 }
 function navGoProduct(id){currentProduct=products.find(p=>p.id===id);if(!currentProduct){navGo('products');return;}renderProductDetail();showPage('pdetail');}
 function navGoIron(pid,iid){
@@ -1328,6 +1869,45 @@ function renderFeaturedIron(){
   if(!el)return;
   el.innerHTML=ironCardHtml(products.find(p=>p.id==='musashi-634'),CPS_IRON);
 }
+const MK_HERO_COPY=[
+  {kicker:'JAPANESE CRAFTSMANSHIP · NIGODEMO',title:'THE MIRACLE OF MOSES<br><span style="font-size:.72em;font-weight:600;">PRECISION FORGED DRIVER</span>',lead:'495cc · 250~260g · Graphene Shaft · SCF. 비거리·방향성의 니고데모 드라이버 대표 모델.'},
+  {kicker:'CPS GRAPHENE · PATENT',title:'634 CPS GRAPHENE<br>7 IRON SET',lead:'JEHOVAH NISSI III · HYPER SPEED TECHNOLOGY. 대표 아이언 · 특허 제10-2961654호 · #5~SW 7pc.'},
+  {kicker:'MUSASHI 634 · SINCE 1956',title:'MUSASHI 634<br>PRECISION FORGED GOLF CLUB',lead:'일본 장인의 혼이 담긴 프리미엄 골프클럽. 10시리즈 · 단조 · 특허 기술.'}
+];
+let mkHeroIdx=0,mkHeroTimer;
+function mkHeroRender(){
+  const slides=document.querySelectorAll('.mk-hero-slide');
+  if(!slides.length)return;
+  slides.forEach((s,i)=>s.classList.toggle('active',i===mkHeroIdx));
+  const c=MK_HERO_COPY[mkHeroIdx]||MK_HERO_COPY[0];
+  const k=document.getElementById('mkHeroKicker'),t=document.getElementById('mkHeroTitle'),l=document.getElementById('mkHeroLead'),n=document.getElementById('mkHeroCounter');
+  if(k)k.textContent=c.kicker;
+  if(t)t.innerHTML=c.title;
+  if(l)l.textContent=c.lead;
+  if(n)n.textContent=String(mkHeroIdx+1).padStart(2,'0');
+  document.querySelectorAll('#mkHeroDots button').forEach((b,i)=>b.classList.toggle('active',i===mkHeroIdx));
+}
+function heroSlide(dir){
+  const slides=document.querySelectorAll('.mk-hero-slide');
+  if(!slides.length)return;
+  mkHeroIdx=(mkHeroIdx+dir+slides.length)%slides.length;
+  mkHeroRender();
+  resetMkHeroTimer();
+}
+function mkHeroGo(i){mkHeroIdx=i;mkHeroRender();resetMkHeroTimer();}
+function resetMkHeroTimer(){clearInterval(mkHeroTimer);if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;mkHeroTimer=setInterval(()=>heroSlide(1),7000);}
+(function initMkHero(){
+  const dots=document.getElementById('mkHeroDots');
+  const n=document.querySelectorAll('.mk-hero-slide').length;
+  if(dots){for(let i=0;i<n;i++){const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','슬라이드 '+(i+1));b.onclick=()=>mkHeroGo(i);dots.appendChild(b);}}
+  mkHeroRender();resetMkHeroTimer();
+})();
+function homeScroll(id){
+  closeMenu();
+  const go=()=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});};
+  if(!document.getElementById('page-home').classList.contains('active')){showPage('home');setTimeout(go,80);}else go();
+}
+function productInquiry(){window.location.href='mailto:paullew@hanmail.net?subject='+encodeURIComponent('무사시634 제품 문의');}
 function navGo(id){closeMenu();showPage(id);}
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1342,27 +1922,50 @@ function showPage(id){
 }
 function renderProducts(){
   const list=filt==='all'?products:products.filter(p=>p.cat===filt);
-  document.getElementById('productsTableBody').innerHTML=list.map(p=>`<tr class="click" onclick="navGoProduct('${p.id}')"><td>${String(p.no).padStart(2,'0')}</td><td class="name">${p.n}</td><td class="cat">${p.catLabel}</td><td>${p.items}</td><td style="color:var(--muted)">${p.desc}</td></tr>`).join('');
+  const groupsEl=document.getElementById('productCategoryGroups');
   const cards=document.getElementById('productCards');
-  if(cards)cards.innerHTML=list.map(p=>`<div class="product-card" onclick="navGoProduct('${p.id}')"><div class="pc-no">${String(p.no).padStart(2,'0')}</div><h4>${p.n}</h4><div class="pc-cat">${p.catLabel}</div><p>${p.items}</p></div>`).join('');
+  if(groupsEl){
+    if(filt==='all'){
+      groupsEl.style.display='grid';
+      groupsEl.innerHTML=catOrder.map(cat=>{
+        const items=products.filter(p=>p.cat===cat);
+        if(!items.length)return'';
+        return`<div class="prod-cat-block"><h3>${productCats[cat]}</h3><ul>${items.map(p=>`<li onclick="navGoProduct('${p.id}')"><strong>${String(p.no).padStart(2,'0')} · ${p.n}</strong><span>${p.items}</span></li>`).join('')}</ul></div>`;
+      }).join('');
+    }else groupsEl.style.display='none';
+  }
+  if(cards){
+    cards.style.display=filt==='all'?'none':'grid';
+    cards.innerHTML=list.map(p=>`<div class="product-card" onclick="navGoProduct('${p.id}')"><div class="pc-no">${String(p.no).padStart(2,'0')}</div><h4>${p.n}</h4><div class="pc-cat">${p.catLabel}</div><p>${p.items}</p></div>`).join('');
+  }
+  document.getElementById('productsTableBody').innerHTML=list.map(p=>`<tr class="click" onclick="navGoProduct('${p.id}')"><td>${String(p.no).padStart(2,'0')}</td><td class="name">${p.n}</td><td class="cat">${p.catLabel}</td><td>${p.items}</td><td style="color:var(--muted)">${p.desc}</td></tr>`).join('');
 }
 function renderSeriesWall(){
   const el=document.getElementById('homeSeriesWall');
   if(!el)return;
-  const left=products.slice(0,5),right=products.slice(5,10);
-  el.innerHTML=`<div class="series-wall-photo"><img src="assets/musashi-products-wall.png" alt="무사시 10시리즈 벽면"></div><div class="series-wall-cols"><ul class="series-col left">${left.map(p=>`<li onclick="navGoProduct('${p.id}')">${p.n}</li>`).join('')}</ul><ul class="series-col right">${right.map(p=>`<li onclick="navGoProduct('${p.id}')">${p.n}</li>`).join('')}</ul></div>`;
+  const seriesItem=p=>`<li onclick="navGoProduct('${p.id}')"><span class="series-cat">${p.catLabel}</span>${p.n}</li>`;
+  const left=products.filter(p=>['forged','iron','women','putter'].includes(p.cat));
+  const right=products.filter(p=>['flagship','driver','goods','limited','collector'].includes(p.cat));
+  el.innerHTML=`<div class="series-showcase"><img src="assets/series-showcase.jpg" alt="무사시 10시리즈 CPS 아이언 · JEHOVAH NISSI 드라이버" onclick="openLightbox(this.src)"><div class="series-showcase-cap"><span>10 SERIES · JAPAN FORGED</span><p>클럽 종류별 10브랜드 · Magnificat 골프화 별도</p></div></div><div class="series-wall-cols"><ul class="series-col left">${left.map(seriesItem).join('')}</ul><ul class="series-col right">${right.map(seriesItem).join('')}</ul></div>`;
 }
 const FLAGSHIP=[
   {tag:'IRON · FLAGSHIP',title:'634 CPS 그래핀 7아이언',desc:'비거리 전용 · JEHOVAH NISSI III · #5~SW',img:'assets/irons/cps-graphene/hero.jpg',onclick:"navGoIron('musashi-634','cps-graphene-7i')"},
-  {tag:'DRIVER · NIGODEMO',title:'634 NICODEMUS 니고데모',desc:'초고반발 드라이버 · 비거리·방향성',img:'assets/musashi-products-wall.png',onclick:"navGo('nigodemo')"},
-  {tag:'FOOTWEAR · PATENT',title:'Magnificat 골프화',desc:'맨발로 걷는 슈즈 · 수제 명품 · 특허',img:'assets/magnificat/cover.png',onclick:"navGo('magnificat')"}
+  {tag:'DRIVER · MOSES',title:'THE MIRACLE OF MOSES',desc:'495cc · 250~260g · Graphene Shaft · SCF',img:'assets/nigodemo/jehovah-nissi-course.jpg',onclick:"navGo('nigodemo')"},
+  {tag:'FOOTWEAR · PATENT',title:'Magnificat 골프화',desc:'수제 명품 · 특허 · one more step',img:'assets/magnificat/cover.png',onclick:"navGo('magnificat')"}
 ];
 function renderFlagship(){
   const el=document.getElementById('homeFlagship');
   if(!el)return;
   el.innerHTML=FLAGSHIP.map(f=>`<div class="flagship-card" onclick="${f.onclick}"><img src="${f.img}" alt="${f.title}"><div class="fc-body"><div class="fc-tag">${f.tag}</div><h4>${f.title}</h4><p>${f.desc}</p></div></div>`).join('');
 }
-function filterProducts(t){filt=t;document.querySelectorAll('.filter-btn').forEach(b=>{b.className='filter-btn btn btn-ghost btn-sm';});event.target.className='filter-btn btn btn-primary btn-sm';renderProducts();}
+function filterProducts(t){
+  filt=t;
+  document.querySelectorAll('.filter-btn').forEach(b=>{
+    b.className='filter-btn btn btn-ghost btn-sm';
+    if(b.dataset.cat===t)b.className='filter-btn btn btn-primary btn-sm';
+  });
+  renderProducts();
+}
 renderProducts();renderSeriesWall();renderFlagship();renderFeaturedIron();
 function toast(msg){const t=document.getElementById('siteToast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
 function handleSubmit(e,brand){e.preventDefault();toast('문의가 접수되었습니다. 담당자가 연락드리겠습니다.');e.target.reset();}
@@ -1389,12 +1992,10 @@ function startHeroEntrance(fast){
   if(hero)hero.classList.add('entered');
   if(nav){nav.classList.remove('intro-wait');nav.classList.add('nav-in');}
   document.body.classList.add('hero-ready');
-  document.querySelectorAll('#page-home .hero .intro-wait').forEach((el,i)=>{
+  document.querySelectorAll('#page-home .reveal.intro-wait').forEach((el,i)=>{
     el.classList.remove('intro-wait');
     setTimeout(()=>el.classList.add('on'),fast?70*i:140*i+120);
   });
-  const grid=document.querySelector('#page-home .stat-grid');
-  if(grid&&!fast)setTimeout(()=>grid.querySelectorAll('[data-target]').forEach(v=>{if(v.textContent==='0')countUp(v,+v.dataset.target);}),900);
 }
 function runIntro(){
   const curtain=document.getElementById('introCurtain');

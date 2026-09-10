@@ -1,21 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
   <defs>
-    <linearGradient id="kgia-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E8C547"/>
-      <stop offset="50%" stop-color="#C9A227"/>
-      <stop offset="100%" stop-color="#9A7B1A"/>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C969"/>
+      <stop offset="100%" stop-color="#B8962E"/>
     </linearGradient>
-    <linearGradient id="kgia-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#141820"/>
-      <stop offset="100%" stop-color="#0A0B10"/>
-    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="400" height="240" rx="16" fill="url(#kgia-bg)"/>
-  <rect x="12" y="12" width="376" height="216" rx="12" stroke="url(#kgia-gold)" stroke-width="2" fill="none" opacity=".85"/>
-  <circle cx="200" cy="88" r="44" stroke="url(#kgia-gold)" stroke-width="2" fill="rgba(201,162,39,.08)"/>
-  <path d="M200 58 L200 118 M176 82 L224 82" stroke="url(#kgia-gold)" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="200" cy="118" r="6" fill="url(#kgia-gold)"/>
-  <text x="200" y="168" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="700" letter-spacing="6" fill="url(#kgia-gold)">KGIA</text>
-  <text x="200" y="196" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#9BA3B8" letter-spacing="1">Korea Golf Industry Association</text>
-  <text x="200" y="218" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#E8EAF2">\m����</text>
+  <rect width="800" height="500" fill="#0F172A"/>
+  <rect width="800" height="500" fill="url(#glow)"/>
+  <rect x="24" y="24" width="752" height="452" rx="20" stroke="url(#g)" stroke-width="2" fill="none" opacity=".55"/>
+  <circle cx="400" cy="175" r="72" stroke="url(#g)" stroke-width="2.5" fill="rgba(212,175,55,.06)"/>
+  <path d="M400 118v114M348 175h104" stroke="url(#g)" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="400" cy="175" r="8" fill="url(#g)"/>
+  <text x="400" y="300" text-anchor="middle" font-family="Georgia,serif" font-size="54" font-weight="700" letter-spacing="12" fill="url(#g)">KGIA</text>
+  <text x="400" y="345" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" fill="#94A3B8" letter-spacing="2">Korea Golf Industry Association</text>
+  <text x="400" y="395" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="#F1F5F9">한국골프산업협회</text>
+  <text x="400" y="440" text-anchor="middle" font-family="monospace" font-size="14" fill="#64748B" letter-spacing="4">INDUSTRY · NETWORK · GROWTH</text>
 </svg>
