@@ -1168,6 +1168,64 @@ async function runMgmtFeeCycle() {
   return { reminded: remindR.rows.length, locked: lockR.rows.length };
 }
 
+/** 회원 공지용 — 실시간 상품·품질 관리 요약 (하루 1회) */
+async function buildMemberOpsDigest() {
+  const today = kstTodayYmd();
+  const krR = await query(`
+    SELECT COUNT(*)::int AS c FROM services
+    WHERE active=1 AND id ~ '^(skg|sky|skt|skx|sktr|skseo|pkr|pig17|pyt17)'
+  `);
+  const activeKr = krR.rows[0]?.c || 0;
+  const totalR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
+  const totalActive = totalR.rows[0]?.c || 0;
+  return [
+    `상품·품질을 실시간으로 점검·업데이트하고 있습니다. (${today})`,
+    `• 전체 판매 상품 ${totalActive}개 · 한국·프리미엄 ${activeKr}개 운영 중`,
+    `• 공급 연동·가격·품질 상태 자동 점검`,
+    `• 문제 상품은 판매 중단 후 대체 상품으로 교체`,
+    `서비스 주문에서 최신 목록을 확인해 주세요.`,
+  ].join('\n');
+}
+
+/** 공지 배너(notice)에 운영 요약 반영 — default만 / 전체 활성 사이트 */
+async function applyOpsDigestToSites(opts = {}) {
+  const text = opts.text || await buildMemberOpsDigest();
+  const scope = opts.scope === 'default' ? 'default' : 'active';
+  const r = scope === 'default'
+    ? await query(`UPDATE sites SET notice=$1 WHERE id='default' RETURNING id, name`, [text])
+    : await query(`UPDATE sites SET notice=$1 WHERE COALESCE(active,1)=1 RETURNING id, name`, [text]);
+  await setGlobalSetting('ops_digest_last_date', kstTodayYmd());
+  await setGlobalSetting('ops_digest_text', text);
+  return { text, scope, updated: r.rows.length, sites: r.rows.map(x => x.name) };
+}
+
+function startOpsDigestScheduler() {
+  let lastRun = '';
+  const tick = async () => {
+    try {
+      const hour = Number(new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Seoul', hour: 'numeric', hour12: false
+      }));
+      const today = kstTodayYmd();
+      // 매일 10시 KST 전후 1회 — 전체 활성 사이트 공지 갱신
+      if (hour >= 9 && hour <= 11 && lastRun !== today) {
+        const already = await getGlobalSetting('ops_digest_last_date');
+        if (already === today) {
+          lastRun = today;
+          return;
+        }
+        lastRun = today;
+        const r = await applyOpsDigestToSites({ scope: 'active' });
+        console.log(`📢 회원 공지(운영 요약) 갱신 ${r.updated}곳`);
+      }
+    } catch (e) {
+      console.log('운영 공지 스케줄러 오류:', e.message);
+    }
+  };
+  tick();
+  setInterval(tick, 15 * 60 * 1000);
+}
+
 function startMgmtFeeScheduler() {
   let lastRun = '';
   const tick = async () => {
@@ -9167,6 +9225,26 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+/** 슈퍼 — 회원 공지(운영 요약) 미리보기 / GLOW만 / 전체 적용 */
+app.post('/api/super/ops-digest', requireSuperAdmin, async (req, res) => {
+  try {
+    const { scope, dryRun } = req.body || {};
+    const text = await buildMemberOpsDigest();
+    if (dryRun || scope === 'preview') {
+      return res.json({ ok: true, preview: true, text });
+    }
+    const applyScope = scope === 'all' || scope === 'active' ? 'active' : 'default';
+    const result = await applyOpsDigestToSites({ text, scope: applyScope });
+    res.json({
+      ok: true,
+      message: applyScope === 'default'
+        ? 'GLOW 공지에 운영 요약을 반영했습니다'
+        : `활성 사이트 ${result.updated}곳 공지를 갱신했습니다`,
+      ...result,
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /** 슈퍼 — 관리비 입금 신청 목록 */
 app.get('/api/super/mgmt-fee-requests', requireSuperAdmin, async (req, res) => {
   try {
@@ -10607,5 +10685,7 @@ app.listen(PORT, async () => {
 
   startDailyReportScheduler(query, getGlobalSetting, setGlobalSetting, sendTelegramToSuper);
   startMgmtFeeScheduler();
+  startOpsDigestScheduler();
   console.log('📅 관리비 주기 스케줄러 시작 (막히기 3일 전 TG 알림 · 미납 자동 정지)');
+  console.log('📢 회원 공지(운영 요약) 스케줄러 시작 (하루 1회)');
 });

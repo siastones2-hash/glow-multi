@@ -1505,6 +1505,13 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">처리 중</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="stPend">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">완료</div><div style="font-size:22px;font-weight:800;color:var(--ok)" id="stDone">0</div></div>
         </div>
+        <div id="opsDigestCard" style="display:none;margin-bottom:16px;border-radius:14px;padding:14px 16px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <div style="font-size:13px;font-weight:800;color:#065F46">🔄 실시간 상품·품질 관리</div>
+            <div style="font-size:11px;font-weight:700;color:#047857" id="opsDigestDate"></div>
+          </div>
+          <div style="font-size:13px;line-height:1.65;color:#064E3B;white-space:pre-line" id="opsDigestBody"></div>
+        </div>
         <div class="card dash-welcome" style="margin-bottom:16px">
           <div style="font-size:18px;font-weight:800;margin-bottom:6px;color:var(--tx)">안녕하세요, <span class="gt" id="welName">-</span>님</div>
           <div style="font-size:14px;color:var(--tm);margin-bottom:16px;font-weight:400;line-height:1.65" id="welMsg">아래 메뉴에서 <strong style="color:var(--tx)">서비스 주문</strong> 또는 <strong style="color:var(--tx)">잔액 충전</strong>을 선택하세요.</div>
@@ -1872,7 +1879,7 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
               <div class="fg"><label>메인 슬로건 (강조 부분)</label><input type="text" id="stSlogan" placeholder="빛나도록"/></div>
               <div class="fg"><label>메인 슬로건 (두 번째 줄)</label><input type="text" id="stSloganSub" placeholder="우리가 성장시킵니다"/></div>
               <div class="fg"><label>부제목 설명</label><textarea id="stDesc" rows="2" placeholder="유튜브·인스타·틱톡·X까지..."></textarea></div>
-              <div class="fg"><label>공지사항 (비워두면 미표시)</label><input type="text" id="stNotice" placeholder="현재 이벤트 진행 중!"/></div>
+              <div class="fg"><label>공지사항 (비워두면 미표시 · 여러 줄 가능)</label><textarea id="stNotice" rows="4" placeholder="상품·품질 실시간 관리 중&#10;• 오늘 업데이트 요약"></textarea></div>
               <div style="border-top:1px solid var(--bd);margin:14px 0;padding-top:12px">
                 <div style="font-size:13px;font-weight:800;color:var(--p2);margin-bottom:4px">💰 충전 보너스 (금액별)</div>
                 <div style="font-size:11px;color:var(--tl);margin-bottom:10px">충전 금액이 클수록 보너스율을 높게 줄 수 있습니다. 각 금액의 보너스율(%)을 입력하세요. 비워두면 그 금액은 보너스 없음. 전부 비우면 보너스 미사용. ⚠️ 보너스만큼 크레딧 소모가 늘어나니 크레딧을 여유 있게 확보하세요.</div>
@@ -3233,26 +3240,38 @@ async function loadSiteConfig(){
     });
   })();
 
-  // 공지사항 — 랜딩(pg-land)과 로그인 후 대시보드 본문(dashMain) 양쪽에 표시
-  // ⚠️ pg-dash는 가로 flex 레이아웃이므로 본문(dashMain) 안쪽에 넣어야 함
+  // 공지사항 — 상단 띠배너 + 홈 카드(여러 줄 운영 업데이트)
   var noticeTargets=[{pg:'pg-land',host:'pg-land'},{pg:'pg-dash',host:'dashMain'}];
-  if(d.notice){
+  var noticeText=String(d.notice||'').trim();
+  if(noticeText){
+    var noticeOneLine=noticeText.split(/\n+/).map(function(s){return s.trim()}).filter(Boolean)[0]||noticeText;
     noticeTargets.forEach(function(t){
       var nbId='noticeBanner_'+t.pg;
       var nb=ge(nbId);
       if(!nb){
         nb=document.createElement('div');nb.id=nbId;
-        nb.style.cssText='background:linear-gradient(90deg,var(--p2),var(--p1));color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;z-index:200';
+        nb.style.cssText='background:linear-gradient(90deg,#059669,#10B981);color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;z-index:200;white-space:pre-line;line-height:1.45';
         var host=ge(t.host);if(host)host.insertBefore(nb,host.firstChild);
       }
-      nb.textContent='📢 '+d.notice;
+      nb.textContent='📢 '+noticeOneLine;
+      nb.title=noticeText;
       nb.style.display='block';
     });
+    var odc=ge('opsDigestCard'), odb=ge('opsDigestBody'), odd=ge('opsDigestDate');
+    if(odc&&odb){
+      odc.style.display='block';
+      odb.textContent=noticeText;
+      if(odd){
+        var m=noticeText.match(/(\d{4}-\d{2}-\d{2})/);
+        odd.textContent=m?m[1]:'오늘';
+      }
+    }
   }else{
     noticeTargets.forEach(function(t){
       var nb=ge('noticeBanner_'+t.pg);
       if(nb)nb.style.display='none';
     });
+    var odcOff=ge('opsDigestCard');if(odcOff)odcOff.style.display='none';
   }
 
   // 사이드바 배너 (사이트별 홍보 배너) + 어드민 설정 입력칸 채우기
