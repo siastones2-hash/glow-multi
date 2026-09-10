@@ -1169,6 +1169,93 @@ async function runMgmtFeeCycle() {
 }
 
 /** 회원 공지용 — 실시간 상품·품질 관리 요약 (하루 1회) */
+async function getTodayServiceChanges() {
+  const today = kstTodayYmd();
+  const curR = await query(`SELECT id, name, active FROM services`);
+  const curActive = new Map(
+    curR.rows.filter(r => parseInt(r.active, 10) === 1).map(r => [String(r.id), String(r.name || r.id)])
+  );
+  let prev = {};
+  try {
+    prev = JSON.parse((await getGlobalSetting('ops_digest_active_snapshot')) || '{}') || {};
+  } catch (_) {
+    prev = {};
+  }
+  const added = [];
+  const removed = [];
+  for (const [id, name] of curActive) {
+    if (!prev[id]) added.push(name);
+  }
+  for (const [id, name] of Object.entries(prev)) {
+    if (!curActive.has(id)) removed.push(name);
+  }
+  try {
+    const stopR = await query(`
+      SELECT name FROM services
+      WHERE COALESCE(active,0)=0
+        AND inactive_at IS NOT NULL
+        AND ((inactive_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Seoul')::date = $1::date
+      ORDER BY inactive_at DESC
+      LIMIT 10
+    `, [today]);
+    for (const row of stopR.rows) {
+      const n = String(row.name || '').trim();
+      if (n && !removed.includes(n)) removed.push(n);
+    }
+  } catch (_) { /* inactive_at 없을 수 있음 */ }
+  return {
+    added: added.slice(0, 6),
+    removed: removed.slice(0, 6),
+    snapshot: Object.fromEntries(curActive),
+  };
+}
+
+function shortenSvcName(name, max = 36) {
+  const s = String(name || '').replace(/\s+/g, ' ').trim();
+  return s.length > max ? s.slice(0, max - 1) + '…' : s;
+}
+
+/** 설명 첫 문장만 — 실제 DB 설명 기반 (과장 문구 제거) */
+function digestDescSnippet(desc, max = 52) {
+  let t = String(desc || '')
+    .replace(/\s+/g, ' ')
+    .replace(/※[^·]*/g, '')
+    .trim();
+  if (!t) return '';
+  const first = (t.split(/[.。]/)[0] || t).trim();
+  return first.length > max ? first.slice(0, max - 1) + '…' : first;
+}
+
+async function pickLiveHighlightServices() {
+  // 실제로 판매 중인 한국·프리미엄만 — 이름·설명이 있는 것
+  const r = await query(`
+    SELECT id, name, description, refill_guaranteed
+    FROM services
+    WHERE active=1
+      AND id ~ '^(skg|sky|skt|skx|sktr|skseo|pkr|pig17|pyt17)'
+      AND COALESCE(TRIM(name),'') <> ''
+      AND COALESCE(TRIM(description),'') <> ''
+    ORDER BY
+      CASE WHEN name LIKE '%⭐%' THEN 0 ELSE 1 END,
+      CASE WHEN COALESCE(refill_guaranteed,0)=1 THEN 0 ELSE 1 END,
+      id
+    LIMIT 8
+  `);
+  const picks = [];
+  for (const row of r.rows) {
+    const snip = digestDescSnippet(row.description);
+    if (!snip || snip.length < 12) continue;
+    picks.push({
+      id: row.id,
+      name: shortenSvcName(row.name, 40),
+      snip,
+      refill: parseInt(row.refill_guaranteed || 0, 10) === 1,
+    });
+    if (picks.length >= 4) break;
+  }
+  return picks;
+}
+
 async function buildMemberOpsDigest() {
   const today = kstTodayYmd();
   const krR = await query(`
@@ -1178,25 +1265,103 @@ async function buildMemberOpsDigest() {
   const activeKr = krR.rows[0]?.c || 0;
   const totalR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
   const totalActive = totalR.rows[0]?.c || 0;
-  return [
-    `상품·품질을 실시간으로 점검·업데이트하고 있습니다. (${today})`,
-    `• 전체 판매 상품 ${totalActive}개 · 한국·프리미엄 ${activeKr}개 운영 중`,
-    `• 공급 연동·가격·품질 상태 자동 점검`,
-    `• 문제 상품은 판매 중단 후 대체 상품으로 교체`,
-    `서비스 주문에서 최신 목록을 확인해 주세요.`,
-  ].join('\n');
+  const stoppedR = await query(`
+    SELECT COUNT(*)::int AS c FROM services
+    WHERE COALESCE(active,0)=0
+      AND COALESCE(TRIM(inactive_note),'') <> ''
+  `).catch(() => ({ rows: [{ c: 0 }] }));
+  const qualityHeld = stoppedR.rows[0]?.c || 0;
+  const changes = await getTodayServiceChanges();
+  const highlights = await pickLiveHighlightServices();
+
+  const lines = [
+    `좋은 상품만 판매합니다. 품질·연동을 매일 점검하고 있습니다. (${today})`,
+    `• 지금 판매 중 ${totalActive}개 · 한국·프리미엄 ${activeKr}개`,
+    `• 문제·미검증 상품은 판매 중단 (누적 ${qualityHeld}개 품질 관리)`,
+  ];
+  if (changes.added.length) {
+    lines.push(`• 오늘 추가: ${changes.added.map(n => shortenSvcName(n, 28)).join(' · ')}`);
+  }
+  if (changes.removed.length) {
+    lines.push(`• 오늘 품질 이슈로 중단: ${changes.removed.map(n => shortenSvcName(n, 28)).join(' · ')}`);
+  }
+  if (!changes.added.length && !changes.removed.length) {
+    lines.push(`• 오늘은 큰 변경 없이 품질 점검만 완료`);
+  }
+  if (highlights.length) {
+    lines.push(`지금 이용 가능한 상품 예시:`);
+    for (const h of highlights) {
+      lines.push(`· ${h.name} — ${h.snip}`);
+    }
+  }
+  lines.push(`자세한 목록은 「서비스 주문」에서 확인해 주세요.`);
+  return { text: lines.join('\n'), changes, today, totalActive, activeKr, highlights, qualityHeld };
 }
 
 /** 공지 배너(notice)에 운영 요약 반영 — default만 / 전체 활성 사이트 */
 async function applyOpsDigestToSites(opts = {}) {
-  const text = opts.text || await buildMemberOpsDigest();
+  let built;
+  if (opts.built && typeof opts.built === 'object') {
+    built = opts.built;
+  } else if (typeof opts.text === 'string') {
+    built = { text: opts.text, changes: await getTodayServiceChanges(), today: kstTodayYmd() };
+  } else {
+    built = await buildMemberOpsDigest();
+  }
+  const text = built.text;
   const scope = opts.scope === 'default' ? 'default' : 'active';
   const r = scope === 'default'
     ? await query(`UPDATE sites SET notice=$1 WHERE id='default' RETURNING id, name`, [text])
     : await query(`UPDATE sites SET notice=$1 WHERE COALESCE(active,1)=1 RETURNING id, name`, [text]);
   await setGlobalSetting('ops_digest_last_date', kstTodayYmd());
   await setGlobalSetting('ops_digest_text', text);
-  return { text, scope, updated: r.rows.length, sites: r.rows.map(x => x.name) };
+  if (built.changes?.snapshot) {
+    await setGlobalSetting('ops_digest_active_snapshot', JSON.stringify(built.changes.snapshot));
+  }
+
+  let tg = { sent: 0, skipped: true };
+  if (opts.notifyTg !== false && scope === 'active') {
+    const addN = built.changes?.added?.length || 0;
+    const rmN = built.changes?.removed?.length || 0;
+    let msg =
+      `✅ <b>오늘 품질 점검 완료</b> — 좋은 상품만 유지\n\n` +
+      `📅 ${built.today || kstTodayYmd()}\n` +
+      `📢 회원 공지 <b>${r.rows.length}곳</b> 갱신\n` +
+      `📦 판매 중 ${built.totalActive ?? '—'}개` +
+      (built.activeKr != null ? ` · 한국·프리미엄 ${built.activeKr}개` : '') +
+      (built.qualityHeld != null ? `\n🛡 품질 관리(판매중단) ${built.qualityHeld}개` : '') +
+      `\n➕ 신규 ${addN} · ⏸ 중단 ${rmN}`;
+    if (built.highlights?.length) {
+      msg += `\n\n<b>판매 중 예시</b>`;
+      for (const h of built.highlights.slice(0, 3)) {
+        msg += `\n· ${shortenSvcName(h.name, 36)}`;
+      }
+    }
+    if (addN) {
+      msg += `\n\n<b>오늘 추가</b>\n` + built.changes.added.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+    }
+    if (rmN) {
+      msg += `\n\n<b>오늘 중단</b>\n` + built.changes.removed.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+    }
+    msg += `\n\n회원 홈·상단 공지에 “좋은 상품만 판매” 안내가 반영되었습니다.`;
+    tg = await broadcastToAdminTelegrams(msg);
+  }
+
+  return {
+    text,
+    scope,
+    updated: r.rows.length,
+    sites: r.rows.map(x => x.name),
+    changes: {
+      added: built.changes?.added || [],
+      removed: built.changes?.removed || [],
+    },
+    highlights: built.highlights || [],
+    totalActive: built.totalActive,
+    activeKr: built.activeKr,
+    qualityHeld: built.qualityHeld,
+    tg,
+  };
 }
 
 function startOpsDigestScheduler() {
@@ -1207,7 +1372,7 @@ function startOpsDigestScheduler() {
         timeZone: 'Asia/Seoul', hour: 'numeric', hour12: false
       }));
       const today = kstTodayYmd();
-      // 매일 10시 KST 전후 1회 — 전체 활성 사이트 공지 갱신
+      // 매일 10시 KST 전후 1회 — 전체 활성 사이트 공지 갱신 + 관리자 TG
       if (hour >= 9 && hour <= 11 && lastRun !== today) {
         const already = await getGlobalSetting('ops_digest_last_date');
         if (already === today) {
@@ -1215,8 +1380,8 @@ function startOpsDigestScheduler() {
           return;
         }
         lastRun = today;
-        const r = await applyOpsDigestToSites({ scope: 'active' });
-        console.log(`📢 회원 공지(운영 요약) 갱신 ${r.updated}곳`);
+        const r = await applyOpsDigestToSites({ scope: 'active', notifyTg: true });
+        console.log(`📢 회원 공지(운영 요약) 갱신 ${r.updated}곳 · TG ${r.tg?.sent || 0}`);
       }
     } catch (e) {
       console.log('운영 공지 스케줄러 오류:', e.message);
@@ -9228,18 +9393,33 @@ app.post('/api/super/credit-requests/process', requireSuperAdmin, async (req, re
 /** 슈퍼 — 회원 공지(운영 요약) 미리보기 / GLOW만 / 전체 적용 */
 app.post('/api/super/ops-digest', requireSuperAdmin, async (req, res) => {
   try {
-    const { scope, dryRun } = req.body || {};
-    const text = await buildMemberOpsDigest();
+    const { scope, dryRun, notifyTg } = req.body || {};
+    const built = await buildMemberOpsDigest();
     if (dryRun || scope === 'preview') {
-      return res.json({ ok: true, preview: true, text });
+      return res.json({
+        ok: true,
+        preview: true,
+        text: built.text,
+        changes: built.changes,
+        highlights: built.highlights,
+        today: built.today,
+        totalActive: built.totalActive,
+        activeKr: built.activeKr,
+        qualityHeld: built.qualityHeld,
+      });
     }
     const applyScope = scope === 'all' || scope === 'active' ? 'active' : 'default';
-    const result = await applyOpsDigestToSites({ text, scope: applyScope });
+    const result = await applyOpsDigestToSites({
+      built,
+      scope: applyScope,
+      notifyTg: applyScope === 'active' && notifyTg !== false,
+    });
     res.json({
       ok: true,
       message: applyScope === 'default'
-        ? 'GLOW 공지에 운영 요약을 반영했습니다'
-        : `활성 사이트 ${result.updated}곳 공지를 갱신했습니다`,
+        ? 'GLOW 공지에 품질 관리 안내를 반영했습니다'
+        : `활성 사이트 ${result.updated}곳 공지 갱신` +
+          (result.tg?.sent ? ` · 관리자 TG ${result.tg.sent}곳` : ''),
       ...result,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
