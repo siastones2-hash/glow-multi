@@ -465,18 +465,18 @@ async function initDB() {
       {id:'pyt8',name:'YouTube 쇼츠 조회수 — 프리미엄 글로벌 (드롭 보상)',pl:'youtube',rate:1.68,min:100,max:1000000,description:'전 세계 실계정 기반으로 제공되는 고품질 YouTube 쇼츠 조회수 서비스입니다. 유튜브에서 지금 가장 빠르게 성장하는 쇼츠 포맷의 조회수를 늘립니다. 초기 조회수가 빠르게 쌓이면 쇼츠 피드 알고리즘의 바이럴 루프에 진입하여 수백만 조회수까지 자연 성장이 가능합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'27924'},
       {id:'pyt9',name:'YouTube 조회수 — 아랍 타겟',pl:'youtube',rate:4.69,min:500,max:100000,description:'아랍 기반 고품질 YouTube 조회수 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 영상 업로드 직후 조회수를 빠르게 채워 유튜브 알고리즘에 강한 신호를 보냅니다. 초기 조회수가 빠를수록 추천·홈피드 배포 확률이 높아지며 실제 사용자 패턴으로 처리되어 계정 안전성이 보장됩니다.',api_id:'2866'},
       {id:'pig11',name:'Instagram 노출 — 한국 타겟',pl:'instagram',rate:12.54,min:5,max:10000,description:'한국 기반 고품질 Instagram 노출 서비스로, 국내 타겟 마케팅의 핵심으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다.',api_id:'29158'},
-      {id:'pig17',name:'Instagram 좋아요 — 한국 타겟',pl:'instagram',rate:1.02,min:20,max:200000,description:'한국 타겟 Instagram 좋아요입니다. 국내 탐색·인기 노출 신호용으로, 게시물·릴스 URL을 입력하세요.',api_id:'30710'},
-      {id:'pig6',name:'Instagram 팔로워 — 한국 타겟 (구SKU 중단)',pl:'instagram',rate:40.32,min:10,max:20000,description:'[판매 중단] 구 Peakerr 한국 팔로워. 대체: pkr9(한국 HQ 1년 리필) 또는 skg1.',api_id:'28308',active:0},
-      {id:'pkr1',name:'Instagram 팔로워 — 한국 (구SKU 중단)',pl:'instagram',rate:59.6409,min:10,max:20000,description:'[판매 중단] 구 Peakerr 한국 팔로워. 대체: pkr9.',api_id:'27334',active:0},
-      {id:'pkr2',name:'Instagram 팔로워 — 한국 슬로우 (구SKU 중단)',pl:'instagram',rate:59.6409,min:10,max:50000,description:'[판매 중단] 구 Peakerr 한국 팔로워. 대체: pkr9.',api_id:'27334',active:0},
-      {id:'pkr3',name:'Instagram 좋아요 — 한국 (365일 보상) ⭐',pl:'instagram',rate:1.2,min:20,max:1000000,description:'한국 타겟 Instagram 좋아요 · 365일 드롭 보상입니다. 브랜드·이벤트 게시물의 장기 참여 유지에 적합합니다. 게시물·릴스 URL을 입력하세요.',api_id:'30711'},
-      {id:'pkr4',name:'Instagram 좋아요 — 한국 리얼 MQ',pl:'instagram',rate:2.04,min:20,max:1000000,description:'100% Real Korean Accounts 표기 Instagram 좋아요(MQ)입니다. 국내 타겟 참여용. 게시물·릴스 URL을 입력하세요.',api_id:'27077'},
-      {id:'pkr5',name:'Instagram 좋아요 — 한국 Real Exclusive (30일)',pl:'instagram',rate:6.912,min:10,max:20000,description:'한국 Real Exclusive 좋아요 · 30일 리필 표기입니다. 고품질 국내 참여용. 게시물·릴스 URL을 입력하세요.',api_id:'33845'},
-      {id:'pkr6',name:'Instagram 댓글 — 한국 랜덤 프리미엄',pl:'instagram',rate:55.296,min:5,max:1000,description:'한국 프리미엄 랜덤 댓글입니다. 게시물 초기 참여·국내 신호용으로 사용하세요. 게시물 URL을 입력하세요.',api_id:'36371'},
-      {id:'pkr7',name:'Instagram 댓글 — 한국 맞춤 HQ',pl:'instagram',rate:92.736,min:1,max:2000,description:'한국 맞춤(Custom) HQ 댓글입니다. 원하는 문구로 국내 계정 댓글을 달 때 사용하세요. 게시물 URL을 입력하세요.',api_id:'35464'},
-      {id:'pkr9',name:'Instagram 팔로워 — 한국 HQ (1년 리필) ⭐',pl:'instagram',rate:17.2224,min:30,max:1000,description:'한국 HQ 팔로워 · 1년 리필 표기(일 약 100명 슬로우)입니다. 구 SKU(외국인 유입)와 다른 신규 상품입니다. 프로필 링크를 입력하세요.',api_id:'35465'},
-      {id:'pkr10',name:'Instagram 팔로워 — 한국 (30일 리필)',pl:'instagram',rate:45.444,min:5,max:50000,description:'한국 팔로워 · 30일 리필 표기입니다. 국내 마케팅용 신규 Peakerr SKU입니다. 프로필 링크를 입력하세요.',api_id:'35485'},
-      {id:'pyt17',name:'YouTube 조회수 — 한국 Native (평생) ⭐',pl:'youtube',rate:3.8708,min:1000,max:1000000,description:'South Korean Native Views · Lifetime 보장 표기입니다. 국내 시청 지표·추천 신호용. watch?v= 또는 youtu.be 링크를 입력하세요.',api_id:'34592'},
+      {id:'pig17',name:'Instagram 좋아요 — 한국 타겟',pl:'instagram',rate:1.02,min:20,max:200000,description:'한국 사용자 대상으로 인스타그램 게시물·릴스에 좋아요를 늘려 드립니다. 좋아요가 많으면 탐색 탭·인기 게시물 노출 확률이 올라가고, 처음 보는 사람도 “반응 있는 콘텐츠”로 느껴 팔로우·문의로 이어지기 쉽습니다. 국내 브랜드·쇼핑몰·개인 계정 홍보에 쓰기 좋은 기본형입니다. 공개된 게시물 또는 릴스 URL을 입력하세요.',api_id:'30710'},
+      {id:'pig6',name:'Instagram 팔로워 — 한국 타겟 (구SKU 중단)',pl:'instagram',rate:40.32,min:10,max:20000,description:'[판매 중단] 구 한국 팔로워. 대체: Instagram 팔로워 — 한국 HQ (1년 리필).',api_id:'28308',active:0},
+      {id:'pkr1',name:'Instagram 팔로워 — 한국 (구SKU 중단)',pl:'instagram',rate:59.6409,min:10,max:20000,description:'[판매 중단] 구 한국 팔로워. 대체: Instagram 팔로워 — 한국 HQ (1년 리필).',api_id:'27334',active:0},
+      {id:'pkr2',name:'Instagram 팔로워 — 한국 슬로우 (구SKU 중단)',pl:'instagram',rate:59.6409,min:10,max:50000,description:'[판매 중단] 구 한국 팔로워. 대체: Instagram 팔로워 — 한국 HQ (1년 리필).',api_id:'27334',active:0},
+      {id:'pkr3',name:'Instagram 좋아요 — 한국 (365일 보상) ⭐',pl:'instagram',rate:1.2,min:20,max:1000000,description:'한국 타겟 인스타그램 좋아요이며, 작업 후 숫자가 줄어들면 365일 동안 드롭 보상이 이어집니다. 이벤트·런칭·광고 게시물처럼 오랫동안 반응이 유지돼야 하는 콘텐츠에 특히 적합합니다. 좋아요가 쌓이면 알고리즘이 인기 게시물로 인식해 더 많은 사람에게 노출됩니다. 공개된 게시물·릴스 URL을 입력하세요.',api_id:'30711'},
+      {id:'pkr4',name:'Instagram 좋아요 — 한국 리얼 MQ',pl:'instagram',rate:2.04,min:20,max:1000000,description:'한국 실계정(리얼) 성격의 인스타그램 좋아요입니다. 국내 고객·팔로워에게 “실제 반응이 있는 게시물”로 보이게 해, 브랜드 신뢰와 탐색 노출에 도움이 됩니다. 쇼핑몰·카페·병원·로컬 비즈니스 등 한국 시장을 겨냥할 때 쓰기 좋은 중상급 옵션입니다. 공개된 게시물·릴스 URL을 입력하세요.',api_id:'27077'},
+      {id:'pkr5',name:'Instagram 좋아요 — 한국 Real Exclusive (30일)',pl:'instagram',rate:6.912,min:10,max:20000,description:'한국 Real Exclusive급 인스타그램 좋아요로, 30일 리필(드롭 시 보충) 표기가 있는 고품질 옵션입니다. 일반 좋아요보다 단가가 높지만 참여 품질·유지에 무게를 둔 상품이라, 중요 캠페인·신제품 게시물에 추천합니다. 공개된 게시물·릴스 URL을 입력하세요.',api_id:'33845'},
+      {id:'pkr6',name:'Instagram 댓글 — 한국 랜덤 프리미엄',pl:'instagram',rate:55.296,min:5,max:1000,description:'한국 계정에서 자연스러운 랜덤 댓글이 달립니다. 게시물 초반에 댓글이 붙으면 “활발한 게시물”로 보여 추가 좋아요·댓글이 따라오기 쉽고, 탐색 노출에도 도움이 됩니다. 문구를 직접 고를 필요 없이 빠르게 참여를 붙이고 싶을 때 사용하세요. 공개된 게시물 URL을 입력하세요.',api_id:'36371'},
+      {id:'pkr7',name:'Instagram 댓글 — 한국 맞춤 HQ',pl:'instagram',rate:92.736,min:1,max:2000,description:'원하시는 문구로 한국 HQ 계정 댓글을 달아 드립니다. 이벤트 안내, 제품 칭찬, 질문형 멘션 등 브랜드 톤에 맞는 댓글로 신뢰감을 높일 수 있습니다. 맞춤 문구는 주문 시 별도 안내에 따라 남겨 주세요. 공개된 게시물 URL을 입력하세요.',api_id:'35464'},
+      {id:'pkr9',name:'Instagram 팔로워 — 한국 HQ (1년 리필) ⭐',pl:'instagram',rate:17.2224,min:30,max:1000,description:'한국 HQ 팔로워를 하루 약 100명 정도의 슬로우 속도로 늘려 드립니다. 1년 리필 표기가 있어 줄어들면 보충이 이어지므로, 계정 숫자를 오래 유지하고 싶을 때 적합합니다. 팔로워가 늘면 프로필 신뢰도가 올라가고 협찬·문의에도 유리합니다. 예전에 문제 있던 저품질 한국 팔로워와는 다른 신규 상품입니다. 공개 프로필 링크를 입력하세요.',api_id:'35465'},
+      {id:'pkr10',name:'Instagram 팔로워 — 한국 (30일 리필)',pl:'instagram',rate:45.444,min:5,max:50000,description:'한국 타겟 인스타그램 팔로워이며 30일 리필 표기가 있습니다. 국내 마케팅·브랜드 계정의 팔로워 수를 빠르게 키울 때 사용하세요. 팔로워가 많으면 탐색·추천과 협업 제안에서 더 신뢰받기 쉽습니다. 공개 프로필 링크를 입력하세요.',api_id:'35485'},
+      {id:'pyt17',name:'YouTube 조회수 — 한국 Native (평생) ⭐',pl:'youtube',rate:3.8708,min:1000,max:1000000,description:'한국 Native(국내 시청 성격) 유튜브 조회수이며 평생 보장 표기가 있습니다. 영상 업로드 직후 조회수를 채워 추천·홈 피드 신호로 쓰기 좋고, 국내 시청자 비중이 중요한 채널에 적합합니다. watch?v= 또는 youtu.be 형태의 공개 영상 링크를 입력하세요.',api_id:'34592'},
       {id:'pig1',name:'Instagram 댓글 — 프리미엄 글로벌',pl:'instagram',rate:10.0,min:10,max:10000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 댓글 서비스입니다. 댓글이 많은 게시물은 알고리즘이 높은 참여도로 인식해 탐색 탭 노출을 늘립니다. 긍정적 댓글은 브랜드 이미지를 강화하고, 질문형 댓글은 추가 참여를 유발하는 연쇄 효과를 만듭니다.',api_id:'2544'},
       {id:'pig10',name:'Instagram 노출 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.41,min:10,max:300000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 노출 서비스입니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'17506'},
       {id:'pig12',name:'Instagram 노출 — 미국 타겟 (드롭 보상)',pl:'instagram',rate:0.35,min:10,max:20000,description:'미국 기반 고품질 Instagram 노출 서비스로, 미국 광고 RPM이 세계 최고 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29617'},
@@ -1207,8 +1207,8 @@ async function getTodayServiceChanges() {
     }
   } catch (_) { /* inactive_at 없을 수 있음 */ }
   return {
-    added: added.slice(0, 6),
-    removed: removed.slice(0, 6),
+    added: added.slice(0, 8),
+    removed: removed.slice(0, 8),
     snapshot: Object.fromEntries(curActive),
     baseline: !hasPrev,
   };
@@ -1277,31 +1277,50 @@ async function buildMemberOpsDigest() {
   const qualityHeld = stoppedR.rows[0]?.c || 0;
   const changes = await getTodayServiceChanges();
   const highlights = await pickLiveHighlightServices();
+  const added = (changes.added || []).map(n => shortenSvcName(n, 40));
+  const removed = (changes.removed || []).map(n => shortenSvcName(n, 40));
 
+  // 회원 홈용 — 매일 관리 결과(추가·중단)를 분명히 보여 신뢰 강화
   const lines = [
-    `좋은 상품만 판매합니다. 품질·연동을 매일 점검하고 있습니다. (${today})`,
+    `좋은 상품만 판매합니다. 매일 품질·연동을 점검한 뒤 반영합니다. (${today})`,
     `• 지금 판매 중 ${totalActive}개 · 한국·프리미엄 ${activeKr}개`,
-    `• 문제·미검증 상품은 판매 중단 (누적 ${qualityHeld}개 품질 관리)`,
+    `• 품질 관리(판매중단) 누적 ${qualityHeld}개`,
+    ``,
+    `➕ 오늘 추가`,
   ];
-  if (changes.added.length) {
-    lines.push(`• 오늘 추가: ${changes.added.map(n => shortenSvcName(n, 28)).join(' · ')}`);
-  }
-  if (changes.removed.length) {
-    lines.push(`• 오늘 품질 이슈로 중단: ${changes.removed.map(n => shortenSvcName(n, 28)).join(' · ')}`);
-  }
-  if (!changes.added.length && !changes.removed.length) {
+  if (added.length) {
+    for (const n of added) lines.push(`· ${n}`);
+  } else {
     lines.push(changes.baseline
-      ? `• 품질 기준 점검 완료 · 판매 목록은 검증된 상품만 유지`
-      : `• 오늘은 큰 변경 없이 품질 점검만 완료`);
+      ? `· (첫 점검 기준 저장 · 내일부터 추가 목록 표시)`
+      : `· 없음 — 기존 검증 상품 유지`);
+  }
+  lines.push(``, `⏸ 오늘 판매 중단`);
+  if (removed.length) {
+    for (const n of removed) lines.push(`· ${n}`);
+  } else {
+    lines.push(`· 없음 — 문제 상품 없음`);
   }
   if (highlights.length) {
-    lines.push(`지금 이용 가능한 상품 예시:`);
+    lines.push(``, `지금 이용 가능한 상품 예시`);
     for (const h of highlights) {
       lines.push(`· ${h.name} — ${h.snip}`);
     }
   }
-  lines.push(`자세한 목록은 「서비스 주문」에서 확인해 주세요.`);
-  return { text: lines.join('\n'), changes, today, totalActive, activeKr, highlights, qualityHeld };
+  lines.push(``, `자세한 목록은 「서비스 주문」에서 확인해 주세요.`);
+
+  const payload = {
+    today,
+    totalActive,
+    activeKr,
+    qualityHeld,
+    added,
+    removed,
+    baseline: !!changes.baseline,
+    highlights: (highlights || []).map(h => ({ name: h.name, snip: h.snip })),
+    headline: `매일 품질 점검 · ${today}`,
+  };
+  return { text: lines.join('\n'), changes, today, totalActive, activeKr, highlights, qualityHeld, payload };
 }
 
 /** 공지 배너(notice)에 운영 요약 반영 — default만 / 전체 활성 사이트 */
@@ -1321,6 +1340,17 @@ async function applyOpsDigestToSites(opts = {}) {
     : await query(`UPDATE sites SET notice=$1 WHERE COALESCE(active,1)=1 RETURNING id, name`, [text]);
   await setGlobalSetting('ops_digest_last_date', kstTodayYmd());
   await setGlobalSetting('ops_digest_text', text);
+  const payload = built.payload || {
+    today: built.today || kstTodayYmd(),
+    totalActive: built.totalActive,
+    activeKr: built.activeKr,
+    qualityHeld: built.qualityHeld,
+    added: built.changes?.added || [],
+    removed: built.changes?.removed || [],
+    highlights: (built.highlights || []).map(h => ({ name: h.name, snip: h.snip })),
+    headline: `매일 품질 점검 · ${built.today || kstTodayYmd()}`,
+  };
+  await setGlobalSetting('ops_digest_payload', JSON.stringify(payload));
   if (built.changes?.snapshot) {
     await setGlobalSetting('ops_digest_active_snapshot', JSON.stringify(built.changes.snapshot));
   }
@@ -1329,10 +1359,10 @@ async function applyOpsDigestToSites(opts = {}) {
   if (opts.notifyTg !== false && scope === 'active') {
     const addN = built.changes?.added?.length || 0;
     const rmN = built.changes?.removed?.length || 0;
+    // 파트너 관리자용 — 멀티테넌트/갱신 건수 등 운영 메타 넣지 않음
     let msg =
       `✅ <b>오늘 품질 점검 완료</b> — 좋은 상품만 유지\n\n` +
       `📅 ${built.today || kstTodayYmd()}\n` +
-      `📢 회원 공지 <b>${r.rows.length}곳</b> 갱신\n` +
       `📦 판매 중 ${built.totalActive ?? '—'}개` +
       (built.activeKr != null ? ` · 한국·프리미엄 ${built.activeKr}개` : '') +
       (built.qualityHeld != null ? `\n🛡 품질 관리(판매중단) ${built.qualityHeld}개` : '') +
@@ -1366,6 +1396,7 @@ async function applyOpsDigestToSites(opts = {}) {
     totalActive: built.totalActive,
     activeKr: built.activeKr,
     qualityHeld: built.qualityHeld,
+    payload,
     tg,
   };
 }
@@ -1378,7 +1409,7 @@ function startOpsDigestScheduler() {
         timeZone: 'Asia/Seoul', hour: 'numeric', hour12: false
       }));
       const today = kstTodayYmd();
-      // 매일 10시 KST 전후 1회 — 전체 활성 사이트 공지 갱신 + 관리자 TG
+      // 매일 10시 KST 전후 1회 — 회원 홈 공지에 당일 관리 결과 업로드 (+ 관리자 TG, 멀티테넌트 표현 없음)
       if (hour >= 9 && hour <= 11 && lastRun !== today) {
         const already = await getGlobalSetting('ops_digest_last_date');
         if (already === today) {
@@ -1387,7 +1418,7 @@ function startOpsDigestScheduler() {
         }
         lastRun = today;
         const r = await applyOpsDigestToSites({ scope: 'active', notifyTg: true });
-        console.log(`📢 회원 공지(운영 요약) 갱신 ${r.updated}곳 · TG ${r.tg?.sent || 0}`);
+        console.log(`📢 회원 공지(일일 품질관리) 반영 ${r.updated} · TG ${r.tg?.sent || 0}`);
       }
     } catch (e) {
       console.log('운영 공지 스케줄러 오류:', e.message);
@@ -3510,127 +3541,127 @@ const SMMKINGS_CURATED_SEEDS = [
   {
     id: 'skg1', pl: 'instagram', api_id: '5165', cost: 25.50, min: 20, max: 10000, refill: 0,
     name: 'Instagram 팔로워 — 한국 HQ ⭐',
-    description: '한국 타겟 Instagram HQ 팔로워입니다. 국내 마케팅·브랜드 신뢰도에 적합합니다. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 HQ 품질의 인스타그램 팔로워를 늘려 드립니다. 팔로워가 늘어나면 프로필이 더 신뢰감 있게 보이고, 협찬·문의·탐색 노출에도 도움이 됩니다. 국내 브랜드·쇼핑몰·개인 마케팅에 쓰기 좋은 대표 상품입니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg5', pl: 'instagram', api_id: '7377', cost: 51.00, min: 10, max: 20000, refill: 0,
     name: 'Instagram 팔로워 — 한국 UHQ (논드롭)',
-    description: '한국 타겟 Instagram UHQ 팔로워입니다. 논드롭 품질로 장기 유지에 유리합니다. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 UHQ(초고품질) 인스타그램 팔로워입니다. 논드롭에 가까운 유지력을 목표로 하는 상품이라, 숫자를 오래 안정적으로 유지하고 싶을 때 선택하세요. 브랜드 신뢰·장기 계정 자산용으로 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg2', pl: 'instagram', api_id: '3770', cost: 97.50, sellKrw: 220000, min: 10, max: 35000, refill: 1,
     name: 'Instagram 팔로워 — 한국 리얼 S1 (30일 보장)',
-    description: '한국 리얼 계정 기반 Instagram 팔로워(S1)입니다. 30일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 리얼 계정 기반 인스타그램 팔로워(S1)입니다. 30일 보장(리필) 표기가 있어 줄어들면 보충이 이어집니다. 실제 계정 느낌이 중요한 국내 마케팅에 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg6', pl: 'instagram', api_id: '5240', cost: 112.50, sellKrw: 260000, min: 5, max: 50000, refill: 1,
     name: 'Instagram 팔로워 — 한국 리얼 S2 (30일 보장)',
-    description: '한국 리얼 팔로워 프리미엄 S2(대량)입니다. 30일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 리얼 팔로워 프리미엄 S2로, 대량 주문에 맞춰진 상위 옵션입니다. 30일 보장 표기가 있어 드롭 시 보충이 가능합니다. 빠르게 규모를 키우면서도 품질을 유지하고 싶을 때 사용하세요. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg7', pl: 'instagram', api_id: '5239', cost: 157.50, sellKrw: 320000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 리얼 연령±20 (90일)',
-    description: '한국 리얼 팔로워 · 연령대 ±20 타겟입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 리얼 팔로워 중 연령대(±20) 타겟이 가능한 상품입니다. 90일 보장 표기로 유지 기간이 깁니다. 특정 연령층 고객을 겨냥하는 브랜드·콘텐츠에 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg8', pl: 'instagram', api_id: '5257', cost: 157.50, sellKrw: 320000, min: 10, max: 20000, refill: 1,
     name: 'Instagram 팔로워 — 한국 남성 (90일)',
-    description: '한국 남성 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 남성 타겟 리얼 팔로워입니다. 90일 보장 표기가 있어 줄어들면 보충이 이어집니다. 남성 고객·남성 패션·게임·IT 등 남성 비중 높은 계정에 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg9', pl: 'instagram', api_id: '5258', cost: 157.50, sellKrw: 320000, min: 10, max: 20000, refill: 1,
     name: 'Instagram 팔로워 — 한국 여성 (90일)',
-    description: '한국 여성 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 여성 타겟 리얼 팔로워입니다. 90일 보장 표기가 있어 줄어들면 보충이 이어집니다. 뷰티·패션·라이프·카페 등 여성 고객 비중이 높은 브랜드에 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg10', pl: 'instagram', api_id: '5242', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 남성·연령±20 (90일)',
-    description: '한국 남성 + 연령±20 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 남성 + 연령±20 조합 타겟 리얼 팔로워입니다. 90일 보장. 성별·연령을 더 맞춰 팔로워 구성을 만들고 싶을 때 사용하세요. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg11', pl: 'instagram', api_id: '5243', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 여성·연령±20 (90일)',
-    description: '한국 여성 + 연령±20 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 여성 + 연령±20 조합 타겟 리얼 팔로워입니다. 90일 보장. 뷰티·패션 등 젊은 여성 고객층을 겨냥할 때 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg12', pl: 'instagram', api_id: '5244', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 남성·연령±30 (90일)',
-    description: '한국 남성 + 연령±30 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 남성 + 연령±30 조합 타겟 리얼 팔로워입니다. 90일 보장. 3040 남성 고객층 비중이 중요한 브랜드·서비스에 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg13', pl: 'instagram', api_id: '5245', cost: 210.00, sellKrw: 400000, min: 10, max: 40000, refill: 1,
     name: 'Instagram 팔로워 — 한국 여성·연령±30 (90일)',
-    description: '한국 여성 + 연령±30 타겟 리얼 팔로워입니다. 90일 보장 표기. 프로필 링크 또는 사용자명을 입력하세요.'
+    description: '한국 여성 + 연령±30 조합 타겟 리얼 팔로워입니다. 90일 보장. 3040 여성 고객층(육아·홈·라이프 등)을 겨냥할 때 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg3', pl: 'instagram', api_id: '2859', cost: 8.45, min: 50, max: 12000, refill: 0,
     name: 'Instagram 좋아요 — 한국 (노출 포함)',
-    description: '한국 타겟 Instagram 좋아요+노출입니다. 게시물·릴스 URL을 입력하세요.'
+    description: '한국 타겟으로 인스타그램 좋아요와 함께 노출(Impression) 성격의 도달을 늘려 드립니다. 게시물 반응이 올라가면 탐색·추천에 유리하고, “인기 있는 게시물”로 보이게 됩니다. 공개된 게시물·릴스 URL을 입력하세요.'
   },
   {
     id: 'skg4', pl: 'instagram', api_id: '5226', cost: 0.03, min: 100, max: 1000000, refill: 0,
     name: 'Instagram 조회수 — 한국',
-    description: '한국 타겟 Instagram 조회수입니다. 릴스·영상 게시물 URL을 입력하세요.'
+    description: '한국 타겟 인스타그램 조회수입니다. 릴스·영상 게시물의 조회 지표를 올려 알고리즘 배포를 돕습니다. 초반 조회가 쌓이면 더 많은 사람에게 노출될 확률이 높아집니다. 공개된 릴스·영상 게시물 URL을 입력하세요.'
   },
   {
     id: 'sky1', pl: 'youtube', api_id: '7303', cost: 5.76, min: 1000, max: 1000000, refill: 0,
     name: 'YouTube 조회수 — 한국 모바일',
-    description: '한국 타겟 YouTube 모바일 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+    description: '한국 모바일 환경 성격의 유튜브 조회수입니다. 영상 업로드 직후 조회수를 채워 추천·홈 피드 신호로 쓰기 좋습니다. 국내 시청 비중이 중요한 채널에 적합합니다. watch?v= 또는 youtu.be 공개 영상 링크를 입력하세요.'
   },
   {
     id: 'sky2', pl: 'youtube', api_id: '2594', cost: 6.72, min: 500, max: 100000, refill: 0,
     name: 'YouTube 조회수 — 한국 Unique',
-    description: '한국 Unique Viewer 기반 YouTube 조회수입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+    description: '한국 Unique Viewer 기반 유튜브 조회수입니다. 단순 반복 조회보다 “서로 다른 시청” 성격에 가까운 지표를 올릴 때 사용합니다. 국내 노출·시청 리포트용으로 적합합니다. watch?v= 또는 youtu.be 공개 영상 링크를 입력하세요.'
   },
   {
     id: 'sky3', pl: 'youtube', api_id: '5162', cost: 15.00, min: 1000, max: 100000, refill: 0,
     name: 'YouTube 조회수 — 한국 Unique·수익화 ⭐',
-    description: '한국 Real·Active Unique 조회수입니다. 수익화(Monetization) 성격 조회로, 국내 노출·시청 지표에 유리합니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+    description: '한국 Real·Active Unique 조회수로, 수익화(Monetization) 성격의 시청 지표에 가깝게 설계된 상위 옵션입니다. 국내 시청 품질을 중시하는 채널·광고주에 추천합니다. watch?v= 또는 youtu.be 공개 영상 링크를 입력하세요.'
   },
   {
     id: 'sky4', pl: 'youtube', api_id: '4146', cost: 9.60, min: 500, max: 100000, refill: 0,
     name: 'YouTube 조회수 — 한국 Unique Titan',
-    description: '한국 Unique Viewer(Titan) 조회수입니다. 고모네타 성격 타겟 조회로 국내 시청 지표를 올릴 때 씁니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+    description: '한국 Unique Viewer(Titan) 조회수입니다. 고품질 타겟 조회로 국내 시청 지표를 올릴 때 사용하세요. 영상 초기 부스팅·추천 신호용으로 적합합니다. watch?v= 또는 youtu.be 공개 영상 링크를 입력하세요.'
   },
   {
     id: 'sky5', pl: 'youtube', api_id: '7305', cost: 9.00, min: 1000, max: 1000000, refill: 0,
     name: 'YouTube 조회수 — 한국 모바일 Ads',
-    description: '한국 모바일·Ads-Enabled 조회수입니다. 광고 재생 성격 모바일 조회로 국내 지표용입니다. watch?v= 또는 youtu.be 영상 링크를 입력하세요.'
+    description: '한국 모바일·광고(Ads) 성격 조회수입니다. 광고 재생과 연관된 모바일 시청 지표를 올릴 때 사용합니다. 국내 모바일 시청 비중이 중요한 영상에 적합합니다. watch?v= 또는 youtu.be 공개 영상 링크를 입력하세요.'
   },
   {
     id: 'sky6', pl: 'youtube', api_id: '4540', cost: 1.80, min: 10, max: 5000, refill: 0,
     name: 'YouTube 좋아요 — 한국 (쇼츠·영상)',
-    description: '한국 타겟 YouTube 쇼츠·영상 좋아요입니다. 쇼츠 또는 일반 영상 링크를 입력하세요.'
+    description: '한국 타겟 유튜브 좋아요입니다. 쇼츠·일반 영상 모두 사용 가능합니다. 좋아요 비율이 높으면 알고리즘이 콘텐츠를 더 좋게 평가해 배포가 넓어지기 쉽습니다. 공개된 쇼츠 또는 영상 링크를 입력하세요.'
   },
   {
     id: 'sky7', pl: 'youtube', api_id: '6327', cost: 6.72, min: 500, max: 500000, refill: 0,
     name: 'YouTube 자동 조회수 — 한국 (신규 영상)',
-    description: '채널에 올라오는 새 영상에 한국 타겟 조회수가 자동으로 들어갑니다. 채널 URL 또는 대표 영상 링크를 입력하세요. (구독자 증가 상품 아님)'
+    description: '채널에 새 영상이 올라오면 한국 타겟 조회수가 자동으로 들어가도록 설정하는 상품입니다. 매번 영상마다 주문하지 않아도 초반 조회 부스팅이 이어집니다. ※ 구독자 증가 상품이 아닙니다. 채널 URL 또는 대표 영상 링크를 입력하세요.'
   },
   {
     id: 'skt1', pl: 'tiktok', api_id: '3693', cost: 4.13, min: 10, max: 1000000, refill: 1,
     name: 'TikTok 팔로워 — HQ (30일 보장)',
-    description: '고품질 TikTok 팔로워입니다. 프로필 링크를 입력하세요.'
+    description: '고품질(HQ) 틱톡 팔로워입니다. 30일 보장 표기가 있어 줄어들면 보충이 이어집니다. 팔로워가 많으면 새 영상의 포유(For You) 배포 신뢰도가 올라갑니다. 공개 프로필 링크를 입력하세요.'
   },
   {
     id: 'skt2', pl: 'tiktok', api_id: '3734', cost: 0.38, min: 50, max: 200000, refill: 1,
     name: 'TikTok 좋아요 — HQ (30일 보장)',
-    description: '고품질 TikTok 좋아요입니다. 영상 링크를 입력하세요.'
+    description: '고품질(HQ) 틱톡 좋아요입니다. 30일 보장 표기가 있습니다. 조회수 대비 좋아요가 높으면 포유 탭 배포가 빨라지기 쉽습니다. 공개된 영상 링크를 입력하세요.'
   },
   {
     id: 'skt3', pl: 'tiktok', api_id: '4778', cost: 0.15, min: 500, max: 5000000, refill: 0,
     name: 'TikTok 조회수 — 한국 Instant ⭐',
-    description: '한국 타겟 TikTok 조회수(즉시 시작)입니다. 국내 노출 지표를 빠르게 올릴 때 사용하세요. 영상 링크를 입력하세요.'
+    description: '한국 타겟 틱톡 조회수이며 시작이 빠른 Instant형입니다. 영상 초반 조회를 빠르게 채워 국내 노출·바이럴 신호를 만들 때 사용하세요. 공개된 틱톡 영상 링크를 입력하세요.'
   },
   {
     id: 'skx1', pl: 'twitter', api_id: '6189', cost: 0.57, min: 500, max: 1000000, refill: 0,
     name: 'X 조회·노출 — 한국 Instant',
-    description: '한국 타겟 X(트위터) 게시물 조회수+노출입니다. 국내 도달 지표용입니다. 게시물 링크를 입력하세요.'
+    description: '한국 타겟 X(트위터) 게시물 조회수·노출입니다. 시작이 빠른 Instant형으로, 공지·이벤트·홍보 게시물의 국내 도달 지표를 올릴 때 사용하세요. 공개된 게시물 링크를 입력하세요.'
   },
   {
     id: 'skx2', pl: 'twitter', api_id: '4907', cost: 0.09, min: 500, max: 100000000, refill: 0,
     name: 'X 영상 조회·노출 — 한국',
-    description: '한국 타겟 X 영상 조회수+노출입니다. 영상 게시물 링크를 입력하세요.'
+    description: '한국 타겟 X(트위터) 영상 조회수·노출입니다. 영상 게시물의 국내 도달·재생 지표를 키울 때 사용하세요. 공개된 영상 게시물 링크를 입력하세요.'
   },
   // —— 한국 트래픽 카테고리 (Instant · 링크+수량 · 판매≈원가×10, 타 상품 배수와 무관) ——
   {
@@ -3889,7 +3920,7 @@ function formatSmmkingsKoreaName(s, pl, typeKo) {
 
 function smmkingsKoreaImportDescription(pl, typeKo) {
   const base = koreanImportDescription(pl, typeKo);
-  return `${base} 연동 B(SMMKings) 한국 전용 큐레이션입니다.`;
+  return `${base} 초보자도 링크만 넣으면 주문할 수 있습니다.`;
 }
 
 /** 연동 B 카탈로그 — 한국 HQ·Real·리필 등 고품질 후보 */
@@ -4312,7 +4343,8 @@ async function notifyAdminsNewServices(title, added, opts = {}) {
     return { sent: 0, skipped: true };
   }
   const maxLines = opts.maxLines ?? 10;
-  const footer = opts.footer || '전체 사이트에 연결되었습니다. 판매 목록에서 확인하세요.';
+  // 파트너는 자기 사이트만 있다고 봄 — "전체 사이트/N곳" 등 멀티테넌트 표현 금지
+  const footer = opts.footer || '판매 목록에서 확인하세요.';
 
   let msg = `${title}\n\n`;
   if (opts.summary) msg += `${opts.summary}\n\n`;
@@ -4356,7 +4388,8 @@ async function notifyAdminsRemovedServices(title, removed, opts = {}) {
   return broadcastToAdminTelegrams(msg);
 }
 
-/** 슈퍼 + 사이트 TG 봇이 있는 관리자 전원에게 동일 메시지 */
+/** 슈퍼 + 사이트 TG 봇이 있는 관리자 전원에게 동일 메시지
+ *  주의: 수신자마다 같은 문구가 감 — "N곳/전체 사이트/다른 파트너" 등 넣지 말 것 */
 async function broadcastToAdminTelegrams(message) {
   const recipients = [];
   const seen = new Set();
@@ -6183,19 +6216,27 @@ function formatKoreanImportName(name, pl) {
 }
 
 function koreanImportDescription(pl, type) {
+  const byType = {
+    '팔로워': '팔로워 수를 늘려 계정 신뢰도와 노출을 올리는 상품입니다. 공개 프로필 링크를 입력하세요.',
+    '좋아요': '게시물·영상에 좋아요를 붙여 반응을 높이는 상품입니다. 공개된 게시물/영상 URL을 입력하세요.',
+    '조회수': '조회수를 채워 추천·노출 신호를 만드는 상품입니다. 공개된 영상/게시물 URL을 입력하세요.',
+    '댓글': '댓글로 초기 참여를 붙이는 상품입니다. 공개된 게시물 URL을 입력하세요.',
+    '노출': '노출(Impression) 지표를 올려 도달 범위를 넓히는 상품입니다. 공개된 게시물 URL을 입력하세요.',
+  };
   const base = {
-    youtube: '한국 타겟 유튜브 — 조회·구독·좋아요 등 국내 노출에 유리한 고품질 상품입니다.',
-    instagram: '한국 타겟 인스타 — 팔로워·좋아요·릴스 등 국내 탐색 노출에 최적화된 상품입니다.',
-    tiktok: '한국 타겟 틱톡 — 포유·팔로워·좋아요 등 국내 바이럴용 고품질 상품입니다.',
-    threads: '한국 타겟 스레드 — 팔로워·좋아요 등 국내 참여 강화용 상품입니다.',
-    twitter: '한국 타겟 X(트위터) — 팔로워·좋아요·조회 등 국내 도달 확대용입니다.',
-    facebook: '한국 타겟 페이스북 — 페이지·좋아요·팔로워 등 국내 마케팅용입니다.',
-    telegram: '한국 타겟 텔레그램 — 멤버·반응 등 채널 성장용 고품질 상품입니다.',
-    naver: '네이버·한국 타겟 — 스마트스토어·플레이스·블로그 등 국내 검색·쇼핑 연동용입니다.',
-    kakao: '카카오·한국 타겟 — 채널·스토어 등 국내 메신저 마케팅용입니다.',
+    youtube: '한국 시청자 성격의 유튜브 상품입니다. 국내 노출·추천 지표에 유리합니다.',
+    instagram: '한국 사용자 성격의 인스타그램 상품입니다. 국내 탐색·브랜드 신뢰에 유리합니다.',
+    tiktok: '한국 사용자 성격의 틱톡 상품입니다. 국내 포유·바이럴 지표에 유리합니다.',
+    threads: '한국 사용자 성격의 스레드 상품입니다. 국내 참여·도달을 올리는 데 씁니다.',
+    twitter: '한국 사용자 성격의 X(트위터) 상품입니다. 국내 도달·반응 지표에 유리합니다.',
+    facebook: '한국 사용자 성격의 페이스북 상품입니다. 국내 페이지·게시물 마케팅에 씁니다.',
+    telegram: '한국 사용자 성격의 텔레그램 상품입니다. 채널·그룹 성장에 씁니다.',
+    naver: '네이버·한국 타겟 상품입니다. 국내 검색·쇼핑·콘텐츠 연동에 씁니다.',
+    kakao: '카카오·한국 타겟 상품입니다. 국내 채널·스토어 마케팅에 씁니다.',
   };
   const d = base[pl] || '한국 타겟 고품질 마케팅 상품입니다.';
-  return type ? `${d} (${type})` : d;
+  const tip = byType[type] || (type ? `(${type}) 공개 링크를 입력하세요.` : '공개 링크를 입력하세요.');
+  return `${d} ${tip} 초보자도 설명만 읽고 바로 주문할 수 있도록 안내합니다.`;
 }
 
 async function insertPeakerrImport(s, displayName, pl, description) {
@@ -6888,6 +6929,12 @@ app.get('/api/site-config', async (req, res) => {
 
   const pres = getEffectiveSitePresentation(site);
 
+  let opsDigest = null;
+  try {
+    const raw = await getGlobalSetting('ops_digest_payload');
+    if (raw) opsDigest = JSON.parse(raw);
+  } catch (_) { opsDigest = null; }
+
   res.json({
     siteId: site.id,
     isDefault: pres.isDefault,
@@ -6904,6 +6951,7 @@ app.get('/api/site-config', async (req, res) => {
     stat3Num: site.stat3_num || '50%+', stat3Label: site.stat3_label || '마진 보장',
     stat4Num: site.stat4_num || '100%', stat4Label: site.stat4_label || '안전 보장',
     notice: site.notice || '',
+    opsDigest,
     chargeBonusTiers: site.charge_bonus_tiers || '',
     bannerText: site.banner_text || '',
     bannerImage: site.banner_image || '',

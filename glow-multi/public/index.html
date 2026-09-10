@@ -1505,12 +1505,11 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">처리 중</div><div style="font-size:22px;font-weight:800;color:var(--wn)" id="stPend">0</div></div>
           <div class="sc"><div style="font-size:10px;letter-spacing:.1em;color:var(--tl);font-weight:700;text-transform:uppercase;margin-bottom:5px">완료</div><div style="font-size:22px;font-weight:800;color:var(--ok)" id="stDone">0</div></div>
         </div>
-        <div id="opsDigestCard" style="display:none;margin-bottom:16px;border-radius:14px;padding:14px 16px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-            <div style="font-size:13px;font-weight:800;color:#065F46">🛡 좋은 상품만 · 실시간 품질 관리</div>
-            <div style="font-size:11px;font-weight:700;color:#047857" id="opsDigestDate"></div>
-          </div>
-          <div style="font-size:13px;line-height:1.65;color:#064E3B;white-space:pre-line" id="opsDigestBody"></div>
+        <div id="opsDigestHomeHint" style="display:none;margin-bottom:12px">
+          <button type="button" onclick="openOpsDigestPopup(true)" style="width:100%;text-align:left;border-radius:12px;padding:12px 14px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10B981;cursor:pointer">
+            <div style="font-size:13px;font-weight:800;color:#065F46">🛡 오늘의 품질 관리 공지 보기</div>
+            <div style="font-size:11px;color:#047857;margin-top:4px">추가·중단된 상품을 확인하세요</div>
+          </button>
         </div>
         <div class="card dash-welcome" style="margin-bottom:16px">
           <div style="font-size:18px;font-weight:800;margin-bottom:6px;color:var(--tx)">안녕하세요, <span class="gt" id="welName">-</span>님</div>
@@ -2174,6 +2173,34 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
 </div>
 
 <!-- 모달들 -->
+<!-- 매일 품질 관리 공지 팝업 -->
+<div class="mbg" id="mOpsDigest">
+  <div class="modal" style="max-width:520px;background:linear-gradient(160deg,#ecfdf5,#d1fae5);border:1px solid #10B981">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#065F46">🛡 매일 품질 관리 · 오늘 반영</div>
+        <div style="font-size:12px;font-weight:700;color:#047857;margin-top:4px" id="opsDigestDate"></div>
+      </div>
+      <button type="button" onclick="closeM('mOpsDigest')" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.8);border:1px solid rgba(16,185,129,.35);cursor:pointer;font-size:15px;flex-shrink:0">✕</button>
+    </div>
+    <div id="opsDigestStats" style="display:none;font-size:12px;color:#047857;font-weight:600;margin-bottom:12px;line-height:1.5"></div>
+    <div style="display:grid;gap:10px;margin-bottom:10px">
+      <div id="opsDigestAddedBox" style="display:none;background:rgba(255,255,255,.7);border-radius:10px;padding:10px 12px;border:1px solid rgba(16,185,129,.25)">
+        <div style="font-size:12px;font-weight:800;color:#047857;margin-bottom:6px">➕ 오늘 추가</div>
+        <div id="opsDigestAdded" style="font-size:12px;line-height:1.55;color:#064E3B"></div>
+      </div>
+      <div id="opsDigestRemovedBox" style="display:none;background:rgba(255,255,255,.7);border-radius:10px;padding:10px 12px;border:1px solid rgba(245,158,11,.3)">
+        <div style="font-size:12px;font-weight:800;color:#B45309;margin-bottom:6px">⏸ 오늘 판매 중단</div>
+        <div id="opsDigestRemoved" style="font-size:12px;line-height:1.55;color:#78350F"></div>
+      </div>
+    </div>
+    <div style="font-size:13px;line-height:1.65;color:#064E3B;white-space:pre-line;max-height:36vh;overflow-y:auto" id="opsDigestBody"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+      <button type="button" class="bo bpf" onclick="hideOpsDigestToday()" style="flex:1;min-width:140px;border-color:#059669;color:#047857">오늘 하루 보지 않기</button>
+      <button type="button" class="bp bpf" onclick="closeM('mOpsDigest')" style="flex:1;min-width:100px;background:#059669;border-color:#059669">확인</button>
+    </div>
+  </div>
+</div>
 <!-- 서비스 추가/수정 모달 -->
 <div class="mbg" id="mService">
   <div class="modal">
@@ -3240,38 +3267,39 @@ async function loadSiteConfig(){
     });
   })();
 
-  // 공지사항 — 상단 띠배너 + 홈 카드(여러 줄 운영 업데이트)
+  // 공지사항 — 상단 띠배너 + 팝업(매일 품질 관리, 하루 보지않기)
   var noticeTargets=[{pg:'pg-land',host:'pg-land'},{pg:'pg-dash',host:'dashMain'}];
   var noticeText=String(d.notice||'').trim();
-  if(noticeText){
-    var noticeOneLine=noticeText.split(/\n+/).map(function(s){return s.trim()}).filter(Boolean)[0]||noticeText;
+  var od=d.opsDigest&&typeof d.opsDigest==='object'?d.opsDigest:null;
+  window.__opsDigestCache={noticeText:noticeText,od:od};
+  if(noticeText||od){
+    var noticeOneLine=(noticeText.split(/\n+/).map(function(s){return s.trim()}).filter(Boolean)[0])
+      ||(od&&od.headline)||'매일 품질 점검 완료 · 좋은 상품만 판매';
     noticeTargets.forEach(function(t){
       var nbId='noticeBanner_'+t.pg;
       var nb=ge(nbId);
       if(!nb){
         nb=document.createElement('div');nb.id=nbId;
-        nb.style.cssText='background:linear-gradient(90deg,#059669,#10B981);color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;z-index:200;white-space:pre-line;line-height:1.45';
+        nb.style.cssText='background:linear-gradient(90deg,#059669,#10B981);color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;z-index:200;white-space:pre-line;line-height:1.45;cursor:pointer';
+        nb.onclick=function(){openOpsDigestPopup(true)};
         var host=ge(t.host);if(host)host.insertBefore(nb,host.firstChild);
       }
       nb.textContent='📢 '+noticeOneLine;
-      nb.title=noticeText;
+      nb.title='클릭하면 자세히 보기';
       nb.style.display='block';
     });
-    var odc=ge('opsDigestCard'), odb=ge('opsDigestBody'), odd=ge('opsDigestDate');
-    if(odc&&odb){
-      odc.style.display='block';
-      odb.textContent=noticeText;
-      if(odd){
-        var m=noticeText.match(/(\d{4}-\d{2}-\d{2})/);
-        odd.textContent=m?m[1]:'오늘';
-      }
+    fillOpsDigestModal(noticeText, od);
+    var hint=ge('opsDigestHomeHint');if(hint)hint.style.display='block';
+    if(!isOpsDigestHiddenToday()){
+      setTimeout(function(){openOpsDigestPopup(false)},450);
     }
   }else{
     noticeTargets.forEach(function(t){
       var nb=ge('noticeBanner_'+t.pg);
       if(nb)nb.style.display='none';
     });
-    var odcOff=ge('opsDigestCard');if(odcOff)odcOff.style.display='none';
+    var hintOff=ge('opsDigestHomeHint');if(hintOff)hintOff.style.display='none';
+    closeM('mOpsDigest');
   }
 
   // 사이드바 배너 (사이트별 홍보 배너) + 어드민 설정 입력칸 채우기
@@ -5608,7 +5636,71 @@ function renderAdmUsersFilter(){
     ]));
   }
 }
-function closeM(id){ge(id).classList.remove('on')}
+function closeM(id){var el=ge(id);if(el)el.classList.remove('on')}
+
+function kstTodayYmdClient(){
+  try{
+    return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  }catch(_){
+    var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+}
+function isOpsDigestHiddenToday(){
+  try{return localStorage.getItem('glow_ops_digest_hide')===kstTodayYmdClient()}catch(_){return false}
+}
+function hideOpsDigestToday(){
+  try{localStorage.setItem('glow_ops_digest_hide',kstTodayYmdClient())}catch(_){}
+  closeM('mOpsDigest');
+}
+function fillOpsDigestModal(noticeText, od){
+  var odb=ge('opsDigestBody'), odd=ge('opsDigestDate');
+  var ods=ge('opsDigestStats'), oda=ge('opsDigestAdded'), odr=ge('opsDigestRemoved');
+  var odab=ge('opsDigestAddedBox'), odrb=ge('opsDigestRemovedBox');
+  if(odd)odd.textContent=(od&&od.today)||(String(noticeText||'').match(/(\d{4}-\d{2}-\d{2})/)||[])[1]||'오늘';
+  if(od&&ods){
+    var bits=[];
+    if(od.totalActive!=null)bits.push('판매 중 '+od.totalActive+'개');
+    if(od.activeKr!=null)bits.push('한국·프리미엄 '+od.activeKr+'개');
+    if(od.qualityHeld!=null)bits.push('품질관리 '+od.qualityHeld+'개');
+    ods.textContent=bits.join(' · ');
+    ods.style.display=bits.length?'block':'none';
+  }else if(ods){ods.style.display='none'}
+  function fillList(el,box,items,emptyTxt){
+    if(!el||!box)return;
+    var arr=Array.isArray(items)?items:[];
+    box.style.display='block';
+    el.style.whiteSpace='pre-line';
+    el.textContent=arr.length
+      ? arr.map(function(n){return '· '+String(n)}).join('\n')
+      : ('· '+emptyTxt);
+  }
+  if(od){
+    fillList(oda,odab,od.added,od.baseline?'첫 점검 기준 저장 · 내일부터 추가 목록 표시':'없음 — 기존 검증 상품 유지');
+    fillList(odr,odrb,od.removed,'없음 — 문제 상품 없음');
+    if(odb){
+      if(od.highlights&&od.highlights.length){
+        odb.textContent='지금 이용 가능한 상품 예시\n'+od.highlights.slice(0,4).map(function(h){
+          return '· '+(h.name||'')+(h.snip?' — '+h.snip:'');
+        }).join('\n');
+      }else if(noticeText){
+        odb.textContent=noticeText;
+      }else{
+        odb.textContent='';
+      }
+    }
+  }else{
+    if(odab)odab.style.display='none';
+    if(odrb)odrb.style.display='none';
+    if(odb)odb.textContent=noticeText||'';
+  }
+}
+function openOpsDigestPopup(force){
+  var cache=window.__opsDigestCache||{};
+  if(!cache.noticeText&&!cache.od)return;
+  fillOpsDigestModal(cache.noticeText, cache.od);
+  if(!force&&isOpsDigestHiddenToday())return;
+  var m=ge('mOpsDigest');if(m)m.classList.add('on');
+}
 
 // ── 초기화 ──
 
