@@ -5695,7 +5695,7 @@ function fillOpsDigestModal(noticeText, od){
   var quiet=!!(od&&od.quiet);
   var day=(od&&od.today)||(String(noticeText||'').match(/(\d{4}-\d{2}-\d{2})/)||[])[1]||kstTodayYmdClient();
   if(odd)odd.textContent=day;
-  if(titleEl)titleEl.textContent=quiet?('상품 점검 · '+day):'오늘 상품 점검을 반영했습니다';
+  if(titleEl)titleEl.textContent=quiet?day:'오늘 상품 점검을 반영했습니다';
   if(odi){
     if(quiet){odi.style.display='none';odi.textContent='';}
     else{odi.style.display='block';odi.textContent=(od&&od.intro)||'문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.';}
