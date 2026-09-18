@@ -1281,9 +1281,9 @@ async function buildMemberOpsDigest() {
   const removed = (changes.removed || []).map(n => shortenSvcName(n, 40));
   const quiet = !added.length && !removed.length;
 
-  // 변동 없으면 날짜만 — “없음/변동 없음” 같은 문구는 쓰지 않음
+  // 변동 없어도 “최신으로 점검·유지 중” — 침묵/변동없음 표현 쓰지 않음
   if (quiet) {
-    const text = `${today}`;
+    const text = `오늘도 최신 상품으로 점검·유지 중입니다. (${today})`;
     const payload = {
       today,
       totalActive,
@@ -1294,8 +1294,8 @@ async function buildMemberOpsDigest() {
       baseline: !!changes.baseline,
       highlights: [],
       quiet: true,
-      headline: today,
-      intro: '',
+      headline: text,
+      intro: '판매 목록은 매일 점검해 최신 상태로 유지합니다.',
     };
     return { text, changes, today, totalActive, activeKr, highlights: [], qualityHeld, payload, quiet: true };
   }
@@ -1373,9 +1373,17 @@ async function applyOpsDigestToSites(opts = {}) {
     const addN = built.changes?.added?.length || 0;
     const rmN = built.changes?.removed?.length || 0;
     const quiet = !!(built.quiet || built.payload?.quiet || (!addN && !rmN));
-    // 변동 없으면 TG도 생략 — “변동 없음” 문구 자체 쓰지 않음
-    if (!quiet) {
-      let msg =
+    // 파트너 관리자용 — 멀티테넌트 표현 없음. 변동 없어도 “최신 유지” 알림은 매일 발송
+    let msg;
+    if (quiet) {
+      msg =
+        `✅ <b>오늘도 최신으로 점검·유지 중</b>\n\n` +
+        `📅 ${built.today || kstTodayYmd()}\n` +
+        `📦 주문 가능 ${built.totalActive ?? '—'}개` +
+        (built.activeKr != null ? ` · 한국·프리미엄 ${built.activeKr}개` : '') +
+        `\n\n판매 목록은 매일 점검해 최신 상태로 유지합니다.`;
+    } else {
+      msg =
         `✅ <b>오늘 상품 점검 반영</b>\n\n` +
         `📅 ${built.today || kstTodayYmd()}\n` +
         `📦 주문 가능 ${built.totalActive ?? '—'}개` +
@@ -1394,8 +1402,8 @@ async function applyOpsDigestToSites(opts = {}) {
         msg += `\n\n<b>오늘 판매 중단</b>\n` + built.changes.removed.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
       }
       msg += `\n\n회원 화면에 오늘 점검 결과가 반영되었습니다.`;
-      tg = await broadcastToAdminTelegrams(msg);
     }
+    tg = await broadcastToAdminTelegrams(msg);
   }
 
   return {

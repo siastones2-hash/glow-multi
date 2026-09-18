@@ -3323,9 +3323,21 @@ async function loadSiteConfig(){
     fillOpsDigestModal(noticeText, od);
     var hint=ge('opsDigestHomeHint');
     var quiet=!!(od&&od.quiet);
-    if(hint)hint.style.display=quiet?'none':'block';
-    // 변동 있을 때만 자동 팝업 — 변동 없으면 띠배너 날짜만
-    if(!quiet&&!isOpsDigestHiddenToday()){
+    // quiet여도 홈에서 “최신 유지” 확인 가능
+    if(hint)hint.style.display='block';
+    if(quiet){
+      var ht=hint&&hint.querySelector('.ops-home-hint-t');
+      var hs=hint&&hint.querySelector('.ops-home-hint-s');
+      if(ht)ht.textContent='오늘도 최신으로 유지 중';
+      if(hs)hs.textContent=(od&&od.today)?od.today:'점검·유지';
+    }else{
+      var ht2=hint&&hint.querySelector('.ops-home-hint-t');
+      var hs2=hint&&hint.querySelector('.ops-home-hint-s');
+      if(ht2)ht2.textContent='오늘 상품 점검';
+      if(hs2)hs2.textContent='추가·중단 내역 확인';
+    }
+    // 변동 있거나, quiet라도 하루 1회 짧게 안내
+    if(!isOpsDigestHiddenToday()){
       setTimeout(function(){openOpsDigestPopup(false)},450);
     }
   }else{
@@ -5695,13 +5707,25 @@ function fillOpsDigestModal(noticeText, od){
   var quiet=!!(od&&od.quiet);
   var day=(od&&od.today)||(String(noticeText||'').match(/(\d{4}-\d{2}-\d{2})/)||[])[1]||kstTodayYmdClient();
   if(odd)odd.textContent=day;
-  if(titleEl)titleEl.textContent=quiet?day:'오늘 상품 점검을 반영했습니다';
+  if(titleEl)titleEl.textContent=quiet?'오늘도 최신으로 점검·유지 중입니다':'오늘 상품 점검을 반영했습니다';
   if(odi){
-    if(quiet){odi.style.display='none';odi.textContent='';}
-    else{odi.style.display='block';odi.textContent=(od&&od.intro)||'문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.';}
+    if(quiet){
+      odi.style.display='block';
+      odi.textContent=(od&&od.intro)||'판매 목록은 매일 점검해 최신 상태로 유지합니다.';
+    }else{
+      odi.style.display='block';
+      odi.textContent=(od&&od.intro)||'문제가 확인되면 바로 판매를 중단하고, 점검 통과 상품만 목록에 남깁니다.';
+    }
   }
   if(quiet){
-    if(ods){ods.classList.remove('on');ods.style.display='none';ods.innerHTML=''}
+    if(ods){
+      var chips=[];
+      if(od&&od.totalActive!=null)chips.push('주문 가능 '+od.totalActive+'개');
+      if(od&&od.activeKr!=null)chips.push('한국·프리미엄 '+od.activeKr+'개');
+      ods.innerHTML=chips.map(function(t){return '<span class="ops-chip">'+t+'</span>'}).join('');
+      ods.classList.toggle('on',chips.length>0);
+      ods.style.display=chips.length?'flex':'none';
+    }
     if(odab)odab.style.display='none';
     if(odrb)odrb.style.display='none';
     if(odb)odb.textContent='';
