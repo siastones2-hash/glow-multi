@@ -27,6 +27,25 @@ const PANEL_AGENTS = { peakerr: peakerrHttpsAgent, smmkings: smmkingsHttpsAgent 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MGMT_FEE_DEFAULT_KRW = 100000;
+/** 관리비 면제 — 알림·자동정지 대상 아님 */
+const MGMT_FEE_EXEMPT_SITE_IDS = new Set([
+  'site_1779358964407', // 히즈마케팅
+  'ignitris',           // 이그니트리스
+  'site_1780810481969', // 시크릿바이럴
+]);
+const MGMT_FEE_EXEMPT_NAMES = new Set(['히즈마케팅', '이그니트리스', '시크릿바이럴', '스크릿바이럴']);
+
+function siteMgmtFeeKrw(site) {
+  const n = parseInt(site?.mgmt_fee_krw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : MGMT_FEE_DEFAULT_KRW;
+}
+
+function isMgmtFeeExempt(site) {
+  if (!site) return false;
+  if (MGMT_FEE_EXEMPT_SITE_IDS.has(String(site.id || ''))) return true;
+  if (MGMT_FEE_EXEMPT_NAMES.has(String(site.name || '').trim())) return true;
+  return siteMgmtFeeKrw(site) === 0;
+}
 
 // ── HMAC 자체서명 토큰 시스템 ──
 const TOKEN_SECRET = process.env.TOKEN_SECRET || 'glow-multi-secret-key-2024';
@@ -616,16 +635,33 @@ async function initDB() {
       [MGMT_FEE_DEFAULT_KRW]
     );
   } catch(e) {}
+  // 관리비 면제 파트너 — 금액 0 · 납부일 비움 (알림·자동정지 제외)
+  try {
+    const ids = [...MGMT_FEE_EXEMPT_SITE_IDS];
+    const names = [...MGMT_FEE_EXEMPT_NAMES];
+    await query(
+      `UPDATE sites
+       SET mgmt_fee_krw=0, mgmt_fee_due=NULL, mgmt_fee_remind_for=NULL
+       WHERE id = ANY($1::text[]) OR name = ANY($2::text[])`,
+      [ids, names]
+    );
+  } catch(e) {}
   // 관리비 주기 초기값: 활성 파트너 = 오늘+30일, 이미 정지 = 오늘(미납)
   try {
     await query(`
       UPDATE sites SET mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '30 days')::date
       WHERE id <> 'default' AND mgmt_fee_due IS NULL AND COALESCE(active,1)=1
-    `);
+        AND COALESCE(mgmt_fee_krw, ${MGMT_FEE_DEFAULT_KRW}) > 0
+        AND id <> ALL($1::text[])
+        AND name <> ALL($2::text[])
+    `, [[...MGMT_FEE_EXEMPT_SITE_IDS], [...MGMT_FEE_EXEMPT_NAMES]]);
     await query(`
       UPDATE sites SET mgmt_fee_due = (NOW() AT TIME ZONE 'Asia/Seoul')::date
       WHERE id <> 'default' AND mgmt_fee_due IS NULL AND COALESCE(active,1)=0
-    `);
+        AND COALESCE(mgmt_fee_krw, ${MGMT_FEE_DEFAULT_KRW}) > 0
+        AND id <> ALL($1::text[])
+        AND name <> ALL($2::text[])
+    `, [[...MGMT_FEE_EXEMPT_SITE_IDS], [...MGMT_FEE_EXEMPT_NAMES]]);
   } catch(e) {}
   try {
     await query(`CREATE TABLE IF NOT EXISTS mgmt_fee_requests (
@@ -940,7 +976,7 @@ function canSubmitMgmtFee(site) {
 /** 사이트 정지 시 — 공개 화면엔 안 보이게, 관리자 텔레그램으로만 안내 */
 async function notifySiteSuspendedByMgmtFee(site, reason = '미납') {
   if (!site || site.id === 'default') return;
-  const fee = Math.max(0, parseInt(site.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
+  const fee = siteMgmtFeeKrw(site);
   const due = formatYmd(site.mgmt_fee_due);
   const payUrl = mgmtPayUrl(site);
   const adminMsg =
@@ -1102,18 +1138,21 @@ async function runMgmtFeeCycle() {
   const today = kstTodayYmd();
   console.log(`📅 관리비 주기 점검 ${today}`);
 
-  // 1) 3일 전 리마인더
+  // 1) 3일 전 리마인더 (관리비 면제·0원 제외)
   const remindR = await query(`
     SELECT id, name, domain, mgmt_fee_krw, mgmt_fee_due, tg_token, tg_chat
     FROM sites
     WHERE id <> 'default'
+      AND COALESCE(mgmt_fee_krw, $1) > 0
       AND mgmt_fee_due IS NOT NULL
       AND mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '3 days')::date
       AND (mgmt_fee_remind_for IS NULL OR mgmt_fee_remind_for IS DISTINCT FROM mgmt_fee_due)
     ORDER BY name
-  `);
+  `, [MGMT_FEE_DEFAULT_KRW]);
+  let reminded = 0;
   for (const s of remindR.rows) {
-    const fee = Math.max(0, parseInt(s.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
+    if (isMgmtFeeExempt(s)) continue;
+    const fee = siteMgmtFeeKrw(s);
     const due = formatYmd(s.mgmt_fee_due);
     const adminMsg =
       `⏰ <b>관리비 납부 안내</b> (3일 전)\n\n` +
@@ -1137,17 +1176,19 @@ async function runMgmtFeeCycle() {
       await sendTelegramToSuper(adminMsg).catch(() => null);
     }
     await query(`UPDATE sites SET mgmt_fee_remind_for = mgmt_fee_due WHERE id=$1`, [s.id]);
+    reminded++;
   }
-  if (remindR.rows.length) {
-    console.log(`⏰ 관리비 3일 전 알림 ${remindR.rows.length}곳`);
+  if (reminded) {
+    console.log(`⏰ 관리비 3일 전 알림 ${reminded}곳`);
   }
 
-  // 2) 납부일 경과 → 자동 정지
+  // 2) 납부일 경과 → 자동 정지 (관리비 면제·0원 제외)
   const lockR = await query(`
     SELECT id, name, domain, mgmt_fee_krw, mgmt_fee_due, tg_token, tg_chat
     FROM sites
     WHERE id <> 'default'
       AND COALESCE(active,1)=1
+      AND COALESCE(mgmt_fee_krw, $1) > 0
       AND mgmt_fee_due IS NOT NULL
       AND mgmt_fee_due <= (NOW() AT TIME ZONE 'Asia/Seoul')::date
       AND NOT EXISTS (
@@ -1155,17 +1196,20 @@ async function runMgmtFeeCycle() {
         WHERE r.site_id = sites.id AND r.status = 'pending'
       )
     ORDER BY name
-  `);
+  `, [MGMT_FEE_DEFAULT_KRW]);
+  let locked = 0;
   for (const s of lockR.rows) {
+    if (isMgmtFeeExempt(s)) continue;
     await query(`UPDATE sites SET active=0 WHERE id=$1 AND id <> 'default'`, [s.id]);
     await notifySiteSuspendedByMgmtFee(s, '미납 · 자동 정지');
     await logActivity('default', 'system', '', '관리비 미납 자동 정지', 'site', s.id,
       `${s.name} · 기한 ${formatYmd(s.mgmt_fee_due)}`);
+    locked++;
   }
-  if (lockR.rows.length) {
-    console.log(`⏸ 관리비 미납 자동 정지 ${lockR.rows.length}곳`);
+  if (locked) {
+    console.log(`⏸ 관리비 미납 자동 정지 ${locked}곳`);
   }
-  return { reminded: remindR.rows.length, locked: lockR.rows.length };
+  return { reminded, locked };
 }
 
 /** 회원 공지용 — 실시간 상품·품질 관리 요약 (하루 1회) */
@@ -1560,7 +1604,10 @@ app.post('/api/public/mgmt-fee-paid', async (req, res) => {
         message: '이미 입금완료 신청이 접수되어 있습니다. 운영자 확인·승인 후 처리됩니다.'
       });
     }
-    const feeKrw = Math.max(0, parseInt(req.site.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
+    const feeKrw = siteMgmtFeeKrw(req.site);
+    if (feeKrw <= 0 || isMgmtFeeExempt(req.site)) {
+      return res.status(400).json({ error: '이 사이트는 관리비 입금 대상이 아닙니다' });
+    }
     const id = 'mfee_' + Date.now();
     await query(
       `INSERT INTO mgmt_fee_requests(id,site_id,site_name,domain,amount,depositor,phone,note,status)
@@ -10680,7 +10727,7 @@ app.get('*', async (req, res) => {
       ) {
         const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
         const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
-        const feeKrw = Math.max(0, parseInt(req.site?.mgmt_fee_krw, 10) || MGMT_FEE_DEFAULT_KRW);
+        const feeKrw = siteMgmtFeeKrw(req.site);
         return res.status(200).type('html').send(
           renderSuspendedPayPage(siteName, logo, feeKrw.toLocaleString('ko-KR'), payKey)
         );
