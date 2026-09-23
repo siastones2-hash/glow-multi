@@ -94,6 +94,9 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
 .slot.two{background:#1a1a1a}
 .slot em{display:block;font-style:normal;font-size:11px;color:#8a8478;letter-spacing:.12em}
 .slot strong{display:block;margin-top:5px;font-size:18px;font-weight:600;letter-spacing:.04em}
+.day.fin{grid-column:1/-1;display:grid;grid-template-columns:220px 1fr 1fr}
+.day.fin .when{border-bottom:0}
+.day.fin .slot{border-top:0;border-left:1px solid #2a2a2a}
 .prog{margin-top:16px;font-size:16px;color:#d8d2c6;letter-spacing:.08em;line-height:1.9}
 
 .zgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(180px,22vw);gap:4px;margin-top:28px}
@@ -149,6 +152,8 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
   .block{padding:48px 0}
   .btn.ghost{margin:10px 0 0}
   .days{grid-template-columns:1fr 1fr}
+  .day.fin{grid-column:1/-1;grid-template-columns:1fr}
+  .day.fin .slot{border-left:0;border-top:1px solid #2a2a2a}
 }
 </style>
 </head>
@@ -189,15 +194,11 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
 
 <div class="wall">
   <figure class="pic big" data-src="assets/photos/sc-terminal-dusk.jpg"><img src="assets/photos/sc-terminal-dusk.jpg" alt="해질녘 여의도 유람선터미널"></figure>
-  <figure class="pic mid" data-src="assets/photos/sc-sign-night.jpg"><img src="assets/photos/sc-sign-night.jpg" alt="4층 루프탑 서울크루즈"></figure>
-  <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 조명"></figure>
-  <figure class="pic" data-src="assets/photos/sc-look.jpg"><img src="assets/photos/sc-look.jpg" alt="선상에서 본 여의도"></figure>
-  <figure class="pic wide" data-src="assets/photos/sc-fromboat.jpg"><img src="assets/photos/sc-fromboat.jpg" alt="선상에서 본 서울크루즈"></figure>
-  <figure class="pic wide" data-src="assets/photos/sc-river-night.jpg"><img src="assets/photos/sc-river-night.jpg" alt="한강 야경과 유람선"></figure>
-  <figure class="pic" data-src="assets/photos/sc-gulls.jpg"><img src="assets/photos/sc-gulls.jpg" alt="선상 갈매기"></figure>
-  <figure class="pic" data-src="assets/photos/p03.jpg"><img src="assets/photos/p03.jpg" alt="한강에서 본 선착장"></figure>
-  <figure class="pic" data-src="assets/photos/p00.jpg"><img src="assets/photos/p00.jpg" alt="서울크루즈 선착장"></figure>
-  <figure class="pic" data-src="assets/photos/roof.jpg"><img src="assets/photos/roof.jpg" alt="루프탑 건물"></figure>
+  <figure class="pic mid" data-src="assets/photos/sc-fromboat.jpg"><img src="assets/photos/sc-fromboat.jpg" alt="선상에서 본 서울크루즈"></figure>
+  <figure class="pic" data-src="assets/photos/sc-63.jpg"><img src="assets/photos/sc-63.jpg" alt="63스퀘어 노을"></figure>
+  <figure class="pic" data-src="assets/photos/sc-fountain.jpg"><img src="assets/photos/sc-fountain.jpg" alt="한강 분수"></figure>
+  <figure class="pic wide" data-src="assets/photos/sc-bridge.jpg"><img src="assets/photos/sc-bridge.jpg" alt="한강대교 야경"></figure>
+  <figure class="pic wide" data-src="assets/photos/p08.jpg"><img src="assets/photos/p08.jpg" alt="여의도 야경"></figure>
 </div>
 
 <section class="block" id="about">
@@ -214,10 +215,6 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
       <tr><th>문의</th><td>010-6773-0419</td></tr>
     </table>
   </div>
-  <div class="wrap about-shot">
-    <figure class="pic" data-src="assets/photos/sc-terminal-night.jpg"><img src="assets/photos/sc-terminal-night.jpg" alt="저녁 서울크루즈 터미널"></figure>
-    <figure class="pic" data-src="assets/photos/sc-deck-63.jpg"><img src="assets/photos/sc-deck-63.jpg" alt="선상에서 본 63빌딩"></figure>
-  </div>
 </section>
 
 <section class="block dark" id="show">
@@ -227,7 +224,7 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
     <p class="prog">DJ · 미스트 · 전자오르간 · 마술쇼 · 버스킹 · 푸드&amp;BAR</p>
     <div class="show-atm">
       <figure class="pic" data-src="assets/photos/sc-hall.jpg"><img src="assets/photos/sc-hall.jpg" alt="선내 공연 홀"></figure>
-      <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 야간 공연 공간"></figure>
+      <figure class="pic" data-src="assets/photos/sc-lounge.jpg"><img src="assets/photos/sc-lounge.jpg" alt="선내 라운지"></figure>
     </div>
     <figure class="show-fig lineup pic" data-src="assets/photos/dj-lineup.jpg?v=cut">
       <img src="assets/photos/dj-lineup.jpg?v=cut" alt="DJ 라인업">
@@ -245,7 +242,7 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
       <article class="day wk"><div class="when"><b>10.10</b><span class="yo">토</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>허니</strong></div></article>
       <article class="day wk"><div class="when"><b>10.11</b><span class="yo">일</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>젤로</strong></div></article>
       <article class="day"><div class="when"><b>10.12</b><span class="yo">월</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>가빈</strong></div></article>
-      <article class="day"><div class="when"><b>10.13</b><span class="yo">화</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>캐쉬</strong></div></article>
+      <article class="day fin"><div class="when"><b>10.13</b><span class="yo">폐막 · 화</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>캐쉬</strong></div></article>
     </div>
   </div>
 </section>
@@ -259,10 +256,6 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
         <img src="assets/photos/sc-sign-night.jpg" alt="밤 서울크루즈 4층 루프탑">
         <figcaption><strong>4층 루프탑</strong><span>서울크루즈</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/sc-rooftop-lights.jpg">
-        <img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 조명">
-        <figcaption><strong>루프탑</strong><span>한강 위</span></figcaption>
-      </figure>
       <figure class="zcard" data-src="assets/photos/sc-terminal-night.jpg">
         <img src="assets/photos/sc-terminal-night.jpg" alt="저녁 터미널">
         <figcaption><strong>터미널</strong><span>여의도</span></figcaption>
@@ -271,42 +264,14 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
         <img src="assets/photos/sc-river-night.jpg" alt="한강 야경과 유람선">
         <figcaption><strong>한강</strong><span>야경</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/sc-look.jpg">
-        <img src="assets/photos/sc-look.jpg" alt="선상에서 본 여의도">
-        <figcaption><strong>선상</strong><span>여의도</span></figcaption>
+      <figure class="zcard" data-src="assets/photos/p03.jpg">
+        <img src="assets/photos/p03.jpg" alt="한강에서 본 선착장">
+        <figcaption><strong>선착장</strong><span>한강 위</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/sc-lounge.jpg">
-        <img src="assets/photos/sc-lounge.jpg" alt="선내 라운지">
-        <figcaption><strong>라운지</strong><span>바</span></figcaption>
+      <figure class="zcard" data-src="assets/photos/p05.jpg">
+        <img src="assets/photos/p05.jpg" alt="63스퀘어 야경">
+        <figcaption><strong>63스퀘어</strong><span>야경</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/sc-hall.jpg">
-        <img src="assets/photos/sc-hall.jpg" alt="선내 홀과 무대">
-        <figcaption><strong>무대</strong><span>공연 홀</span></figcaption>
-      </figure>
-      <figure class="zcard" data-src="assets/photos/p01.jpg">
-        <img src="assets/photos/p01.jpg" alt="선내 라운지">
-        <figcaption><strong>라운지</strong><span>홀</span></figcaption>
-      </figure>
-      <figure class="zcard" data-src="assets/photos/p02.jpg">
-        <img src="assets/photos/p02.jpg" alt="선내 무대">
-        <figcaption><strong>무대</strong><span>공연</span></figcaption>
-      </figure>
-      <figure class="zcard" data-src="assets/photos/sc-gulls.jpg">
-        <img src="assets/photos/sc-gulls.jpg" alt="선상 갈매기">
-        <figcaption><strong>선상</strong><span>한강</span></figcaption>
-      </figure>
-      <figure class="zcard" data-src="assets/photos/p09.jpg">
-        <img src="assets/photos/p09.jpg" alt="선상 데크">
-        <figcaption><strong>데크</strong><span>한강 위</span></figcaption>
-      </figure>
-    </div>
-    <div class="nightrow">
-      <figure class="pic" data-src="assets/photos/sc-bridge.jpg"><img src="assets/photos/sc-bridge.jpg" alt="한강대교 야경"></figure>
-      <figure class="pic" data-src="assets/photos/sc-63.jpg"><img src="assets/photos/sc-63.jpg" alt="63스퀘어 노을"></figure>
-      <figure class="pic" data-src="assets/photos/sc-fountain.jpg"><img src="assets/photos/sc-fountain.jpg" alt="한강 분수"></figure>
-      <figure class="pic" data-src="assets/photos/p05.jpg"><img src="assets/photos/p05.jpg" alt="한강 야경"></figure>
-      <figure class="pic" data-src="assets/photos/p08.jpg"><img src="assets/photos/p08.jpg" alt="여의도 야경"></figure>
-      <figure class="pic" data-src="assets/photos/sc-bridge-night.jpg"><img src="assets/photos/sc-bridge-night.jpg" alt="한강 다리 야경"></figure>
     </div>
   </div>
 </section>
