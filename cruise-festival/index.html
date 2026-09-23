@@ -82,15 +82,18 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
 .show-atm img{width:100%;height:100%;object-fit:cover}
 .show-fig.lineup{width:min(520px,92%);margin:40px auto 0;background:#111}
 .show-fig.lineup img{width:100%;height:auto;display:block}
-.days{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:40px auto 0;text-align:left}
-.day{background:#181818;border:1px solid #2c2c2c;padding:18px 16px 16px;min-height:168px}
-.day.wk{background:#1f1a14;border-color:#3a3228}
-.day .when{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid #2c2c2c}
-.day b{font-size:26px;font-weight:600;letter-spacing:.04em;line-height:1}
-.day .yo{font-size:13px;color:#9a9488;letter-spacing:.08em}
-.day dl{margin-top:14px;display:grid;gap:12px}
-.day dt{font-size:11px;color:#8a8478;letter-spacing:.08em}
-.day dd{margin-top:3px;font-size:18px;font-weight:600;letter-spacing:.04em}
+.days{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:48px auto 0;text-align:left}
+.day{background:#141414;border:1px solid #2e2e2e;overflow:hidden}
+.day.wk{border-color:#4a3f32}
+.day .when{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;background:#0c0c0c}
+.day.wk .when{background:#1c1712}
+.day b{font-size:28px;font-weight:600;letter-spacing:.04em;line-height:1}
+.day .yo{font-size:12px;letter-spacing:.12em;color:#cfc6b6;border:1px solid #5a5348;padding:3px 8px}
+.day.wk .yo{border-color:#8a7a64;color:#eadcc8}
+.slot{padding:14px 16px;border-top:1px solid #2a2a2a}
+.slot.two{background:#1a1a1a}
+.slot em{display:block;font-style:normal;font-size:11px;color:#8a8478;letter-spacing:.12em}
+.slot strong{display:block;margin-top:5px;font-size:18px;font-weight:600;letter-spacing:.04em}
 .prog{margin-top:16px;font-size:16px;color:#d8d2c6;letter-spacing:.08em;line-height:1.9}
 
 .zgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(180px,22vw);gap:4px;margin-top:28px}
@@ -191,7 +194,7 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
   <figure class="pic" data-src="assets/photos/sc-look.jpg"><img src="assets/photos/sc-look.jpg" alt="선상에서 본 여의도"></figure>
   <figure class="pic wide" data-src="assets/photos/sc-fromboat.jpg"><img src="assets/photos/sc-fromboat.jpg" alt="선상에서 본 서울크루즈"></figure>
   <figure class="pic wide" data-src="assets/photos/sc-river-night.jpg"><img src="assets/photos/sc-river-night.jpg" alt="한강 야경과 유람선"></figure>
-  <figure class="pic" data-src="assets/photos/sc-enter.jpg"><img src="assets/photos/sc-enter.jpg" alt="서울크루즈 입구"></figure>
+  <figure class="pic" data-src="assets/photos/sc-gulls.jpg"><img src="assets/photos/sc-gulls.jpg" alt="선상 갈매기"></figure>
   <figure class="pic" data-src="assets/photos/p03.jpg"><img src="assets/photos/p03.jpg" alt="한강에서 본 선착장"></figure>
   <figure class="pic" data-src="assets/photos/p00.jpg"><img src="assets/photos/p00.jpg" alt="서울크루즈 선착장"></figure>
   <figure class="pic" data-src="assets/photos/roof.jpg"><img src="assets/photos/roof.jpg" alt="루프탑 건물"></figure>
@@ -226,23 +229,23 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
       <figure class="pic" data-src="assets/photos/sc-hall.jpg"><img src="assets/photos/sc-hall.jpg" alt="선내 공연 홀"></figure>
       <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 야간 공연 공간"></figure>
     </div>
-    <figure class="show-fig lineup pic" data-src="assets/photos/dj-lineup.jpg?v=nobpm">
-      <img src="assets/photos/dj-lineup.jpg?v=nobpm" alt="DJ 라인업">
+    <figure class="show-fig lineup pic" data-src="assets/photos/dj-lineup.jpg?v=cut">
+      <img src="assets/photos/dj-lineup.jpg?v=cut" alt="DJ 라인업">
     </figure>
     <div class="days">
-      <article class="day"><div class="when"><b>10.1</b><span class="yo">목</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>캐쉬</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.2</b><span class="yo">금</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>엘리아</dd></div></dl></article>
-      <article class="day wk"><div class="when"><b>10.3</b><span class="yo">토</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>2AS</dd></div></dl></article>
-      <article class="day wk"><div class="when"><b>10.4</b><span class="yo">일</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>젤로</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.5</b><span class="yo">월</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>가빈</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.6</b><span class="yo">화</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>지유</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.7</b><span class="yo">수</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>가빈</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.8</b><span class="yo">목</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>캐쉬</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.9</b><span class="yo">금</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>2AS</dd></div></dl></article>
-      <article class="day wk"><div class="when"><b>10.10</b><span class="yo">토</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>허니</dd></div></dl></article>
-      <article class="day wk"><div class="when"><b>10.11</b><span class="yo">일</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>젤로</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.12</b><span class="yo">월</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>가빈</dd></div></dl></article>
-      <article class="day"><div class="when"><b>10.13</b><span class="yo">화</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>캐쉬</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.1</b><span class="yo">목</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>캐쉬</strong></div></article>
+      <article class="day"><div class="when"><b>10.2</b><span class="yo">금</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>엘리아</strong></div></article>
+      <article class="day wk"><div class="when"><b>10.3</b><span class="yo">토</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>2AS</strong></div></article>
+      <article class="day wk"><div class="when"><b>10.4</b><span class="yo">일</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>젤로</strong></div></article>
+      <article class="day"><div class="when"><b>10.5</b><span class="yo">월</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>가빈</strong></div></article>
+      <article class="day"><div class="when"><b>10.6</b><span class="yo">화</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>지유</strong></div></article>
+      <article class="day"><div class="when"><b>10.7</b><span class="yo">수</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>가빈</strong></div></article>
+      <article class="day"><div class="when"><b>10.8</b><span class="yo">목</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>캐쉬</strong></div></article>
+      <article class="day"><div class="when"><b>10.9</b><span class="yo">금</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>2AS</strong></div></article>
+      <article class="day wk"><div class="when"><b>10.10</b><span class="yo">토</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>허니</strong></div></article>
+      <article class="day wk"><div class="when"><b>10.11</b><span class="yo">일</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>젤로</strong></div></article>
+      <article class="day"><div class="when"><b>10.12</b><span class="yo">월</span></div><div class="slot"><em>1부 · 20:00</em><strong>리미스트</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>가빈</strong></div></article>
+      <article class="day"><div class="when"><b>10.13</b><span class="yo">화</span></div><div class="slot"><em>1부 · 20:00</em><strong>싸이먼</strong></div><div class="slot two"><em>2부 · 23:00</em><strong>캐쉬</strong></div></article>
     </div>
   </div>
 </section>
