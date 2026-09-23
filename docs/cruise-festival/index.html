@@ -91,8 +91,8 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
 .way .note{margin-top:18px;color:#d8d2c6;font-size:15px}
 .way a{color:#fff;font-weight:700}
 .foot{padding:28px 0 48px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
-.foot .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.foot a{color:var(--ink)}
+.foot .wrap{display:flex;flex-direction:column;gap:8px}
+.foot .legal{font-size:12px;color:#8a8478}
 .menu{display:none}
 #lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:80;align-items:center;justify-content:center;padding:20px}
 #lb.on{display:flex}
@@ -262,7 +262,8 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
 
 <footer class="foot">
   <div class="wrap">
-    <div>(주)포리마제 · 대표 김승용 · 개인정보 관리책임자 이현석 · 010-6773-0419</div>
+    <div>(주)포리마제 · 대표 김승용 · 010-6773-0419</div>
+    <div class="legal">개인정보 관리책임자 이현석</div>
   </div>
 </footer>
 
