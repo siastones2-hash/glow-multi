@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>서울크루즈페스티벌</title>
 <meta name="description" content="10월 1일–13일, 여의나루역 4층 루프탑. 주최 (주)포리마제. 입장 2만원.">
-<meta name="theme-color" content="#0a090c">
+<meta name="theme-color" content="#111111">
 <link rel="canonical" href="https://siastones2-hash.github.io/glow-multi/cruise-festival/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://siastones2-hash.github.io/glow-multi/cruise-festival/">
@@ -13,17 +13,16 @@
 <meta property="og:description" content="여의나루역 4층 · 입장 2만원 · 주최 (주)포리마제">
 <meta property="og:image" content="https://siastones2-hash.github.io/glow-multi/cruise-festival/assets/photos/night-hero.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23111111' width='32' height='32'/%3E%3Ctext x='6' y='22' fill='%23fff' font-size='14' font-family='serif'%3E4F%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23111111' width='32' height='32'/%3E%3Ctext x='6' y='22' fill='%23fff' font-size='14' font-family='sans-serif'%3E4F%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Cormorant+Garamond:ital,wght@0,500;1,600;1,700&display=swap">
 <style>
 :root{
-  --ink:#f3efe6;
-  --dim:#b8b0a2;
-  --line:#2a2620;
-  --paper:#0c0b0e;
-  --black:#07070a;
-  --gold:#e8c98a;
+  --ink:#171717;
+  --dim:#5a554c;
+  --line:#ddd6c8;
+  --paper:#f4f0e8;
+  --white:#fff;
+  --black:#111;
   --nav:64px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -33,107 +32,80 @@ a{color:inherit}
 img{max-width:100%;display:block}
 button{font-family:inherit;cursor:pointer;border:0;background:none}
 .wrap{width:min(1080px,calc(100% - 40px));margin:0 auto}
-.serif{font-family:'Nanum Myeongjo','Song Myung',serif}
-.script{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic}
-nav.top{position:sticky;top:0;z-index:50;height:var(--nav);background:rgba(7,7,10,.92);color:#fff;display:flex;align-items:center;backdrop-filter:blur(10px)}
+nav.top{position:sticky;top:0;z-index:50;height:var(--nav);background:var(--black);color:#fff;display:flex;align-items:center}
 nav.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;width:min(1080px,calc(100% - 32px))}
-.brand{font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:16px;letter-spacing:-.02em}
-.top .navs{display:flex;gap:26px;font-size:13px;color:#cfcfcf;margin-left:auto;margin-right:20px}
+.brand{font-weight:800;font-size:15px;letter-spacing:-.02em;text-decoration:none}
+.top .navs{display:flex;gap:28px;font-size:13px;margin-left:auto;margin-right:20px}
 .top .navs a{color:#cfcfcf;text-decoration:none}
 .top .navs a:hover{color:#fff}
 .call{font-size:13px;font-weight:700;color:#fff;text-decoration:none;border:1px solid #444;padding:7px 12px}
-.hero{position:relative;color:#fff;background:#050308;overflow:hidden}
-.hero img{width:100%;height:min(90vh,860px);object-fit:cover;object-position:center 42%;filter:saturate(1.18) contrast(1.08) brightness(1.02)}
-.hero::before,.hero::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1}
-.hero::before{background:
-  radial-gradient(ellipse 42% 38% at 58% 52%, rgba(255,176,72,.28), transparent 62%),
-  radial-gradient(ellipse 70% 45% at 50% 108%, rgba(4,6,18,.9), transparent 58%)}
-.hero::after{background:linear-gradient(180deg, rgba(6,10,28,.22) 0%, transparent 30%, rgba(4,6,16,.88) 100%)}
-.hero-copy{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 0 56px}
-.hero-copy .eye{font-size:22px;color:var(--gold);letter-spacing:.06em}
-.hero-copy h1{font-size:clamp(40px,7vw,76px);font-weight:800;letter-spacing:-.03em;line-height:1.12;margin-top:6px;text-shadow:0 6px 32px rgba(0,0,0,.55)}
-.hero-copy .who{margin-top:14px;font-size:16px;color:#f6e7c4}
-.hero-copy .meta{margin-top:8px;font-size:15px;color:#ddd4c4}
-.info{background:#0a090c;color:#fff;border-top:1px solid #1c1a16;border-bottom:1px solid #1c1a16}
+.hero{position:relative;color:#fff;background:#050308}
+.hero img{width:100%;height:min(86vh,780px);object-fit:cover;object-position:center 42%}
+.hero-copy{position:absolute;left:0;right:0;bottom:0;padding:0 0 48px;background:linear-gradient(180deg,transparent 10%,rgba(5,8,16,.82) 100%)}
+.hero-copy h1{font-size:clamp(36px,6vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1.1}
+.hero-copy p{margin-top:10px;font-size:16px;color:#eee6d6}
+.info{background:var(--black);color:#fff}
 .info .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
-.info dl{padding:22px 0;border-right:1px solid #221f1a}
+.info dl{padding:22px 0;border-right:1px solid #2a2a2a}
 .info dl:last-child{border-right:0}
-.info dt{font-size:12px;color:#8a8478;margin-bottom:4px}
+.info dt{font-size:12px;color:#9a9a9a;margin-bottom:4px}
 .info dd{font-size:18px;font-weight:700;letter-spacing:-.03em}
-.block{padding:80px 0;position:relative}
-h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weight:800;letter-spacing:-.03em;margin-bottom:16px;line-height:1.3}
-.lead{font-size:17px;max-width:40em;color:#ddd6c8}
+.block{padding:72px 0}
+h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin-bottom:16px;line-height:1.25}
+.lead{font-size:17px;max-width:38em;color:var(--ink)}
 .lead + .lead{margin-top:14px}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
 .table{width:100%;border-collapse:collapse}
-.table th,.table td{text-align:left;padding:13px 0;border-bottom:1px solid #2a2620;vertical-align:top;font-size:15px}
-.table th{width:28%;color:#9a9488;font-weight:600}
-.photo-bg{background:#09080c}
-.photo-bg .veil{position:absolute;inset:0;background:
-  linear-gradient(180deg, rgba(8,7,10,.55), rgba(8,7,10,.82)),
-  url('assets/photos/p02.jpg') center/cover;opacity:.28;pointer-events:none}
-.photo-bg .wrap{position:relative;z-index:1}
+.table th,.table td{text-align:left;padding:13px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:15px}
+.table th{width:30%;color:var(--dim);font-weight:600}
+.dark{background:var(--black);color:#f3efe6}
+.dark .lead{color:#d8d2c6}
+.dark .table th{color:#9a9488}
+.dark .table td{border-color:#2c2c2c}
 .zgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:240px;gap:10px;margin-top:28px}
 .zcard{position:relative;overflow:hidden;background:#000;height:100%;min-height:0}
 .zcard.wide{grid-column:span 2;grid-row:span 2}
-.zcard.wide img{object-position:center 55%}
 .zcard img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
-.zcard:hover img{transform:scale(1.04)}
-.zcard figcaption{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.88));color:#fff}
+.zcard:hover img{transform:scale(1.03)}
+.zcard figcaption{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.86));color:#fff}
 .zcard strong{display:block;font-size:16px;font-weight:800}
 .zcard span{display:block;margin-top:3px;font-size:13px;color:#cfc8bc}
-.ships{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px}
-.ship{display:block;text-decoration:none;min-height:220px;padding:22px 20px;background:#111014;border:1px solid #2a2620;position:relative;overflow:hidden}
-.ship:hover{border-color:#c4a46a}
-.ship.on{border-color:#e8c98a}
-.ship b{display:block;font-size:12px;color:var(--gold);letter-spacing:.08em;margin-bottom:10px}
-.ship strong{display:block;font-family:'Nanum Myeongjo',serif;font-size:22px;line-height:1.3}
-.ship p{margin-top:10px;font-size:14px;color:#b8b0a2}
-.ship em{position:absolute;right:16px;bottom:16px;font-style:normal;font-size:12px;color:#8a8478}
 .wrap.wide{width:min(1680px,calc(100% - 24px))}
-.plans{display:block;margin-top:28px}
+.plans{margin-top:28px}
 .plans figure{background:#0b1220;cursor:zoom-in}
 .plans img{width:100%;height:auto;display:block}
-.plans figcaption{font-size:14px;color:#9a9488;padding:12px 2px 0}
-.price-box{border:1px solid #3a342c;padding:28px;background:#121015}
+.plans figcaption{font-size:14px;color:var(--dim);padding:12px 2px 0}
+.price-box{border:1px solid var(--ink);padding:28px;background:var(--white)}
 .price-box .n{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1}
 .price-box .n span{font-size:16px;font-weight:600;margin-left:6px}
-.price-box p{margin:14px 0 22px;color:#b8b0a2}
-.btn{display:inline-block;background:#f3efe6;color:#111;text-decoration:none;padding:12px 18px;font-size:14px;font-weight:700}
-.btn.ghost{background:transparent;color:#f3efe6;border:1px solid #666;margin-left:8px}
-.partners{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
-.partners article{padding:20px;border:1px solid #2a2620;background:#100e13}
-.partners h3{font-size:14px;color:var(--gold);margin-bottom:8px;font-weight:600}
-.partners p{font-size:15px;color:#ddd6c8}
-.reviews{margin-top:20px;padding:22px;border:1px dashed #3a342c;color:#9a9488;font-size:15px}
-.addrs{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:22px}
-.addrs h3{font-size:16px;margin-bottom:8px}
-.addrs p{color:#b8b0a2;font-size:15px}
-.addrs a{color:var(--gold);font-size:14px;font-weight:700}
+.price-box p{margin:14px 0 22px;color:var(--dim)}
+.btn{display:inline-block;background:var(--black);color:#fff;text-decoration:none;padding:12px 18px;font-size:14px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);margin-left:8px}
+.dark .btn{background:#fff;color:#111}
+.dark .btn.ghost{background:transparent;color:#fff;border-color:#666}
 .mapwrap{margin-top:24px;height:420px;background:#111;border:1px solid #2c2c2c}
 .mapwrap iframe{width:100%;height:100%;border:0;display:block}
-.foot{padding:28px 0 48px;border-top:1px solid #221f1a;color:#8a8478;font-size:13px}
+.way p.lead{color:#d8d2c6}
+.way .note{margin-top:18px;color:#d8d2c6;font-size:15px}
+.way a{color:#fff;font-weight:700}
+.foot{padding:28px 0 48px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
 .foot .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.foot a{color:#ddd6c8}
+.foot a{color:var(--ink)}
 .menu{display:none}
 #lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:80;align-items:center;justify-content:center;padding:20px}
 #lb.on{display:flex}
 #lb img{max-width:100%;max-height:92vh}
-@media(max-width:900px){
-  .ships,.partners{grid-template-columns:1fr 1fr}
-}
 @media(max-width:800px){
-  .info .wrap,.split,.addrs{grid-template-columns:1fr}
+  .info .wrap,.split{grid-template-columns:1fr}
   .zgrid{grid-template-columns:1fr 1fr;grid-auto-rows:170px}
   .zcard.wide{grid-column:auto;grid-row:auto}
-  .info dl{border-right:0;border-bottom:1px solid #221f1a}
+  .info dl{border-right:0;border-bottom:1px solid #2a2a2a}
   .top .navs{display:none}
   .top .navs.open{display:flex;flex-direction:column;position:absolute;top:var(--nav);left:0;right:0;background:#111;padding:16px 20px 20px;gap:14px}
   .menu{display:block;color:#fff;font-size:20px}
-  .hero img{height:68vh}
-  .block{padding:56px 0}
+  .hero img{height:62vh}
+  .block{padding:52px 0}
   .btn.ghost{margin:10px 0 0}
-  .ships,.partners{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -153,12 +125,11 @@ h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weig
 </nav>
 
 <header class="hero" id="top">
-  <img src="assets/photos/night-hero.jpg?v=glam" alt="서울크루즈 여의도 선착장 4층 루프탑">
+  <img src="assets/photos/night-hero.jpg?v=glam" alt="서울크루즈 여의나루 4층 루프탑">
   <div class="hero-copy">
     <div class="wrap">
-      <h1 class="serif">서울크루즈페스티벌</h1>
-      <p class="who">(주)포리마제</p>
-      <p class="meta">10월 1일–13일 · 여의나루역 · 입장 2만 원</p>
+      <h1>서울크루즈페스티벌</h1>
+      <p>10월 1일–13일 · 여의나루역 · 입장 2만 원</p>
     </div>
   </div>
 </header>
@@ -172,8 +143,7 @@ h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weig
   </div>
 </div>
 
-<section class="block photo-bg" id="about">
-  <div class="veil"></div>
+<section class="block" id="about">
   <div class="wrap split">
     <div>
       <h2>서울크루즈 4층 루프탑</h2>
@@ -185,15 +155,15 @@ h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weig
       <tr><th>대표</th><td>김승용</td></tr>
       <tr><th>개인정보 관리</th><td>이현석</td></tr>
       <tr><th>장소</th><td>5호선 여의나루역 2번 출구 · 한강 쪽</td></tr>
-      <tr><th>문의</th><td>010-6773-0419 · 선박 예약 1551-1132</td></tr>
+      <tr><th>문의</th><td>010-6773-0419</td></tr>
     </table>
   </div>
 </section>
 
-<section class="block" id="place">
+<section class="block dark" id="place">
   <div class="wrap">
-    <h2>선착장 · 배 · 무대</h2>
-    <p class="lead">서울크루즈 건물과 선상, 공연 홀입니다. 축제는 4층 루프탑에서 진행합니다.</p>
+    <h2>현장</h2>
+    <p class="lead">선착장과 선상, 무대입니다. 축제는 4층 루프탑에서 진행합니다.</p>
     <div class="zgrid">
       <figure class="zcard wide" data-src="assets/photos/p03.jpg">
         <img src="assets/photos/p03.jpg" alt="한강에서 본 서울크루즈 선착장">
@@ -201,11 +171,11 @@ h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weig
       </figure>
       <figure class="zcard" data-src="assets/photos/p00.jpg">
         <img src="assets/photos/p00.jpg" alt="서울크루즈 선착장 건물">
-        <figcaption><strong>선착장 건물</strong><span>4층 루프탑</span></figcaption>
+        <figcaption><strong>선착장</strong><span>4층 루프탑</span></figcaption>
       </figure>
       <figure class="zcard" data-src="assets/photos/p02.jpg">
         <img src="assets/photos/p02.jpg" alt="선내 홀과 무대">
-        <figcaption><strong>무대</strong><span>공연 · LED</span></figcaption>
+        <figcaption><strong>무대</strong><span>공연 홀</span></figcaption>
       </figure>
       <figure class="zcard" data-src="assets/photos/p09.jpg">
         <img src="assets/photos/p09.jpg" alt="선상 데크">
@@ -213,14 +183,13 @@ h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weig
       </figure>
       <figure class="zcard" data-src="assets/photos/p01.jpg">
         <img src="assets/photos/p01.jpg" alt="선내 라운지">
-        <figcaption><strong>라운지</strong><span>바 · 소파석</span></figcaption>
+        <figcaption><strong>라운지</strong><span>바</span></figcaption>
       </figure>
       <figure class="zcard" data-src="assets/photos/p05.jpg">
         <img src="assets/photos/p05.jpg" alt="한강 야경">
-        <figcaption><strong>한강 야경</strong><span>63스퀘어 · 원효대교</span></figcaption>
+        <figcaption><strong>한강 야경</strong><span>63스퀘어</span></figcaption>
       </figure>
     </div>
-    <div class="reviews">공연이 시작되면 현장 사진과 후기를 이 자리에 올립니다.</div>
   </div>
 </section>
 
@@ -242,34 +211,17 @@ h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weig
     <div class="price-box">
       <div class="n">20,000<span>원</span></div>
       <p>1인 입장료. 식음료는 별도입니다.<br>2026년 10월 1일(목) – 10월 13일(화)</p>
-      <a class="btn" href="tel:010-6773-0419">행사 문의</a>
+      <a class="btn" href="tel:010-6773-0419">전화 문의</a>
       <a class="btn ghost" href="https://www.seoulcruise.co.kr/" target="_blank" rel="noopener">유람선 예약</a>
     </div>
     <div>
-      <h2>연중 대관 · 광고</h2>
-      <p class="lead">4층 루프탑은 365일 운영합니다. 부스, 기업 행사, 공연은 문의하시면 됩니다.</p>
-      <p class="lead">서울크루즈 행사는 앞으로도 광고를 이어 갑니다. 고기프렌즈 · 국밥프렌즈가 홍보를 맡습니다.</p>
-    </div>
-  </div>
-  <div class="wrap">
-    <div class="partners">
-      <article>
-        <h3>주최</h3>
-        <p>(주)포리마제 · 대표 김승용<br>개인정보 관리 이현석</p>
-      </article>
-      <article>
-        <h3>광고</h3>
-        <p>고기프렌즈 · 국밥프렌즈</p>
-      </article>
-      <article>
-        <h3>협력</h3>
-        <p>무적채광 MUSASHI 634</p>
-      </article>
+      <h2>연중 대관</h2>
+      <p class="lead">4층 루프탑은 365일 운영합니다. 부스 입점, 기업 행사, 공연 대관은 010-6773-0419로 문의하시면 됩니다.</p>
     </div>
   </div>
 </section>
 
-<section class="block" id="way" style="background:#08070a">
+<section class="block dark way" id="way">
   <div class="wrap">
     <h2>오는 길</h2>
     <p class="lead">5호선 여의나루역 2번 출구 · 한강 쪽</p>
@@ -280,24 +232,18 @@ h2{font-family:'Nanum Myeongjo',serif;font-size:clamp(26px,3.6vw,38px);font-weig
         allowfullscreen
         loading="lazy"></iframe>
     </div>
-    <div class="addrs" style="grid-template-columns:1fr">
-      <div>
-        <h3>여의나루역</h3>
-        <p>5호선 여의나루역 2번 출구로 나와 한강 쪽으로 오시면 됩니다.</p>
-        <p style="margin-top:10px">
-          <a href="https://map.naver.com/p/search/여의나루역" target="_blank" rel="noopener">네이버 지도</a>
-          &nbsp;·&nbsp;
-          <a href="https://map.kakao.com/link/search/여의나루역" target="_blank" rel="noopener">카카오맵</a>
-        </p>
-      </div>
-    </div>
+    <p class="note">
+      <a href="https://map.naver.com/p/search/여의나루역" target="_blank" rel="noopener">네이버 지도</a>
+      &nbsp;·&nbsp;
+      <a href="https://map.kakao.com/link/search/여의나루역" target="_blank" rel="noopener">카카오맵</a>
+    </p>
   </div>
 </section>
 
 <footer class="foot">
   <div class="wrap">
-    <div>(주)포리마제 · 대표 김승용 · 개인정보 관리 이현석 · 010-6773-0419</div>
-    <div>광고 고기프렌즈 · 국밥프렌즈 · 선박 예약 <a href="https://www.seoulcruise.co.kr/">seoulcruise.co.kr</a></div>
+    <div>(주)포리마제 · 대표 김승용 · 개인정보 관리책임자 이현석 · 010-6773-0419</div>
+    <div>광고 고기프렌즈 · 국밥프렌즈 · 협력 무적채광 MUSASHI 634</div>
   </div>
 </footer>
 
