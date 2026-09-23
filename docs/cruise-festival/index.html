@@ -13,8 +13,8 @@
 <meta property="og:description" content="여의도 유람선터미널 4층 · 오후 6시–새벽 2시 · 주최 (주)포리마제이">
 <meta property="og:image" content="https://siastones2-hash.github.io/glow-multi/cruise-festival/assets/photos/night-hero.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23111111' width='32' height='32'/%3E%3Ctext x='6' y='22' fill='%23fff' font-size='14' font-family='sans-serif'%3E4F%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23111111' width='32' height='32'/%3E%3Ctext x='6' y='22' fill='%23fff' font-size='14' font-family='serif'%3E4F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://hangeul.pstatic.net/hangeul_static/css/maru-buri.css">
 <style>
 :root{
   --ink:#171717;
@@ -27,83 +27,94 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;background:var(--paper);color:var(--ink);line-height:1.8;letter-spacing:.01em;word-break:keep-all;-webkit-font-smoothing:antialiased;font-size:16px}
+body{font-family:'MaruBuri','Gowun Batang','Apple SD Gothic Neo',serif;background:var(--paper);color:var(--ink);line-height:1.85;letter-spacing:.02em;word-break:keep-all;-webkit-font-smoothing:antialiased;font-size:17px}
 a{color:inherit}
 img{max-width:100%;display:block}
 button{font-family:inherit;cursor:pointer;border:0;background:none}
 .wrap{width:min(1080px,calc(100% - 40px));margin:0 auto}
 nav.top{position:sticky;top:0;z-index:50;height:var(--nav);background:var(--black);color:#fff;display:flex;align-items:center}
 nav.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;width:min(1080px,calc(100% - 32px))}
-.brand{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-weight:400;font-size:16px;letter-spacing:.02em;text-decoration:none}
-.top .navs{display:flex;gap:28px;font-size:13px;margin-left:auto;margin-right:20px}
+.brand{font-weight:400;font-size:17px;letter-spacing:.04em;text-decoration:none}
+.top .navs{display:flex;gap:28px;font-size:14px;margin-left:auto;margin-right:20px}
 .top .navs a{color:#cfcfcf;text-decoration:none}
 .top .navs a:hover{color:#fff}
-.call{font-size:13px;font-weight:700;color:#fff;text-decoration:none;border:1px solid #444;padding:7px 12px}
+.call{font-size:14px;font-weight:600;color:#fff;text-decoration:none;border:1px solid #444;padding:7px 12px}
 .hero{position:relative;color:#fff;background:#050308}
-.hero img{width:100%;height:min(86vh,780px);object-fit:cover;object-position:center 42%}
-.hero-copy{position:absolute;left:0;right:0;bottom:0;padding:0 0 48px;background:linear-gradient(180deg,transparent 10%,rgba(5,8,16,.82) 100%)}
-.hero-copy h1{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(34px,5.6vw,58px);font-weight:400;letter-spacing:.02em;line-height:1.25}
-.hero-copy p{margin-top:14px;font-size:16px;color:#eee6d6;letter-spacing:.04em}
+.hero img{width:100%;height:min(92vh,860px);object-fit:cover;object-position:center 42%}
+.hero-copy{position:absolute;left:0;right:0;bottom:0;padding:0 0 52px;background:linear-gradient(180deg,transparent 8%,rgba(5,8,16,.84) 100%)}
+.hero-copy h1{font-size:clamp(36px,6vw,62px);font-weight:600;letter-spacing:.06em;line-height:1.3}
+.hero-copy p{margin-top:16px;font-size:17px;color:#eee6d6;letter-spacing:.08em}
 .info{background:var(--black);color:#fff}
 .info .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
 .info dl{padding:22px 0;border-right:1px solid #2a2a2a}
 .info dl:last-child{border-right:0}
-.info dt{font-size:12px;color:#9a9a9a;margin-bottom:4px}
-.info dd{font-size:17px;font-weight:500;letter-spacing:.01em}
-.block{padding:72px 0}
-h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4vw,34px);font-weight:400;letter-spacing:.02em;margin-bottom:20px;line-height:1.4}
-.lead{font-size:16px;max-width:38em;color:var(--ink);line-height:1.9}
+.info dt{font-size:13px;color:#9a9a9a;margin-bottom:4px}
+.info dd{font-size:18px;font-weight:600;letter-spacing:.02em}
+.block{padding:64px 0}
+h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-bottom:18px;line-height:1.45}
+.lead{font-size:17px;max-width:38em;color:var(--ink);line-height:1.95}
 .lead + .lead{margin-top:16px}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
 .table{width:100%;border-collapse:collapse}
-.table th,.table td{text-align:left;padding:13px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:15px}
+.table th,.table td{text-align:left;padding:13px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:16px}
 .table th{width:30%;color:var(--dim);font-weight:600}
 .dark{background:var(--black);color:#f3efe6}
 .dark .lead{color:#d8d2c6}
 .dark .table th{color:#9a9488}
 .dark .table td{border-color:#2c2c2c}
-.film{display:grid;grid-template-columns:repeat(4,1fr);height:min(34vw,340px);background:#111}
-.film figure{margin:0;overflow:hidden;height:100%}
-.film img{width:100%;height:100%;object-fit:cover;display:block}
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:40px}
-.trio figure{overflow:hidden;background:#111;aspect-ratio:3/2}
-.trio img{width:100%;height:100%;object-fit:cover}
-.show-atm{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:32px 0 0}
+
+.wall{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(110px,14vw);gap:4px;padding:4px;background:#111}
+.wall figure{overflow:hidden;background:#000;margin:0;min-height:0}
+.wall img{width:100%;height:100%;object-fit:cover;display:block}
+.wall .big{grid-column:span 3;grid-row:span 2}
+.wall .mid{grid-column:span 2;grid-row:span 2}
+.wall .tall{grid-column:span 2;grid-row:span 2}
+.wall .wide{grid-column:span 3}
+
+.about-shot{margin-top:40px;display:grid;grid-template-columns:1.4fr 1fr;gap:4px}
+.about-shot figure{overflow:hidden;background:#111;margin:0;min-height:420px}
+.about-shot img{width:100%;height:100%;object-fit:cover}
+
+#show{text-align:center}
+#show .lead,#show .prog{margin-left:auto;margin-right:auto}
+.show-atm{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(860px,100%);margin:32px auto 0}
 .show-atm figure{overflow:hidden;background:#111;aspect-ratio:4/3}
 .show-atm img{width:100%;height:100%;object-fit:cover}
-.nightrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:28px}
-.nightrow figure{overflow:hidden;background:#111;aspect-ratio:3/4}
-.nightrow img{width:100%;height:100%;object-fit:cover}
-.way-split{display:grid;grid-template-columns:.85fr 1.15fr;gap:12px;margin-top:24px}
-.way-split .pic img{width:100%;height:420px;object-fit:cover}
-.zgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:220px;gap:10px;margin-top:28px}
+.show-fig.lineup{width:min(520px,92%);margin:40px auto 0;background:#111}
+.show-fig.lineup img{width:100%;height:auto;display:block}
+.days{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:40px auto 0;text-align:left}
+.day{background:#181818;border:1px solid #2c2c2c;padding:18px 16px 16px;min-height:168px}
+.day.wk{background:#1f1a14;border-color:#3a3228}
+.day .when{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid #2c2c2c}
+.day b{font-size:26px;font-weight:600;letter-spacing:.04em;line-height:1}
+.day .yo{font-size:13px;color:#9a9488;letter-spacing:.08em}
+.day dl{margin-top:14px;display:grid;gap:12px}
+.day dt{font-size:11px;color:#8a8478;letter-spacing:.08em}
+.day dd{margin-top:3px;font-size:18px;font-weight:600;letter-spacing:.04em}
+.prog{margin-top:16px;font-size:16px;color:#d8d2c6;letter-spacing:.08em;line-height:1.9}
+
+.zgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(180px,22vw);gap:4px;margin-top:28px}
 .zcard{position:relative;overflow:hidden;background:#000;height:100%;min-height:0}
 .zcard.wide{grid-column:span 2;grid-row:span 2}
 .zcard img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
 .zcard:hover img{transform:scale(1.03)}
-.zcard figcaption{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.86));color:#fff}
-.zcard strong{display:block;font-size:16px;font-weight:700}
+.zcard figcaption{position:absolute;left:0;right:0;bottom:0;padding:36px 14px 12px;background:linear-gradient(transparent,rgba(0,0,0,.86));color:#fff}
+.zcard strong{display:block;font-size:16px;font-weight:600}
 .zcard span{display:block;margin-top:3px;font-size:13px;color:#cfc8bc}
-.wrap.wide{width:min(1680px,calc(100% - 24px))}
+.wrap.wide{width:min(1680px,calc(100% - 16px))}
 .plans{margin-top:28px}
 .plans figure{background:#0b1220;cursor:zoom-in}
 .plans img{width:100%;height:auto;display:block}
-.plans figcaption{font-size:14px;color:var(--dim);padding:12px 2px 0}
+.plans figcaption{font-size:15px;color:var(--dim);padding:12px 2px 0}
 .pic{cursor:zoom-in;margin:0}
-.show-fig{background:#111;overflow:hidden}
-.show-fig img{width:100%;height:100%;object-fit:cover;min-height:300px}
-.show-fig.lineup{width:100%;max-width:none;margin:36px 0 0}
-.show-fig.lineup img{min-height:0;height:auto;display:block}
-.sched-wrap{overflow-x:auto;margin-top:40px}
-.sched{width:100%;border-collapse:collapse;font-size:15px;min-width:560px}
-.sched th,.sched td{text-align:left;padding:13px 12px 13px 0;border-bottom:1px solid #2c2c2c}
-.sched th{color:#9a9488;font-weight:500}
-.prog{margin-top:18px;font-size:15px;color:#d8d2c6;letter-spacing:.04em;line-height:1.9}
-.price-box{border:1px solid var(--ink);padding:28px;background:var(--white)}
-.price-box .n{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1}
-.price-box .n span{font-size:16px;font-weight:600;margin-left:6px}
-.price-box p{margin:14px 0 22px;color:var(--dim)}
-.btn{display:inline-block;background:var(--black);color:#fff;text-decoration:none;padding:12px 18px;font-size:14px;font-weight:700}
+.nightrow{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:4px}
+.nightrow figure{overflow:hidden;background:#111;aspect-ratio:3/4}
+.nightrow img{width:100%;height:100%;object-fit:cover}
+.way-split{display:grid;grid-template-columns:.85fr 1.15fr;gap:8px;margin-top:24px}
+.way-split .pic img{width:100%;height:420px;object-fit:cover}
+.pay-shot{overflow:hidden;background:#111;min-height:320px}
+.pay-shot img{width:100%;height:100%;object-fit:cover;min-height:320px}
+.btn{display:inline-block;background:var(--black);color:#fff;text-decoration:none;padding:12px 18px;font-size:15px;font-weight:600}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);margin-left:8px}
 .dark .btn{background:#fff;color:#111}
 .dark .btn.ghost{background:transparent;color:#fff;border-color:#666}
@@ -111,29 +122,30 @@ h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4v
 .mapwrap iframe{width:100%;height:100%;border:0;display:block}
 .way p.lead{color:#d8d2c6}
 .way .note{margin-top:18px;color:#d8d2c6;font-size:15px}
-.way a{color:#fff;font-weight:700}
-.foot{padding:28px 0 48px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+.way a{color:#fff;font-weight:600}
+.foot{padding:28px 0 48px;border-top:1px solid var(--line);color:var(--dim);font-size:14px}
 .foot .wrap{display:flex;flex-direction:column;gap:8px}
-.foot .legal{font-size:12px;color:#8a8478}
+.foot .legal{font-size:13px;color:#8a8478}
 .menu{display:none}
 #lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:80;align-items:center;justify-content:center;padding:20px}
 #lb.on{display:flex}
 #lb img{max-width:100%;max-height:92vh}
 @media(max-width:800px){
-  .info .wrap,.split,.way-split{grid-template-columns:1fr}
-  .film{grid-template-columns:1fr 1fr;height:auto}
-  .film figure{height:150px}
-  .trio,.show-atm,.nightrow{grid-template-columns:1fr 1fr}
+  .info .wrap,.split,.way-split,.about-shot{grid-template-columns:1fr}
+  .wall{grid-template-columns:repeat(2,1fr);grid-auto-rows:150px}
+  .wall .big,.wall .mid,.wall .tall,.wall .wide{grid-column:span 2;grid-row:span 1}
   .zgrid{grid-template-columns:1fr 1fr;grid-auto-rows:170px}
   .zcard.wide{grid-column:auto;grid-row:auto}
-  .way-split .pic img{height:240px}
+  .nightrow{grid-template-columns:1fr 1fr 1fr}
+  .way-split .pic img,.about-shot figure{height:240px;min-height:240px}
   .info dl{border-right:0;border-bottom:1px solid #2a2a2a}
   .top .navs{display:none}
   .top .navs.open{display:flex;flex-direction:column;position:absolute;top:var(--nav);left:0;right:0;background:#111;padding:16px 20px 20px;gap:14px}
   .menu{display:block;color:#fff;font-size:20px}
   .hero img{height:62vh}
-  .block{padding:52px 0}
+  .block{padding:48px 0}
   .btn.ghost{margin:10px 0 0}
+  .days{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -172,11 +184,17 @@ h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4v
   </div>
 </div>
 
-<div class="film">
-  <figure class="pic" data-src="assets/photos/sc-terminal-night.jpg"><img src="assets/photos/sc-terminal-night.jpg" alt="저녁 서울크루즈 터미널"></figure>
-  <figure class="pic" data-src="assets/photos/sc-sign-night.jpg"><img src="assets/photos/sc-sign-night.jpg" alt="4층 루프탑 서울크루즈 야경"></figure>
-  <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 조명과 한강"></figure>
-  <figure class="pic" data-src="assets/photos/sc-river-night.jpg"><img src="assets/photos/sc-river-night.jpg" alt="한강 야경과 유람선"></figure>
+<div class="wall">
+  <figure class="pic big" data-src="assets/photos/sc-terminal-dusk.jpg"><img src="assets/photos/sc-terminal-dusk.jpg" alt="해질녘 여의도 유람선터미널"></figure>
+  <figure class="pic mid" data-src="assets/photos/sc-sign-night.jpg"><img src="assets/photos/sc-sign-night.jpg" alt="4층 루프탑 서울크루즈"></figure>
+  <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 조명"></figure>
+  <figure class="pic" data-src="assets/photos/sc-look.jpg"><img src="assets/photos/sc-look.jpg" alt="선상에서 본 여의도"></figure>
+  <figure class="pic wide" data-src="assets/photos/sc-fromboat.jpg"><img src="assets/photos/sc-fromboat.jpg" alt="선상에서 본 서울크루즈"></figure>
+  <figure class="pic wide" data-src="assets/photos/sc-river-night.jpg"><img src="assets/photos/sc-river-night.jpg" alt="한강 야경과 유람선"></figure>
+  <figure class="pic" data-src="assets/photos/sc-enter.jpg"><img src="assets/photos/sc-enter.jpg" alt="서울크루즈 입구"></figure>
+  <figure class="pic" data-src="assets/photos/p03.jpg"><img src="assets/photos/p03.jpg" alt="한강에서 본 선착장"></figure>
+  <figure class="pic" data-src="assets/photos/p00.jpg"><img src="assets/photos/p00.jpg" alt="서울크루즈 선착장"></figure>
+  <figure class="pic" data-src="assets/photos/roof.jpg"><img src="assets/photos/roof.jpg" alt="루프탑 건물"></figure>
 </div>
 
 <section class="block" id="about">
@@ -193,12 +211,9 @@ h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4v
       <tr><th>문의</th><td>010-6773-0419</td></tr>
     </table>
   </div>
-  <div class="wrap">
-    <div class="trio">
-      <figure class="pic" data-src="assets/photos/sc-terminal-dusk.jpg"><img src="assets/photos/sc-terminal-dusk.jpg" alt="해질녘 여의도 유람선터미널"></figure>
-      <figure class="pic" data-src="assets/photos/sc-fromboat.jpg"><img src="assets/photos/sc-fromboat.jpg" alt="선상에서 본 서울크루즈"></figure>
-      <figure class="pic" data-src="assets/photos/sc-enter.jpg"><img src="assets/photos/sc-enter.jpg" alt="서울크루즈 입구"></figure>
-    </div>
+  <div class="wrap about-shot">
+    <figure class="pic" data-src="assets/photos/sc-terminal-night.jpg"><img src="assets/photos/sc-terminal-night.jpg" alt="저녁 서울크루즈 터미널"></figure>
+    <figure class="pic" data-src="assets/photos/sc-deck-63.jpg"><img src="assets/photos/sc-deck-63.jpg" alt="선상에서 본 63빌딩"></figure>
   </div>
 </section>
 
@@ -211,36 +226,29 @@ h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4v
       <figure class="pic" data-src="assets/photos/sc-hall.jpg"><img src="assets/photos/sc-hall.jpg" alt="선내 공연 홀"></figure>
       <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 야간 공연 공간"></figure>
     </div>
-    <figure class="show-fig lineup" data-src="assets/photos/dj-lineup.jpg">
-      <img src="assets/photos/dj-lineup.jpg" alt="BPM Entertainment DJ 라인업">
+    <figure class="show-fig lineup pic" data-src="assets/photos/dj-lineup.jpg?v=nobpm">
+      <img src="assets/photos/dj-lineup.jpg?v=nobpm" alt="DJ 라인업">
     </figure>
-    <div class="sched-wrap">
-      <table class="sched">
-        <thead>
-          <tr><th>날짜</th><th>요일</th><th>1부 20:00</th><th>2부 23:00</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>10.1</td><td>목</td><td>리미스트</td><td>캐쉬</td></tr>
-          <tr><td>10.2</td><td>금</td><td>리미스트</td><td>엘리아</td></tr>
-          <tr><td>10.3</td><td>토</td><td>싸이먼</td><td>2AS</td></tr>
-          <tr><td>10.4</td><td>일</td><td>싸이먼</td><td>젤로</td></tr>
-          <tr><td>10.5</td><td>월</td><td>리미스트</td><td>가빈</td></tr>
-          <tr><td>10.6</td><td>화</td><td>싸이먼</td><td>지유</td></tr>
-          <tr><td>10.7</td><td>수</td><td>리미스트</td><td>가빈</td></tr>
-          <tr><td>10.8</td><td>목</td><td>싸이먼</td><td>캐쉬</td></tr>
-          <tr><td>10.9</td><td>금</td><td>리미스트</td><td>2AS</td></tr>
-          <tr><td>10.10</td><td>토</td><td>싸이먼</td><td>허니</td></tr>
-          <tr><td>10.11</td><td>일</td><td>리미스트</td><td>젤로</td></tr>
-          <tr><td>10.12</td><td>월</td><td>리미스트</td><td>가빈</td></tr>
-          <tr><td>10.13</td><td>화</td><td>싸이먼</td><td>캐쉬</td></tr>
-        </tbody>
-      </table>
+    <div class="days">
+      <article class="day"><div class="when"><b>10.1</b><span class="yo">목</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>캐쉬</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.2</b><span class="yo">금</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>엘리아</dd></div></dl></article>
+      <article class="day wk"><div class="when"><b>10.3</b><span class="yo">토</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>2AS</dd></div></dl></article>
+      <article class="day wk"><div class="when"><b>10.4</b><span class="yo">일</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>젤로</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.5</b><span class="yo">월</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>가빈</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.6</b><span class="yo">화</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>지유</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.7</b><span class="yo">수</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>가빈</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.8</b><span class="yo">목</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>캐쉬</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.9</b><span class="yo">금</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>2AS</dd></div></dl></article>
+      <article class="day wk"><div class="when"><b>10.10</b><span class="yo">토</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>허니</dd></div></dl></article>
+      <article class="day wk"><div class="when"><b>10.11</b><span class="yo">일</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>젤로</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.12</b><span class="yo">월</span></div><dl><div><dt>1부 20:00</dt><dd>리미스트</dd></div><div><dt>2부 23:00</dt><dd>가빈</dd></div></dl></article>
+      <article class="day"><div class="when"><b>10.13</b><span class="yo">화</span></div><dl><div><dt>1부 20:00</dt><dd>싸이먼</dd></div><div><dt>2부 23:00</dt><dd>캐쉬</dd></div></dl></article>
     </div>
   </div>
 </section>
 
 <section class="block dark" id="place">
-  <div class="wrap">
+  <div class="wrap wide">
     <h2>현장</h2>
     <p class="lead">선착장과 선상, 4층 루프탑입니다. 축제는 옥상에서 진행합니다.</p>
     <div class="zgrid">
@@ -272,19 +280,29 @@ h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4v
         <img src="assets/photos/sc-hall.jpg" alt="선내 홀과 무대">
         <figcaption><strong>무대</strong><span>공연 홀</span></figcaption>
       </figure>
+      <figure class="zcard" data-src="assets/photos/p01.jpg">
+        <img src="assets/photos/p01.jpg" alt="선내 라운지">
+        <figcaption><strong>라운지</strong><span>홀</span></figcaption>
+      </figure>
+      <figure class="zcard" data-src="assets/photos/p02.jpg">
+        <img src="assets/photos/p02.jpg" alt="선내 무대">
+        <figcaption><strong>무대</strong><span>공연</span></figcaption>
+      </figure>
       <figure class="zcard" data-src="assets/photos/sc-gulls.jpg">
         <img src="assets/photos/sc-gulls.jpg" alt="선상 갈매기">
         <figcaption><strong>선상</strong><span>한강</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/sc-deck-63.jpg">
-        <img src="assets/photos/sc-deck-63.jpg" alt="선상에서 본 63빌딩">
-        <figcaption><strong>데크</strong><span>63스퀘어</span></figcaption>
+      <figure class="zcard" data-src="assets/photos/p09.jpg">
+        <img src="assets/photos/p09.jpg" alt="선상 데크">
+        <figcaption><strong>데크</strong><span>한강 위</span></figcaption>
       </figure>
     </div>
     <div class="nightrow">
       <figure class="pic" data-src="assets/photos/sc-bridge.jpg"><img src="assets/photos/sc-bridge.jpg" alt="한강대교 야경"></figure>
       <figure class="pic" data-src="assets/photos/sc-63.jpg"><img src="assets/photos/sc-63.jpg" alt="63스퀘어 노을"></figure>
       <figure class="pic" data-src="assets/photos/sc-fountain.jpg"><img src="assets/photos/sc-fountain.jpg" alt="한강 분수"></figure>
+      <figure class="pic" data-src="assets/photos/p05.jpg"><img src="assets/photos/p05.jpg" alt="한강 야경"></figure>
+      <figure class="pic" data-src="assets/photos/p08.jpg"><img src="assets/photos/p08.jpg" alt="여의도 야경"></figure>
       <figure class="pic" data-src="assets/photos/sc-bridge-night.jpg"><img src="assets/photos/sc-bridge-night.jpg" alt="한강 다리 야경"></figure>
     </div>
   </div>
@@ -321,7 +339,12 @@ h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4v
     </div>
     <div>
       <h2>연중 대관</h2>
-      <p class="lead">4층 루프탑은 365일 운영합니다. 부스 입점, 기업 행사, 공연 대관은 010-6773-0419로 문의하시면 됩니다.</p>
+      <table class="table">
+        <tr><th>운영</th><td>365일</td></tr>
+        <tr><th>장소</th><td>4층 루프탑</td></tr>
+        <tr><th>대상</th><td>부스 입점 · 기업 행사 · 공연 대관</td></tr>
+        <tr><th>문의</th><td>010-6773-0419</td></tr>
+      </table>
     </div>
   </div>
 </section>
@@ -362,7 +385,7 @@ const navs=document.getElementById('navs');
 document.getElementById('menu').onclick=()=>navs.classList.toggle('open');
 navs.querySelectorAll('a').forEach(a=>a.onclick=()=>navs.classList.remove('open'));
 const lb=document.getElementById('lb');
-document.querySelectorAll('.plans figure, .zcard[data-src], .show-fig[data-src], .pic[data-src]').forEach(f=>{
+document.querySelectorAll('.plans figure, .zcard[data-src], .pic[data-src], .show-fig[data-src]').forEach(f=>{
   f.style.cursor='zoom-in';
   f.onclick=()=>{lb.querySelector('img').src=f.dataset.src;lb.classList.add('on')}
 });
