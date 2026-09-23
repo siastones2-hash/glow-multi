@@ -83,6 +83,7 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
 .show-fig.lineup{width:min(920px,100%);margin:40px auto 0;background:#111}
 .show-fig.lineup img{width:100%;height:auto;display:block}
 .days{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:48px auto 0;text-align:left}
+.days .day:nth-child(11){grid-column:2}
 .day{background:#141414;border:1px solid #2e2e2e;overflow:hidden}
 .day.wk{border-color:#4a3f32}
 .day .when{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;background:#0c0c0c}
@@ -149,6 +150,7 @@ h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:.06em;margin-
   .block{padding:48px 0}
   .btn.ghost{margin:10px 0 0}
   .days{grid-template-columns:1fr 1fr}
+  .days .day:nth-child(11){grid-column:auto}
 }
 </style>
 </head>
