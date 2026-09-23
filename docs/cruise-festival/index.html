@@ -14,7 +14,7 @@
 <meta property="og:image" content="https://siastones2-hash.github.io/glow-multi/cruise-festival/assets/photos/night-hero.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23111111' width='32' height='32'/%3E%3Ctext x='6' y='22' fill='%23fff' font-size='14' font-family='sans-serif'%3E4F%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <style>
 :root{
   --ink:#171717;
@@ -27,14 +27,14 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;background:var(--paper);color:var(--ink);line-height:1.65;word-break:keep-all;-webkit-font-smoothing:antialiased;font-size:16px}
+body{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;background:var(--paper);color:var(--ink);line-height:1.8;letter-spacing:.01em;word-break:keep-all;-webkit-font-smoothing:antialiased;font-size:16px}
 a{color:inherit}
 img{max-width:100%;display:block}
 button{font-family:inherit;cursor:pointer;border:0;background:none}
 .wrap{width:min(1080px,calc(100% - 40px));margin:0 auto}
 nav.top{position:sticky;top:0;z-index:50;height:var(--nav);background:var(--black);color:#fff;display:flex;align-items:center}
 nav.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;width:min(1080px,calc(100% - 32px))}
-.brand{font-weight:800;font-size:15px;letter-spacing:-.02em;text-decoration:none}
+.brand{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-weight:400;font-size:16px;letter-spacing:.02em;text-decoration:none}
 .top .navs{display:flex;gap:28px;font-size:13px;margin-left:auto;margin-right:20px}
 .top .navs a{color:#cfcfcf;text-decoration:none}
 .top .navs a:hover{color:#fff}
@@ -42,18 +42,18 @@ nav.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:
 .hero{position:relative;color:#fff;background:#050308}
 .hero img{width:100%;height:min(86vh,780px);object-fit:cover;object-position:center 42%}
 .hero-copy{position:absolute;left:0;right:0;bottom:0;padding:0 0 48px;background:linear-gradient(180deg,transparent 10%,rgba(5,8,16,.82) 100%)}
-.hero-copy h1{font-size:clamp(36px,6vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1.1}
-.hero-copy p{margin-top:10px;font-size:16px;color:#eee6d6}
+.hero-copy h1{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(34px,5.6vw,58px);font-weight:400;letter-spacing:.02em;line-height:1.25}
+.hero-copy p{margin-top:14px;font-size:16px;color:#eee6d6;letter-spacing:.04em}
 .info{background:var(--black);color:#fff}
 .info .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
 .info dl{padding:22px 0;border-right:1px solid #2a2a2a}
 .info dl:last-child{border-right:0}
 .info dt{font-size:12px;color:#9a9a9a;margin-bottom:4px}
-.info dd{font-size:18px;font-weight:700;letter-spacing:-.03em}
+.info dd{font-size:17px;font-weight:500;letter-spacing:.01em}
 .block{padding:72px 0}
-h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin-bottom:16px;line-height:1.25}
-.lead{font-size:17px;max-width:38em;color:var(--ink)}
-.lead + .lead{margin-top:14px}
+h2{font-family:'Gowun Dodum','Noto Sans KR',sans-serif;font-size:clamp(24px,3.4vw,34px);font-weight:400;letter-spacing:.02em;margin-bottom:20px;line-height:1.4}
+.lead{font-size:16px;max-width:38em;color:var(--ink);line-height:1.9}
+.lead + .lead{margin-top:16px}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{text-align:left;padding:13px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:15px}
@@ -62,28 +62,43 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
 .dark .lead{color:#d8d2c6}
 .dark .table th{color:#9a9488}
 .dark .table td{border-color:#2c2c2c}
-.zgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:240px;gap:10px;margin-top:28px}
+.film{display:grid;grid-template-columns:repeat(4,1fr);height:min(34vw,340px);background:#111}
+.film figure{margin:0;overflow:hidden;height:100%}
+.film img{width:100%;height:100%;object-fit:cover;display:block}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:40px}
+.trio figure{overflow:hidden;background:#111;aspect-ratio:3/2}
+.trio img{width:100%;height:100%;object-fit:cover}
+.show-atm{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:32px 0 0}
+.show-atm figure{overflow:hidden;background:#111;aspect-ratio:4/3}
+.show-atm img{width:100%;height:100%;object-fit:cover}
+.nightrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:28px}
+.nightrow figure{overflow:hidden;background:#111;aspect-ratio:3/4}
+.nightrow img{width:100%;height:100%;object-fit:cover}
+.way-split{display:grid;grid-template-columns:.85fr 1.15fr;gap:12px;margin-top:24px}
+.way-split .pic img{width:100%;height:420px;object-fit:cover}
+.zgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:220px;gap:10px;margin-top:28px}
 .zcard{position:relative;overflow:hidden;background:#000;height:100%;min-height:0}
 .zcard.wide{grid-column:span 2;grid-row:span 2}
 .zcard img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
 .zcard:hover img{transform:scale(1.03)}
 .zcard figcaption{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.86));color:#fff}
-.zcard strong{display:block;font-size:16px;font-weight:800}
+.zcard strong{display:block;font-size:16px;font-weight:700}
 .zcard span{display:block;margin-top:3px;font-size:13px;color:#cfc8bc}
 .wrap.wide{width:min(1680px,calc(100% - 24px))}
 .plans{margin-top:28px}
 .plans figure{background:#0b1220;cursor:zoom-in}
 .plans img{width:100%;height:auto;display:block}
 .plans figcaption{font-size:14px;color:var(--dim);padding:12px 2px 0}
+.pic{cursor:zoom-in;margin:0}
 .show-fig{background:#111;overflow:hidden}
 .show-fig img{width:100%;height:100%;object-fit:cover;min-height:300px}
-.show-fig.lineup{max-width:720px;margin:28px 0 0}
-.show-fig.lineup img{min-height:0;height:auto}
-.sched-wrap{overflow-x:auto;margin-top:28px}
+.show-fig.lineup{width:100%;max-width:none;margin:36px 0 0}
+.show-fig.lineup img{min-height:0;height:auto;display:block}
+.sched-wrap{overflow-x:auto;margin-top:40px}
 .sched{width:100%;border-collapse:collapse;font-size:15px;min-width:560px}
-.sched th,.sched td{text-align:left;padding:11px 8px 11px 0;border-bottom:1px solid #2c2c2c}
-.sched th{color:#9a9488;font-weight:600}
-.prog{margin-top:14px;font-size:15px;color:#d8d2c6}
+.sched th,.sched td{text-align:left;padding:13px 12px 13px 0;border-bottom:1px solid #2c2c2c}
+.sched th{color:#9a9488;font-weight:500}
+.prog{margin-top:18px;font-size:15px;color:#d8d2c6;letter-spacing:.04em;line-height:1.9}
 .price-box{border:1px solid var(--ink);padding:28px;background:var(--white)}
 .price-box .n{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1}
 .price-box .n span{font-size:16px;font-weight:600;margin-left:6px}
@@ -92,7 +107,7 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);margin-left:8px}
 .dark .btn{background:#fff;color:#111}
 .dark .btn.ghost{background:transparent;color:#fff;border-color:#666}
-.mapwrap{margin-top:24px;height:420px;background:#111;border:1px solid #2c2c2c}
+.mapwrap{margin-top:0;height:420px;background:#111;border:1px solid #2c2c2c}
 .mapwrap iframe{width:100%;height:100%;border:0;display:block}
 .way p.lead{color:#d8d2c6}
 .way .note{margin-top:18px;color:#d8d2c6;font-size:15px}
@@ -105,9 +120,13 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
 #lb.on{display:flex}
 #lb img{max-width:100%;max-height:92vh}
 @media(max-width:800px){
-  .info .wrap,.split{grid-template-columns:1fr}
+  .info .wrap,.split,.way-split{grid-template-columns:1fr}
+  .film{grid-template-columns:1fr 1fr;height:auto}
+  .film figure{height:150px}
+  .trio,.show-atm,.nightrow{grid-template-columns:1fr 1fr}
   .zgrid{grid-template-columns:1fr 1fr;grid-auto-rows:170px}
   .zcard.wide{grid-column:auto;grid-row:auto}
+  .way-split .pic img{height:240px}
   .info dl{border-right:0;border-bottom:1px solid #2a2a2a}
   .top .navs{display:none}
   .top .navs.open{display:flex;flex-direction:column;position:absolute;top:var(--nav);left:0;right:0;background:#111;padding:16px 20px 20px;gap:14px}
@@ -153,6 +172,13 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
   </div>
 </div>
 
+<div class="film">
+  <figure class="pic" data-src="assets/photos/sc-terminal-night.jpg"><img src="assets/photos/sc-terminal-night.jpg" alt="저녁 서울크루즈 터미널"></figure>
+  <figure class="pic" data-src="assets/photos/sc-sign-night.jpg"><img src="assets/photos/sc-sign-night.jpg" alt="4층 루프탑 서울크루즈 야경"></figure>
+  <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 조명과 한강"></figure>
+  <figure class="pic" data-src="assets/photos/sc-river-night.jpg"><img src="assets/photos/sc-river-night.jpg" alt="한강 야경과 유람선"></figure>
+</div>
+
 <section class="block" id="about">
   <div class="wrap split">
     <div>
@@ -167,6 +193,13 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
       <tr><th>문의</th><td>010-6773-0419</td></tr>
     </table>
   </div>
+  <div class="wrap">
+    <div class="trio">
+      <figure class="pic" data-src="assets/photos/sc-terminal-dusk.jpg"><img src="assets/photos/sc-terminal-dusk.jpg" alt="해질녘 여의도 유람선터미널"></figure>
+      <figure class="pic" data-src="assets/photos/sc-fromboat.jpg"><img src="assets/photos/sc-fromboat.jpg" alt="선상에서 본 서울크루즈"></figure>
+      <figure class="pic" data-src="assets/photos/sc-enter.jpg"><img src="assets/photos/sc-enter.jpg" alt="서울크루즈 입구"></figure>
+    </div>
+  </div>
 </section>
 
 <section class="block dark" id="show">
@@ -174,6 +207,10 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
     <h2>공연</h2>
     <p class="lead">매일 오후 6시–새벽 2시. DJ는 1부 20:00, 2부 23:00입니다.</p>
     <p class="prog">DJ · 미스트 · 전자오르간 · 마술쇼 · 버스킹 · 푸드&amp;BAR</p>
+    <div class="show-atm">
+      <figure class="pic" data-src="assets/photos/sc-hall.jpg"><img src="assets/photos/sc-hall.jpg" alt="선내 공연 홀"></figure>
+      <figure class="pic" data-src="assets/photos/sc-rooftop-lights.jpg"><img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 야간 공연 공간"></figure>
+    </div>
     <figure class="show-fig lineup" data-src="assets/photos/dj-lineup.jpg">
       <img src="assets/photos/dj-lineup.jpg" alt="BPM Entertainment DJ 라인업">
     </figure>
@@ -205,32 +242,50 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
 <section class="block dark" id="place">
   <div class="wrap">
     <h2>현장</h2>
-    <p class="lead">선착장과 선상, 무대입니다. 축제는 4층 루프탑에서 진행합니다.</p>
+    <p class="lead">선착장과 선상, 4층 루프탑입니다. 축제는 옥상에서 진행합니다.</p>
     <div class="zgrid">
-      <figure class="zcard wide" data-src="assets/photos/p03.jpg">
-        <img src="assets/photos/p03.jpg" alt="한강에서 본 서울크루즈 선착장">
-        <figcaption><strong>여의도 유람선터미널</strong><span>여의도한강공원길 231</span></figcaption>
+      <figure class="zcard wide" data-src="assets/photos/sc-sign-night.jpg">
+        <img src="assets/photos/sc-sign-night.jpg" alt="밤 서울크루즈 4층 루프탑">
+        <figcaption><strong>4층 루프탑</strong><span>서울크루즈</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/p00.jpg">
-        <img src="assets/photos/p00.jpg" alt="서울크루즈 선착장 건물">
-        <figcaption><strong>선착장</strong><span>4층 루프탑</span></figcaption>
+      <figure class="zcard" data-src="assets/photos/sc-rooftop-lights.jpg">
+        <img src="assets/photos/sc-rooftop-lights.jpg" alt="루프탑 조명">
+        <figcaption><strong>루프탑</strong><span>한강 위</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/p02.jpg">
-        <img src="assets/photos/p02.jpg" alt="선내 홀과 무대">
-        <figcaption><strong>무대</strong><span>공연 홀</span></figcaption>
+      <figure class="zcard" data-src="assets/photos/sc-terminal-night.jpg">
+        <img src="assets/photos/sc-terminal-night.jpg" alt="저녁 터미널">
+        <figcaption><strong>터미널</strong><span>여의도</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/p09.jpg">
-        <img src="assets/photos/p09.jpg" alt="선상 데크">
-        <figcaption><strong>선상</strong><span>한강 위</span></figcaption>
+      <figure class="zcard" data-src="assets/photos/sc-river-night.jpg">
+        <img src="assets/photos/sc-river-night.jpg" alt="한강 야경과 유람선">
+        <figcaption><strong>한강</strong><span>야경</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/p01.jpg">
-        <img src="assets/photos/p01.jpg" alt="선내 라운지">
+      <figure class="zcard" data-src="assets/photos/sc-look.jpg">
+        <img src="assets/photos/sc-look.jpg" alt="선상에서 본 여의도">
+        <figcaption><strong>선상</strong><span>여의도</span></figcaption>
+      </figure>
+      <figure class="zcard" data-src="assets/photos/sc-lounge.jpg">
+        <img src="assets/photos/sc-lounge.jpg" alt="선내 라운지">
         <figcaption><strong>라운지</strong><span>바</span></figcaption>
       </figure>
-      <figure class="zcard" data-src="assets/photos/p05.jpg">
-        <img src="assets/photos/p05.jpg" alt="한강 야경">
-        <figcaption><strong>한강 야경</strong><span>63스퀘어</span></figcaption>
+      <figure class="zcard" data-src="assets/photos/sc-hall.jpg">
+        <img src="assets/photos/sc-hall.jpg" alt="선내 홀과 무대">
+        <figcaption><strong>무대</strong><span>공연 홀</span></figcaption>
       </figure>
+      <figure class="zcard" data-src="assets/photos/sc-gulls.jpg">
+        <img src="assets/photos/sc-gulls.jpg" alt="선상 갈매기">
+        <figcaption><strong>선상</strong><span>한강</span></figcaption>
+      </figure>
+      <figure class="zcard" data-src="assets/photos/sc-deck-63.jpg">
+        <img src="assets/photos/sc-deck-63.jpg" alt="선상에서 본 63빌딩">
+        <figcaption><strong>데크</strong><span>63스퀘어</span></figcaption>
+      </figure>
+    </div>
+    <div class="nightrow">
+      <figure class="pic" data-src="assets/photos/sc-bridge.jpg"><img src="assets/photos/sc-bridge.jpg" alt="한강대교 야경"></figure>
+      <figure class="pic" data-src="assets/photos/sc-63.jpg"><img src="assets/photos/sc-63.jpg" alt="63스퀘어 노을"></figure>
+      <figure class="pic" data-src="assets/photos/sc-fountain.jpg"><img src="assets/photos/sc-fountain.jpg" alt="한강 분수"></figure>
+      <figure class="pic" data-src="assets/photos/sc-bridge-night.jpg"><img src="assets/photos/sc-bridge-night.jpg" alt="한강 다리 야경"></figure>
     </div>
   </div>
 </section>
@@ -275,12 +330,15 @@ h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;margin
   <div class="wrap">
     <h2>오는 길</h2>
     <p class="lead">서울특별시 영등포구 여의도한강공원길 231 · 여의도 유람선터미널<br>5호선 여의나루역 2번 출구, 한강 쪽으로 도보 3분</p>
-    <div class="mapwrap">
-      <iframe
-        title="여의도 유람선터미널 지도"
-        src="https://www.google.com/maps?q=서울특별시+영등포구+여의도한강공원길+231+여의도+유람선터미널&hl=ko&z=16&output=embed"
-        allowfullscreen
-        loading="lazy"></iframe>
+    <div class="way-split">
+      <figure class="pic" data-src="assets/photos/sc-enter.jpg"><img src="assets/photos/sc-enter.jpg" alt="서울크루즈 입구"></figure>
+      <div class="mapwrap">
+        <iframe
+          title="여의도 유람선터미널 지도"
+          src="https://www.google.com/maps?q=서울특별시+영등포구+여의도한강공원길+231+여의도+유람선터미널&hl=ko&z=16&output=embed"
+          allowfullscreen
+          loading="lazy"></iframe>
+      </div>
     </div>
     <p class="note">
       <a href="https://map.naver.com/p/search/서울특별시 영등포구 여의도한강공원길 231 여의도유람선터미널" target="_blank" rel="noopener">네이버 지도</a>
@@ -304,7 +362,7 @@ const navs=document.getElementById('navs');
 document.getElementById('menu').onclick=()=>navs.classList.toggle('open');
 navs.querySelectorAll('a').forEach(a=>a.onclick=()=>navs.classList.remove('open'));
 const lb=document.getElementById('lb');
-document.querySelectorAll('.plans figure, .zcard[data-src], .show-fig[data-src]').forEach(f=>{
+document.querySelectorAll('.plans figure, .zcard[data-src], .show-fig[data-src], .pic[data-src]').forEach(f=>{
   f.style.cursor='zoom-in';
   f.onclick=()=>{lb.querySelector('img').src=f.dataset.src;lb.classList.add('on')}
 });
