@@ -4,6 +4,7 @@ glow-multi/ssh_keys/id_ed25519
 .env.*
 node_modules/
 .DS_Store
+docs/cruise-festival/assets/plan-orig.jpg
 .claude-export-tmp/
 data/naver_reviews/*.json
 !data/naver_reviews/.gitkeep
