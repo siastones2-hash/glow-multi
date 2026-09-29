@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Threads Auto</title>
+<style>
+:root{
+  --bg:#0f1117;--card:#1a1d27;--card2:#222633;
+  --tx:#eef0f6;--muted:#8b92a8;--line:#2e3344;
+  --p:#6366f1;--p2:#818cf8;--ok:#22c55e;--wn:#f59e0b;--er:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:24px 16px 80px}
+header{text-align:center;margin-bottom:32px}
+header h1{font-size:1.5rem;font-weight:700;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.9rem;margin-top:6px}
+
+.steps{display:flex;gap:8px;margin-bottom:28px;overflow-x:auto;padding-bottom:4px}
+.step-dot{
+  flex:1;min-width:72px;text-align:center;padding:10px 6px;border-radius:12px;
+  background:var(--card);border:1px solid var(--line);font-size:.72rem;color:var(--muted);
+  cursor:pointer;transition:.2s;
+}
+.step-dot.active{border-color:var(--p);color:var(--p2);background:rgba(99,102,241,.12)}
+.step-dot.done{border-color:var(--ok);color:var(--ok)}
+.step-dot .num{display:block;font-size:1rem;font-weight:700;margin-bottom:2px}
+
+.panel{display:none;animation:fade .25s ease}
+.panel.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+.card h2{font-size:1rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h2 span{font-size:1.2rem}
+
+.checklist{list-style:none}
+.checklist li{
+  display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--line);font-size:.92rem;
+}
+.checklist li:last-child{border:none}
+.badge{
+  font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:999px;
+  background:var(--card2);color:var(--muted);white-space:nowrap;
+}
+.badge.ok{background:rgba(34,197,94,.15);color:var(--ok)}
+.badge.no{background:rgba(239,68,68,.12);color:var(--er)}
+.badge.mid{background:rgba(245,158,11,.15);color:var(--wn)}
+
+.biz-grid{display:grid;gap:10px}
+.biz{
+  display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;
+  background:var(--card2);border:1px solid var(--line);cursor:pointer;transition:.15s;
+}
+.biz:hover,.biz.selected{border-color:var(--p);background:rgba(99,102,241,.08)}
+.biz .emoji{font-size:1.6rem}
+.biz .name{font-weight:600;font-size:.95rem}
+.biz .sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+.biz.next-ring{outline:2px solid var(--p);outline-offset:2px}
+
+.preview-box{
+  background:#0a0c12;border:1px solid var(--line);border-radius:14px;
+  padding:20px;font-size:.95rem;white-space:pre-wrap;min-height:140px;line-height:1.65;
+}
+.meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--muted)}
+.meta strong{color:var(--tx)}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px 20px;border-radius:12px;border:none;font-size:.92rem;font-weight:600;
+  cursor:pointer;transition:.15s;width:100%;margin-top:10px;
+}
+.btn-primary{background:var(--p);color:#fff}
+.btn-primary:hover{background:var(--p2)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--muted)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-row .btn{margin-top:0}
+
+.queue-item{
+  padding:14px;border-radius:12px;background:var(--card2);border:1px solid var(--line);
+  margin-bottom:10px;font-size:.85rem;
+}
+.queue-item .status{font-size:.7rem;font-weight:700;text-transform:uppercase;margin-bottom:6px}
+.queue-item.pending .status{color:var(--wn)}
+.queue-item.published .status{color:var(--ok)}
+.queue-item .text{color:var(--muted);white-space:pre-wrap;margin-top:8px;max-height:80px;overflow:hidden}
+
+.log-box{
+  background:#0a0c12;border-radius:12px;padding:12px;font-family:ui-monospace,monospace;
+  font-size:.72rem;color:var(--muted);max-height:200px;overflow-y:auto;line-height:1.6;
+}
+
+.hint{font-size:.82rem;color:var(--muted);margin-top:12px;padding:12px;background:rgba(99,102,241,.08);border-radius:10px;border:1px solid rgba(99,102,241,.2)}
+
+.connect-steps{display:flex;flex-direction:column;gap:14px}
+.connect-step{display:flex;gap:14px;padding:14px;background:var(--card2);border-radius:12px;border:1px solid var(--line)}
+.connect-num{
+  width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;
+}
+.connect-sub{font-size:.78rem;color:var(--muted);margin:4px 0 8px}
+.redirect-uri{
+  display:block;padding:8px 10px;background:#0a0c12;border-radius:8px;
+  font-size:.75rem;color:var(--p2);margin-bottom:10px;word-break:break-all;
+}
+.field-label{display:block;font-size:.75rem;color:var(--muted);margin:8px 0 4px}
+.field{
+  width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+  background:#0a0c12;color:var(--tx);font-size:.88rem;margin-bottom:6px;
+}
+.btn-sm{width:auto;padding:8px 16px;margin-top:6px;font-size:.82rem}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--card2);border:1px solid var(--line);padding:12px 20px;border-radius:12px;
+  font-size:.88rem;opacity:0;pointer-events:none;transition:.3s;z-index:99;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Threads Auto</h1>
+    <p>📓 익명 일기 · 상호·실명 X · 하루 3~5</p>
+  </header>
+
+  <div class="steps" id="steps">
+    <div class="step-dot active" data-step="0"><span class="num">1</span>상태</div>
+    <div class="step-dot" data-step="1"><span class="num">2</span>사업</div>
+    <div class="step-dot" data-step="2"><span class="num">3</span>글 생성</div>
+    <div class="step-dot" data-step="3"><span class="num">4</span>발행</div>
+    <div class="step-dot" data-step="4"><span class="num">5</span>큐·로그</div>
+    <div class="step-dot" data-step="5"><span class="num">6</span>댓글</div>
+  </div>
+
+  <!-- 1. 상태 -->
+  <section class="panel show" id="panel-0">
+    <div class="card" style="border-color:rgba(34,197,94,.35)">
+      <h2><span>⚡</span> 빠른 시작</h2>
+      <ol style="font-size:.88rem;color:var(--muted);padding-left:18px;line-height:1.8;margin-bottom:14px">
+        <li><strong style="color:var(--tx)">threads-auto.command</strong> 더블클릭 → 이 화면</li>
+        <li><strong style="color:var(--tx)">오늘 글 만들기</strong> → 확인 → 발행</li>
+        <li>매일 자동: <strong style="color:var(--tx)">자동발행-켜기.command</strong> (선택)</li>
+      </ol>
+      <button class="btn btn-primary" onclick="quickToday()">📓 일기 한 편 만들기</button>
+      <button class="btn btn-ghost" onclick="fillDiary()">📅 내일~ 일기 큐 채우기</button>
+      <p class="connect-sub" style="margin-top:10px">상호·실명 없이 · 일의 결만 · 하루 3~5개</p>
+    </div>
+    <div class="card" id="trends-card">
+      <h2><span>🔥</span> 지금 한국 검색 트렌드</h2>
+      <div id="trends-list" style="font-size:.85rem;color:var(--muted)">불러오는 중…</div>
+    </div>
+    <div class="card">
+      <h2><span>📍</span> 현재 단계</h2>
+      <p id="phase-info" style="font-size:.92rem;color:var(--muted)">불러오는 중…</p>
+    </div>
+    <div class="card" style="border-color:rgba(99,102,241,.4)">
+      <h2><span>🧵</span> 내 Threads 연결 <small style="font-weight:400;color:var(--muted);font-size:.75rem">— Meta 앱 필요 없음</small></h2>
+      <p style="font-size:.9rem;margin-bottom:16px;line-height:1.6">
+        아래 버튼 한 번 → 브라우저에서 <strong>본인 스레드 로그인</strong> → Enter<br>
+        끝. 제가 나머지는 자동으로 저장합니다.
+      </p>
+      <button class="btn btn-primary" id="btn-easy-login" onclick="easyLogin()">🧵 스레드 로그인 창 열기</button>
+      <p class="connect-sub" id="connected-as" style="margin-top:12px;color:var(--ok);display:none;font-size:.9rem"></p>
+      <p class="connect-sub" id="login-wait" style="margin-top:8px;color:var(--wn);display:none">로그인 창에서 로그인 후 Enter → 이 페이지 새로고침</p>
+    </div>
+    <div class="card">
+      <h2><span>🔌</span> 연결 상태</h2>
+      <ul class="checklist" id="checklist"></ul>
+    </div>
+    <details class="card" style="padding:16px">
+      <summary style="cursor:pointer;font-size:.88rem;color:var(--muted)">고급: Meta API 연동 (개발자용 · 건너뛰어도 됨)</summary>
+      <div style="margin-top:12px">
+        <code class="redirect-uri" id="redirect-uri">http://localhost:3847/api/auth/callback</code>
+        <input class="field" id="inp-app-id" placeholder="App ID">
+        <input class="field" id="inp-app-secret" type="password" placeholder="App Secret">
+        <button class="btn btn-ghost btn-sm" onclick="saveMeta()">저장</button>
+        <button class="btn btn-ghost btn-sm" onclick="connectThreads()">API로 연결</button>
+      </div>
+    </details>
+    <div class="card">
+      <h2><span>📋</span> 다음 자동 발행</h2>
+      <p id="next-info" style="font-size:.92rem;color:var(--muted)">불러오는 중…</p>
+    </div>
+    <div class="card">
+      <h2><span>⏰</span> 자동 발행 시각 (KST)</h2>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px">자동발행-켜기.command 켰을 때 이 시각에 1개 올림</p>
+      <div class="btn-row">
+        <div>
+          <label class="field-label">시</label>
+          <input class="field" id="set-hour" type="number" min="0" max="23" value="9">
+        </div>
+        <div>
+          <label class="field-label">분</label>
+          <input class="field" id="set-minute" type="number" min="0" max="59" value="0">
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="saveSettings()">시각 저장</button>
+      <div style="margin-top:14px">
+        <label class="field-label">글 모드</label>
+        <select class="field" id="set-content-mode" onchange="saveSettings()">
+          <option value="diary">📓 일기 (하루 3~5)</option>
+          <option value="trend">🔥 트렌드 (핫한 검색어)</option>
+          <option value="rotate">🏢 사업 로테이션</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-step1-next" onclick="go(1)">다음: 사업 확인 →</button>
+    <div class="hint" id="step1-hint">Threads 연결이 끝나면 2단계로 넘어가서 글 생성·발행 테스트를 하세요.</div>
+  </section>
+
+  <!-- 2. 사업 -->
+  <section class="panel" id="panel-1">
+    <div class="card">
+      <h2><span>🏢</span> 사업 로테이션 (1계정)</h2>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Phase에 맞는 주제만 표시. 클릭하면 그 주제로 글 생성.</p>
+      <div class="biz-grid" id="biz-grid"></div>
+    </div>
+    <button class="btn btn-primary" onclick="go(2)">다음: 글 생성 →</button>
+  </section>
+
+  <!-- 3. 글 생성 -->
+  <section class="panel" id="panel-2">
+    <div class="card">
+      <h2><span>✍️</span> 글 미리보기</h2>
+      <div class="preview-box" id="preview-text">「글 생성하기」 버튼을 눌러보세요</div>
+      <div class="meta" id="preview-meta"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="generatePreview()">🔄 글 생성하기</button>
+      <button class="btn btn-ghost" onclick="editPreview()">✏️ 직접 수정</button>
+    </div>
+    <button class="btn btn-primary" id="btn-to-publish" disabled onclick="go(3)">다음: 발행 확인 →</button>
+  </section>
+
+  <!-- 4. 발행 -->
+  <section class="panel" id="panel-3">
+    <div class="card">
+      <h2><span>🚀</span> Threads에 올리기</h2>
+      <div class="preview-box" id="publish-text"></div>
+      <div class="meta" id="publish-meta"></div>
+    </div>
+    <button class="btn btn-primary" id="btn-publish" onclick="doPublish()">지금 Threads에 발행</button>
+    <button class="btn btn-ghost" onclick="queueAdd()">예약 큐에 넣기 (나중에 발행)</button>
+    <div class="hint" id="publish-hint">Threads 연결이 안 되어 있으면 「예약 큐에 넣기」로 먼저 쌓아두세요.</div>
+  </section>
+
+  <!-- 5. 큐·로그 -->
+  <section class="panel" id="panel-4">
+    <div class="card">
+      <h2><span>📅</span> 예약 큐</h2>
+      <div id="queue-list"></div>
+      <button class="btn btn-ghost" onclick="publishDue()">예약 시간 지난 글 발행</button>
+      <button class="btn btn-ghost" onclick="fillDiary()">📓 일기 큐 더 채우기</button>
+    </div>
+    <div class="card">
+      <h2><span>📜</span> 최근 로그</h2>
+      <div class="log-box" id="log-box"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="refreshAll()">새로고침</button>
+  </section>
+
+  <!-- 6. 댓글 -->
+  <section class="panel" id="panel-5">
+    <div class="card">
+      <h2><span>💬</span> 댓글 → 답글 초안</h2>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:12px">
+        동기화로 초안만 만듭니다. <strong style="color:var(--tx)">전송은 확인 후</strong> 눌러주세요. (맞팔 자동 X)
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="syncComments()">댓글 동기화</button>
+        <button class="btn btn-ghost" onclick="loadComments()">새로고침</button>
+      </div>
+      <p id="comments-meta" class="connect-sub" style="margin-top:10px"></p>
+      <div id="comments-list" style="margin-top:14px"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let step = 0;
+let status = {};
+let config = {};
+let selectedBiz = null;
+let draft = null;
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function go(n) {
+  step = n;
+  $$('.panel').forEach((p, i) => p.classList.toggle('show', i === n));
+  $$('.step-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === n);
+    d.classList.toggle('done', i < n);
+  });
+  if (n === 3 && draft) {
+    $('#publish-text').textContent = draft.text;
+    $('#publish-meta').innerHTML = `<span><strong>${draft.emoji} ${draft.businessName}</strong></span><span>${draft.chars}자</span><span>${draft.mode === 'ai' ? 'AI 생성' : '템플릿'}</span>`;
+    $('#btn-publish').disabled = !status.threads?.ready;
+  }
+  if (n === 4) loadQueue();
+  if (n === 5) loadComments();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+$$('.step-dot').forEach((d) => d.addEventListener('click', () => go(+d.dataset.step)));
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+async function loadTrends() {
+  try {
+    const r = await api('/api/trends');
+    const el = $('#trends-list');
+    if (!r.items?.length) {
+      el.textContent = '트렌드 불러오기 실패 — 나중에 다시';
+      return;
+    }
+    el.innerHTML = r.items.map((t) =>
+      `<div style="padding:6px 0;border-bottom:1px solid var(--line)">
+        ${t.ok ? '✅' : '⏭'} <strong style="color:var(--tx)">${t.topic}</strong>
+        ${t.headline ? `<div style="font-size:.78rem;margin-top:2px">${t.headline.slice(0, 50)}…</div>` : ''}
+      </div>`).join('');
+  } catch { $('#trends-list').textContent = '(트렌드 로드 실패)'; }
+}
+
+async function refreshAll() {
+  status = await api('/api/status');
+  config = await api('/api/config');
+  renderStatus();
+  renderBiz();
+  loadTrends();
+  const logs = await api('/api/logs');
+  $('#log-box').textContent = logs.lines.length ? logs.lines.join('\n') : '(로그 없음)';
+}
+
+function renderStatus() {
+  const items = [
+    ['Threads 연결', status.threads?.ready, null, true],
+    ['연결 방식', status.threads?.mode === 'browser', 'mode', false],
+    ['Claude API (AI 글)', status.claude, 'optional', false],
+  ];
+  $('#checklist').innerHTML = items.map(([label, ok, kind]) => {
+    let c, t;
+    if (kind === 'optional') {
+      c = ok ? 'ok' : 'mid';
+      t = ok ? '완료' : '선택 · 템플릿 사용 중';
+    } else if (kind === 'mode') {
+      c = ok ? 'ok' : 'mid';
+      t = status.threads?.mode === 'browser' ? '브라우저 (쉬운)' : status.threads?.mode === 'api' ? 'Meta API' : '아직 없음';
+    } else {
+      c = ok ? 'ok' : 'no';
+      t = ok ? '완료' : '로그인 필요';
+    }
+    return `<li><span>${label}</span><span class="badge ${c}">${t}</span></li>`;
+  }).join('');
+
+  const n = status.nextBusiness;
+  const phase = status.introPhase || 1;
+  $('#phase-info').innerHTML = `
+    <strong>Phase ${phase}: ${status.phaseLabel || ''}</strong><br>
+    ${status.phaseDesc || ''}<br>
+    <span style="font-size:.82rem">지금까지 ${status.totalPosts || 0}개 · 활성 주제: ${(status.activeTopics || []).join(', ')}</span>`;
+
+  const pt = status.publishTime || '9:00 KST';
+  const [h, rest] = pt.replace(' KST', '').split(':');
+  $('#set-hour').value = h || 9;
+  $('#set-minute').value = parseInt(rest || '0', 10);
+  $('#set-content-mode').value = status.contentMode || 'trend';
+
+  const hours = (status.diary?.hours || [9, 13, 18, 21]).join('·');
+  const modeLabel = status.contentMode === 'diary' ? '📓 일기'
+    : status.contentMode === 'trend' ? '🔥 트렌드' : '🏢 로테이션';
+  if (status.contentMode === 'diary') {
+    $('#next-info').innerHTML = `모드: <strong>${modeLabel}</strong> · 하루 ${status.diary?.postsPerDay || 4}개 · 시각 ${hours}시 · 대기 ${status.queueCount || 0}개`;
+  } else if (status.contentMode === 'trend') {
+    $('#next-info').innerHTML = `모드: <strong>${modeLabel}</strong> · 매일 ${status.publishTime} · ${status.generateMode === 'ai' ? 'AI+트렌드' : '템플릿+트렌드'}`;
+  } else {
+    $('#next-info').innerHTML = n
+      ? `다음 순서: <strong>${n.emoji} ${n.name}</strong> · 매일 ${status.publishTime} · 생성 방식: ${status.generateMode === 'ai' ? 'AI' : '템플릿'}`
+      : '설정 확인 필요';
+  }
+
+  if (!selectedBiz && n) selectedBiz = status.nextBusiness?.id || config.rotation?.[0];
+
+  if (status.redirectUri) $('#redirect-uri').textContent = status.redirectUri;
+  const connected = status.threadsUser?.username || status.threadsUser?.id;
+  const el = $('#connected-as');
+  if (status.threads?.ready) {
+    el.style.display = 'block';
+    if (status.threads.mode === 'browser') {
+      el.textContent = '✅ Threads 연결됨 (브라우저 로그인 저장 완료)';
+    } else {
+      el.textContent = `✅ 연결됨: @${connected || 'API'}`;
+    }
+    $('#login-wait').style.display = 'none';
+  } else {
+    el.style.display = 'none';
+  }
+  $('#btn-step1-next').disabled = !status.threads?.ready;
+}
+
+function openMeta() {
+  window.open('https://developers.facebook.com/apps/create/', '_blank');
+}
+
+async function easyLogin() {
+  try {
+    await api('/api/browser/login', { method: 'POST' });
+    $('#login-wait').style.display = 'block';
+    toast('로그인 창 열림 — 로그인 후 Enter');
+  } catch (e) { toast(e.message); }
+}
+
+async function saveMeta() {
+  const appId = $('#inp-app-id').value.trim();
+  const appSecret = $('#inp-app-secret').value.trim();
+  if (!appId || !appSecret) { toast('App ID와 Secret 입력'); return; }
+  try {
+    const r = await api('/api/meta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appId, appSecret }),
+    });
+    $('#redirect-uri').textContent = r.redirectUri;
+    toast('Meta 앱 정보 저장됨');
+    await refreshAll();
+  } catch (e) { toast(e.message); }
+}
+
+async function connectThreads() {
+  try {
+    const r = await api('/api/auth/url');
+    window.location.href = r.url;
+  } catch (e) { toast(e.message); }
+}
+
+function renderBiz() {
+  const nextId = status.nextBusiness?.id;
+  const ids = status.activeIds?.length ? status.activeIds : config.rotation;
+  $('#biz-grid').innerHTML = ids.map((id) => {
+    const b = config.businesses[id];
+    const sel = id === selectedBiz ? 'selected' : '';
+    const ring = id === nextId ? 'next-ring' : '';
+    return `<div class="biz ${sel} ${ring}" data-id="${id}" onclick="selectBiz('${id}')">
+      <span class="emoji">${b.emoji}</span>
+      <div><div class="name">${b.name}</div><div class="sub">${b.oneLiner}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function selectBiz(id) {
+  selectedBiz = id;
+  renderBiz();
+  draft = null;
+  $('#preview-text').textContent = '「글 생성하기」 버튼을 눌러보세요';
+  $('#preview-meta').innerHTML = '';
+  $('#btn-to-publish').disabled = true;
+}
+
+async function generatePreview() {
+  try {
+    $('#preview-text').textContent = '생성 중…';
+    draft = await api('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId: selectedBiz }),
+    });
+    selectedBiz = draft.businessId;
+    $('#preview-text').textContent = draft.text;
+    $('#preview-meta').innerHTML = `<span><strong>${draft.emoji} ${draft.businessName}</strong></span><span>${draft.chars}/500자</span><span>${draft.mode === 'ai' ? 'AI 생성' : '템플릿'}</span>`;
+    $('#btn-to-publish').disabled = false;
+    toast('글 생성 완료');
+  } catch (e) {
+    $('#preview-text').textContent = '오류: ' + e.message;
+    toast(e.message);
+  }
+}
+
+function editPreview() {
+  if (!draft) { toast('먼저 글을 생성하세요'); return; }
+  const t = prompt('글 수정 (500자 이내)', draft.text);
+  if (t != null) {
+    draft.text = t.slice(0, 500);
+    draft.chars = draft.text.length;
+    $('#preview-text').textContent = draft.text;
+    $('#preview-meta').innerHTML = `<span><strong>${draft.emoji} ${draft.businessName}</strong></span><span>${draft.chars}/500자</span><span>직접 수정</span>`;
+    $('#btn-to-publish').disabled = draft.text.length > 0;
+  }
+}
+
+async function quickToday() {
+  try {
+    draft = await api('/api/today', { method: 'POST' });
+    selectedBiz = draft.businessId;
+    $('#preview-text').textContent = draft.text;
+    const trendTag = draft.trend ? ` · 🔥 ${draft.trend.topic}` : '';
+    $('#preview-meta').innerHTML = `<span><strong>${draft.emoji} ${draft.businessName}</strong>${trendTag}</span><span>${draft.chars}/500자</span><span>${draft.mode || ''}</span>`;
+    $('#btn-to-publish').disabled = false;
+    go(2);
+    toast('오늘 글 생성됨 — 확인 후 발행');
+  } catch (e) { toast(e.message); }
+}
+
+async function saveSettings() {
+  const h = +$('#set-hour').value;
+  const m = +$('#set-minute').value;
+  const contentMode = $('#set-content-mode').value;
+  try {
+    const r = await api('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publishHour: h, publishMinute: m, contentMode }),
+    });
+    toast('저장됨: ' + r.publishTime + ' · ' + contentMode);
+    await refreshAll();
+  } catch (e) { toast(e.message); }
+}
+
+async function doPublish() {
+  if (!draft) return;
+  $('#btn-publish').disabled = true;
+  try {
+    const r = await api('/api/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: draft.text,
+        businessId: draft.businessId,
+        trendTopic: draft.trend?.topic,
+      }),
+    });
+    toast(r.verified ? '✅ 프로필에 올라감!' : '발행 완료');
+    draft = null;
+    await refreshAll();
+    go(4);
+  } catch (e) {
+    toast('발행 실패: ' + e.message);
+  } finally {
+    $('#btn-publish').disabled = !status.threads?.ready;
+  }
+}
+
+async function queueAdd() {
+  if (!draft) { toast('글 없음'); return; }
+  const when = prompt('예약 시각 (ISO, 비우면 내일)', '');
+  try {
+    await api('/api/queue-add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: draft.text,
+        businessId: draft.businessId,
+        businessName: draft.businessName,
+        publishAt: when || undefined,
+      }),
+    });
+    toast('큐에 저장됨');
+    go(4);
+  } catch (e) { toast(e.message); }
+}
+
+async function loadQueue() {
+  const q = await api('/api/queue');
+  const el = $('#queue-list');
+  if (!q.items.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">예약된 글 없음</p>';
+    return;
+  }
+  el.innerHTML = q.items.slice().reverse().map((i) => `
+    <div class="queue-item ${i.status}">
+      <div class="status">${i.status} · ${i.businessName || ''}</div>
+      <div>${i.publishAt ? new Date(i.publishAt).toLocaleString('ko-KR') : ''}</div>
+      <div class="text">${i.text || ''}</div>
+    </div>`).join('');
+}
+
+async function publishDue() {
+  try {
+    const r = await api('/api/publish-due', { method: 'POST' });
+    toast(r.count ? `${r.count}개 발행 처리` : '발행할 예약 없음');
+    loadQueue();
+    refreshAll();
+  } catch (e) { toast(e.message); }
+}
+
+async function fillDiary() {
+  try {
+    toast('일기 큐 채우는 중…');
+    const r = await api('/api/diary/fill', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: 3 }),
+    });
+    toast(`큐 준비됨 · 대기 ${r.queueCount}개`);
+    go(4);
+    loadQueue();
+    refreshAll();
+  } catch (e) { toast(e.message); }
+}
+
+async function loadComments() {
+  try {
+    const r = await api('/api/comments');
+    $('#comments-meta').textContent = r.syncedAt
+      ? `마지막 동기화: ${new Date(r.syncedAt).toLocaleString('ko-KR')} · 대기 ${r.pending || 0}`
+      : '아직 동기화 전';
+    const el = $('#comments-list');
+    const items = (r.items || []).filter((c) => c.status !== 'skipped' && c.status !== 'replied');
+    const done = (r.items || []).filter((c) => c.status === 'replied').slice(0, 5);
+    if (!items.length && !done.length) {
+      el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">댓글 없음 — 동기화 해보세요</p>';
+      return;
+    }
+    el.innerHTML = items.map((c) => `
+      <div class="queue-item ${c.status === 'draft' ? 'pending' : 'pending'}" style="margin-bottom:12px">
+        <div class="status">@${c.username || '?'} · ${c.status}</div>
+        <div style="margin-top:6px;color:var(--tx)">${escapeHtml(c.text || '')}</div>
+        <div class="text" style="max-height:none">${escapeHtml((c.postPreview || '').slice(0, 80))}</div>
+        <label class="field-label">답글 초안</label>
+        <textarea class="field" id="reply-${c.id}" rows="3" style="min-height:72px;resize:vertical">${escapeHtml(c.draftReply || '')}</textarea>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-ghost btn-sm" onclick="redraftComment('${c.id}')">초안 다시</button>
+          <button class="btn btn-primary btn-sm" onclick="sendComment('${c.id}')">전송</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="skipComment('${c.id}')">건너뛰기</button>
+      </div>`).join('')
+      + (done.length ? `<p style="font-size:.78rem;color:var(--muted);margin:12px 0 6px">최근 전송</p>` + done.map((c) =>
+        `<div class="queue-item published"><div class="status">replied · @${c.username}</div><div class="text">${escapeHtml(c.draftReply || '')}</div></div>`
+      ).join('') : '');
+  } catch (e) {
+    $('#comments-list').textContent = e.message;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+async function syncComments() {
+  try {
+    toast('댓글 수집 중… (브라우저)');
+    const r = await api('/api/comments/sync', { method: 'POST' });
+    toast(`수집 ${r.scraped || 0}개 · 초안 준비`);
+    await loadComments();
+    refreshAll();
+  } catch (e) { toast(e.message); }
+}
+
+async function redraftComment(id) {
+  try {
+    await api('/api/comments/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    toast('초안 다시 만듦');
+    await loadComments();
+  } catch (e) { toast(e.message); }
+}
+
+async function sendComment(id) {
+  const text = $(`#reply-${id}`)?.value?.trim();
+  if (!text) { toast('답글 내용 없음'); return; }
+  if (!confirm('이 답글을 Threads에 전송할까요?')) return;
+  try {
+    await api('/api/comments/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, text }),
+    });
+    toast('답글 전송됨');
+    await loadComments();
+  } catch (e) { toast('전송 실패: ' + e.message); }
+}
+
+async function skipComment(id) {
+  try {
+    await api('/api/comments/skip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    await loadComments();
+  } catch (e) { toast(e.message); }
+}
+
+refreshAll();
+if (new URLSearchParams(location.search).get('connected') === '1') {
+  toast('Threads 연결 완료!');
+  history.replaceState({}, '', '/');
+}
+setInterval(refreshAll, 30000);
+</script>
+</body>
+</html>

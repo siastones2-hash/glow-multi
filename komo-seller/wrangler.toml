@@ -1,0 +1,25 @@
+name = "komo-seller"
+main = "src/worker.js"
+compatibility_date = "2025-08-28"
+account_id = "e259f19bf7f04cfa80ce2727350862db"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+[[kv_namespaces]]
+binding = "KOMO_STORE"
+id = "e5c1553183cb420daa39a6f5db688f87"
+
+[[d1_databases]]
+binding = "KOMO_DB"
+database_name = "komo-shop"
+database_id = "6cd96e40-34d8-4450-8e1e-bfe3705c334c"
+
+[vars]
+BANK_NAME = "우리은행"
+BANK_ACCOUNT = "1005-504-945329"
+BANK_HOLDER = "나욱희(올픽유통)"
+ADMIN_PIN = "0328"

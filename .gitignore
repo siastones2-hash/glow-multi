@@ -1,8 +1,13 @@
 # SSH 개인키·민감 정보 (GitHub 업로드 금지)
 glow-multi/ssh_keys/id_ed25519
+scripts/keys/
 .env
 .env.*
 node_modules/
+logs/
+ig-auto/data/storage-state.json
+threads-auto/data/threads-session-meta.json
+threads-auto/data/threads-storage.json
 .DS_Store
 docs/cruise-festival/assets/plan-orig.jpg
 .claude-export-tmp/

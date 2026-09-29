@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>상품관리 · 올픽유통</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#ff5d93">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff3f7;color:#3a2430;font-family:'Noto Sans KR',Arial,sans-serif}
+.wrap{max-width:980px;margin:auto;padding:22px 16px 60px}
+.box{background:#fff;border:2px solid #ffd6e4;border-radius:18px;padding:16px;margin-bottom:12px}
+h1{margin:0 0 8px;font-size:22px;color:#d9487d}h2{margin:0 0 10px;font-size:16px}
+label{display:block;margin:10px 0 5px;font-size:12px;font-weight:800;color:#8a6b78}
+input,select{width:100%;height:42px;border:2px solid #ffd0e2;border-radius:12px;padding:0 11px}
+.btn{margin-top:12px;height:44px;border:0;border-radius:12px;background:linear-gradient(180deg,#ff8fb8,#ff5d93);color:#fff;font-weight:900;cursor:pointer;padding:0 16px}
+.btn.gray{background:#fff;color:#8a4a63;border:2px solid #ffd0e2}
+.btn.red{background:#ff4d6d}
+.nav{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+.nav a,.nav button{margin:0;color:#d9487d;font-weight:800;text-decoration:none;font-size:13px;background:none;border:0;cursor:pointer;height:auto;padding:0}
+.row{display:grid;grid-template-columns:72px 1fr 120px 80px auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #ffe4ef}
+.row img{width:72px;height:96px;object-fit:contain;object-position:center;border:1px solid #ffd6e4;border-radius:12px;background:#fff7fb}
+.muted{color:#8a6b78;font-size:12px}
+.actions{display:flex;flex-direction:column;gap:6px}
+.actions button{margin:0;height:36px}
+.preview{width:120px;height:160px;object-fit:cover;object-position:center top;border-radius:12px;border:1px solid #ffd6e4;background:#fff7fb;display:none}
+.marks{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.marks label{display:flex;align-items:center;gap:4px;margin:0;font-size:12px;font-weight:800;color:#8a4a63;cursor:pointer}
+.marks input{width:16px;height:16px;padding:0;accent-color:#ff5d93}
+#who{font-weight:900;color:#d9487d}
+@media(max-width:780px){.row{grid-template-columns:72px 1fr;}.actions{flex-direction:row}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a href="/">고객몰</a>
+    <a href="/admin/home">관리홈</a>
+    <a href="/admin/dealers">도매</a>
+    <a href="/admin/orders">주문</a>
+    <a href="/admin/members">회원</a>
+    <a href="/admin/me">내 정보</a>
+    <span class="muted">로그인: <span id="who"></span></span>
+    <button type="button" id="out">로그아웃</button>
+  </div>
+  <h1>상품 · 금액 관리</h1>
+  <p class="muted">정품·신규·핫한·품절임박은 상품마다 직접 켜면 고객몰에 반짝이게 표시됩니다.</p>
+  <div class="box">
+    <h2>새 상품 올리기</h2>
+    <label>사진</label>
+    <input id="file" type="file" accept="image/*">
+    <img id="preview" class="preview" alt="">
+    <label>상품명</label><input id="name" placeholder="상품명">
+    <label>금액(원)</label><input id="price" inputmode="numeric" placeholder="7500">
+    <label>주문단위(개)</label><input id="unit" inputmode="numeric" value="1">
+    <label>분류</label><input id="cat" placeholder="산리오 / 짱구 / 잡화">
+    <div class="marks">
+      <label><input id="gNew" type="checkbox"> 정품</label>
+      <label><input id="nNew" type="checkbox"> 신규상품</label>
+      <label><input id="hNew" type="checkbox"> 핫한상품</label>
+      <label><input id="lNew" type="checkbox"> 품절임박</label>
+    </div>
+    <button class="btn" id="add" type="button">상품 등록</button>
+  </div>
+  <div class="box">
+    <h2>등록된 상품 <span class="muted" id="cnt"></span></h2>
+    <div id="list"></div>
+  </div>
+</div>
+<script>
+async function gate(){
+  const s=await (await fetch('/local-api/admin/status')).json();
+  if(!s.loggedIn){location.replace('/admin?next=/admin/products');return false}
+  who.textContent=s.id||'관리자';
+  return true;
+}
+function fileToJpeg(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const max=900;
+      let w=img.width,h=img.height;
+      if(w>max){h=Math.round(h*max/w);w=max}
+      const c=document.createElement('canvas');
+      c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg',0.82));
+      URL.revokeObjectURL(url);
+    };
+    img.onerror=reject;
+    img.src=url;
+  });
+}
+let pendingImage='';
+file.onchange=async()=>{
+  if(!file.files[0])return;
+  pendingImage=await fileToJpeg(file.files[0]);
+  preview.src=pendingImage;preview.style.display='block';
+};
+function badgePayload(row){
+  return {
+    badge_genuine:row.querySelector('[data-g]').checked,
+    badge_new:row.querySelector('[data-n]').checked,
+    badge_hot:row.querySelector('[data-h]').checked,
+    badge_low:row.querySelector('[data-l]').checked
+  };
+}
+async function load(){
+  const r=await fetch('/local-api/admin/products');
+  const d=await r.json();
+  if(!d.success){location.replace('/admin?next=/admin/products');return}
+  cnt.textContent='('+((d.products||[]).length)+'개)';
+  list.innerHTML=(d.products||[]).map(p=>`
+    <div class="row" data-id="${p.product_id}" style="${p.active===false?'opacity:.55':''}">
+      <img src="${p.thumbnail?p.thumbnail+(p.thumbnail.includes('?')?'&':'?')+'v=aioff':''}" alt="">
+      <div>
+        <input data-name value="${(p.name||'').replace(/"/g,'&quot;')}">
+        <div class="muted">NO.${p.product_no||'-'} · ${p.category||''}</div>
+        <div class="marks">
+          <label><input data-g type="checkbox" ${p.badge_genuine?'checked':''}> 정품</label>
+          <label><input data-n type="checkbox" ${p.badge_new?'checked':''}> 신규</label>
+          <label><input data-h type="checkbox" ${p.badge_hot?'checked':''}> 핫한</label>
+          <label><input data-l type="checkbox" ${p.badge_low?'checked':''}> 품절임박</label>
+        </div>
+      </div>
+      <input data-price inputmode="numeric" value="${p.price||0}">
+      <input data-unit inputmode="numeric" value="${p.order_unit||1}">
+      <div class="actions">
+        <button class="btn" data-save type="button">저장</button>
+        <button class="btn gray" data-hide type="button">${p.active===false?'판매재개':'숨기기'}</button>
+        <button class="btn red" data-del type="button">삭제</button>
+      </div>
+    </div>`).join('')||'<div class="muted">상품이 없습니다.</div>';
+  list.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>saveRow(b.closest('.row')));
+  list.querySelectorAll('[data-hide]').forEach(b=>b.onclick=()=>hideRow(b.closest('.row')));
+  list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delRow(b.closest('.row')));
+  list.querySelectorAll('.marks input').forEach(box=>box.onchange=()=>saveBadges(box.closest('.row')));
+}
+async function saveBadges(row){
+  const r=await fetch('/local-api/admin/products/'+encodeURIComponent(row.dataset.id),{
+    method:'PUT',headers:{'content-type':'application/json'},
+    body:JSON.stringify(badgePayload(row))
+  });
+  const d=await r.json();
+  if(!d.success) alert(d.error||'표시 저장에 실패했습니다.');
+}
+async function saveRow(row){
+  const id=row.dataset.id;
+  const r=await fetch('/local-api/admin/products/'+encodeURIComponent(id),{
+    method:'PUT',headers:{'content-type':'application/json'},
+    body:JSON.stringify({
+      name:row.querySelector('[data-name]').value,
+      price:row.querySelector('[data-price]').value,
+      order_unit:row.querySelector('[data-unit]').value,
+      ...badgePayload(row)
+    })
+  });
+  const d=await r.json();
+  alert(d.success?'저장했습니다.':(d.error||'실패'));
+  if(d.success)load();
+}
+async function hideRow(row){
+  const id=row.dataset.id;
+  const hide=row.querySelector('[data-hide]').textContent==='숨기기';
+  const r=await fetch('/local-api/admin/products/'+encodeURIComponent(id),{
+    method:'PUT',headers:{'content-type':'application/json'},
+    body:JSON.stringify({active:!hide})
+  });
+  const d=await r.json();
+  if(d.success)load(); else alert(d.error||'실패');
+}
+async function delRow(row){
+  if(!confirm('이 상품을 삭제할까요?'))return;
+  const r=await fetch('/local-api/admin/products/'+encodeURIComponent(row.dataset.id),{
+    method:'DELETE',headers:{'content-type':'application/json'},body:'{}'
+  });
+  const d=await r.json();
+  if(d.success)load(); else alert(d.error||'실패');
+}
+add.onclick=async()=>{
+  const r=await fetch('/local-api/admin/products',{
+    method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({
+      name:name.value.trim(),
+      price:price.value,
+      order_unit:unit.value||1,
+      category:cat.value.trim()||'직접등록',
+      image:pendingImage,
+      badge_genuine:gNew.checked,
+      badge_new:nNew.checked,
+      badge_hot:hNew.checked,
+      badge_low:lNew.checked
+    })
+  });
+  const d=await r.json();
+  if(!d.success){alert(d.error||'실패');return}
+  name.value='';price.value='';unit.value='1';cat.value='';pendingImage='';file.value='';preview.style.display='none';
+  gNew.checked=nNew.checked=hNew.checked=lNew.checked=false;
+  alert('등록했습니다.');
+  load();
+};
+out.onclick=async()=>{
+  await fetch('/local-api/admin/logout',{method:'POST'});
+  location.replace('/admin');
+};
+(async()=>{ if(await gate()) load(); })();
+</script>
+</body>
+</html>

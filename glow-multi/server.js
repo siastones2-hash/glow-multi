@@ -10373,12 +10373,22 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
     }
 
     let mgmtFeeDue = before.mgmt_fee_due ? formatYmd(before.mgmt_fee_due) : null;
-    if (req.body.mgmtFeeDue !== undefined && req.body.mgmtFeeDue !== null && String(req.body.mgmtFeeDue).trim() !== '') {
-      const dueStr = String(req.body.mgmtFeeDue).trim().slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(dueStr)) {
-        return res.json({ error: '관리비 납부일은 YYYY-MM-DD 형식이어야 합니다' });
+    if (req.body.mgmtFeeDue !== undefined) {
+      const dueRaw = String(req.body.mgmtFeeDue ?? '').trim();
+      if (dueRaw === '') {
+        mgmtFeeDue = null;
+      } else {
+        const dueStr = dueRaw.slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dueStr)) {
+          return res.json({ error: '관리비 납부일은 YYYY-MM-DD 형식이어야 합니다' });
+        }
+        mgmtFeeDue = dueStr;
       }
-      mgmtFeeDue = dueStr;
+    }
+    // 관리비 0원(면제)이면 납부일·리마인드 초기화
+    if (mgmtFee === 0 || isMgmtFeeExempt({ id: siteId, name, mgmt_fee_krw: mgmtFee })) {
+      mgmtFee = 0;
+      mgmtFeeDue = null;
     }
 
     const activeVal = active === undefined || active === null
@@ -10387,7 +10397,7 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
 
     // theme은 건드리지 않음 (자동 테마 JSON 보존 · 저장 실패처럼 보이는 현상 방지)
     await query(
-      `UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9,mgmt_fee_krw=$10,mgmt_fee_due=$11 WHERE id=$12`,
+      `UPDATE sites SET name=$1,domain=$2,logo=$3,primary_color=$4,accent_color=$5,margin=$6,exrate=$7,active=$8,super_margin=$9,mgmt_fee_krw=$10,mgmt_fee_due=$11,mgmt_fee_remind_for=CASE WHEN $10::int=0 THEN NULL ELSE mgmt_fee_remind_for END WHERE id=$12`,
       [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, activeVal, superMarginVal, mgmtFee, mgmtFeeDue, siteId]
     );
 

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>본사 · 올픽유통</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#ff5d93">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff3f7;color:#3a2430;font-family:'Noto Sans KR',Arial,sans-serif}
+.wrap{max-width:980px;margin:auto;padding:22px 16px 70px}
+.nav{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.nav a,.nav button{margin:0;color:#d9487d;font-weight:800;text-decoration:none;font-size:13px;background:none;border:0;cursor:pointer;height:auto;padding:0}
+h1{margin:0 0 6px;font-size:24px;color:#d9487d}
+h2{margin:18px 0 8px;font-size:16px}
+.muted{color:#8a6b78;font-size:13px;line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.stat{background:#fff;border:2px solid #ffd6e4;border-radius:16px;padding:14px 12px}
+.stat b{display:block;font-size:22px;color:#3a7bd5;margin-top:4px}
+.stat.profit{background:#f3fff6;border-color:#b7ebc6;box-shadow:0 0 18px rgba(47,158,98,.18)}
+.stat.profit b{color:#147a3c}
+.stat.wait b{color:#c46a00}
+.stat label{display:block;margin:0;font-size:12px;font-weight:800;color:#8a6b78}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
+.tabs a{background:#fff;border:2px solid #ffd6e4;border-radius:14px;padding:10px 12px;text-decoration:none;color:#8a4a63;font-size:13px;font-weight:800}
+.tabs a.on,.tabs a:hover{border-color:#ff5d93;color:#d9487d}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.card{display:block;background:#fff;border:2px solid #ffd6e4;border-radius:18px;padding:18px;text-decoration:none;color:inherit;box-shadow:0 8px 0 rgba(255,141,184,.12)}
+.card.glow{background:#fff8fb;border-color:#ff8fb8;box-shadow:0 0 22px rgba(255,93,147,.22)}
+.card b{display:block;font-size:18px;color:#d9487d;margin-bottom:6px}
+.card span{color:#8a6b78;font-size:13px;font-weight:700}
+.box{background:#fff;border:2px solid #ffd6e4;border-radius:18px;padding:16px;margin-top:12px}
+label{display:block;margin:10px 0 5px;font-size:12px;font-weight:800;color:#8a6b78}
+input{width:100%;height:46px;border:2px solid #ffd0e2;border-radius:12px;padding:0 11px;font-size:16px}
+.btn{margin-top:12px;height:46px;border:0;border-radius:12px;background:linear-gradient(180deg,#ff8fb8,#ff5d93);color:#fff;font-weight:900;cursor:pointer;padding:0 16px}
+.btn.gray{background:#fff;color:#8a4a63;border:2px solid #ffd0e2}
+#who{font-weight:900;color:#d9487d}
+@media(max-width:720px){.stats,.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a href="/">고객몰</a>
+    <a href="/admin/home">관리홈</a>
+    <a href="/admin/dealers">도매</a>
+    <a href="/admin/products">상품</a>
+    <a href="/admin/orders">주문</a>
+    <a href="/admin/members">회원</a>
+    <a href="/admin/me">내 정보</a>
+    <span class="muted">로그인: <span id="who"></span></span>
+    <button type="button" id="out">로그아웃</button>
+  </div>
+  <h1>올픽유통 본사</h1>
+  <p class="muted">본사에서 도매자·주문·매출을 한눈에 봅니다. 도매자는 고객몰에 전화번호로 로그인합니다.</p>
+  <div class="stats" id="hq"></div>
+  <div class="tabs">
+    <a class="on" href="/admin/home">본사 현황</a>
+    <a href="/admin/dealers">도매자 관리</a>
+    <a href="/admin/orders">전체 주문</a>
+    <a href="/admin/members">전체 회원</a>
+    <a href="/admin/products">상품 관리</a>
+  </div>
+  <div class="grid">
+    <a class="card glow" href="/admin/dealers">
+      <b>도매자 관리</b>
+      <span id="dCnt">거래처 등록, 주문·매출, 이용중지</span>
+    </a>
+    <a class="card" href="/admin/products">
+      <b>상품 관리</b>
+      <span id="pCnt">올리기, 금액 수정, 숨기기</span>
+    </a>
+    <a class="card" href="/admin/orders">
+      <b>주문 관리</b>
+      <span id="oCnt">배송지 확인, 입금 확인, 발송 처리</span>
+    </a>
+    <a class="card" href="/admin/members">
+      <b>회원 관리</b>
+      <span id="mCnt">가입 고객, 주문 내역, 이용중지</span>
+    </a>
+    <a class="card" href="/admin/me">
+      <b>내 정보</b>
+      <span>이름·이메일·휴대폰, 비밀번호 변경</span>
+    </a>
+    <a class="card" href="/" target="_blank">
+      <b>고객몰 보기</b>
+      <span>손님이 보는 화면을 확인합니다.</span>
+    </a>
+  </div>
+  <div class="box" id="salesBox" style="display:none">
+    <h2>매출</h2>
+    <p class="muted" id="salesTxt"></p>
+  </div>
+  <div class="box">
+    <h2>우리 입금 계좌</h2>
+    <p class="muted">손님 주문 화면과 별개입니다. 몰에 안내할 올픽유통 계좌만 여기 저장합니다.</p>
+    <label>은행</label><input id="bank">
+    <label>계좌번호</label><input id="accountNo">
+    <label>예금주</label><input id="holder">
+    <button class="btn" id="saveBank" type="button">계좌 저장</button>
+  </div>
+</div>
+<script>
+const won=n=>Number(n||0).toLocaleString('ko-KR')+'원';
+async function gate(){
+  const s=await (await fetch('/local-api/admin/status')).json();
+  if(!s.loggedIn){location.replace('/admin?next=/admin/home');return false}
+  who.textContent=s.id||'관리자';
+  if(s.role==='owner'){
+    salesBox.style.display='block';
+    const d=await (await fetch('/local-api/owner/sales')).json();
+    if(d.success){
+      const t=d.summary.today, m=d.summary.month, a=d.summary.all;
+      salesTxt.textContent='오늘 '+t.paidCount+'건 '+Number(t.paidTotal||0).toLocaleString('ko-KR')+'원 · 이번달 '+m.paidCount+'건 '+Number(m.paidTotal||0).toLocaleString('ko-KR')+'원 · 누적 '+a.paidCount+'건 '+Number(a.paidTotal||0).toLocaleString('ko-KR')+'원 (입금확인 이후)';
+    }
+  }
+  return true;
+}
+function stat(label,value,cls){
+  return '<div class="stat '+(cls||'')+'"><label>'+label+'</label><b>'+value+'</b></div>';
+}
+async function stats(){
+  const [h,p,o,b,m]=await Promise.all([
+    fetch('/local-api/admin/hq').then(r=>r.json()),
+    fetch('/local-api/admin/products').then(r=>r.json()),
+    fetch('/local-api/orders').then(r=>r.json()),
+    fetch('/local-api/bank').then(r=>r.json()),
+    fetch('/local-api/admin/members').then(r=>r.json())
+  ]);
+  const products=p.products||[];
+  const orders=o.orders||[];
+  const wait=orders.filter(x=>x.status==='입금대기').length;
+  const addr=orders.filter(x=>x.status!=='취소'&&!x.addressChecked).length;
+  const s=h.summary||{}, t=h.today||{};
+  hq.innerHTML=[
+    stat('전체 회원', (h.members||0)+'명'),
+    stat('도매자', (h.dealers||0)+'곳'),
+    stat('전체 주문', (s.count||0)+'건'),
+    stat('판매액(입금확인 이후)', won(s.paidTotal||0), 'profit'),
+    stat('입금 대기', won(s.waitTotal||0), 'wait'),
+    stat('오늘 주문', (t.count||0)+'건 · '+won(t.total||0))
+  ].join('');
+  dCnt.textContent='등록 '+(h.dealers||0)+'곳 · 오늘 주문 '+(t.count||0)+'건';
+  pCnt.textContent='등록 '+products.length+'개 · 판매중 '+products.filter(x=>x.active!==false).length+'개';
+  oCnt.textContent='주문 '+orders.length+'건 · 입금대기 '+wait+'건 · 배송지 미확인 '+addr+'건';
+  mCnt.textContent='가입 '+(m.count|| (m.members||[]).length)+'명';
+  bank.value=b.bank||''; accountNo.value=b.account||''; holder.value=b.holder||'';
+}
+saveBank.onclick=async()=>{
+  const r=await fetch('/local-api/bank',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({bank:bank.value,account:accountNo.value,holder:holder.value})});
+  const d=await r.json();
+  alert(d.success?'계좌를 저장했습니다.':(d.error||'실패'));
+};
+out.onclick=async()=>{
+  await fetch('/local-api/admin/logout',{method:'POST'});
+  location.replace('/admin');
+};
+(async()=>{ if(await gate()) stats(); })();
+</script>
+</body>
+</html>

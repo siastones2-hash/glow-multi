@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.supersia.threads-auto</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/apple/Projects/09-기타/.tools/node/bin/node</string>
+    <string>/Users/apple/glow-multi/threads-auto/bin/scheduler.js</string>
+    <string>--queue</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>60</integer>
+  <key>StandardOutPath</key>
+  <string>/Users/apple/glow-multi/threads-auto/data/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/apple/glow-multi/threads-auto/data/launchd.err.log</string>
+  <key>RunAtLoad</key>
+  <true/>
+</dict>
+</plist>

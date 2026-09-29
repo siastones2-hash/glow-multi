@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>회원 관리 · 올픽유통</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#ff5d93">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff3f7;color:#3a2430;font-family:'Noto Sans KR',Arial,sans-serif}
+.wrap{max-width:860px;margin:auto;padding:22px 16px 70px}
+.nav{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.nav a,.nav button{margin:0;color:#d9487d;font-weight:800;text-decoration:none;font-size:13px;background:none;border:0;cursor:pointer;height:auto;padding:0}
+h1{margin:0 0 8px;font-size:22px;color:#d9487d}
+.muted{color:#8a6b78;font-size:13px;line-height:1.55}
+.search{width:100%;height:46px;border:2px solid #ffd0e2;border-radius:12px;padding:0 12px;font-size:16px;margin-bottom:12px}
+.card{background:#fff;border:2px solid #ffd6e4;border-radius:18px;padding:14px;margin-bottom:10px}
+.top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:900;background:#ffe4ef;color:#d9487d}
+.badge.off{background:#eee;color:#888}
+label{display:block;margin:8px 0 4px;font-size:12px;font-weight:800;color:#8a6b78}
+textarea,input{width:100%;border:2px solid #ffd0e2;border-radius:12px;padding:10px;font-size:15px}
+textarea{min-height:64px}
+.btn{margin-top:8px;height:40px;border:0;border-radius:12px;background:linear-gradient(180deg,#ff8fb8,#ff5d93);color:#fff;font-weight:900;cursor:pointer;padding:0 12px}
+.btn.gray{background:#fff;color:#8a4a63;border:2px solid #ffd0e2}
+.btn.danger{background:#fff;color:#c62828;border:2px solid #ffb4b4}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.empty{padding:28px 8px;text-align:center;color:#8a6b78;font-weight:800}
+#who{font-weight:900;color:#d9487d}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a href="/">고객몰</a>
+    <a href="/admin/home">관리홈</a>
+    <a href="/admin/dealers">도매</a>
+    <a href="/admin/products">상품</a>
+    <a href="/admin/orders">주문</a>
+    <a href="/admin/members">회원</a>
+    <a href="/admin/me">내 정보</a>
+    <span class="muted">로그인: <span id="who"></span></span>
+    <button type="button" id="out">로그아웃</button>
+  </div>
+  <h1>회원 관리</h1>
+  <p class="muted" id="cnt">가입한 고객의 이름, 전화, 주소, 주문 내역을 봅니다. 탈퇴시키면 같은 번호로 다시 가입할 수 있고, 주문은 그대로 남습니다.</p>
+  <input class="search" id="q" placeholder="이름, 전화번호 검색">
+  <div id="list"><div class="empty">불러오는 중...</div></div>
+</div>
+<script>
+const won=n=>Number(n||0).toLocaleString('ko-KR')+'원';
+const phoneFmt=v=>{const d=String(v||'').replace(/\D/g,'').slice(0,11);if(d.length<=3)return d;if(d.length<=7)return d.slice(0,3)+'-'+d.slice(3);return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7)};
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function gate(){
+  const s=await (await fetch('/local-api/admin/status')).json();
+  if(!s.loggedIn){location.replace('/admin?next=/admin/members');return false}
+  who.textContent=s.id||'관리자';
+  return true;
+}
+async function setMember(id,body){
+  const r=await fetch('/local-api/admin/members/'+encodeURIComponent(id),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!d.success){alert(d.error||'실패');return}
+  load();
+}
+async function leaveMember(id){
+  const r=await fetch('/local-api/admin/members/'+encodeURIComponent(id),{method:'DELETE'});
+  const d=await r.json();
+  if(!d.success){alert(d.error||'실패');return}
+  load();
+}
+async function load(){
+  const r=await fetch('/local-api/admin/members?q='+encodeURIComponent(q.value.trim()));
+  const d=await r.json();
+  if(!d.success){list.innerHTML='<div class="empty">'+(d.error||'로그인이 필요합니다.')+'</div>';return}
+  const rows=d.members||[];
+  cnt.textContent='가입 회원 '+rows.length+'명. 탈퇴시키면 같은 번호로 다시 가입할 수 있고, 주문은 그대로 남습니다.';
+  list.innerHTML=rows.map(m=>`
+    <article class="card">
+      <div class="top">
+        <div><b>${esc(m.business?m.business+' · ':'')}${esc(m.name)}</b> <span class="badge ${m.active?'':'off'}">${m.active?'이용중':'이용중지'}</span>${m.dealer?' <span class="badge">도매</span>':''}
+        <div class="muted">${phoneFmt(m.phone)}${m.email?' · '+esc(m.email):''} · 가입 ${m.createdAt?new Date(m.createdAt).toLocaleDateString('ko-KR'):'-'}</div></div>
+        <b>${won(m.orderTotal||0)}</b>
+      </div>
+      <div class="muted" style="margin:8px 0">주문 ${m.orderCount||0}건<br>(${esc(m.zonecode)}) ${esc(m.address1)} ${esc(m.address2)}</div>
+      <label>메모</label>
+      <textarea data-note="${esc(m.id)}">${esc(m.note)}</textarea>
+      <div class="tools">
+        <button class="btn" data-save="${esc(m.id)}" type="button">메모 저장</button>
+        <button class="btn gray" data-off="${esc(m.id)}" type="button">${m.active?'이용중지':'이용재개'}</button>
+        <button class="btn gray" data-dealer="${esc(m.id)}" type="button">${m.dealer?'도매 해제':'도매자로'}</button>
+        <button class="btn danger" data-leave="${esc(m.id)}" type="button">탈퇴</button>
+      </div>
+    </article>`).join('')||'<div class="empty">아직 가입한 회원이 없습니다.</div>';
+  list.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{
+    const note=list.querySelector('[data-note="'+b.dataset.save+'"]').value;
+    setMember(b.dataset.save,{note});
+  });
+  list.querySelectorAll('[data-off]').forEach(b=>b.onclick=()=>{
+    const stop=b.textContent==='이용중지';
+    setMember(b.dataset.off,{active:!stop});
+  });
+  list.querySelectorAll('[data-dealer]').forEach(b=>b.onclick=()=>{
+    setMember(b.dataset.dealer,{dealer:b.textContent==='도매자로'});
+  });
+  list.querySelectorAll('[data-leave]').forEach(b=>b.onclick=()=>{
+    if(!confirm('이 회원을 탈퇴시킬까요? 같은 번호로 다시 가입할 수 있고, 주문 내역은 그대로 남습니다.')) return;
+    leaveMember(b.dataset.leave);
+  });
+}
+let t=0;
+q.oninput=()=>{clearTimeout(t);t=setTimeout(load,250)};
+out.onclick=async()=>{
+  await fetch('/local-api/admin/logout',{method:'POST'});
+  location.replace('/admin');
+};
+(async()=>{ if(await gate()) load(); })();
+</script>
+</body>
+</html>

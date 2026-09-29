@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>관리자 찾기 · 올픽유통</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#ff5d93">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff3f7;color:#3a2430;font-family:'Noto Sans KR',Arial,sans-serif;display:grid;place-items:center;padding:24px}
+.box{width:min(420px,100%);background:#fff;border:2px solid #ffd6e4;border-radius:22px;padding:28px 22px}
+h1{margin:0 0 8px;font-size:22px;color:#d9487d}
+.muted{color:#8a6b78;font-size:13px;line-height:1.6;margin:0 0 16px}
+label{display:block;margin:12px 0 5px;font-size:12px;font-weight:800;color:#8a6b78}
+input{width:100%;height:48px;border:2px solid #ffd0e2;border-radius:12px;padding:0 12px;font-size:16px}
+.btn{width:100%;margin-top:16px;height:48px;border:0;border-radius:14px;background:linear-gradient(180deg,#ff8fb8,#ff5d93);color:#fff;font-weight:900;cursor:pointer}
+.err{display:none;margin-top:10px;color:#be123c;font-size:13px;font-weight:800}
+.ok{display:none;margin-top:10px;color:#147a3c;font-size:13px;font-weight:800}
+a{color:#d9487d;font-weight:800;font-size:13px;text-decoration:none}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>아이디 · 비밀번호 찾기</h1>
+  <p class="muted">가입해 둔 이메일과 휴대폰 번호가 맞으면 비밀번호를 다시 정할 수 있습니다.</p>
+  <div id="step1">
+    <label>이메일</label><input id="email" type="email">
+    <label>휴대폰</label><input id="phone" inputmode="numeric">
+    <button class="btn" id="find" type="button">확인</button>
+  </div>
+  <div id="step2" class="hide">
+    <p class="ok" id="found" style="display:block"></p>
+    <label>새 비밀번호</label><input id="npw" type="password">
+    <button class="btn" id="reset" type="button">비밀번호 바꾸기</button>
+  </div>
+  <div class="err" id="err"></div>
+  <p style="margin-top:16px"><a href="/admin">로그인으로</a></p>
+</div>
+<script>
+let token='';
+function show(m){err.style.display='block';err.textContent=m}
+find.onclick=async()=>{
+  err.style.display='none';
+  const r=await fetch('/local-api/admin/find',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email.value,phone:phone.value})});
+  const d=await r.json();
+  if(!d.success){show(d.error||'확인할 수 없습니다.');return}
+  token=d.token;
+  found.textContent='확인됐습니다. 새 비밀번호를 입력하세요.';
+  step1.classList.add('hide'); step2.classList.remove('hide');
+};
+reset.onclick=async()=>{
+  err.style.display='none';
+  const r=await fetch('/local-api/admin/reset',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,password:npw.value})});
+  const d=await r.json();
+  if(!d.success){show(d.error||'변경에 실패했습니다.');return}
+  location.replace('/admin');
+};
+</script>
+</body>
+</html>

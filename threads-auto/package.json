@@ -1,0 +1,17 @@
+{
+  "name": "threads-auto",
+  "version": "1.0.0",
+  "description": "사업 로테이션 Threads 자동 글 생성·발행 (GLOW와 무관)",
+  "type": "module",
+  "scripts": {
+    "ui": "node bin/server.js",
+    "once": "node bin/run-once.js",
+    "dry": "node bin/run-once.js --dry-run",
+    "auth": "node bin/auth.js",
+    "fill": "node bin/fill-queue.js",
+    "fill-diary": "node bin/fill-diary.js",
+    "sync-comments": "node bin/sync-comments.js",
+    "publish-queue": "node bin/publish-queue.js",
+    "schedule": "node bin/scheduler.js --queue"
+  }
+}
