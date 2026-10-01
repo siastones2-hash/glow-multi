@@ -646,10 +646,10 @@ async function initDB() {
       [ids, names]
     );
   } catch(e) {}
-  // 관리비 주기 초기값: 활성 파트너 = 오늘+30일, 이미 정지 = 오늘(미납)
+  // 관리비 주기 초기값: 활성 파트너 = 다음 달 같은 날, 이미 정지 = 오늘(미납)
   try {
     await query(`
-      UPDATE sites SET mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '30 days')::date
+      UPDATE sites SET mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '1 month')::date
       WHERE id <> 'default' AND mgmt_fee_due IS NULL AND COALESCE(active,1)=1
         AND COALESCE(mgmt_fee_krw, ${MGMT_FEE_DEFAULT_KRW}) > 0
         AND id <> ALL($1::text[])
@@ -852,6 +852,11 @@ app.get(['/ads', '/ads/'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'ads.html'));
 });
 
+app.get(['/works', '/works/'], (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.sendFile(path.join(__dirname, 'public', 'works.html'));
+});
+
 function getToken(req) {
   const auth = req.headers['authorization'];
   if (auth && auth.startsWith('Bearer ')) return auth.slice(7);
@@ -928,15 +933,40 @@ function formatYmd(d) {
   }
 }
 
-/** 관리비 승인 시 다음 납부일(+30일) 갱신 */
+/** 같은 날짜를 다음 달로. 31일 → 짧은 달은 말일 */
+function addOneCalendarMonth(ymd) {
+  const [y, m, d] = String(ymd || '').slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return kstTodayYmd();
+  const ny = m === 12 ? y + 1 : y;
+  const nm = m === 12 ? 1 : m + 1;
+  const last = new Date(Date.UTC(ny, nm, 0)).getUTCDate();
+  const nd = Math.min(d, last);
+  return `${ny}-${String(nm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+}
+
+/** 현재 납부일의 ‘일’을 유지한 다음 달 기한. 밀린 달은 오늘 이후 같은 날까지 진행 */
+function nextMonthlyDueYmd(currentDueYmd) {
+  const today = kstTodayYmd();
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(String(currentDueYmd || '').slice(0, 10))
+    ? String(currentDueYmd).slice(0, 10)
+    : today;
+  let next = addOneCalendarMonth(base);
+  for (let i = 0; i < 24 && next <= today; i++) next = addOneCalendarMonth(next);
+  return next;
+}
+
+/** 관리비 승인 시 다음 납부일 — 매달 같은 날 */
 async function extendMgmtFeeDue(siteId) {
+  const cur = await query(`SELECT mgmt_fee_due FROM sites WHERE id=$1 AND id <> 'default'`, [siteId]);
+  if (!cur.rows[0]) return;
+  const next = nextMonthlyDueYmd(formatYmd(cur.rows[0].mgmt_fee_due));
   await query(`
     UPDATE sites SET
       active = 1,
-      mgmt_fee_due = ((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '30 days')::date,
+      mgmt_fee_due = $2::date,
       mgmt_fee_remind_for = NULL
     WHERE id = $1 AND id <> 'default'
-  `, [siteId]);
+  `, [siteId, next]);
 }
 
 const MGMT_FEE_BANK = '우리은행 1002-160-164625';
@@ -1531,7 +1561,7 @@ async function processMgmtFeeRequest(id, action, processedBy = '') {
   if (approve) {
     await extendMgmtFeeDue(row.site_id);
     await logActivity('default', processedBy, '', '관리비 승인·사이트 재오픈', 'site', row.site_id,
-      `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor} · 다음 기한 +30일`);
+      `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor} · 다음 기한 같은 날`);
   } else {
     await logActivity('default', processedBy, '', '관리비 신청 거절', 'site', row.site_id,
       `${row.site_name} · ${row.depositor}`);
@@ -1551,7 +1581,7 @@ async function tgMgmtFeeAlert(row) {
     `👤 입금자: <b>${row.depositor || ''}</b>\n`;
   if (row.phone) msg += `📞 ${row.phone}\n`;
   if (row.note) msg += `📝 ${row.note}\n`;
-  msg += `\n입금 확인 후 <b>✅ 승인</b>을 눌러 주세요.\n승인 시 사이트 재오픈(또는 이용 유지) 및 다음 기한 +30일 처리됩니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`;
+  msg += `\n입금 확인 후 <b>✅ 승인</b>을 눌러 주세요.\n승인 시 사이트 재오픈(또는 이용 유지) 및 다음 달 같은 날로 기한이 넘어갑니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`;
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
@@ -10213,7 +10243,7 @@ app.post('/api/super/sites/create', requireSuperAdmin, async (req, res) => {
       hero_badge,hero_prefix,ui_layout,slogan,slogan_sub,description,
       stat1_num,stat1_label,stat2_num,stat2_label,stat3_num,stat3_label,stat4_num,stat4_label,
       mgmt_fee_krw,mgmt_fee_due
-    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '30 days')::date)`,
+    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,((NOW() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '1 month')::date)`,
       [siteId, domain, name, finalLogo, finalPrimary, finalAccent,
         parseFloat(margin || 0), newSiteExrate, parseFloat(credit || 0), superMarginVal, finalTheme,
         branding.hero_badge, branding.hero_prefix, branding.ui_layout,
@@ -10401,7 +10431,7 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
       [name, domain, logo || '✨', primaryColor, accentColor, marginNum, exrateNum, activeVal, superMarginVal, mgmtFee, mgmtFeeDue, siteId]
     );
 
-    // 활성→정지: 관리자 TG만 안내 / 정지→활성: 납부 주기 +30일
+    // 활성→정지: 관리자 TG만 안내 / 정지→활성: 다음 달 같은 날로 기한 연장
     const wasActive = Number(before.active) === 1;
     if (wasActive && activeVal === 0 && siteId !== 'default') {
       const locked = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
