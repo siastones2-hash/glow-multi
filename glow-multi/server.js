@@ -944,22 +944,20 @@ function addOneCalendarMonth(ymd) {
   return `${ny}-${String(nm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
 }
 
-/** 현재 납부일의 ‘일’을 유지한 다음 달 기한. 밀린 달은 오늘 이후 같은 날까지 진행 */
-function nextMonthlyDueYmd(currentDueYmd) {
+/** 입금·재오픈한 날(KST)을 기준으로 다음 달 같은 날 */
+function nextMonthlyDueYmd(anchorYmd) {
   const today = kstTodayYmd();
-  const base = /^\d{4}-\d{2}-\d{2}$/.test(String(currentDueYmd || '').slice(0, 10))
-    ? String(currentDueYmd).slice(0, 10)
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(String(anchorYmd || '').slice(0, 10))
+    ? String(anchorYmd).slice(0, 10)
     : today;
-  let next = addOneCalendarMonth(base);
-  for (let i = 0; i < 24 && next <= today; i++) next = addOneCalendarMonth(next);
-  return next;
+  return addOneCalendarMonth(base);
 }
 
-/** 관리비 승인 시 다음 납부일 — 매달 같은 날 */
+/** 관리비 승인·재오픈 시 다음 납부일 — 살아난 날 기준, 매달 같은 날 */
 async function extendMgmtFeeDue(siteId) {
-  const cur = await query(`SELECT mgmt_fee_due FROM sites WHERE id=$1 AND id <> 'default'`, [siteId]);
+  const cur = await query(`SELECT id FROM sites WHERE id=$1 AND id <> 'default'`, [siteId]);
   if (!cur.rows[0]) return;
-  const next = nextMonthlyDueYmd(formatYmd(cur.rows[0].mgmt_fee_due));
+  const next = nextMonthlyDueYmd(kstTodayYmd());
   await query(`
     UPDATE sites SET
       active = 1,
@@ -1561,7 +1559,7 @@ async function processMgmtFeeRequest(id, action, processedBy = '') {
   if (approve) {
     await extendMgmtFeeDue(row.site_id);
     await logActivity('default', processedBy, '', '관리비 승인·사이트 재오픈', 'site', row.site_id,
-      `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor} · 다음 기한 같은 날`);
+      `${row.site_name} · ₩${Number(row.amount).toLocaleString()} · ${row.depositor} · 재오픈일 기준 다음 달`);
   } else {
     await logActivity('default', processedBy, '', '관리비 신청 거절', 'site', row.site_id,
       `${row.site_name} · ${row.depositor}`);
@@ -1581,7 +1579,7 @@ async function tgMgmtFeeAlert(row) {
     `👤 입금자: <b>${row.depositor || ''}</b>\n`;
   if (row.phone) msg += `📞 ${row.phone}\n`;
   if (row.note) msg += `📝 ${row.note}\n`;
-  msg += `\n입금 확인 후 <b>✅ 승인</b>을 눌러 주세요.\n승인 시 사이트 재오픈(또는 이용 유지) 및 다음 달 같은 날로 기한이 넘어갑니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`;
+  msg += `\n입금 확인 후 <b>✅ 승인</b>을 눌러 주세요.\n승인·재오픈한 날이 매달 납부일이 되고, 다음 기한은 다음 달 같은 날입니다.\n⏰ ${typeof tgKstNow === 'function' ? tgKstNow() : ''}`;
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
