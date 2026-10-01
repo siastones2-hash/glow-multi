@@ -539,9 +539,9 @@ async function initDB() {
       {id:'ptw2',name:'Twitter/X 좋아요 — 아랍 타겟',pl:'twitter',rate:9.83,min:20,max:100000,description:'아랍 기반 고품질 Twitter/X 좋아요 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 좋아요가 많은 트윗은 X 알고리즘의 추천 탭과 탐색 탭에 우선 노출됩니다. 중요한 공지·신제품·캠페인 트윗의 유기적 도달 범위를 크게 확장시키는 사회적 증명 효과도 있습니다.',api_id:'29069'},
       {id:'ptw3',name:'Twitter/X 조회수+임프레션 — 올인원',pl:'twitter',rate:0.0061,min:100,max:10000000,description:'트위터/X 게시물의 조회수와 임프레션을 동시에 증가시키는 올인원 프리미엄 서비스입니다. 조회수 대비 임프레션 비율은 X 알고리즘이 "가치 있는 트윗"을 판단하는 핵심 지표로, 주문 하나로 핵심 참여 지표 2개가 동시 개선됩니다. 취소 가능 옵션 포함.',api_id:'29865'},
       {id:'pfb1',name:'Facebook 댓글 — 브라질 타겟',pl:'facebook',rate:210.0,min:10,max:200,description:'브라질 기반 고품질 Facebook 댓글 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물에 댓글을 달아 참여도를 높입니다. 댓글이 많은 게시물은 알고리즘이 인기 콘텐츠로 분류하여 뉴스피드 상단 노출이 늘어납니다.',api_id:'28905'},
-      {id:'pfb2',name:'Facebook 페이지 좋아요+팔로워 — 30일 보장 (2-in-1)',pl:'facebook',rate:1.26,min:100,max:2000000,description:'페이스북 페이지 좋아요와 팔로워가 동시에 증가하는 2-in-1 프리미엄 서비스입니다. 일 1만~2만 속도로 빠르게 성장하며 30일 드롭 보장이 제공됩니다. 하나의 주문으로 두 개 지표가 동시에 올라가 비즈니스 페이지의 신뢰도와 도달률을 한 번에 끌어올릴 수 있습니다.',api_id:'29350'},
+      {id:'pfb2',name:'Facebook 페이지 좋아요+팔로워 — 30일 보장 (2-in-1)',pl:'facebook',rate:1.26,min:100,max:2000000,description:'[판매 중단] 주문이 시작되지 않고 전액 환불되었습니다. 대체: Facebook 페이지 팔로워 — 평생 보장 (고속).',api_id:'29350',active:0},
       {id:'pfb3',name:'Facebook 팔로워 — 브라질 타겟 (드롭 보상)',pl:'facebook',rate:3.36,min:50,max:200000,description:'브라질 기반 고품질 Facebook 팔로워 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 페이스북 페이지 좋아요·팔로워는 비즈니스 신뢰도의 핵심 지표로, 광고 집행 시 클릭률과 전환율에 직접적인 영향을 주고 방문자에게 신뢰감을 형성합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'28903'},
-      {id:'pfb4',name:'Facebook 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'facebook',rate:0.27,min:10,max:500000,description:'전 세계 실계정 기반으로 제공되는 고품질 Facebook 팔로워 서비스입니다. 페이스북 페이지 좋아요·팔로워는 비즈니스 신뢰도의 핵심 지표로, 광고 집행 시 클릭률과 전환율에 직접적인 영향을 주고 방문자에게 신뢰감을 형성합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'31397'},
+      {id:'pfb4',name:'Facebook 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'facebook',rate:0.27,min:10,max:500000,description:'[판매 중단] 주문이 완료되지 않고 취소되었습니다. 대체: Facebook 페이지 팔로워 — 평생 보장 (고속).',api_id:'31397',active:0},
       {id:'pfb5',name:'Facebook 팔로워 — 태국 타겟',pl:'facebook',rate:3.09,min:10,max:100000,description:'태국 기반 고품질 Facebook 팔로워 서비스로, 태국은 동남아 핵심 이커머스 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 페이스북 페이지 좋아요·팔로워는 비즈니스 신뢰도의 핵심 지표로, 광고 집행 시 클릭률과 전환율에 직접적인 영향을 주고 방문자에게 신뢰감을 형성합니다.',api_id:'30863'},
       {id:'pfb6',name:'Facebook 좋아요 — 브라질 타겟 (드롭 보상)',pl:'facebook',rate:4.2,min:20,max:10000,description:'브라질 기반 고품질 Facebook 좋아요 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 좋아요로 페이스북 알고리즘 노출을 높입니다. 좋아요가 많은 게시물은 뉴스피드 상단에 우선 표시되고 친구들에게도 노출되어 유기적 도달이 크게 증가합니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'28902'},
       {id:'pfb7',name:'Facebook 페이지 팔로워 — 평생 보장 (고속)',pl:'facebook',rate:0.5887,min:100,max:1000000,description:'페이스북 페이지 팔로워를 일 50만 속도로 유입시키는 평생 보장 최상급 서비스입니다. 페이지 팔로워는 비즈니스 계정의 신뢰도 척도이며, 메타 광고 매니저에서 룩어라이크 오디언스(유사 타겟) 생성의 기반이 됩니다. 평생 드롭 보장으로 오래 쌓인 자산이 영구 유지됩니다.',api_id:'22328'},
@@ -2636,6 +2636,14 @@ const DISABLED_SEED_META = {
     note: '동일 공급 SKU 상품과 통합되어 판매를 중단했습니다.',
     replaceId: 'pyt2',
   },
+  pfb2: {
+    note: '주문이 시작되지 않고 전액 환불되어 판매를 중단했습니다.',
+    replaceId: 'pfb7',
+  },
+  pfb4: {
+    note: '주문이 완료되지 않고 취소되어 판매를 중단했습니다.',
+    replaceId: 'pfb7',
+  },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
@@ -2662,20 +2670,32 @@ async function applyDisabledSeedMeta() {
   }
 }
 
-async function getUnreliableServiceDetails(opts = {}) {
-  const minOrders = opts.minOrders ?? 2;
-  const days = opts.days ?? 30;
+function unreliableOrderSql(alias = '') {
+  const p = alias ? `${alias}.` : '';
+  const delivered = `(
+    ${p}status IN ('completed','processing','pending')
+    OR (${p}status = 'partial_refunded' AND COALESCE(${p}remains, ${p}qty, 0) < COALESCE(${p}qty, 0))
+  )`;
+  const terminalFail = `(
+    ${p}status IN ('cancelled','canceled','failed','refunded')
+    OR (${p}status = 'partial_refunded' AND COALESCE(${p}remains, ${p}qty, 0) >= COALESCE(${p}qty, 1))
+  )`;
+  return { delivered, terminalFail };
+}
+
+/** 완료가 한 번도 없는 상품 — 취소·전액환불만 있으면 판매 중단. 일부 진행된 부분환불은 유지 */
+async function getUnreliableServiceDetails() {
+  const { delivered, terminalFail } = unreliableOrderSql();
   const r = await query(`
     SELECT sid,
       COUNT(*)::int AS total,
       COUNT(*) FILTER (WHERE status IN ('cancelled','canceled'))::int AS cancelled,
       COUNT(*) FILTER (WHERE status IN ('failed','refunded'))::int AS failed
     FROM orders
-    WHERE created >= NOW() - ($2 || ' days')::interval
     GROUP BY sid
-    HAVING COUNT(*) >= $1
-       AND COUNT(*) FILTER (WHERE status IN ('completed','processing','pending')) = 0
-  `, [minOrders, days]);
+    HAVING COUNT(*) FILTER (WHERE ${delivered}) = 0
+       AND COUNT(*) FILTER (WHERE ${terminalFail}) >= 1
+  `);
   return r.rows;
 }
 
@@ -2754,18 +2774,10 @@ async function ensureSmmkingsCatalogLoaded(opts = {}) {
   await syncSmmkingsCatalog();
 }
 
-/** 최근 주문이 전부 실패·취소인 상품 (성공 0건) — 시드 상품도 숨김 대상 */
-async function getUnreliableServiceIds(opts = {}) {
-  const minOrders = opts.minOrders ?? 2;
-  const days = opts.days ?? 30;
-  const r = await query(`
-    SELECT sid FROM orders
-    WHERE created >= NOW() - ($2 || ' days')::interval
-    GROUP BY sid
-    HAVING COUNT(*) >= $1
-       AND COUNT(*) FILTER (WHERE status IN ('completed','processing','pending')) = 0
-  `, [minOrders, days]);
-  return new Set(r.rows.map(row => row.sid));
+/** 완료가 한 번도 없는 상품 — 시드여도 다시 켜지 않음 */
+async function getUnreliableServiceIds() {
+  const rows = await getUnreliableServiceDetails();
+  return new Set(rows.map(row => row.sid));
 }
 
 async function deactivateUnreliableServices(opts = {}) {
@@ -2773,7 +2785,7 @@ async function deactivateUnreliableServices(opts = {}) {
   let n = 0;
   const items = [];
   for (const row of details) {
-    const parts = [`최근 ${opts.days ?? 30}일 주문 ${row.total}건 전부 미완료`];
+    const parts = [`주문 ${row.total}건 모두 완료되지 않음`];
     if (row.cancelled > 0) parts.push(`취소 ${row.cancelled}건`);
     if (row.failed > 0) parts.push(`실패·환불 ${row.failed}건`);
     parts.push('자동 판매 중단');
@@ -3143,8 +3155,9 @@ async function resolveOrderService(sid) {
   const inactR = await query(`SELECT * FROM services WHERE id=$1`, [sid]);
   const row = inactR.rows[0];
   if (!row) return null;
-  // 영구 중단 시드는 Peakerr에 살아 있어도 절대 재활성화하지 않음
+  // 영구 중단·한 번도 완료되지 않은 상품은 공급 목록에 있어도 다시 켜지 않음
   if (PERMANENTLY_DISABLED_SEEDS.has(row.id)) return null;
+  if ((await getUnreliableServiceIds()).has(row.id)) return null;
   if (isCuratedServiceId(row.id) && row.api_id) {
     const prov = serviceProvider(row);
     if (prov === 'smmkings') {
@@ -3933,19 +3946,23 @@ async function ensureSmmkingsSeedServices() {
       if (peakerrServiceHasRefill(remote)) seed.refill = 1;
     }
     const rate = await glowRateForSmmkingsSeed(seed, marginMult);
+    const keepOff = PERMANENTLY_DISABLED_SEEDS.has(seed.id);
     await query(`
       INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'smmkings')
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'smmkings')
       ON CONFLICT(id) DO UPDATE SET
         name=EXCLUDED.name, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max,
-        description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
+        description=EXCLUDED.description, api_id=EXCLUDED.api_id,
+        active=CASE WHEN $11=1 THEN 0 ELSE 1 END,
         refill_guaranteed=EXCLUDED.refill_guaranteed, provider='smmkings',
-        inactive_note='', replace_service_id=NULL
-    `, [seed.id, seed.name, seed.pl, rate, seed.min, seed.max, seed.description, seed.api_id, seed.refill ? 1 : 0]);
-    await linkServiceToAllSites(seed.id);
+        inactive_note=CASE WHEN $11=1 THEN services.inactive_note ELSE '' END,
+        replace_service_id=CASE WHEN $11=1 THEN services.replace_service_id ELSE NULL END
+    `, [seed.id, seed.name, seed.pl, rate, seed.min, seed.max, seed.description, seed.api_id, keepOff ? 0 : 1, seed.refill ? 1 : 0, keepOff ? 1 : 0]);
+    if (!PERMANENTLY_DISABLED_SEEDS.has(seed.id)) await linkServiceToAllSites(seed.id);
     n++;
   }
   await applyDisabledSeedMeta().catch(() => null);
+  await deactivateUnreliableServices().catch(() => null);
   if (n > 0) console.log(`✅ 연동 B 큐레이션 ${n}개 등록 (기본×${SMMKINGS_TARGET_MULT}/고정가, marginMult=${marginMult.toFixed(2)})`);
   return n;
 }
