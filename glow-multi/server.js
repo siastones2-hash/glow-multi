@@ -516,7 +516,7 @@ async function initDB() {
       {id:'pig27',name:'Instagram 조회수 — 프리미엄 글로벌',pl:'instagram',rate:3.52,min:10,max:100000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 조회수 서비스입니다. 영상 조회수가 빠르게 쌓이면 인스타그램 알고리즘의 바이럴 루프에 진입하여 탐색 탭과 팔로워 외 사용자에게도 대규모 노출됩니다. 신규 팔로워 유입의 가장 빠른 경로입니다.',api_id:'14576'},
       {id:'pig3',name:'Instagram 팔로워 — 아랍 타겟 (드롭 보상)',pl:'instagram',rate:34.58,min:20,max:50000,description:'아랍 기반 고품질 Instagram 팔로워 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29762'},
       {id:'pig4',name:'Instagram 팔로워 — 브라질 타겟 (드롭 보상)',pl:'instagram',rate:2.4192,min:10,max:5000000,description:'브라질 기반 고품질 Instagram 팔로워 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'28284'},
-      {id:'pig5',name:'Instagram 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.57,min:1,max:10000000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 팔로워 서비스입니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'30505'},
+      {id:'pig5',name:'Instagram 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.57,min:1,max:10000000,description:'[판매 중단] 최근 주문이 시작되지 않고 취소되었습니다. 국가 타겟 팔로워 상품을 이용해 주세요.',api_id:'30505',active:0},
       {id:'pig7',name:'Instagram 팔로워 — 나이지리아 타겟 (드롭 보상)',pl:'instagram',rate:34.58,min:20,max:100000,description:'나이지리아 기반 고품질 Instagram 팔로워 서비스로, 나이지리아는 아프리카 최대 디지털 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29756'},
       {id:'pig8',name:'Instagram 팔로워 — 터키 타겟 (드롭 보상)',pl:'instagram',rate:34.02,min:10,max:500000,description:'터키 기반 고품질 Instagram 팔로워 서비스로, 터키 사용자는 참여율이 매우 높으며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29835'},
       {id:'pig9',name:'Instagram 팔로워 — 미국 타겟',pl:'instagram',rate:48.91,min:50,max:6000,description:'미국 기반 고품질 Instagram 팔로워 서비스로, 미국 광고 RPM이 세계 최고 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 팔로워 수는 계정 신뢰도의 핵심 지표로, 팔로워가 많을수록 탐색 탭 노출이 증가하고 브랜드 협찬 제안 가능성이 크게 높아집니다. 자연스러운 성장 패턴으로 처리되며 드롭 시 보상받을 수 있어 장기적인 계정 자산으로 활용됩니다.',api_id:'22628'},
@@ -2644,6 +2644,10 @@ const DISABLED_SEED_META = {
     note: '주문이 완료되지 않고 취소되어 판매를 중단했습니다.',
     replaceId: 'pfb7',
   },
+  pig5: {
+    note: '최근 주문이 시작되지 않고 취소되어 판매를 중단했습니다.',
+    replaceId: null,
+  },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
@@ -2683,20 +2687,44 @@ function unreliableOrderSql(alias = '') {
   return { delivered, terminalFail };
 }
 
-/** 완료가 한 번도 없는 상품 — 취소·전액환불만 있으면 판매 중단. 일부 진행된 부분환불은 유지 */
+/** 한 번도 완료가 없거나, 최근 주문 2건이 연속으로 시작 없이 취소·환불된 상품 */
 async function getUnreliableServiceDetails() {
   const { delivered, terminalFail } = unreliableOrderSql();
-  const r = await query(`
+  const never = await query(`
     SELECT sid,
       COUNT(*)::int AS total,
       COUNT(*) FILTER (WHERE status IN ('cancelled','canceled'))::int AS cancelled,
-      COUNT(*) FILTER (WHERE status IN ('failed','refunded'))::int AS failed
+      COUNT(*) FILTER (WHERE status IN ('failed','refunded'))::int AS failed,
+      'never'::text AS kind
     FROM orders
     GROUP BY sid
     HAVING COUNT(*) FILTER (WHERE ${delivered}) = 0
        AND COUNT(*) FILTER (WHERE ${terminalFail}) >= 1
   `);
-  return r.rows;
+  const stalled = await query(`
+    SELECT sid,
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE status IN ('cancelled','canceled'))::int AS cancelled,
+      COUNT(*) FILTER (WHERE status IN ('failed','refunded'))::int AS failed,
+      'stalled'::text AS kind
+    FROM (
+      SELECT sid, status, COALESCE(starts_count,0) AS starts_count,
+             ROW_NUMBER() OVER (PARTITION BY sid ORDER BY created DESC) AS rn
+      FROM orders
+    ) t
+    WHERE rn <= 2
+    GROUP BY sid
+    HAVING COUNT(*) = 2
+       AND COUNT(*) FILTER (
+         WHERE status IN ('cancelled','canceled','failed','refunded') AND starts_count = 0
+       ) = 2
+  `);
+  const map = new Map();
+  for (const row of never.rows) map.set(row.sid, row);
+  for (const row of stalled.rows) {
+    if (!map.has(row.sid)) map.set(row.sid, row);
+  }
+  return [...map.values()];
 }
 
 async function ensurePeakerrCatalogLoaded(opts = {}) {
@@ -2785,7 +2813,9 @@ async function deactivateUnreliableServices(opts = {}) {
   let n = 0;
   const items = [];
   for (const row of details) {
-    const parts = [`주문 ${row.total}건 모두 완료되지 않음`];
+    const parts = row.kind === 'stalled'
+      ? ['최근 주문 2건이 시작되지 않고 취소·환불됨']
+      : [`주문 ${row.total}건 모두 완료되지 않음`];
     if (row.cancelled > 0) parts.push(`취소 ${row.cancelled}건`);
     if (row.failed > 0) parts.push(`실패·환불 ${row.failed}건`);
     parts.push('자동 판매 중단');
@@ -3385,21 +3415,7 @@ async function refundZeroProgressStuckOrders(opts = {}) {
       refunded++;
       if (o.sid) hitSids.add(o.sid);
     }
-    // 같은 상품에서 최근 14일 미진행 환불 2건 이상 → 판매 중단
-    for (const sid of hitSids) {
-      if (PERMANENTLY_DISABLED_SEEDS.has(sid)) continue;
-      const cntR = await query(`
-        SELECT COUNT(*)::int AS c FROM orders
-        WHERE sid=$1 AND status='refunded'
-          AND COALESCE(starts_count,0)=0
-          AND created > NOW() - INTERVAL '14 days'
-      `, [sid]);
-      if ((cntR.rows[0]?.c || 0) >= 2) {
-        await hideServiceWithNote(sid,
-          '최근 주문에서 작업이 시작되지 않아 판매를 중단했습니다. 다른 상품을 이용해 주세요.');
-        console.log(`⚠️ 미진행 반복 상품 숨김: ${sid}`);
-      }
-    }
+    if (hitSids.size) await deactivateUnreliableServices().catch(() => null);
     if (refunded > 0) console.log(`💸 미진행(시작0) 주문 ${refunded}건 자동 환불`);
     return refunded;
   } catch (e) {
@@ -5544,6 +5560,9 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
     if (newStatus === 'completed' && order.status !== 'completed' && opts.notifyTg !== false) {
       // 작업 완료 TG 끔 — 주문마다 스팸. 새주문·환불만 유지
       console.log(`✅ 작업 완료 ${order.id} (TG 생략)`);
+    }
+    if (startsCount === 0 && ['cancelled', 'canceled', 'refunded', 'failed'].includes(newStatus)) {
+      await deactivateUnreliableServices().catch(() => null);
     }
     
     return {
