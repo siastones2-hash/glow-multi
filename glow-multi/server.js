@@ -4206,7 +4206,9 @@ function classifyNaverPanelService(s) {
   const low = full.toLowerCase();
   const reasons = [];
   if (BAD_SERVICE_NAME.test(full)) reasons.push('저품질 키워드');
-  if (/custom\s*(comment|review)|emoji\s*comment|비밀번호|계정\s*생성|account\s*creat/.test(low)) {
+  if (/\[lq\]|\blq\b|cheap|저품질/.test(low)) reasons.push('저품질·저가 표기');
+  if (/\bjapan\b|일본/.test(low) && !/south korea|한국|🇰🇷/.test(low)) reasons.push('한국 상품이 아님');
+  if (/custom\s*(comment|review|keyword)|emoji\s*comment|비밀번호|계정\s*생성|account\s*creat/.test(low)) {
     reasons.push('문구 입력이나 계정 생성이 필요함');
   }
   if (/guaranteed?\s*(rank|#1|1st)|1위\s*보장|상위\s*1페이지\s*보장/.test(low)) reasons.push('순위 보장 문구');
@@ -4215,26 +4217,21 @@ function classifyNaverPanelService(s) {
   const min = parseInt(s.min, 10) || 0;
   const max = parseInt(s.max, 10) || 0;
   if (max > 0 && min > max) reasons.push('수량 범위 오류');
-  if (/website|웹사이트|referral|organic traffic|direct traffic/.test(low) && !/blog|cafe|place|플레이스|store|스토어|clip|클립/.test(low)) {
-    reasons.push('웹사이트 유입은 이미 판매 중');
-  }
+  if (/\btraffic\b|website|웹사이트|referral/.test(low)) reasons.push('웹사이트 유입은 이미 판매 중');
 
   let kind = 'other';
-  if (/neighbor|서로이웃/.test(low)) kind = 'neighbor';
+  if (/chzzk|치지직/.test(low)) kind = 'chzzk';
+  else if (/naver\s*tv|네이버\s*tv/.test(low) && /short|clip|숏츠|클립/.test(low)) kind = 'naver_tv_short';
+  else if (/naver\s*tv|네이버\s*tv/.test(low)) kind = 'naver_tv';
+  else if (/neighbor|서로이웃/.test(low)) kind = 'neighbor';
   else if (/scrap|스크랩/.test(low)) kind = 'scrap';
   else if (/cafe|카페/.test(low) && /member|join|회원/.test(low)) kind = 'cafe';
   else if (/place|플레이스/.test(low) && /save|찜|bookmark|저장/.test(low)) kind = 'place_save';
   else if (/place|플레이스/.test(low) && /review|리뷰|comment|댓글/.test(low)) kind = 'place_review';
-  else if (/place|플레이스/.test(low)) kind = 'place';
   else if (/smart\s*store|스마트스토어/.test(low) && /wish|찜|like|좋아요/.test(low)) kind = 'store_zzim';
-  else if (/smart\s*store|스마트스토어/.test(low)) kind = 'store';
-  else if (/clip|클립/.test(low)) kind = 'clip';
-  else if (/kin|지식인/.test(low)) kind = 'kin';
-  else if (/blog|블로그/.test(low) && /like|공감/.test(low)) kind = 'blog_like';
+  else if (/blog|블로그/.test(low) && /like|공감/.test(low) && !/traffic/.test(low)) kind = 'blog_like';
   else if (/blog|블로그/.test(low) && /comment|댓글/.test(low)) kind = 'blog_comment';
-  else if (/blog|블로그/.test(low) && /view|visit|조회|방문/.test(low)) kind = 'blog_view';
-  else if (/blog|블로그/.test(low)) kind = 'blog';
-  else if (/view|visit|조회|방문/.test(low)) kind = 'view';
+  else if (/blog|블로그/.test(low) && /view|visit|조회|방문/.test(low) && !/traffic/.test(low)) kind = 'blog_view';
 
   if (kind === 'blog_comment' || kind === 'place_review' || kind === 'kin') {
     reasons.push('댓글·리뷰는 문구를 넣어야 해서 제외');
@@ -4253,14 +4250,12 @@ function naverImportCopy(kind, refill) {
     scrap: ['네이버 블로그 스크랩 — 한국', `네이버 블로그 글을 스크랩한 기록이 늘어납니다. 스크랩이 있으면 글이 더 읽힌 콘텐츠로 보입니다.${tail} 공개 글 주소를 입력하세요.`],
     blog_like: ['네이버 블로그 공감 — 한국', `네이버 블로그 글에 공감이 들어갑니다. 공감이 있는 글은 방문자가 반응 있는 글로 보기 쉽습니다.${tail} 공개 글 주소를 입력하세요.`],
     blog_view: ['네이버 블로그 조회수 — 한국', `네이버 블로그 글 조회수가 올라갑니다. 조회가 쌓이면 글이 읽히고 있다는 신호가 됩니다.${tail} 공개 글 주소를 입력하세요.`],
-    blog: ['네이버 블로그 — 한국', `네이버 블로그 지표를 올리는 상품입니다.${tail} 공개 블로그 또는 글 주소를 입력하세요.`],
     cafe: ['네이버 카페 회원 — 한국', `네이버 카페 회원 수가 늘어납니다. 회원이 많은 카페는 새로 들어오는 사람에게 활성 커뮤니티로 보입니다.${tail} 공개 카페 주소를 입력하세요.`],
     place_save: ['네이버 플레이스 저장 — 한국', `네이버 플레이스 저장 수가 늘어납니다. 저장이 많으면 장소를 찾아본 사람이 많다는 인상입니다.${tail} 플레이스 주소를 입력하세요.`],
-    place: ['네이버 플레이스 — 한국', `네이버 플레이스 지표를 올리는 상품입니다.${tail} 플레이스 주소를 입력하세요.`],
     store_zzim: ['네이버 스마트스토어 찜 — 한국', `스마트스토어 상품 찜 수가 늘어납니다. 찜이 있으면 상품을 관심 있어 하는 사람이 많아 보입니다.${tail} 상품 주소를 입력하세요.`],
-    store: ['네이버 스마트스토어 — 한국', `네이버 스마트스토어 지표를 올리는 상품입니다.${tail} 스토어 또는 상품 주소를 입력하세요.`],
-    clip: ['네이버 클립 조회수 — 한국', `네이버 클립 조회수가 올라갑니다. 초반 조회가 있으면 영상이 더 노출되기 쉽습니다.${tail} 공개 클립 주소를 입력하세요.`],
-    view: ['네이버 조회수 — 한국', `네이버 콘텐츠 조회수가 올라갑니다.${tail} 공개 주소를 입력하세요.`],
+    chzzk: ['네이버 치지직 조회수 — 한국', `네이버 치지직 영상 조회수가 올라갑니다. 초반 조회가 쌓이면 영상이 더 노출되기 쉽습니다. 공개된 치지직 영상 주소를 입력하세요.`],
+    naver_tv: ['네이버 TV 조회수 — 한국', `네이버 TV 영상 조회수가 올라갑니다. PC로 재생되는 조회입니다. 공개된 네이버 TV 영상 주소를 입력하세요.`],
+    naver_tv_short: ['네이버 TV 숏츠 조회수 — 한국', `네이버 TV 숏츠·짧은 영상 조회수가 올라갑니다. 모바일 재생 기준입니다. 공개된 숏츠 영상 주소를 입력하세요.`],
   };
   const pair = map[kind];
   if (!pair) return null;
