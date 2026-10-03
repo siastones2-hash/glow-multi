@@ -1308,7 +1308,7 @@ async function pickLiveHighlightServices() {
     SELECT id, name, description, refill_guaranteed
     FROM services
     WHERE active=1
-      AND id ~ '^(skg|sky|skt|skx|sktr|skseo|pkr|pig17|pyt17)'
+      AND id ~ '^(skg|sky|skt|skx|sktr|skseo|snv|pkr|pig17|pyt17)'
       AND COALESCE(TRIM(name),'') <> ''
       AND COALESCE(TRIM(description),'') <> ''
     ORDER BY
@@ -1336,7 +1336,7 @@ async function buildMemberOpsDigest() {
   const today = kstTodayYmd();
   const krR = await query(`
     SELECT COUNT(*)::int AS c FROM services
-    WHERE active=1 AND id ~ '^(skg|sky|skt|skx|sktr|skseo|pkr|pig17|pyt17)'
+    WHERE active=1 AND id ~ '^(skg|sky|skt|skx|sktr|skseo|snv|pkr|pig17|pyt17)'
   `);
   const activeKr = krR.rows[0]?.c || 0;
   const totalR = await query(`SELECT COUNT(*)::int AS c FROM services WHERE active=1`);
@@ -4194,6 +4194,175 @@ async function importSmmkingsKoreaServices(opts = {}) {
     candidates: listed.count, catalog: listed.catalog,
     summary: `연동 B 한국 ${added.length}개`
   };
+}
+
+const NAVER_SERVICE_RE = /naver|네이버|smart\s*store|스마트스토어|서로이웃|플레이스|지식인/i;
+
+function classifyNaverPanelService(s) {
+  const name = String(s.name || '');
+  const cat = String(s.category || '');
+  const full = `${name} ${cat} ${s.type || ''}`;
+  if (!NAVER_SERVICE_RE.test(full)) return null;
+  const low = full.toLowerCase();
+  const reasons = [];
+  if (BAD_SERVICE_NAME.test(full)) reasons.push('저품질 키워드');
+  if (/custom\s*(comment|review)|emoji\s*comment|비밀번호|계정\s*생성|account\s*creat/.test(low)) {
+    reasons.push('문구 입력이나 계정 생성이 필요함');
+  }
+  if (/guaranteed?\s*(rank|#1|1st)|1위\s*보장|상위\s*1페이지\s*보장/.test(low)) reasons.push('순위 보장 문구');
+  const rate = parseFloat(s.rate || 0);
+  if (!(rate > 0)) reasons.push('가격 없음');
+  const min = parseInt(s.min, 10) || 0;
+  const max = parseInt(s.max, 10) || 0;
+  if (max > 0 && min > max) reasons.push('수량 범위 오류');
+  if (/website|웹사이트|referral|organic traffic|direct traffic/.test(low) && !/blog|cafe|place|플레이스|store|스토어|clip|클립/.test(low)) {
+    reasons.push('웹사이트 유입은 이미 판매 중');
+  }
+
+  let kind = 'other';
+  if (/neighbor|서로이웃/.test(low)) kind = 'neighbor';
+  else if (/scrap|스크랩/.test(low)) kind = 'scrap';
+  else if (/cafe|카페/.test(low) && /member|join|회원/.test(low)) kind = 'cafe';
+  else if (/place|플레이스/.test(low) && /save|찜|bookmark|저장/.test(low)) kind = 'place_save';
+  else if (/place|플레이스/.test(low) && /review|리뷰|comment|댓글/.test(low)) kind = 'place_review';
+  else if (/place|플레이스/.test(low)) kind = 'place';
+  else if (/smart\s*store|스마트스토어/.test(low) && /wish|찜|like|좋아요/.test(low)) kind = 'store_zzim';
+  else if (/smart\s*store|스마트스토어/.test(low)) kind = 'store';
+  else if (/clip|클립/.test(low)) kind = 'clip';
+  else if (/kin|지식인/.test(low)) kind = 'kin';
+  else if (/blog|블로그/.test(low) && /like|공감/.test(low)) kind = 'blog_like';
+  else if (/blog|블로그/.test(low) && /comment|댓글/.test(low)) kind = 'blog_comment';
+  else if (/blog|블로그/.test(low) && /view|visit|조회|방문/.test(low)) kind = 'blog_view';
+  else if (/blog|블로그/.test(low)) kind = 'blog';
+  else if (/view|visit|조회|방문/.test(low)) kind = 'view';
+
+  if (kind === 'blog_comment' || kind === 'place_review' || kind === 'kin') {
+    reasons.push('댓글·리뷰는 문구를 넣어야 해서 제외');
+  }
+  if (kind === 'other') reasons.push('용도가 불명확');
+  const refill = peakerrServiceHasRefill(s) || /refill|auto-?refill|보장/.test(low);
+  const quality = /\breal\b|\bhq\b|premium|리얼|논드롭|non-?drop/.test(low);
+  if (!refill && !quality && /follower|팔로워/.test(low)) reasons.push('리필·실계정 표기 없는 팔로워');
+  return { kind, ok: reasons.length === 0, reasons, refill, quality, rate, min, max };
+}
+
+function naverImportCopy(kind, refill) {
+  const tail = refill ? ' 줄어들면 보충이 이어지는 표기가 있습니다.' : '';
+  const map = {
+    neighbor: ['네이버 블로그 서로이웃 — 한국', `네이버 블로그에 서로이웃이 들어갑니다. 이웃이 늘면 블로그가 더 활성화된 계정으로 보이고, 글 노출에도 도움이 됩니다.${tail} 공개 블로그 주소를 입력하세요.`],
+    scrap: ['네이버 블로그 스크랩 — 한국', `네이버 블로그 글을 스크랩한 기록이 늘어납니다. 스크랩이 있으면 글이 더 읽힌 콘텐츠로 보입니다.${tail} 공개 글 주소를 입력하세요.`],
+    blog_like: ['네이버 블로그 공감 — 한국', `네이버 블로그 글에 공감이 들어갑니다. 공감이 있는 글은 방문자가 반응 있는 글로 보기 쉽습니다.${tail} 공개 글 주소를 입력하세요.`],
+    blog_view: ['네이버 블로그 조회수 — 한국', `네이버 블로그 글 조회수가 올라갑니다. 조회가 쌓이면 글이 읽히고 있다는 신호가 됩니다.${tail} 공개 글 주소를 입력하세요.`],
+    blog: ['네이버 블로그 — 한국', `네이버 블로그 지표를 올리는 상품입니다.${tail} 공개 블로그 또는 글 주소를 입력하세요.`],
+    cafe: ['네이버 카페 회원 — 한국', `네이버 카페 회원 수가 늘어납니다. 회원이 많은 카페는 새로 들어오는 사람에게 활성 커뮤니티로 보입니다.${tail} 공개 카페 주소를 입력하세요.`],
+    place_save: ['네이버 플레이스 저장 — 한국', `네이버 플레이스 저장 수가 늘어납니다. 저장이 많으면 장소를 찾아본 사람이 많다는 인상입니다.${tail} 플레이스 주소를 입력하세요.`],
+    place: ['네이버 플레이스 — 한국', `네이버 플레이스 지표를 올리는 상품입니다.${tail} 플레이스 주소를 입력하세요.`],
+    store_zzim: ['네이버 스마트스토어 찜 — 한국', `스마트스토어 상품 찜 수가 늘어납니다. 찜이 있으면 상품을 관심 있어 하는 사람이 많아 보입니다.${tail} 상품 주소를 입력하세요.`],
+    store: ['네이버 스마트스토어 — 한국', `네이버 스마트스토어 지표를 올리는 상품입니다.${tail} 스토어 또는 상품 주소를 입력하세요.`],
+    clip: ['네이버 클립 조회수 — 한국', `네이버 클립 조회수가 올라갑니다. 초반 조회가 있으면 영상이 더 노출되기 쉽습니다.${tail} 공개 클립 주소를 입력하세요.`],
+    view: ['네이버 조회수 — 한국', `네이버 콘텐츠 조회수가 올라갑니다.${tail} 공개 주소를 입력하세요.`],
+  };
+  const pair = map[kind];
+  if (!pair) return null;
+  return { name: pair[0], description: pair[1] };
+}
+
+async function listSmmkingsNaverCandidates(opts = {}) {
+  const apiKey = await getSmmkingsApiKey();
+  if (!apiKey) return { error: '연동 키가 없습니다', candidates: [], catalog: 0 };
+  let services;
+  if (smmkingsCatalogCache.size > 0 && !opts.forceRefresh) {
+    services = [...smmkingsCatalogCache.values()];
+  } else {
+    const resp = await panelFetch('smmkings', { key: apiKey, action: 'services' }, { timeoutMs: 90000 });
+    services = await resp.json();
+    if (!Array.isArray(services)) return { error: '카탈로그 응답 오류', candidates: [], catalog: 0 };
+    const map = new Map();
+    services.forEach(s => map.set(String(s.service), s));
+    smmkingsCatalogCache = map;
+  }
+  const existingR = await query(`SELECT api_id, id, name, active FROM services WHERE api_id IS NOT NULL AND api_id != ''`);
+  const existingByApi = new Map(existingR.rows.map(r => [String(r.api_id), r]));
+  const candidates = [];
+  for (const s of services) {
+    const judged = classifyNaverPanelService(s);
+    if (!judged) continue;
+    const copy = naverImportCopy(judged.kind, judged.refill);
+    const apiId = String(s.service);
+    const existing = existingByApi.get(apiId);
+    candidates.push({
+      apiId,
+      name: String(s.name || '').slice(0, 160),
+      category: String(s.category || '').slice(0, 80),
+      rate: judged.rate,
+      min: judged.min,
+      max: judged.max,
+      refill: judged.refill,
+      quality: judged.quality,
+      kind: judged.kind,
+      ok: judged.ok && !!copy,
+      reasons: copy ? judged.reasons : judged.reasons.concat(['이름 만들 수 없음']),
+      displayName: copy ? copy.name : '',
+      inDb: !!existing,
+      dbId: existing?.id || null,
+      dbActive: existing ? parseInt(existing.active, 10) : null,
+    });
+  }
+  candidates.sort((a, b) => (b.ok - a.ok) || (b.refill - a.refill) || (b.quality - a.quality) || (a.rate - b.rate));
+  return { ok: true, catalog: services.length, candidates, count: candidates.length };
+}
+
+async function importSmmkingsNaverServices(apiIds) {
+  const wanted = new Set((apiIds || []).map(id => String(id)));
+  if (!wanted.size) return { error: '추가할 상품이 없습니다', added: [], count: 0 };
+  const listed = await listSmmkingsNaverCandidates({ forceRefresh: true });
+  if (listed.error) return { error: listed.error, added: [], count: 0 };
+  const byKind = new Map();
+  for (const c of listed.candidates) {
+    if (!wanted.has(c.apiId) || !c.ok || c.inDb) continue;
+    const prev = byKind.get(c.kind);
+    if (!prev || (c.refill && !prev.refill) || (c.refill === prev.refill && c.quality && !prev.quality) || (c.refill === prev.refill && c.quality === prev.quality && c.rate < prev.rate)) {
+      byKind.set(c.kind, c);
+    }
+  }
+  const picked = [...byKind.values()];
+  const marginMult = await getDefaultSellMarginMult();
+  const added = [];
+  let n = 0;
+  const usedR = await query(`SELECT id FROM services WHERE id ~ '^snv[0-9]+$'`);
+  for (const row of usedR.rows) {
+    const m = String(row.id).match(/^snv(\d+)$/);
+    if (m) n = Math.max(n, parseInt(m[1], 10));
+  }
+  for (const c of picked) {
+    const remote = smmkingsCatalogCache.get(c.apiId);
+    const copy = naverImportCopy(c.kind, c.refill);
+    if (!remote || !copy) continue;
+    n += 1;
+    const id = `snv${n}`;
+    const cost = parseFloat(remote.rate || 0);
+    const targetMult = await smmkingsTargetMultForCost(cost);
+    const rate = await glowRateForTargetMultiple(cost, marginMult, targetMult);
+    const hasRefill = c.refill ? 1 : 0;
+    await query(`
+      INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
+      VALUES($1,$2,'naver',$3,$4,$5,$6,$7,1,$8,'smmkings')
+      ON CONFLICT(id) DO UPDATE SET
+        name=EXCLUDED.name, pl='naver', rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max,
+        description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
+        refill_guaranteed=EXCLUDED.refill_guaranteed, provider='smmkings',
+        inactive_note='', replace_service_id=NULL
+    `, [
+      id, copy.name, rate,
+      Math.max(1, parseInt(remote.min, 10) || 1),
+      parseInt(remote.max, 10) || 1000000,
+      copy.description, c.apiId, hasRefill,
+    ]);
+    await linkServiceToAllSites(id);
+    added.push({ id, name: copy.name, pl: 'naver', apiId: c.apiId, kind: c.kind, refill: !!hasRefill });
+  }
+  if (added.length) await syncServiceDescriptionFooters().catch(() => null);
+  return { ok: true, added, count: added.length, skipped: wanted.size - added.length };
 }
 
 /** 공급 카탈로그에서 Facebook 조회수 시드(pfb10) 자동 등록 */
@@ -9447,6 +9616,31 @@ app.post('/api/super/import-vietnam', requireSuperAdmin, async (req, res) => {
       ? `베트남 인스타 ${result.instagram}개 · 틱톡 ${result.tiktok}개 추가 (후보 ${result.scanned}개)`
       : '추가할 베트남 Instagram·TikTok 상품 없음 (이미 등록 또는 공급 목록 미제공)';
     res.json({ ok: true, message: msg, ...result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 네이버 상품 미리보기 (추가 없음)
+app.get('/api/super/smmkings-naver-preview', requireSuperAdmin, async (req, res) => {
+  try {
+    const result = await listSmmkingsNaverCandidates({ forceRefresh: true });
+    if (result.error) return res.json({ error: result.error });
+    const fresh = (result.candidates || []).filter(c => !c.inDb);
+    res.json({
+      ok: true,
+      catalog: result.catalog,
+      count: fresh.length,
+      okCount: fresh.filter(c => c.ok).length,
+      items: fresh.slice(0, 120),
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/super/import-smmkings-naver', requireSuperAdmin, async (req, res) => {
+  try {
+    const apiIds = Array.isArray(req.body?.apiIds) ? req.body.apiIds : [];
+    const result = await importSmmkingsNaverServices(apiIds);
+    if (result.error) return res.json({ error: result.error });
+    res.json({ ok: true, message: result.count ? `${result.count}개 추가` : '추가된 상품 없음', ...result });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
