@@ -1446,8 +1446,12 @@ async function applyOpsDigestToSites(opts = {}) {
 
   let tg = { sent: 0, skipped: true };
   if (opts.notifyTg !== false && scope === 'active') {
-    const addN = built.changes?.added?.length || 0;
-    const rmN = built.changes?.removed?.length || 0;
+    const shownAdded = (built.payload?.added && built.payload.added.length)
+      ? built.payload.added
+      : (built.changes?.added || []);
+    const shownRemoved = built.payload?.removed || built.changes?.removed || [];
+    const addN = shownAdded.length;
+    const rmN = shownRemoved.length;
     const quiet = !!(built.quiet || built.payload?.quiet || (!addN && !rmN));
     // 파트너 관리자용 — 멀티테넌트 표현 없음. 변동 없어도 “최신 유지” 알림은 매일 발송
     let msg;
@@ -1472,10 +1476,10 @@ async function applyOpsDigestToSites(opts = {}) {
         }
       }
       if (addN) {
-        msg += `\n\n<b>오늘 새로 열림</b>\n` + built.changes.added.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+        msg += `\n\n<b>오늘 새로 열림</b>\n` + shownAdded.slice(0, 6).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
       }
       if (rmN) {
-        msg += `\n\n<b>오늘 판매 중단</b>\n` + built.changes.removed.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
+        msg += `\n\n<b>오늘 판매 중단</b>\n` + shownRemoved.slice(0, 4).map(n => `· ${shortenSvcName(n, 42)}`).join('\n');
       }
       msg += `\n\n회원 화면에 오늘 점검 결과가 반영되었습니다.`;
     }
