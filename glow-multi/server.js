@@ -1253,15 +1253,15 @@ async function getTodayServiceChanges() {
   } catch (_) {
     prev = {};
   }
-  const added = [];
-  const removed = [];
+  const addedNames = [];
+  const removedNames = [];
   const hasPrev = Object.keys(prev).length > 0;
   if (hasPrev) {
     for (const [id, name] of curActive) {
-      if (!prev[id]) added.push(name);
+      if (!prev[id]) addedNames.push(String(name || id));
     }
     for (const [id, name] of Object.entries(prev)) {
-      if (!curActive.has(id)) removed.push(name);
+      if (!curActive.has(id)) removedNames.push(String(name || id));
     }
   }
   try {
@@ -1275,12 +1275,14 @@ async function getTodayServiceChanges() {
     `, [today]);
     for (const row of stopR.rows) {
       const n = String(row.name || '').trim();
-      if (n && !removed.includes(n)) removed.push(n);
+      if (n && !removedNames.includes(n)) removedNames.push(n);
     }
   } catch (_) { /* inactive_at 없을 수 있음 */ }
+  const addedRank = (name) => /네이버|치지직/.test(name) ? 0 : 1;
+  addedNames.sort((a, b) => addedRank(a) - addedRank(b));
   return {
-    added: added.slice(0, 8),
-    removed: removed.slice(0, 8),
+    added: addedNames.slice(0, 24),
+    removed: removedNames.slice(0, 8),
     snapshot: Object.fromEntries(curActive),
     baseline: !hasPrev,
   };
@@ -1349,8 +1351,10 @@ async function buildMemberOpsDigest() {
   const qualityHeld = stoppedR.rows[0]?.c || 0;
   const changes = await getTodayServiceChanges();
   const highlights = await pickLiveHighlightServices();
-  const added = (changes.added || []).map(n => shortenSvcName(n, 40));
-  const removed = (changes.removed || []).map(n => shortenSvcName(n, 40));
+  const addedAll = (changes.added || []).map(n => shortenSvcName(n, 40));
+  const naverAdded = addedAll.filter(n => /네이버|치지직/.test(n));
+  const added = naverAdded.length ? naverAdded : addedAll.slice(0, 8);
+  const removed = (changes.removed || []).map(n => shortenSvcName(n, 40)).slice(0, 8);
   const quiet = !added.length && !removed.length;
 
   // 변동 없어도 “최신으로 점검·유지 중” — 침묵/변동없음 표현 쓰지 않음
