@@ -262,7 +262,8 @@ async function initDB() {
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS target_count INTEGER DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_count INTEGER DEFAULT 0`); } catch(e) {}
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refill_last_at TIMESTAMP`); } catch(e) {}
-  try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP`); } catch(e) {}
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP`).catch(()=>{});
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS fault TEXT DEFAULT ''`).catch(()=>{});
   try { await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS api_provider TEXT DEFAULT 'peakerr'`); } catch(e) {}
   try { await query(`UPDATE services SET provider='peakerr' WHERE provider IS NULL OR TRIM(provider)=''`); } catch(e) {}
   try { await query(`UPDATE orders SET api_provider='peakerr' WHERE api_provider IS NULL OR TRIM(api_provider)=''`); } catch(e) {}
@@ -2697,6 +2698,7 @@ function unreliableOrderSql(alias = '') {
 
 /** 한 번도 완료가 없거나, 최근 주문 2건이 연속으로 시작 없이 취소·환불된 상품 */
 async function getUnreliableServiceDetails() {
+  await tagCustomerFaultOrders().catch(() => null);
   const { delivered, terminalFail } = unreliableOrderSql();
   const never = await query(`
     SELECT sid,
@@ -2705,6 +2707,7 @@ async function getUnreliableServiceDetails() {
       COUNT(*) FILTER (WHERE status IN ('failed','refunded'))::int AS failed,
       'never'::text AS kind
     FROM orders
+    WHERE COALESCE(fault,'') <> 'customer'
     GROUP BY sid
     HAVING COUNT(*) FILTER (WHERE ${delivered}) = 0
        AND COUNT(*) FILTER (WHERE ${terminalFail}) >= 1
@@ -2719,6 +2722,7 @@ async function getUnreliableServiceDetails() {
       SELECT sid, status, COALESCE(starts_count,0) AS starts_count,
              ROW_NUMBER() OVER (PARTITION BY sid ORDER BY created DESC) AS rn
       FROM orders
+      WHERE COALESCE(fault,'') <> 'customer'
     ) t
     WHERE rn <= 2
     GROUP BY sid
@@ -3406,7 +3410,17 @@ async function refundZeroProgressStuckOrders(opts = {}) {
           if (['pending', 'in progress', 'processing', 'awaiting'].includes(pst)) {
             await submitPanelCancel(prov, apiKey, o.api_order_id).catch(() => null);
           }
+          const fault = customerOrderFault(o, st);
+          if (fault) {
+            await closeCustomerFaultOrder(o, fault, st);
+            continue;
+          }
         }
+      }
+      const linkFault = linkIsCustomerFault(o);
+      if (linkFault) {
+        await closeCustomerFaultOrder(o, linkFault, null);
+        continue;
       }
       const fin = await restoreRefundFinancials(o, 100, {
         reason: `미진행(시작0) 자동 환불 ${hours}h+ - ${o.id}`,
@@ -4446,6 +4460,12 @@ function validateUrl(url, platform, svc = null) {
     const isValid = expectedDomains.some(d => domain === d || domain.endsWith('.' + d));
     if (!isValid) {
       return { ok: false, error: `잘못된 URL입니다. ${platform} 서비스는 ${expectedDomains[0]} 링크를 입력해주세요.` };
+    }
+    if (platform === 'instagram') {
+      const post = u.pathname.match(/^\/(?:p|reel|reels|tv)\/([^/?#]+)/i);
+      if (post && !/^[A-Za-z0-9_-]{5,15}$/.test(post[1])) {
+        return { ok: false, error: '인스타그램 게시물 주소가 올바르지 않습니다. 게시물에서 공유한 링크를 넣어주세요.' };
+      }
     }
     if (platform === 'tiktok' && svc) {
       const bucket = serviceOrderBucket(svc);
@@ -5652,7 +5672,65 @@ async function cancelOrderWithPeakerr(order, opts = {}) {
   }
 }
 
-// 💸 주문 자동 환불 처리 (Peakerr 기반)
+// 💸 주문 자동 환불 처리 (공급 상태 기반)
+function linkIsCustomerFault(order) {
+  const link = String(order?.link || '').trim();
+  if (!link) return '';
+  let u;
+  try { u = new URL(link); } catch { return '주소 형식 오류'; }
+  const host = u.hostname.replace(/^www\./, '').toLowerCase();
+  const pl = String(order.pl || '').toLowerCase();
+  const name = String(order.sname || '');
+  const ig = pl === 'instagram' || /instagram|인스타/i.test(name);
+  if (ig && (host === 'instagram.com' || host.endsWith('.instagram.com') || host === 'instagr.am')) {
+    const m = u.pathname.match(/^\/(?:p|reel|reels|tv)\/([^/?#]+)/i);
+    if (m && !/^[A-Za-z0-9_-]{5,15}$/.test(m[1])) return '게시물 주소가 올바르지 않음';
+  }
+  return '';
+}
+
+function supplierCustomerFault(data) {
+  if (!data || typeof data !== 'object') return '';
+  const text = Object.values(data).filter(v => typeof v === 'string').join(' ');
+  const low = text.toLowerCase();
+  if (/private|not public|is private|account private|비공개|protected account/.test(low)) return '계정이 비공개임';
+  if (/invalid link|incorrect link|wrong link|bad link|invalid url|wrong url|not a valid|media not found|user not found|page not found|does not exist|doesn't exist|unavailable|restricted/.test(low)) {
+    return '주소 또는 계정 오류';
+  }
+  return '';
+}
+
+function customerOrderFault(order, supplierData) {
+  return linkIsCustomerFault(order) || supplierCustomerFault(supplierData);
+}
+
+async function tagCustomerFaultOrders() {
+  const r = await query(`
+    SELECT id, link, pl, sname FROM orders
+    WHERE COALESCE(fault,'') = ''
+      AND COALESCE(link,'') <> ''
+  `);
+  let n = 0;
+  for (const row of r.rows) {
+    if (!linkIsCustomerFault(row)) continue;
+    await query(`UPDATE orders SET fault='customer' WHERE id=$1 AND COALESCE(fault,'')=''`, [row.id]);
+    n++;
+  }
+  return n;
+}
+
+async function closeCustomerFaultOrder(order, fault, supplierData) {
+  await query(`
+    UPDATE orders SET status='cancelled', fault='customer', remains=COALESCE(remains, qty)
+    WHERE id=$1 AND status NOT IN ('completed')
+  `, [order.id]);
+  await logActivity(order.site_id, 'system', '환불없음', '고객 주문 오류로 환불하지 않음', 'order', order.id, fault);
+  const extra = `고객 주문 오류입니다. (${fault})\n비공개 계정·잘못된 주소는 환불되지 않습니다.`;
+  await tgOrderNotify('⚠️ <b>환불 없음</b>', order, { actorId: 'system', extra }).catch(() => null);
+  console.log(`⚠️ 고객 주문 오류 환불 없음 ${order.id}: ${fault}`);
+  return supplierData;
+}
+
 async function autoRefundOrder(order, peakerrData, opts = {}) {
   try {
     // Peakerr 상태 확인
@@ -5686,6 +5764,16 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
         newStatus = 'refunded';
       }
     }
+
+    const fault = (refundPercent > 0 && startsCount === 0) ? customerOrderFault(order, peakerrData) : '';
+    if (fault && ['refunded', 'partial_refunded', 'cancelled', 'canceled'].includes(order.status)) {
+      await query(`UPDATE orders SET fault='customer' WHERE id=$1 AND COALESCE(fault,'')=''`, [order.id]);
+      return { status: order.status, refundPercent: 0, refundAmount: 0, creditRefund: 0, customerFault: fault };
+    }
+    if (fault) {
+      refundPercent = 0;
+      newStatus = 'cancelled';
+    }
     
     const targetCount = startsCount + parseInt(order.qty || 0, 10);
     const justCompleted = newStatus === 'completed' && order.status !== 'completed';
@@ -5695,10 +5783,20 @@ async function autoRefundOrder(order, peakerrData, opts = {}) {
       await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3, target_count=$4, completed_at=NOW() WHERE id=$5`,
         [newStatus, startsCount, remains, targetCount, order.id]);
     } else {
-      await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3 WHERE id=$4`,
-        [newStatus, startsCount, remains, order.id]);
+      await query(`UPDATE orders SET status=$1, starts_count=$2, remains=$3, fault=CASE WHEN $5<>'' THEN 'customer' ELSE fault END WHERE id=$4`,
+        [newStatus, startsCount, remains, order.id, fault || '']);
     }
     if (startsCount > 0) await clearStartCountAlert(order.id);
+
+    if (fault) {
+      await logActivity(order.site_id, 'system', '환불없음', '고객 주문 오류로 환불하지 않음', 'order', order.id, fault);
+      await tgOrderNotify('⚠️ <b>환불 없음</b>', order, {
+        actorId: 'system',
+        extra: `고객 주문 오류입니다. (${fault})\n비공개 계정·잘못된 주소는 환불되지 않습니다.`
+      }).catch(() => null);
+      console.log(`⚠️ 고객 주문 오류 환불 없음 ${order.id}: ${fault}`);
+      return { status: 'cancelled', refundPercent: 0, refundAmount: 0, creditRefund: 0, customerFault: fault };
+    }
     
     // 🎁 완료 시 포인트 적립
     if (justCompleted) {
