@@ -10188,6 +10188,52 @@ async function remapMissingGeoSeedServices() {
 }
 
 /** 슈퍼 — Peakerr 카탈로그 검색 (국가·상품 재매핑용) */
+app.get('/api/super/smmkings-search', requireSuperAdmin, async (req, res) => {
+  try {
+    await ensureSmmkingsCatalogLoaded();
+    if (smmkingsCatalogCache.size === 0) {
+      await syncSmmkingsCatalog();
+    }
+    const q = String(req.query.q || '').trim().toLowerCase();
+    const terms = q.split(/[\s,+|]+/).filter(Boolean);
+    const plFilter = String(req.query.pl || '').trim().toLowerCase();
+    const geoFilter = String(req.query.geo || '').trim().toLowerCase();
+    const excludeGeo = String(req.query.excludeGeo || '').trim().toLowerCase();
+    const hits = [];
+    for (const s of smmkingsCatalogCache.values()) {
+      const full = `${s.name || ''} ${s.category || ''} ${s.type || ''}`;
+      const low = full.toLowerCase();
+      const apiId = String(s.service);
+      if (plFilter && detectPlat(full) !== plFilter) continue;
+      const geo = peakerrMarketGeoKey(s);
+      if (geoFilter && geo !== geoFilter) continue;
+      if (excludeGeo && geo === excludeGeo) continue;
+      if (terms.length && !terms.every(t => {
+        if (/^\d+$/.test(t)) return apiId === t;
+        if (t === 'korea' || t === '한국') return isKoreanMarketService(full);
+        if (t === 'like' || t === 'likes' || t === '좋아요') return /like|likes|좋아요/.test(low);
+        if (t === 'follow' || t === 'follower' || t === 'followers' || t === '팔로워') return /follow|follower|팔로워/.test(low);
+        if (t === 'recommend' || t === '추천') return /recommend|추천|best seller|🔥|⭐/.test(low);
+        return low.includes(t);
+      })) continue;
+      hits.push({
+        apiId,
+        name: String(s.name || '').slice(0, 140),
+        category: String(s.category || '').slice(0, 80),
+        rate: parseFloat(s.rate || 0),
+        min: parseInt(s.min, 10) || 0,
+        max: parseInt(s.max, 10) || 0,
+        refill: peakerrServiceHasRefill(s),
+        geo,
+        pl: detectPlat(full),
+        bucket: detectServiceTypeKo(full),
+      });
+    }
+    hits.sort((a, b) => a.rate - b.rate);
+    res.json({ ok: true, count: hits.length, catalog: smmkingsCatalogCache.size, hits: hits.slice(0, 150) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/super/peakerr-search', requireSuperAdmin, async (req, res) => {
   try {
     await ensurePeakerrCatalogLoaded();
