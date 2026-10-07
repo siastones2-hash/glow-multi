@@ -495,7 +495,8 @@ async function initDB() {
       {id:'pkr6',name:'Instagram 댓글 — 한국 랜덤 프리미엄',pl:'instagram',rate:55.296,min:5,max:1000,description:'한국 계정에서 자연스러운 랜덤 댓글이 달립니다. 게시물 초반에 댓글이 붙으면 “활발한 게시물”로 보여 추가 좋아요·댓글이 따라오기 쉽고, 탐색 노출에도 도움이 됩니다. 문구를 직접 고를 필요 없이 빠르게 참여를 붙이고 싶을 때 사용하세요. 공개된 게시물 URL을 입력하세요.',api_id:'36371'},
       {id:'pkr7',name:'Instagram 댓글 — 한국 맞춤 HQ',pl:'instagram',rate:92.736,min:1,max:2000,description:'원하시는 문구로 한국 HQ 계정 댓글을 달아 드립니다. 이벤트 안내, 제품 칭찬, 질문형 멘션 등 브랜드 톤에 맞는 댓글로 신뢰감을 높일 수 있습니다. 맞춤 문구는 주문 시 별도 안내에 따라 남겨 주세요. 공개된 게시물 URL을 입력하세요.',api_id:'35464'},
       {id:'pkr9',name:'Instagram 팔로워 — 한국 HQ (1년 리필) ⭐',pl:'instagram',rate:17.2224,min:30,max:1000,description:'한국 HQ 팔로워를 하루 약 100명 정도의 슬로우 속도로 늘려 드립니다. 1년 리필 표기가 있어 줄어들면 보충이 이어지므로, 계정 숫자를 오래 유지하고 싶을 때 적합합니다. 팔로워가 늘면 프로필 신뢰도가 올라가고 협찬·문의에도 유리합니다. 예전에 문제 있던 저품질 한국 팔로워와는 다른 신규 상품입니다. 공개 프로필 링크를 입력하세요.',api_id:'35465'},
-      {id:'pkr10',name:'Instagram 팔로워 — 한국 (30일 리필)',pl:'instagram',rate:45.444,min:5,max:50000,description:'한국 타겟 인스타그램 팔로워이며 30일 리필 표기가 있습니다. 국내 마케팅·브랜드 계정의 팔로워 수를 빠르게 키울 때 사용하세요. 팔로워가 많으면 탐색·추천과 협업 제안에서 더 신뢰받기 쉽습니다. 공개 프로필 링크를 입력하세요.',api_id:'35485'},
+      {id:'pkr10',name:'Instagram 팔로워 — 한국 (30일 리필)',pl:'instagram',rate:45.444,min:5,max:50000,description:'[판매 중단] 공급 상품이 빠져 같은 번호가 다른 상품과 겹쳤습니다. 대체: Instagram 팔로워 — 한국 HQ (1년 리필).',api_id:'35485',active:0},
+      {id:'pig28',name:'Instagram 팔로워 — 리얼 (60일 보장) ⭐',pl:'instagram',rate:2.2892,min:10,max:1000000,description:'게시물이 있는 실계정 팔로워입니다. 60일 리필 보장이 있어 줄어들면 보충됩니다. 숫자를 유지할 때 쓰는 글로벌 상품입니다. 한 번에 많이 넣기보다 나눠 주문하면 계정에 덜 튀게 들어옵니다. 공개 프로필 링크를 입력하세요.',api_id:'28933'},
       {id:'pyt17',name:'YouTube 조회수 — 한국 Native (평생) ⭐',pl:'youtube',rate:3.8708,min:1000,max:1000000,description:'한국 Native(국내 시청 성격) 유튜브 조회수이며 평생 보장 표기가 있습니다. 영상 업로드 직후 조회수를 채워 추천·홈 피드 신호로 쓰기 좋고, 국내 시청자 비중이 중요한 채널에 적합합니다. watch?v= 또는 youtu.be 형태의 공개 영상 링크를 입력하세요.',api_id:'34592'},
       {id:'pig1',name:'Instagram 댓글 — 프리미엄 글로벌',pl:'instagram',rate:10.0,min:10,max:10000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 댓글 서비스입니다. 댓글이 많은 게시물은 알고리즘이 높은 참여도로 인식해 탐색 탭 노출을 늘립니다. 긍정적 댓글은 브랜드 이미지를 강화하고, 질문형 댓글은 추가 참여를 유발하는 연쇄 효과를 만듭니다.',api_id:'2544'},
       {id:'pig10',name:'Instagram 노출 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.41,min:10,max:300000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 노출 서비스입니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'17506'},
@@ -587,7 +588,7 @@ async function initDB() {
       }
     }
     // Peakerr 한국 신규·재오픈 시드만 전 사이트 연결 (파트너가 끈 상품을 전부 강제 ON 하지 않음)
-    for (const id of ['pig17', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pkr10', 'pyt17']) {
+    for (const id of ['pig17', 'pig28', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pyt17']) {
       try { await linkServiceToAllSites(id); } catch (_) {}
     }
   }
@@ -2657,6 +2658,15 @@ const DISABLED_SEED_META = {
     note: '최근 주문이 시작되지 않고 취소되어 판매를 중단했습니다.',
     replaceId: null,
   },
+  pkr10: {
+    note: '30일 리필 한국 팔로워 공급 상품이 없어, 다른 상품과 같은 번호로 팔리고 있었습니다.',
+    replaceId: 'pkr9',
+  },
+  skg1: {
+    note: '보장 없는 한국 HQ 팔로워는 완료 뒤 빠지는 경우가 있어 판매를 중단했습니다.',
+    replaceId: 'skg5',
+    replaceHint: 'Instagram 팔로워 — 한국 UHQ (30일 보장)'
+  },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
@@ -3688,14 +3698,14 @@ async function glowRateForSmmkingsSeed(seed, marginMult) {
 
 const SMMKINGS_CURATED_SEEDS = [
   {
-    id: 'skg1', pl: 'instagram', api_id: '5165', cost: 25.50, min: 20, max: 10000, refill: 0,
-    name: 'Instagram 팔로워 — 한국 HQ ⭐',
-    description: '한국 HQ 품질의 인스타그램 팔로워를 늘려 드립니다. 팔로워가 늘어나면 프로필이 더 신뢰감 있게 보이고, 협찬·문의·탐색 노출에도 도움이 됩니다. 국내 브랜드·쇼핑몰·개인 마케팅에 쓰기 좋은 대표 상품입니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
+    id: 'skg1', pl: 'instagram', api_id: '5165', cost: 23.80, min: 10, max: 10000, refill: 0,
+    name: 'Instagram 팔로워 — 한국 HQ',
+    description: '[판매 중단] 보장 없는 한국 HQ 팔로워입니다. 대체: Instagram 팔로워 — 한국 UHQ (30일 보장).'
   },
   {
-    id: 'skg5', pl: 'instagram', api_id: '7377', cost: 51.00, min: 10, max: 20000, refill: 0,
-    name: 'Instagram 팔로워 — 한국 UHQ (논드롭)',
-    description: '한국 UHQ(초고품질) 인스타그램 팔로워입니다. 논드롭에 가까운 유지력을 목표로 하는 상품이라, 숫자를 오래 안정적으로 유지하고 싶을 때 선택하세요. 브랜드 신뢰·장기 계정 자산용으로 적합합니다. 공개 프로필 링크 또는 사용자명을 입력하세요.'
+    id: 'skg5', pl: 'instagram', api_id: '7377', cost: 34.00, min: 10, max: 20000, refill: 1,
+    name: 'Instagram 팔로워 — 한국 UHQ (30일 보장) ⭐',
+    description: '한국 UHQ 인스타그램 팔로워입니다. 30일 보장이 있어 기간 안에 줄어들면 보충됩니다. 브랜드 계정처럼 숫자를 유지할 때 쓰세요. 공개 프로필 링크 또는 사용자명을 입력하세요.'
   },
   {
     id: 'skg2', pl: 'instagram', api_id: '3770', cost: 97.50, sellKrw: 220000, min: 10, max: 35000, refill: 1,
@@ -9988,7 +9998,8 @@ const CURATED_SEED_API_LOCK = {
   pkr1: { api_id: '27334', rate: 59.6409 }, // 한국 구SKU (판매중단)
   pkr2: { api_id: '27334', rate: 59.6409 },
   pkr9: { api_id: '35465', rate: 17.2224 }, // 한국 HQ 1년 리필
-  pkr10: { api_id: '35485', rate: 45.444 }, // 한국 30일 리필
+  pkr10: { api_id: '35485', rate: 45.444 }, // 공급 삭제 — 판매 중단
+  pig28: { api_id: '28933', rate: 2.2892 }, // 리얼 팔로워 60일 리필 (API refill)
   // Instagram 좋아요
   pig13: { api_id: '28283', rate: 0.62 },
   pig15: { api_id: '31244', rate: 0.09 },
