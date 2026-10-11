@@ -908,7 +908,9 @@ app.use(async (req, res, next) => {
 // 관리비 미납 등으로 비활성화된 파트너 사이트 — API 차단
 app.use((req, res, next) => {
   if (!req.siteSuspended) return next();
-  // 정지 화면에서 입금 신청만 허용
+  // 정지 화면: 관리자 로그인·입금 신청만 허용. 계좌는 로그인 후에만 내려줌
+  if (req.method === 'POST' && req.path === '/api/login') return next();
+  if (req.method === 'GET' && req.path === '/api/admin/mgmt-fee-open') return next();
   if (req.method === 'POST' && req.path === '/api/public/mgmt-fee-paid') return next();
   if (req.path.startsWith('/api/')) {
     return res.status(503).json({
@@ -1034,6 +1036,16 @@ async function notifySiteSuspendedByMgmtFee(site, reason = '미납') {
   }
 }
 
+async function isMgmtFeeAdmin(req) {
+  const token = getToken(req);
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) return false;
+  const session = await refreshUserSession(payload);
+  if (!session || !['admin', 'partner', 'superadmin'].includes(session.role)) return false;
+  if (session.role !== 'superadmin' && session.siteId && session.siteId !== req.siteId) return false;
+  return true;
+}
+
 function renderSuspendedCustomerPage(siteName, logo) {
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -1054,17 +1066,121 @@ function renderSuspendedCustomerPage(siteName, logo) {
   p{margin:0;font-size:14px;line-height:1.65;color:#a8a8b8}
   .badge{display:inline-block;margin-top:22px;padding:8px 14px;border-radius:999px;
     background:#2a2a36;color:#c8c8d4;font-size:12px;font-weight:700}
+  .admin-link{margin-top:18px;background:none;border:0;color:#6e6e7c;font-size:12px;cursor:pointer;text-decoration:underline}
+  .login,.pay,.form{display:none;margin-top:18px;text-align:left}
+  .login label,.form label{display:block;font-size:12px;color:#a8a8b8;margin:10px 0 6px}
+  .login input,.form input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #2e2e3a;
+    background:#121218;color:#fff;font-size:14px}
+  .login button,.form button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;
+    background:linear-gradient(135deg,#ff6b81,#c9184a);color:#fff;font-size:15px;font-weight:800;cursor:pointer}
+  .login button:disabled,.form button:disabled{opacity:.55;cursor:not-allowed}
+  .pay{background:#121218;border:1px solid #2e2e3a;border-radius:14px;padding:16px 18px}
+  .pay h2{margin:0 0 10px;font-size:13px;color:#ffb4c0;font-weight:700}
+  .pay .fee{font-size:28px;font-weight:800;color:#fff;margin:0 0 12px}
+  .pay .fee span{font-size:14px;font-weight:600;color:#a8a8b8;margin-left:4px}
+  .pay .bank{font-size:15px;font-weight:700;color:#e8e8f0;line-height:1.5}
+  .pay .holder{font-size:13px;color:#a8a8b8;margin-top:4px}
+  .pay .hint{margin-top:12px;font-size:12px;color:#8a8a9a;line-height:1.55}
+  .msg{margin-top:12px;font-size:13px;line-height:1.5;color:#8AD4A8;display:none}
+  .msg.err{color:#ff8a9a}
 </style>
 </head>
 <body>
   <div class="box">
     <div class="logo">${logo}</div>
     <h1>${siteName}</h1>
-    <p>현재 서비스를 <b style="color:#fff">일시 중단</b> 중입니다.<br>
+    <p id="lead">현재 서비스를 <b style="color:#fff">일시 중단</b> 중입니다.<br>
     빠른 시일 내에 정상화될 예정입니다.<br><br>
     이용에 불편을 드려 죄송합니다.</p>
-    <div class="badge">TEMPORARY UNAVAILABLE</div>
+    <div class="badge" id="badge">TEMPORARY UNAVAILABLE</div>
+    <button type="button" class="admin-link" id="adminBtn">관리자 로그인</button>
+    <div class="login" id="loginBox">
+      <label>관리자 이메일</label>
+      <input id="email" type="email" autocomplete="username"/>
+      <label>비밀번호</label>
+      <input id="pw" type="password" autocomplete="current-password"/>
+      <button type="button" id="loginGo">로그인</button>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+    <div class="pay" id="payBox">
+      <h2>관리자 관리비 결제</h2>
+      <div class="fee" id="fee"></div>
+      <div class="bank" id="bank"></div>
+      <div class="holder" id="holder"></div>
+      <div class="hint">입금자명에 사이트명을 적어 주세요.</div>
+    </div>
+    <div class="form" id="payForm">
+      <label>입금자명 *</label>
+      <input id="depositor" placeholder="통장 입금자명" maxlength="40"/>
+      <label>연락처 (선택)</label>
+      <input id="phone" placeholder="휴대폰 또는 카톡 ID" maxlength="30"/>
+      <label>메모 (선택)</label>
+      <input id="note" placeholder="입금 시각 등" maxlength="200"/>
+      <button type="button" id="payGo">입금 완료 · 신청하기</button>
+      <div class="msg" id="payMsg"></div>
+    </div>
   </div>
+<script>
+(function(){
+  var token='';
+  var adminBtn=document.getElementById('adminBtn');
+  var loginBox=document.getElementById('loginBox');
+  var loginMsg=document.getElementById('loginMsg');
+  adminBtn.onclick=function(){ loginBox.style.display='block'; adminBtn.style.display='none'; };
+  function showErr(el, text){ el.className='msg err'; el.style.display='block'; el.textContent=text; }
+  document.getElementById('loginGo').onclick=async function(){
+    var btn=this;
+    var email=(document.getElementById('email').value||'').trim();
+    var pw=document.getElementById('pw').value||'';
+    if(!email||!pw){ showErr(loginMsg,'이메일과 비밀번호를 입력해 주세요.'); return; }
+    btn.disabled=true; loginMsg.style.display='none';
+    try{
+      var r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,pw:pw})});
+      var d=await r.json();
+      if(d.error||!d.token){ showErr(loginMsg,d.error||'로그인에 실패했습니다.'); btn.disabled=false; return; }
+      var role=(d.user&&d.user.role)||'';
+      if(['admin','partner','superadmin'].indexOf(role)<0){
+        showErr(loginMsg,'관리자 계정만 결제할 수 있습니다.'); btn.disabled=false; return;
+      }
+      token=d.token;
+      var info=await fetch('/api/admin/mgmt-fee-open',{headers:{Authorization:'Bearer '+token}});
+      var pay=await info.json();
+      if(pay.error){ showErr(loginMsg,pay.error); btn.disabled=false; return; }
+      document.getElementById('lead').innerHTML='관리비 입금 후 아래에서 신청해 주세요.<br>확인이 끝나면 사이트가 다시 열립니다.';
+      document.getElementById('badge').style.display='none';
+      loginBox.style.display='none';
+      document.getElementById('fee').innerHTML='₩'+pay.feeLabel+'<span>/월</span>';
+      document.getElementById('bank').textContent=pay.bank;
+      document.getElementById('holder').textContent=pay.holder;
+      document.getElementById('payBox').style.display='block';
+      document.getElementById('payForm').style.display='block';
+    }catch(e){
+      showErr(loginMsg,'로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      btn.disabled=false;
+    }
+  };
+  document.getElementById('payGo').onclick=async function(){
+    var btn=this;
+    var msg=document.getElementById('payMsg');
+    var depositor=(document.getElementById('depositor').value||'').trim();
+    var phone=(document.getElementById('phone').value||'').trim();
+    var note=(document.getElementById('note').value||'').trim();
+    if(depositor.length<2){ showErr(msg,'입금자명을 입력해 주세요.'); return; }
+    btn.disabled=true; msg.style.display='none';
+    try{
+      var r=await fetch('/api/public/mgmt-fee-paid',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+        body:JSON.stringify({depositor:depositor,phone:phone,note:note})});
+      var d=await r.json();
+      if(d.error){ showErr(msg,d.error); btn.disabled=false; return; }
+      msg.className='msg'; msg.style.display='block'; msg.textContent=d.message||'입금완료 신청이 접수되었습니다.';
+      btn.textContent='신청 완료';
+    }catch(e){
+      showErr(msg,'전송 실패. 잠시 후 다시 시도해 주세요.');
+      btn.disabled=false;
+    }
+  };
+})();
+</script>
 </body>
 </html>`;
 }
@@ -1614,6 +1730,33 @@ async function tgMgmtFeeAlert(row) {
   }
 }
 
+/** 정지 화면 — 관리자 로그인 후에만 계좌를 보여 줌 */
+app.get('/api/admin/mgmt-fee-open', async (req, res) => {
+  try {
+    if (!req.site || req.site.id === 'default') {
+      return res.status(400).json({ error: '파트너 사이트에서만 확인할 수 있습니다' });
+    }
+    if (!(await isMgmtFeeAdmin(req))) {
+      return res.status(403).json({ error: '관리자 계정으로 로그인해 주세요.' });
+    }
+    if (!canSubmitMgmtFee(req.site)) {
+      return res.status(400).json({ error: '지금은 관리비 입금 신청 기간이 아닙니다' });
+    }
+    const feeKrw = siteMgmtFeeKrw(req.site);
+    if (feeKrw <= 0 || isMgmtFeeExempt(req.site)) {
+      return res.status(400).json({ error: '이 사이트는 관리비 입금 대상이 아닙니다' });
+    }
+    res.json({
+      ok: true,
+      feeLabel: feeKrw.toLocaleString('ko-KR'),
+      bank: MGMT_FEE_BANK,
+      holder: MGMT_FEE_HOLDER
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 /** 관리비 입금완료 신청 (텔레그램 → 운영자 승인 시 재오픈/기한 연장) */
 app.post('/api/public/mgmt-fee-paid', async (req, res) => {
   try {
@@ -1629,8 +1772,9 @@ app.post('/api/public/mgmt-fee-paid', async (req, res) => {
     if (!depositor || depositor.length < 2) {
       return res.json({ error: '입금자명을 입력해 주세요' });
     }
-    if (!isValidMgmtPayKey(req.site.id, req.body?.k)) {
-      return res.status(403).json({ error: '신청 링크가 올바르지 않습니다. 텔레그램 안내 링크로 다시 접속해 주세요.' });
+    const adminOk = await isMgmtFeeAdmin(req);
+    if (!adminOk && !isValidMgmtPayKey(req.site.id, req.body?.k)) {
+      return res.status(403).json({ error: '관리자 로그인 후 신청해 주세요.' });
     }
     const pending = await query(
       `SELECT id FROM mgmt_fee_requests WHERE site_id=$1 AND status='pending' LIMIT 1`,
@@ -11161,16 +11305,10 @@ app.get('*', async (req, res) => {
       }
     }
 
-    // 비활성 파트너 도메인. 관리비 대상이면 관리자가 이 화면에서 바로 입금 신청.
+    // 비활성 파트너 도메인. 고객에게는 중단 안내만, 계좌는 관리자 로그인 후.
     if (req.siteSuspended) {
       const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
       const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
-      const feeKrw = siteMgmtFeeKrw(req.site);
-      if (feeKrw > 0 && !isMgmtFeeExempt(req.site) && canSubmitMgmtFee(req.site)) {
-        return res.status(200).type('html').send(
-          renderSuspendedPayPage(siteName, logo, feeKrw.toLocaleString('ko-KR'), mgmtPayToken(req.site.id))
-        );
-      }
       return res.status(503).type('html').send(renderSuspendedCustomerPage(siteName, logo));
     }
 
