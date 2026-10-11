@@ -1110,11 +1110,12 @@ function renderSuspendedPayPage(siteName, logo, feeLabel, payKey) {
   <div class="box">
     <div class="logo">${logo}</div>
     <h1>${siteName}</h1>
-    <p>관리비를 입금하신 뒤<br>
-    아래에서 <b style="color:#fff">입금 완료 · 신청하기</b>를 눌러 주세요.<br>
-    운영자 확인·승인 후 바로 처리됩니다.</p>
+    <p>지금은 서비스가 <b style="color:#fff">일시 중단</b>입니다.<br>
+    사이트 관리자가 아래 관리비를 입금한 뒤<br>
+    <b style="color:#fff">입금 완료 · 신청하기</b>를 누르면<br>
+    확인 후 사이트가 다시 열립니다.</p>
     <div class="pay">
-      <h2>관리비 입금 안내</h2>
+      <h2>관리자 관리비 결제</h2>
       <div class="fee">₩${feeLabel}<span>/월</span></div>
       <div class="bank">${MGMT_FEE_BANK}</div>
       <div class="holder">${MGMT_FEE_HOLDER}</div>
@@ -11160,10 +11161,16 @@ app.get('*', async (req, res) => {
       }
     }
 
-    // 비활성(관리비 미납 등) 파트너 도메인 → 본사 GLOW로 넘어가지 않고 정지 안내
+    // 비활성 파트너 도메인. 관리비 대상이면 관리자가 이 화면에서 바로 입금 신청.
     if (req.siteSuspended) {
       const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
       const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
+      const feeKrw = siteMgmtFeeKrw(req.site);
+      if (feeKrw > 0 && !isMgmtFeeExempt(req.site) && canSubmitMgmtFee(req.site)) {
+        return res.status(200).type('html').send(
+          renderSuspendedPayPage(siteName, logo, feeKrw.toLocaleString('ko-KR'), mgmtPayToken(req.site.id))
+        );
+      }
       return res.status(503).type('html').send(renderSuspendedCustomerPage(siteName, logo));
     }
 
