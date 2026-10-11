@@ -1046,7 +1046,17 @@ async function isMgmtFeeAdmin(req) {
   return true;
 }
 
-function renderSuspendedCustomerPage(siteName, logo) {
+function safeHttpsUrl(raw) {
+  const url = String(raw || '').trim();
+  if (!/^https:\/\/[^\s"'<>]+$/i.test(url)) return '';
+  return url.replace(/"/g, '');
+}
+
+function renderSuspendedCustomerPage(siteName, logo, contactUrl) {
+  const contact = safeHttpsUrl(contactUrl);
+  const contactHtml = contact
+    ? `<a class="contact" href="${contact}" target="_blank" rel="noopener">${siteName} 관리자에게 문의</a>`
+    : '';
   return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1066,7 +1076,9 @@ function renderSuspendedCustomerPage(siteName, logo) {
   p{margin:0;font-size:14px;line-height:1.65;color:#a8a8b8}
   .badge{display:inline-block;margin-top:22px;padding:8px 14px;border-radius:999px;
     background:#2a2a36;color:#c8c8d4;font-size:12px;font-weight:700}
-  .admin-link{margin-top:18px;background:none;border:0;color:#6e6e7c;font-size:12px;cursor:pointer;text-decoration:underline}
+  .contact{display:inline-block;margin-top:22px;padding:12px 16px;border-radius:12px;background:#FEE500;color:#3C1E1E;
+    font-size:14px;font-weight:800;text-decoration:none}
+  .admin-link{display:block;margin:16px auto 0;background:none;border:0;color:#6e6e7c;font-size:12px;cursor:pointer;text-decoration:underline}
   .login,.pay,.form{display:none;margin-top:18px;text-align:left}
   .login label,.form label{display:block;font-size:12px;color:#a8a8b8;margin:10px 0 6px}
   .login input,.form input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #2e2e3a;
@@ -1093,6 +1105,7 @@ function renderSuspendedCustomerPage(siteName, logo) {
     빠른 시일 내에 정상화될 예정입니다.<br><br>
     이용에 불편을 드려 죄송합니다.</p>
     <div class="badge" id="badge">TEMPORARY UNAVAILABLE</div>
+    ${contactHtml}
     <button type="button" class="admin-link" id="adminBtn">관리자 로그인</button>
     <div class="login" id="loginBox">
       <label>관리자 이메일</label>
@@ -1140,7 +1153,11 @@ function renderSuspendedCustomerPage(siteName, logo) {
       if(d.error||!d.token){ showErr(loginMsg,d.error||'로그인에 실패했습니다.'); btn.disabled=false; return; }
       var role=(d.user&&d.user.role)||'';
       if(['admin','partner','superadmin'].indexOf(role)<0){
-        showErr(loginMsg,'관리자 계정만 결제할 수 있습니다.'); btn.disabled=false; return;
+        loginBox.style.display='none';
+        adminBtn.style.display='none';
+        document.getElementById('email').value='';
+        document.getElementById('pw').value='';
+        return;
       }
       token=d.token;
       var info=await fetch('/api/admin/mgmt-fee-open',{headers:{Authorization:'Bearer '+token}});
@@ -1148,6 +1165,8 @@ function renderSuspendedCustomerPage(siteName, logo) {
       if(pay.error){ showErr(loginMsg,pay.error); btn.disabled=false; return; }
       document.getElementById('lead').innerHTML='관리비 입금 후 아래에서 신청해 주세요.<br>확인이 끝나면 사이트가 다시 열립니다.';
       document.getElementById('badge').style.display='none';
+      var contact=document.querySelector('.contact');
+      if(contact) contact.style.display='none';
       loginBox.style.display='none';
       document.getElementById('fee').innerHTML='₩'+pay.feeLabel+'<span>/월</span>';
       document.getElementById('bank').textContent=pay.bank;
@@ -11309,7 +11328,7 @@ app.get('*', async (req, res) => {
     if (req.siteSuspended) {
       const siteName = String(req.site?.name || '사이트').replace(/[<>&"]/g, '');
       const logo = String(req.site?.logo || '⏸').replace(/[<>&"]/g, '');
-      return res.status(503).type('html').send(renderSuspendedCustomerPage(siteName, logo));
+      return res.status(503).type('html').send(renderSuspendedCustomerPage(siteName, logo, req.site?.kakao));
     }
 
     // HTML 파일 매번 새로 읽기 (사이트 설정 변경 시 즉시 반영)
