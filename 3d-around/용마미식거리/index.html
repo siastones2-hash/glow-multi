@@ -36,40 +36,6 @@
       visibility: hidden;
     }
     .stage.live iframe { visibility: visible; }
-    .mask {
-      position: absolute;
-      z-index: 4;
-      top: 4px;
-      left: 0;
-      width: 156px;
-      height: 50px;
-      background: transparent;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      -webkit-mask-image: url("mark-mask.png");
-      mask-image: url("mark-mask.png");
-      -webkit-mask-size: 100% 100%;
-      mask-size: 100% 100%;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-    }
-    .brand {
-      position: absolute;
-      z-index: 4;
-      left: 50%;
-      bottom: 124px;
-      width: 440px;
-      height: 96px;
-      transform: translateX(-50%);
-      background: transparent;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      -webkit-mask-image: radial-gradient(ellipse 56% 52% at 50% 58%, #000 10%, transparent 70%);
-      mask-image: radial-gradient(ellipse 56% 52% at 50% 58%, #000 10%, transparent 70%);
-      transition: opacity .4s ease;
-    }
-    .brand.gone { opacity: 0; visibility: hidden; pointer-events: none; }
-
     .cover {
       position: absolute;
       z-index: 8;
@@ -278,8 +244,6 @@
       }
       .panel { top: auto; bottom: 72px; left: 14px; right: 14px; width: auto; }
       .hint { display: none; }
-      .brand { width: 300px; height: 80px; bottom: 108px; }
-      .mask { width: 148px; height: 46px; }
     }
   </style>
 </head>
@@ -293,8 +257,6 @@
       referrerpolicy="no-referrer-when-downgrade"
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
     ></iframe>
-    <div class="mask" aria-hidden="true"></div>
-    <div class="brand" id="brand" aria-hidden="true"></div>
 
     <section class="cover" id="cover">
       <div class="cover-copy">
@@ -382,11 +344,8 @@
     frame.addEventListener("load", arm);
     setTimeout(arm, 2800);
 
-    const brand = document.getElementById("brand");
-
     function revealTour() {
       stage.classList.add("live");
-      setTimeout(() => brand.classList.add("gone"), 8000);
     }
 
     function closePanels() {
