@@ -7,215 +7,444 @@
   <meta name="description" content="강원 강릉시 경강로 포남1동주민센터 일대. 용마미식거리를 3D로 걸어볼 수 있습니다." />
   <meta property="og:title" content="용마미식거리" />
   <meta property="og:description" content="강원 강릉시 경강로 포남1동주민센터 일대" />
+  <meta property="og:url" content="https://siastones2-hash.github.io/glow-multi/3d-around/용마미식거리/" />
+  <meta name="theme-color" content="#140e0b" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23140e0b'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23e4a15a'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; background: #100c09; }
     body {
-      color: #f4ecdf;
+      color: #f6efe4;
       font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     }
     button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 
-    .app { height: 100%; display: flex; min-width: 0; }
-    .rail {
-      width: 280px;
-      flex: none;
-      display: flex;
-      flex-direction: column;
-      padding: 28px 22px 20px;
-      background:
-        linear-gradient(180deg, rgba(228,161,90,.16), transparent 180px),
-        #17110d;
-      border-right: 1px solid rgba(244,236,223,.08);
+    .stage { height: 100%; position: relative; background: #000; }
+    .stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+    .mask {
+      position: absolute;
+      z-index: 4;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 92px;
+      background: linear-gradient(180deg, #0c0806 0px, #0c0806 52px, rgba(12,8,6,0) 92px);
     }
+    .footbar {
+      position: absolute;
+      z-index: 4;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 112px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 22px 20px;
+      background: linear-gradient(180deg, rgba(12,8,6,0), #0c0806 40px);
+      color: rgba(246,239,228,.62);
+      font-size: 13px;
+    }
+
+    .cover {
+      position: absolute;
+      z-index: 8;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      padding: 7vh 7vw 8vh;
+      background:
+        linear-gradient(180deg, #0c0806 0px, #0c0806 72px, rgba(12,8,6,.22) 168px, rgba(12,8,6,.1) 42%, rgba(12,8,6,.78) 74%, #0c0806 100%),
+        linear-gradient(90deg, rgba(12,8,6,.55), rgba(12,8,6,.12) 58%, rgba(12,8,6,.28));
+      transition: opacity .45s ease, visibility .45s ease;
+    }
+    .cover.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+    .cover-copy { max-width: 640px; }
     .kicker {
       margin: 0;
       color: #e4a15a;
       font-size: 12px;
       font-weight: 650;
-      letter-spacing: .22em;
+      letter-spacing: .28em;
     }
-    h1 {
-      margin: 14px 0 0;
-      font-size: 34px;
+    .cover h1 {
+      margin: 18px 0 0;
+      font-size: clamp(52px, 8vw, 92px);
       font-weight: 700;
-      line-height: 1.15;
-      letter-spacing: -.04em;
+      line-height: .95;
+      letter-spacing: -.055em;
     }
-    .place {
-      margin: 12px 0 0;
-      color: rgba(244,236,223,.62);
+    .rule { width: 48px; height: 1px; margin: 22px 0; background: rgba(228,161,90,.8); }
+    .lede {
+      margin: 0;
+      max-width: 28em;
+      color: rgba(246,239,228,.82);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+    .enter {
+      margin-top: 28px;
+      height: 52px;
+      padding: 0 22px;
+      border-radius: 999px;
+      background: #f6efe4;
+      color: #17110d;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .enter:disabled { opacity: .55; cursor: default; }
+    .enter span { margin-left: 8px; }
+    .fine {
+      margin: 14px 0 0;
+      color: rgba(246,239,228,.55);
       font-size: 13px;
-      line-height: 1.55;
     }
-    nav { display: flex; flex-direction: column; gap: 6px; margin-top: 28px; }
-    nav button {
-      min-height: 44px;
-      padding: 0 14px;
+
+    .dock {
+      position: absolute;
+      z-index: 5;
+      top: 18px;
+      left: 18px;
+      width: min(300px, calc(100% - 36px));
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px 16px 14px;
+      border-radius: 22px;
+      background: rgba(18,13,10,.9);
+      border: 1px solid rgba(246,239,228,.12);
+      backdrop-filter: blur(16px);
+    }
+    .dock.show { display: flex; }
+    .dock h1 {
+      margin: 8px 0 0;
+      font-size: 28px;
+      letter-spacing: -.045em;
+      line-height: 1.1;
+    }
+    .dock .place {
+      margin: 8px 0 0;
+      color: rgba(246,239,228,.62);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .group {
+      margin: 8px 2px 0;
+      color: rgba(246,239,228,.4);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: .16em;
+    }
+    .dock button.row, .dock .row {
+      width: 100%;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
       border-radius: 12px;
       text-align: left;
       font-size: 15px;
       letter-spacing: -.02em;
     }
-    nav button:hover { background: rgba(244,236,223,.06); }
-    nav button[aria-current="true"] {
-      background: #f4ecdf;
-      color: #17110d;
-      font-weight: 650;
+    .dock button.row:hover { background: rgba(246,239,228,.06); }
+    .dock button.row[aria-current="true"] { background: #f6efe4; color: #17110d; font-weight: 700; }
+    .dock .tools { display: flex; flex-direction: column; gap: 2px; }
+    .copy {
+      margin-top: 4px;
+      color: rgba(246,239,228,.7);
+      font-size: 13px;
     }
-    .foot {
-      margin-top: auto;
-      padding-top: 18px;
-      color: rgba(244,236,223,.48);
-      font-size: 12px;
-      line-height: 1.55;
-    }
+    .copied { color: #e4a15a; }
 
-    .view { position: relative; flex: 1; min-width: 0; background: #000; }
-    .view iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
-    .mask {
-      position: absolute;
-      z-index: 2;
-      top: 0;
-      left: 0;
-      width: 230px;
-      height: 64px;
-      background: linear-gradient(90deg, #000 0 180px, rgba(0,0,0,0));
-    }
     .panel {
       position: absolute;
-      z-index: 3;
-      top: 16px;
-      right: 16px;
-      width: min(360px, calc(100% - 32px));
+      z-index: 6;
+      top: 18px;
+      right: 18px;
+      width: min(380px, calc(100% - 36px));
+      max-height: calc(100% - 36px);
+      overflow: auto;
       padding: 22px 20px 16px;
-      border-radius: 18px;
-      background: rgba(23,17,13,.94);
-      border: 1px solid rgba(244,236,223,.14);
+      border-radius: 22px;
+      background: rgba(18,13,10,.94);
+      border: 1px solid rgba(246,239,228,.14);
       display: none;
     }
     .panel.open { display: block; }
-    .panel h2 { margin: 0 0 10px; font-size: 18px; letter-spacing: -.03em; }
-    .panel p { margin: 0; color: rgba(244,236,223,.84); font-size: 14px; line-height: 1.6; }
+    .panel h2 { margin: 0 0 12px; font-size: 20px; letter-spacing: -.03em; }
+    .panel p, .panel li { color: rgba(246,239,228,.84); font-size: 14px; line-height: 1.6; }
+    .panel p { margin: 0; }
+    .panel ol { margin: 0; padding-left: 18px; }
+    .panel li + li { margin-top: 8px; }
     .map {
       position: relative;
       margin-top: 14px;
-      height: 180px;
-      border-radius: 12px;
+      height: 190px;
+      border-radius: 14px;
       overflow: hidden;
     }
     .map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-    .close {
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .actions a, .close {
       position: relative;
       z-index: 2;
-      margin-top: 14px;
       height: 36px;
+      display: inline-flex;
+      align-items: center;
       padding: 0 14px;
       border-radius: 999px;
-      background: #f4ecdf;
+      background: #f6efe4;
       color: #17110d;
       font-size: 13px;
-      font-weight: 650;
+      font-weight: 700;
+      text-decoration: none;
     }
+    .actions a.ghost {
+      background: transparent;
+      color: #f6efe4;
+      border: 1px solid rgba(246,239,228,.28);
+    }
+
+    .hint {
+      position: absolute;
+      z-index: 4;
+      left: 50%;
+      bottom: 124px;
+      transform: translateX(-50%);
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(18,13,10,.82);
+      color: rgba(246,239,228,.86);
+      font-size: 13px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .hint.show { opacity: 1; }
+
     .menu-btn { display: none; }
 
     @media (max-width: 800px) {
-      .app { display: block; }
+      .cover { align-items: flex-end; padding: 24px 22px 32px; }
+      .cover h1 { font-size: 48px; }
       .menu-btn {
-        display: inline-flex;
-        align-items: center;
-        position: fixed;
-        z-index: 6;
-        top: 12px;
-        left: 12px;
+        display: none;
+        position: absolute;
+        z-index: 7;
+        top: 14px;
+        left: 14px;
         height: 40px;
         padding: 0 14px;
         border-radius: 999px;
-        background: rgba(23,17,13,.92);
-        border: 1px solid rgba(244,236,223,.16);
+        background: rgba(18,13,10,.9);
+        border: 1px solid rgba(246,239,228,.16);
       }
-      .rail {
-        position: fixed;
-        z-index: 7;
-        inset: 0 auto 0 0;
-        width: min(300px, 88vw);
-        transform: translateX(-105%);
-        transition: transform .2s ease;
+      .menu-btn.show { display: inline-flex; align-items: center; }
+      .dock {
+        top: auto;
+        bottom: 116px;
+        left: 14px;
+        right: 14px;
+        width: auto;
+        max-height: min(62vh, 480px);
+        overflow: auto;
       }
-      .rail.open { transform: none; }
-      .view { height: 100%; }
-      .mask { width: 150px; }
+      .panel { top: auto; bottom: 116px; left: 14px; right: 14px; width: auto; }
+      .hint { display: none; }
+      .footbar { font-size: 12px; padding-bottom: 14px; }
     }
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="stage">
+    <iframe
+      id="tour"
+      title="용마미식거리 3D 둘러보기"
+      allow="fullscreen; xr-spatial-tracking"
+      allowfullscreen
+      referrerpolicy="no-referrer-when-downgrade"
+      sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
+    ></iframe>
+    <div class="mask" aria-hidden="true"></div>
+    <div class="footbar" aria-hidden="true">
+      <span>바닥을 누르면 걸어갑니다</span>
+      <span>화면을 끌면 둘러봅니다</span>
+    </div>
+
+    <section class="cover" id="cover">
+      <div class="cover-copy">
+        <p class="kicker">3D어라운드</p>
+        <h1>용마미식거리</h1>
+        <div class="rule"></div>
+        <p class="lede">강원 강릉시 경강로 포남1동주민센터 일대.<br />촬영한 거리를 그대로 걸어볼 수 있습니다.</p>
+        <button class="enter" id="enter" type="button" disabled>거리 여는 중</button>
+        <p class="fine">바닥을 누르면 그 방향으로 걸어갑니다.</p>
+      </div>
+    </section>
+
     <button class="menu-btn" id="menu-btn" type="button">메뉴</button>
-    <aside class="rail" id="rail">
-      <p class="kicker">3D어라운드</p>
-      <h1>용마미식거리</h1>
-      <p class="place">강원 강릉시 경강로<br />포남1동주민센터 일대</p>
-      <nav>
-        <button type="button" id="walk" aria-current="true">거리 걷기</button>
-        <button type="button" id="where">위치</button>
-      </nav>
-      <p class="foot">화면을 누르면 그쪽으로 걸어 들어갑니다.</p>
+
+    <aside class="dock" id="dock">
+      <div>
+        <p class="kicker">3D어라운드</p>
+        <h1>용마미식거리</h1>
+        <p class="place">강원 강릉시 경강로<br />포남1동주민센터 일대</p>
+      </div>
+      <div>
+        <div class="group">둘러보기</div>
+        <div class="tools">
+          <button class="row" id="walk" type="button" aria-current="true">거리 걷기</button>
+          <button class="row" id="reset" type="button">처음 위치</button>
+        </div>
+        <div class="group">안내</div>
+        <div class="tools">
+          <button class="row" id="where" type="button">위치</button>
+          <button class="row" id="how" type="button">걷는 법</button>
+        </div>
+      </div>
+      <button class="row copy" id="copy" type="button">이 페이지 주소 복사</button>
     </aside>
 
-    <div class="view">
-      <iframe
-        id="tour"
-        title="용마미식거리 3D 둘러보기"
-        allow="fullscreen; xr-spatial-tracking"
-        allowfullscreen
-        referrerpolicy="no-referrer-when-downgrade"
-        sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
-      ></iframe>
-      <div class="mask" aria-hidden="true"></div>
+    <p class="hint" id="hint">바닥을 누르면 그 방향으로 걸어갑니다</p>
 
-      <section class="panel" id="panel-where">
-        <h2>위치</h2>
-        <p>강원 강릉시 경강로 포남1동주민센터 일대</p>
-        <div class="map">
-          <iframe title="용마미식거리 위치" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=%EA%B0%95%EC%9B%90%20%EA%B0%95%EB%A6%89%EC%8B%9C%20%EA%B2%BD%EA%B0%95%EB%A1%9C%20%ED%8F%AC%EB%82%A81%EB%8F%99%EC%A3%BC%EB%AF%BC%EC%84%BC%ED%84%B0&amp;z=16&amp;output=embed"></iframe>
-        </div>
-        <button class="close" id="close" type="button">닫기</button>
-      </section>
-    </div>
+    <section class="panel" id="panel-where">
+      <h2>위치</h2>
+      <p>강원 강릉시 경강로 포남1동주민센터 일대</p>
+      <div class="map">
+        <iframe title="용마미식거리 위치" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=%EA%B0%95%EC%9B%90%20%EA%B0%95%EB%A6%89%EC%8B%9C%20%EA%B2%BD%EA%B0%95%EB%A1%9C%20%ED%8F%AC%EB%82%A81%EB%8F%99%EC%A3%BC%EB%AF%BC%EC%84%BC%ED%84%B0&amp;z=16&amp;output=embed"></iframe>
+      </div>
+      <div class="actions">
+        <a href="https://map.naver.com/p/search/%EA%B0%95%EC%9B%90%20%EA%B0%95%EB%A6%89%EC%8B%9C%20%EA%B2%BD%EA%B0%95%EB%A1%9C%20%ED%8F%AC%EB%82%A81%EB%8F%99%EC%A3%BC%EB%AF%BC%EC%84%BC%ED%84%B0" target="_blank" rel="noopener noreferrer">네이버 지도</a>
+        <button class="close" type="button" data-close>닫기</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-how">
+      <h2>걷는 법</h2>
+      <ol>
+        <li>바닥을 누르면 그 자리로 이동합니다.</li>
+        <li>화면을 끌면 주변을 둘러봅니다.</li>
+        <li>처음 위치를 누르면 처음 장면으로 돌아옵니다.</li>
+      </ol>
+      <div class="actions">
+        <button class="close" type="button" data-close>닫기</button>
+      </div>
+    </section>
   </div>
 
   <script>
+    const pageUrl = "https://siastones2-hash.github.io/glow-multi/3d-around/용마미식거리/";
     const src = "https://my.matterport.com/show/?m=o81fY7Gp7rJ&play=1&qs=1&lang=ko&title=0&help=0&hr=0&mls=0&brand=0";
     const frame = document.getElementById("tour");
-    const rail = document.getElementById("rail");
-    const panel = document.getElementById("panel-where");
+    const cover = document.getElementById("cover");
+    const dock = document.getElementById("dock");
+    const enter = document.getElementById("enter");
+    const hint = document.getElementById("hint");
+    const menuBtn = document.getElementById("menu-btn");
     const walk = document.getElementById("walk");
+    let ready = false;
+
     frame.src = src;
 
-    function showWalk() {
-      panel.classList.remove("open");
+    function arm() {
+      if (ready) return;
+      ready = true;
+      enter.disabled = false;
+      enter.innerHTML = "거리로 들어가기 <span>→</span>";
+    }
+    frame.addEventListener("load", arm);
+    setTimeout(arm, 2800);
+
+    function closePanels() {
+      document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("open"));
       walk.setAttribute("aria-current", "true");
-      rail.classList.remove("open");
+      document.querySelectorAll("#where, #how").forEach((button) => button.removeAttribute("aria-current"));
     }
 
+    function entered() {
+      cover.classList.add("gone");
+      dock.classList.add("show");
+      menuBtn.classList.add("show");
+      hint.classList.add("show");
+      setTimeout(() => hint.classList.remove("show"), 4200);
+    }
+
+    enter.addEventListener("click", () => {
+      arm();
+      entered();
+    });
+
     walk.addEventListener("click", () => {
+      closePanels();
+      dock.classList.remove("open");
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
       frame.src = src;
-      showWalk();
+      closePanels();
+      dock.classList.remove("open");
+      hint.classList.add("show");
+      setTimeout(() => hint.classList.remove("show"), 2800);
     });
 
-    document.getElementById("where").addEventListener("click", () => {
+    function togglePanel(id, button) {
+      const panel = document.getElementById(id);
       const open = panel.classList.contains("open");
-      panel.classList.toggle("open", !open);
-      walk.setAttribute("aria-current", open ? "true" : "false");
-      rail.classList.remove("open");
+      closePanels();
+      if (!open) {
+        panel.classList.add("open");
+        walk.removeAttribute("aria-current");
+        button.setAttribute("aria-current", "true");
+      }
+      dock.classList.remove("open");
+    }
+
+    document.getElementById("where").addEventListener("click", (event) => {
+      togglePanel("panel-where", event.currentTarget);
+    });
+    document.getElementById("how").addEventListener("click", (event) => {
+      togglePanel("panel-how", event.currentTarget);
+    });
+    document.querySelectorAll("[data-close]").forEach((button) => {
+      button.addEventListener("click", closePanels);
     });
 
-    document.getElementById("close").addEventListener("click", showWalk);
-    document.getElementById("menu-btn").addEventListener("click", () => {
-      rail.classList.toggle("open");
+    document.getElementById("copy").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      try {
+        await navigator.clipboard.writeText(pageUrl);
+      } catch (error) {
+        const field = document.createElement("input");
+        field.value = pageUrl;
+        document.body.appendChild(field);
+        field.select();
+        document.execCommand("copy");
+        field.remove();
+      }
+      button.textContent = "주소를 복사했습니다";
+      button.classList.add("copied");
+      setTimeout(() => {
+        button.textContent = "이 페이지 주소 복사";
+        button.classList.remove("copied");
+      }, 1800);
+    });
+
+    menuBtn.addEventListener("click", () => {
+      dock.classList.toggle("open");
     });
   </script>
+  <style>
+    @media (max-width: 800px) {
+      .dock { display: none; }
+      .dock.show { display: none; }
+      .dock.show.open { display: flex; }
+    }
+  </style>
 </body>
 </html>
