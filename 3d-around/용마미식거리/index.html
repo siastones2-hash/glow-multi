@@ -21,8 +21,21 @@
     }
     button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 
-    .stage { height: 100%; position: relative; background: #000; }
-    .stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+    .stage {
+      height: 100%;
+      position: relative;
+      background: #0c0806 url("poster.jpg") center / cover no-repeat;
+    }
+    .stage iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+      visibility: hidden;
+    }
+    .stage.live iframe { visibility: visible; }
     .mask {
       position: absolute;
       z-index: 4;
@@ -32,14 +45,6 @@
       height: 108px;
       background: linear-gradient(180deg, #0c0806 0px, #0c0806 76px, rgba(12,8,6,0) 108px);
     }
-    .curtain {
-      position: absolute;
-      z-index: 7;
-      inset: 0;
-      background: #0c0806;
-      transition: opacity .6s ease;
-    }
-    .curtain.gone { opacity: 0; visibility: hidden; pointer-events: none; }
     .footbar {
       position: absolute;
       z-index: 4;
@@ -280,7 +285,6 @@
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
     ></iframe>
     <div class="mask" aria-hidden="true"></div>
-    <div class="curtain" id="curtain"></div>
     <div class="footbar" aria-hidden="true">
       <span>바닥을 누르면 걸어갑니다</span>
       <span>화면을 끌면 둘러봅니다</span>
@@ -351,8 +355,8 @@
     const pageUrl = "https://siastones2-hash.github.io/glow-multi/3d-around/용마미식거리/";
     const src = "https://my.matterport.com/show/?m=o81fY7Gp7rJ&play=1&qs=1&lang=ko&title=0&help=0&hr=0&mls=0&brand=0";
     const frame = document.getElementById("tour");
+    const stage = document.querySelector(".stage");
     const cover = document.getElementById("cover");
-    const curtain = document.getElementById("curtain");
     const dock = document.getElementById("dock");
     const enter = document.getElementById("enter");
     const hint = document.getElementById("hint");
@@ -362,25 +366,18 @@
 
     frame.src = src;
 
-    let streetOpen = false;
-
     function arm() {
       if (ready) return;
       ready = true;
       enter.disabled = false;
       enter.innerHTML = "거리로 들어가기 <span>→</span>";
     }
-    function openStreet() {
-      if (streetOpen) return;
-      streetOpen = true;
-      curtain.classList.add("gone");
-    }
-    frame.addEventListener("load", () => {
-      arm();
-      setTimeout(openStreet, 1600);
-    });
+    frame.addEventListener("load", arm);
     setTimeout(arm, 2800);
-    setTimeout(openStreet, 4200);
+
+    function revealTour() {
+      stage.classList.add("live");
+    }
 
     function closePanels() {
       document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("open"));
@@ -389,12 +386,15 @@
     }
 
     function entered() {
-      openStreet();
       cover.classList.add("gone");
       dock.classList.add("show");
       menuBtn.classList.add("show");
       hint.classList.add("show");
       setTimeout(() => hint.classList.remove("show"), 4200);
+      cover.addEventListener("transitionend", (event) => {
+        if (event.propertyName === "opacity") revealTour();
+      });
+      setTimeout(revealTour, 700);
     }
 
     enter.addEventListener("click", () => {
