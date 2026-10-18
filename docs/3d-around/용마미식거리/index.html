@@ -29,9 +29,17 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 92px;
-      background: linear-gradient(180deg, #0c0806 0px, #0c0806 52px, rgba(12,8,6,0) 92px);
+      height: 108px;
+      background: linear-gradient(180deg, #0c0806 0px, #0c0806 76px, rgba(12,8,6,0) 108px);
     }
+    .curtain {
+      position: absolute;
+      z-index: 7;
+      inset: 0;
+      background: #0c0806;
+      transition: opacity .6s ease;
+    }
+    .curtain.gone { opacity: 0; visibility: hidden; pointer-events: none; }
     .footbar {
       position: absolute;
       z-index: 4;
@@ -57,7 +65,7 @@
       align-items: flex-end;
       padding: 7vh 7vw 8vh;
       background:
-        linear-gradient(180deg, #0c0806 0px, #0c0806 72px, rgba(12,8,6,.22) 168px, rgba(12,8,6,.1) 42%, rgba(12,8,6,.78) 74%, #0c0806 100%),
+        linear-gradient(180deg, #0c0806 0px, #0c0806 108px, rgba(12,8,6,.22) 200px, rgba(12,8,6,.1) 46%, rgba(12,8,6,.5) 68%, #0c0806 calc(100% - 150px), #0c0806 100%),
         linear-gradient(90deg, rgba(12,8,6,.55), rgba(12,8,6,.12) 58%, rgba(12,8,6,.28));
       transition: opacity .45s ease, visibility .45s ease;
     }
@@ -272,6 +280,7 @@
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
     ></iframe>
     <div class="mask" aria-hidden="true"></div>
+    <div class="curtain" id="curtain"></div>
     <div class="footbar" aria-hidden="true">
       <span>바닥을 누르면 걸어갑니다</span>
       <span>화면을 끌면 둘러봅니다</span>
@@ -343,6 +352,7 @@
     const src = "https://my.matterport.com/show/?m=o81fY7Gp7rJ&play=1&qs=1&lang=ko&title=0&help=0&hr=0&mls=0&brand=0";
     const frame = document.getElementById("tour");
     const cover = document.getElementById("cover");
+    const curtain = document.getElementById("curtain");
     const dock = document.getElementById("dock");
     const enter = document.getElementById("enter");
     const hint = document.getElementById("hint");
@@ -352,14 +362,25 @@
 
     frame.src = src;
 
+    let streetOpen = false;
+
     function arm() {
       if (ready) return;
       ready = true;
       enter.disabled = false;
       enter.innerHTML = "거리로 들어가기 <span>→</span>";
     }
-    frame.addEventListener("load", arm);
+    function openStreet() {
+      if (streetOpen) return;
+      streetOpen = true;
+      curtain.classList.add("gone");
+    }
+    frame.addEventListener("load", () => {
+      arm();
+      setTimeout(openStreet, 1600);
+    });
     setTimeout(arm, 2800);
+    setTimeout(openStreet, 4200);
 
     function closePanels() {
       document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("open"));
@@ -368,6 +389,7 @@
     }
 
     function entered() {
+      openStreet();
       cover.classList.add("gone");
       dock.classList.add("show");
       menuBtn.classList.add("show");
