@@ -45,22 +45,18 @@
       height: 108px;
       background: linear-gradient(180deg, #0c0806 0px, #0c0806 76px, rgba(12,8,6,0) 108px);
     }
-    .footbar {
+    .brand {
       position: absolute;
       z-index: 4;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 112px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 0 22px 20px;
-      background: linear-gradient(180deg, rgba(12,8,6,0), #0c0806 40px);
-      color: rgba(246,239,228,.62);
-      font-size: 13px;
+      left: 50%;
+      bottom: 148px;
+      width: 360px;
+      height: 132px;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse at center, #0c0806 0 46%, rgba(12,8,6,0) 72%);
+      transition: opacity .4s ease;
     }
+    .brand.gone { opacity: 0; visibility: hidden; pointer-events: none; }
 
     .cover {
       position: absolute;
@@ -227,7 +223,7 @@
       position: absolute;
       z-index: 4;
       left: 50%;
-      bottom: 124px;
+      bottom: 78px;
       transform: translateX(-50%);
       padding: 10px 14px;
       border-radius: 999px;
@@ -261,16 +257,16 @@
       .menu-btn.show { display: inline-flex; align-items: center; }
       .dock {
         top: auto;
-        bottom: 116px;
+        bottom: 72px;
         left: 14px;
         right: 14px;
         width: auto;
         max-height: min(62vh, 480px);
         overflow: auto;
       }
-      .panel { top: auto; bottom: 116px; left: 14px; right: 14px; width: auto; }
+      .panel { top: auto; bottom: 72px; left: 14px; right: 14px; width: auto; }
       .hint { display: none; }
-      .footbar { font-size: 12px; padding-bottom: 14px; }
+      .brand { width: 240px; height: 108px; bottom: 108px; }
     }
   </style>
 </head>
@@ -285,10 +281,7 @@
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
     ></iframe>
     <div class="mask" aria-hidden="true"></div>
-    <div class="footbar" aria-hidden="true">
-      <span>바닥을 누르면 걸어갑니다</span>
-      <span>화면을 끌면 둘러봅니다</span>
-    </div>
+    <div class="brand" id="brand" aria-hidden="true"></div>
 
     <section class="cover" id="cover">
       <div class="cover-copy">
@@ -344,6 +337,7 @@
         <li>바닥을 누르면 그 자리로 이동합니다.</li>
         <li>화면을 끌면 주변을 둘러봅니다.</li>
         <li>처음 위치를 누르면 처음 장면으로 돌아옵니다.</li>
+        <li>왼쪽 아래 버튼으로 평면도와 거리 전체를 볼 수 있습니다.</li>
       </ol>
       <div class="actions">
         <button class="close" type="button" data-close>닫기</button>
@@ -375,8 +369,11 @@
     frame.addEventListener("load", arm);
     setTimeout(arm, 2800);
 
+    const brand = document.getElementById("brand");
+
     function revealTour() {
       stage.classList.add("live");
+      setTimeout(() => brand.classList.add("gone"), 8000);
     }
 
     function closePanels() {
