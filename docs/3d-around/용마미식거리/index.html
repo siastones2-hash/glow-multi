@@ -232,7 +232,21 @@
         background: rgba(18,13,10,.9);
         border: 1px solid rgba(246,239,228,.16);
       }
-      .menu-btn.show { display: inline-flex; align-items: center; }
+      .menu-btn.show {
+        top: 0;
+        left: 0;
+        height: 56px;
+        width: 250px;
+        min-width: 250px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 18px;
+        border-radius: 0 0 16px 0;
+        background: #161310;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -.03em;
+      }
       .dock {
         top: auto;
         bottom: 72px;
@@ -269,7 +283,7 @@
       </div>
     </section>
 
-    <button class="menu-btn" id="menu-btn" type="button">메뉴</button>
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="메뉴">용마미식거리</button>
 
     <aside class="dock" id="dock">
       <div>
