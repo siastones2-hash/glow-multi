@@ -39,21 +39,33 @@
     .mask {
       position: absolute;
       z-index: 4;
-      top: 0;
+      top: 4px;
       left: 0;
-      right: 0;
-      height: 108px;
-      background: linear-gradient(180deg, #0c0806 0px, #0c0806 76px, rgba(12,8,6,0) 108px);
+      width: 156px;
+      height: 50px;
+      background: transparent;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      -webkit-mask-image: url("mark-mask.png");
+      mask-image: url("mark-mask.png");
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
     }
     .brand {
       position: absolute;
       z-index: 4;
       left: 50%;
-      bottom: 148px;
-      width: 360px;
-      height: 132px;
+      bottom: 124px;
+      width: 440px;
+      height: 96px;
       transform: translateX(-50%);
-      background: radial-gradient(ellipse at center, #0c0806 0 46%, rgba(12,8,6,0) 72%);
+      background: transparent;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      -webkit-mask-image: radial-gradient(ellipse 56% 52% at 50% 58%, #000 10%, transparent 70%);
+      mask-image: radial-gradient(ellipse 56% 52% at 50% 58%, #000 10%, transparent 70%);
       transition: opacity .4s ease;
     }
     .brand.gone { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -66,7 +78,7 @@
       align-items: flex-end;
       padding: 7vh 7vw 8vh;
       background:
-        linear-gradient(180deg, #0c0806 0px, #0c0806 108px, rgba(12,8,6,.22) 200px, rgba(12,8,6,.1) 46%, rgba(12,8,6,.5) 68%, #0c0806 calc(100% - 150px), #0c0806 100%),
+        linear-gradient(180deg, rgba(12,8,6,.28) 0px, rgba(12,8,6,0) 140px, rgba(12,8,6,0) 58%, rgba(12,8,6,.78) 100%),
         linear-gradient(90deg, rgba(12,8,6,.55), rgba(12,8,6,.12) 58%, rgba(12,8,6,.28));
       transition: opacity .45s ease, visibility .45s ease;
     }
@@ -266,7 +278,8 @@
       }
       .panel { top: auto; bottom: 72px; left: 14px; right: 14px; width: auto; }
       .hint { display: none; }
-      .brand { width: 240px; height: 108px; bottom: 108px; }
+      .brand { width: 300px; height: 80px; bottom: 108px; }
+      .mask { width: 148px; height: 46px; }
     }
   </style>
 </head>
