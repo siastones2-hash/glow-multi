@@ -498,6 +498,11 @@ async function initDB() {
       {id:'pkr10',name:'Instagram 팔로워 — 한국 (30일 리필)',pl:'instagram',rate:45.444,min:5,max:50000,description:'[판매 중단] 공급 상품이 빠져 같은 번호가 다른 상품과 겹쳤습니다. 대체: Instagram 팔로워 — 한국 HQ (1년 리필).',api_id:'35485',active:0},
       {id:'pig28',name:'Instagram 팔로워 — 리얼 (60일 보장) ⭐',pl:'instagram',rate:2.2892,min:10,max:1000000,description:'게시물이 있는 실계정 팔로워입니다. 60일 리필 보장이 있어 줄어들면 보충됩니다. 숫자를 유지할 때 쓰는 글로벌 상품입니다. 한 번에 많이 넣기보다 나눠 주문하면 계정에 덜 튀게 들어옵니다. 공개 프로필 링크를 입력하세요.',api_id:'28933'},
       {id:'pyt17',name:'YouTube 조회수 — 한국 Native (평생) ⭐',pl:'youtube',rate:3.8708,min:1000,max:1000000,description:'한국 Native(국내 시청 성격) 유튜브 조회수이며 평생 보장 표기가 있습니다. 영상 업로드 직후 조회수를 채워 추천·홈 피드 신호로 쓰기 좋고, 국내 시청자 비중이 중요한 채널에 적합합니다. watch?v= 또는 youtu.be 형태의 공개 영상 링크를 입력하세요.',api_id:'34592'},
+      {id:'pyt18',name:'YouTube 라이브 시청자 — 15분 유지',pl:'youtube',rate:0.1543,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 15분 동안 붙여 드립니다. 방송 시작 직후 시청자 수를 띄울 때 쓰세요. 반드시 방송이 켜진 상태에서 주문해야 하며, 15분이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19802'},
+      {id:'pyt19',name:'YouTube 라이브 시청자 — 30분 유지',pl:'youtube',rate:0.3086,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 30분 동안 붙여 드립니다. 짧은 공지·이벤트 방송에 맞습니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 30분이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19803'},
+      {id:'pyt20',name:'YouTube 라이브 시청자 — 1시간 유지 ⭐',pl:'youtube',rate:0.6282,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 1시간 동안 붙여 드립니다. 일반적인 라이브 방송에 가장 무난한 길이입니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 1시간이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19804'},
+      {id:'pyt21',name:'YouTube 라이브 시청자 — 2시간 유지',pl:'youtube',rate:1.2453,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 2시간 동안 붙여 드립니다. 라이브 커머스·토크 방송처럼 조금 긴 방송에 맞습니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 2시간이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19806'},
+      {id:'pyt22',name:'YouTube 라이브 시청자 — 3시간 유지',pl:'youtube',rate:1.8624,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 3시간 동안 붙여 드립니다. 공연·행사 중계처럼 긴 방송에 맞습니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 3시간이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19808'},
       {id:'pig1',name:'Instagram 댓글 — 프리미엄 글로벌',pl:'instagram',rate:10.0,min:10,max:10000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 댓글 서비스입니다. 댓글이 많은 게시물은 알고리즘이 높은 참여도로 인식해 탐색 탭 노출을 늘립니다. 긍정적 댓글은 브랜드 이미지를 강화하고, 질문형 댓글은 추가 참여를 유발하는 연쇄 효과를 만듭니다.',api_id:'2544'},
       {id:'pig10',name:'Instagram 노출 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.41,min:10,max:300000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 노출 서비스입니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'17506'},
       {id:'pig12',name:'Instagram 노출 — 미국 타겟 (드롭 보상)',pl:'instagram',rate:0.35,min:10,max:20000,description:'미국 기반 고품질 Instagram 노출 서비스로, 미국 광고 RPM이 세계 최고 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29617'},
@@ -588,7 +593,7 @@ async function initDB() {
       }
     }
     // Peakerr 한국 신규·재오픈 시드만 전 사이트 연결 (파트너가 끈 상품을 전부 강제 ON 하지 않음)
-    for (const id of ['pig17', 'pig28', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pyt17']) {
+    for (const id of ['pig17', 'pig28', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pyt17', 'pyt18', 'pyt19', 'pyt20', 'pyt21', 'pyt22']) {
       try { await linkServiceToAllSites(id); } catch (_) {}
     }
   }
@@ -4709,7 +4714,7 @@ function validateUrl(url, platform, svc = null) {
             return { ok: false, error: '유튜브 구독자는 채널 링크를 입력해주세요. (예: youtube.com/@채널명)' };
           }
         }
-      } else if (['조회수', '좋아요', '쇼츠 조회수', '쇼츠 좋아요', '댓글', '라이브 좋아요', '시청시간'].includes(bucket)) {
+      } else if (['조회수', '좋아요', '쇼츠 조회수', '쇼츠 좋아요', '댓글', '라이브 좋아요', '라이브 시청자', '시청시간'].includes(bucket)) {
         if (!(isWatch || isYoutuBe || isShorts || isLive)) {
           return { ok: false, error: '유튜브 영상 링크를 입력해주세요. (예: youtube.com/watch?v=영상ID 또는 youtu.be/영상ID)' };
         }
@@ -6374,6 +6379,7 @@ function detectServiceTypeKo(full) {
   const raw = full || '';
   const n = raw.toLowerCase();
   // 한글 상품명 (GLOW 시드·한글화 catalog)
+  if (/라이브/.test(raw) && /시청자/.test(raw)) return '라이브 시청자';
   if (/조회수/.test(raw)) {
     if (/쇼츠|shorts/i.test(raw)) return '쇼츠 조회수';
     if (/스토리|story/i.test(raw)) return '스토리 조회수';
