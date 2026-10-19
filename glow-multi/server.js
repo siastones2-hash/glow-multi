@@ -969,6 +969,11 @@ async function extendMgmtFeeDue(siteId) {
       mgmt_fee_remind_for = NULL
     WHERE id = $1 AND id <> 'default'
   `, [siteId, next]);
+  // 정지 중에는 매일 공지 갱신에서 빠지므로, 다시 열 때 오늘 공지로 맞춤
+  const todayNotice = await getGlobalSetting('ops_digest_text');
+  if (todayNotice) {
+    await query(`UPDATE sites SET notice=$1 WHERE id=$2 AND id <> 'default'`, [todayNotice, siteId]);
+  }
 }
 
 const MGMT_FEE_BANK = '우리은행 1002-160-164625';
@@ -1642,8 +1647,26 @@ async function applyOpsDigestToSites(opts = {}) {
   };
 }
 
+/** 오늘 공지가 이미 나간 뒤 다시 열린 사이트 — 텔레그램 없이 공지만 오늘 것으로 맞춤 */
+async function syncTodayNoticeToReopenedSites() {
+  if ((await getGlobalSetting('ops_digest_last_date')) !== kstTodayYmd()) return 0;
+  const text = await getGlobalSetting('ops_digest_text');
+  if (!text) return 0;
+  const r = await query(`
+    UPDATE sites SET notice=$1
+    WHERE id <> 'default' AND COALESCE(active,1)=1
+      AND COALESCE(notice,'') ~ '\\(\\d{4}-\\d{2}-\\d{2}\\)'
+      AND POSITION($2 IN COALESCE(notice,'')) = 0
+    RETURNING id
+  `, [text, `(${kstTodayYmd()})`]);
+  return r.rowCount || 0;
+}
+
 function startOpsDigestScheduler() {
   let lastRun = '';
+  syncTodayNoticeToReopenedSites()
+    .then(n => { if (n) console.log(`📢 다시 열린 사이트 공지 오늘 날짜로 ${n}곳`); })
+    .catch(e => console.log('공지 맞춤 오류:', e.message));
   const tick = async () => {
     try {
       const hour = Number(new Date().toLocaleString('en-US', {
