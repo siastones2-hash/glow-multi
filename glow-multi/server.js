@@ -6571,6 +6571,141 @@ async function localizeAllSitesServiceNames() {
 }
 
 /** Peakerr에서 HQ·Real 등 핫상품만 골라 DB에 추가 (기존 상품은 유지) */
+/** 이름에 적힌 보장 일수 (없으면 0). 평생은 365 */
+function durableGuaranteeDays(text) {
+  const t = String(text || '').toLowerCase();
+  if (/no\s*refill|리필\s*없/.test(t)) return 0;
+  if (/lifetime|life\s*time|평생/.test(t)) return 365;
+  if (/365\s*(days?|일)|1\s*year|1년/.test(t)) return 365;
+  if (/180\s*(days?|일)/.test(t)) return 180;
+  if (/90\s*(days?|일)|\br90\b/.test(t)) return 90;
+  if (/60\s*(days?|일)|\br60\b/.test(t)) return 60;
+  if (/30\s*(days?|일)|\br30\b|\brb30\b|드롭\s*보상/.test(t)) return 30;
+  return 0;
+}
+
+function durableGuaranteeLabel(days) {
+  if (days >= 365) return days > 365 ? '평생 보장' : '1년 보장';
+  return `${days}일 보장`;
+}
+
+const DURABLE_STRICT_BUCKETS = new Set(['팔로워', '구독자', '멤버', '좋아요']);
+const DURABLE_VIEW_BUCKETS = new Set(['조회수', '쇼츠 조회수', '릴스 조회수', '저장', '공유', '스토리 조회수', '노출']);
+const DURABLE_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'threads', 'facebook', 'twitter', 'telegram'];
+
+function durableLinkHint(pl, bucket) {
+  if (bucket === '팔로워' || bucket === '스토리 조회수') return '공개 프로필 링크를 입력하세요.';
+  if (bucket === '구독자') return '채널 링크(youtube.com/@채널명)를 입력하세요.';
+  if (bucket === '멤버') return '공개 그룹·채널 링크를 입력하세요.';
+  if (pl === 'youtube') return 'watch?v= 또는 youtu.be 형태의 공개 영상 링크를 입력하세요.';
+  return '공개 게시물·영상 링크를 입력하세요.';
+}
+
+/** 공급 목록에서 오래 가는(리필·평생·논드롭) 상품 중, 사이트에 없거나 보장이 더 긴 것만 고름 */
+async function findDurablePeakerrCandidates(opts = {}) {
+  const maxTotal = opts.maxTotal ?? 6;
+  await ensurePeakerrCatalogLoaded();
+  if (peakerrCatalogCache.size === 0) return { error: '공급 목록을 불러오지 못했습니다', picks: [] };
+
+  const allR = await query(`SELECT id, name, pl, api_id, description, active FROM services`);
+  const knownApi = new Set(allR.rows.map(r => String(r.api_id || '')).filter(Boolean));
+  const bestExisting = new Map();
+  for (const row of allR.rows) {
+    if (parseInt(row.active, 10) !== 1) continue;
+    const bucket = serviceOrderBucket(row);
+    const geo = serviceMarketGeoKey(row) === 'usa' ? 'usa' : (serviceMarketGeoKey(row) === 'korea' ? 'korea' : 'global');
+    const key = `${row.pl}:${bucket}:${geo}`;
+    const days = durableGuaranteeDays(`${row.name} ${row.description || ''}`);
+    bestExisting.set(key, Math.max(bestExisting.get(key) ?? -1, days));
+  }
+
+  const byKey = new Map();
+  for (const s of peakerrCatalogCache.values()) {
+    if (knownApi.has(String(s.service))) continue;
+    const full = `${s.name || ''} ${s.category || ''}`;
+    if (scorePeakerrService(s) < 0 || BAD_SERVICE_NAME.test(full)) continue;
+    if (/\blq\b|low quality|mix data|app accounts/i.test(full)) continue;
+    const pl = detectPlat(full);
+    if (!DURABLE_PLATFORMS.includes(pl)) continue;
+    const rawGeo = peakerrMarketGeoKey(s);
+    if (!['global', 'other', 'usa'].includes(rawGeo)) continue;
+    const geo = rawGeo === 'usa' ? 'usa' : 'global';
+    const bucket = peakerrServiceTypeKo(s);
+    const rate = parseFloat(s.rate || 0);
+    const min = parseInt(s.min, 10) || 10;
+    if (!(rate > 0) || rate > 60 || min > 1000) continue;
+
+    const days = durableGuaranteeDays(s.name);
+    const apiRefill = peakerrServiceHasRefill(s);
+    const nonDrop = /non[- ]?drop|no drop|drop 0%/i.test(s.name || '');
+    if (DURABLE_STRICT_BUCKETS.has(bucket)) {
+      if (!apiRefill || days < 30) continue;
+    } else if (DURABLE_VIEW_BUCKETS.has(bucket)) {
+      if (days < 30 && !nonDrop) continue;
+    } else {
+      continue;
+    }
+
+    const key = `${pl}:${bucket}:${geo}`;
+    const have = bestExisting.has(key) ? bestExisting.get(key) : -1;
+    const candDays = days || 1;
+    if (have >= candDays) continue;
+
+    const cand = { s, pl, bucket, geo, days, apiRefill, rate, min, score: scorePeakerrService(s), key };
+    const cur = byKey.get(key);
+    const better = !cur
+      || cand.days > cur.days
+      || (cand.days === cur.days && cand.apiRefill && !cur.apiRefill)
+      || (cand.days === cur.days && cand.apiRefill === cur.apiRefill && cand.score > cur.score)
+      || (cand.days === cur.days && cand.apiRefill === cur.apiRefill && cand.score === cur.score && cand.rate < cur.rate);
+    if (better) byKey.set(key, cand);
+  }
+
+  const picks = [...byKey.values()]
+    .sort((a, b) => (b.days - a.days) || (b.score - a.score) || (a.rate - b.rate))
+    .slice(0, maxTotal);
+  return { picks };
+}
+
+/** 주 1회 — 오래 가는 상품 자동 추가. pdu 아이디는 정리 대상(pk_)이 아니라 유지됨 */
+async function importDurablePeakerrServices(opts = {}) {
+  const dryRun = !!opts.dryRun;
+  const found = await findDurablePeakerrCandidates(opts);
+  if (found.error) return { error: found.error, added: [], count: 0 };
+  const added = [];
+  for (const c of found.picks) {
+    const plLabel = PL_DISPLAY_KO[c.pl] || c.pl;
+    const where = c.geo === 'usa' ? '미국 타겟' : '글로벌';
+    const tag = c.days > 0 ? durableGuaranteeLabel(c.days === 365 && /lifetime|life\s*time/i.test(c.s.name) ? 366 : c.days) : '논드롭';
+    const name = `${plLabel} ${c.bucket} — ${where} (${tag})`;
+    const keep = c.days > 0
+      ? `${tag}이라 기간 안에 줄어들면 다시 채워 드립니다.`
+      : '한 번 들어가면 거의 줄지 않는 종류입니다.';
+    const description = `${where} ${plLabel} ${c.bucket} 상품입니다. ${keep} ${durableLinkHint(c.pl, c.bucket)}`;
+    const id = `pdu${c.s.service}`;
+    const item = { id, name, pl: c.pl, apiId: String(c.s.service), rate: c.rate, days: c.days, refillApi: c.apiRefill };
+    if (!dryRun) {
+      await query(`
+        INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed,provider)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'peakerr')
+        ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min,
+          max=EXCLUDED.max, description=EXCLUDED.description, api_id=EXCLUDED.api_id, active=1,
+          refill_guaranteed=EXCLUDED.refill_guaranteed, provider='peakerr', inactive_note='', replace_service_id=NULL
+      `, [id, name, c.pl, c.rate, c.min, parseInt(c.s.max, 10) || 1000000, description, String(c.s.service), c.apiRefill ? 1 : 0]);
+      await linkServiceToAllSites(id);
+    }
+    added.push(item);
+  }
+  if (!dryRun) {
+    await setGlobalSetting('durable_import_last', kstTodayYmd());
+    if (added.length) {
+      const lines = added.map(a => `· ${a.name}`).join('\n');
+      await sendTelegramToSuper(`🆕 <b>오래 가는 상품 자동 추가</b>\n\n${lines}\n\n첫 주문이 실패하면 자동으로 내려갑니다.`).catch(() => null);
+    }
+  }
+  return { added, count: added.length, dryRun };
+}
+
 async function importHotPeakerrServices(opts = {}) {
   const maxPerPlatform = opts.maxPerPlatform ?? 3;
   const minScore = opts.minScore ?? 120;
@@ -11055,6 +11190,16 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
 });
 
 
+/** 슈퍼 — 오래 가는 상품 추가 (dryRun이면 후보만) */
+app.post('/api/super/import-durable', requireSuperAdmin, async (req, res) => {
+  try {
+    const { dryRun, maxTotal } = req.body || {};
+    const r = await importDurablePeakerrServices({ dryRun: !!dryRun, maxTotal: parseInt(maxTotal, 10) || 6 });
+    if (r.error) return res.json({ error: r.error });
+    res.json({ ok: true, ...r });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /** 슈퍼 — 한 사이트 공지를 오늘 운영 공지로 맞춤 (텔레그램 없음) */
 app.post('/api/super/sites/sync-notice', requireSuperAdmin, async (req, res) => {
   try {
@@ -11602,12 +11747,18 @@ app.listen(PORT, async () => {
     await reconcileServiceCatalog({ notify: false }).catch(e => console.log('카탈로그 정리 스케줄러 오류:', e.message));
   }, 6 * 60 * 60 * 1000);
   
-  // 🆕 신규 서비스 스캔 (일요일마다)
+  // 🆕 오래 가는 상품 주 1회 자동 추가 (처음 한 번은 관리자가 실행해야 켜짐)
   setInterval(async () => {
-    const now = new Date();
-    if (now.getDay() === 0 && now.getHours() === 10) { // 일요일 오전 10시
-      await scanNewServices().catch(e => console.log('신규 스캔 오류:', e.message));
-    }
+    try {
+      const last = await getGlobalSetting('durable_import_last');
+      if (!last) return;
+      const days = (new Date(kstTodayYmd()) - new Date(last)) / 86400000;
+      const hour = Number(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul', hour: 'numeric', hour12: false }));
+      if (days >= 7 && hour >= 10 && hour <= 20) {
+        const r = await importDurablePeakerrServices();
+        console.log(`🆕 오래 가는 상품 자동 추가 ${r.count || 0}개`);
+      }
+    } catch (e) { console.log('오래 가는 상품 추가 오류:', e.message); }
   }, 60 * 60 * 1000);
 
   // 🛡️ 상품 카탈로그 건강 점검 (매일 09:00 KST 근사 · UTC 0시)
