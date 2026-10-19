@@ -11019,6 +11019,19 @@ app.post('/api/super/sites/update', requireSuperAdmin, async (req, res) => {
 });
 
 
+/** 슈퍼 — 한 사이트 공지를 오늘 운영 공지로 맞춤 (텔레그램 없음) */
+app.post('/api/super/sites/sync-notice', requireSuperAdmin, async (req, res) => {
+  try {
+    const siteId = String(req.body?.siteId || '').trim();
+    if (!siteId || siteId === 'default') return res.json({ error: '사이트를 지정해 주세요' });
+    const text = await getGlobalSetting('ops_digest_text');
+    if (!text) return res.json({ error: '오늘 공지가 아직 없습니다' });
+    const r = await query(`UPDATE sites SET notice=$1 WHERE id=$2 RETURNING id`, [text, siteId]);
+    if (!r.rowCount) return res.json({ error: '사이트를 찾을 수 없습니다' });
+    res.json({ ok: true, digestDate: await getGlobalSetting('ops_digest_last_date') });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/super/sites/delete', requireSuperAdmin, async (req, res) => {
   try {
     const { siteId, confirmName } = req.body;
