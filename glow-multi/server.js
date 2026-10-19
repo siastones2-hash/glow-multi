@@ -497,12 +497,15 @@ async function initDB() {
       {id:'pkr9',name:'Instagram 팔로워 — 한국 HQ (1년 리필) ⭐',pl:'instagram',rate:17.2224,min:30,max:1000,description:'한국 HQ 팔로워를 하루 약 100명 정도의 슬로우 속도로 늘려 드립니다. 1년 리필 표기가 있어 줄어들면 보충이 이어지므로, 계정 숫자를 오래 유지하고 싶을 때 적합합니다. 팔로워가 늘면 프로필 신뢰도가 올라가고 협찬·문의에도 유리합니다. 예전에 문제 있던 저품질 한국 팔로워와는 다른 신규 상품입니다. 공개 프로필 링크를 입력하세요.',api_id:'35465'},
       {id:'pkr10',name:'Instagram 팔로워 — 한국 (30일 리필)',pl:'instagram',rate:45.444,min:5,max:50000,description:'[판매 중단] 공급 상품이 빠져 같은 번호가 다른 상품과 겹쳤습니다. 대체: Instagram 팔로워 — 한국 HQ (1년 리필).',api_id:'35485',active:0},
       {id:'pig28',name:'Instagram 팔로워 — 리얼 (60일 보장) ⭐',pl:'instagram',rate:2.2892,min:10,max:1000000,description:'게시물이 있는 실계정 팔로워입니다. 60일 리필 보장이 있어 줄어들면 보충됩니다. 숫자를 유지할 때 쓰는 글로벌 상품입니다. 한 번에 많이 넣기보다 나눠 주문하면 계정에 덜 튀게 들어옵니다. 공개 프로필 링크를 입력하세요.',api_id:'28933'},
+      {id:'pig29',name:'Instagram 팔로워 — 리얼 (평생 보장) ⭐',pl:'instagram',rate:1.334,min:10,max:10000000,description:'프로필 사진과 게시물이 있는 실계정 팔로워입니다. 평생 보장이라 줄어들면 기간 제한 없이 다시 채워 드립니다. 글로벌 계정이며, 숫자를 오래 유지해야 하는 계정에 쓰세요. 공개 프로필 링크를 입력하세요.',api_id:'29524'},
+      {id:'pig30',name:'Instagram 스토리 조회수 — 리얼 (빠른 시작)',pl:'instagram',rate:0.0047,min:100,max:100000,description:'지금 올라가 있는 모든 스토리에 조회수를 붙여 드립니다. 15분 안에 시작하고, 스토리는 24시간 뒤 사라지니 숫자가 빠질 걱정이 없습니다. 스토리를 올린 직후 주문하세요. 공개 계정 프로필 링크를 입력하세요.',api_id:'10570'},
       {id:'pyt17',name:'YouTube 조회수 — 한국 Native (평생) ⭐',pl:'youtube',rate:3.8708,min:1000,max:1000000,description:'한국 Native(국내 시청 성격) 유튜브 조회수이며 평생 보장 표기가 있습니다. 영상 업로드 직후 조회수를 채워 추천·홈 피드 신호로 쓰기 좋고, 국내 시청자 비중이 중요한 채널에 적합합니다. watch?v= 또는 youtu.be 형태의 공개 영상 링크를 입력하세요.',api_id:'34592'},
       {id:'pyt18',name:'YouTube 라이브 시청자 — 15분 유지',pl:'youtube',rate:0.1543,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 15분 동안 붙여 드립니다. 방송 시작 직후 시청자 수를 띄울 때 쓰세요. 반드시 방송이 켜진 상태에서 주문해야 하며, 15분이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19802'},
       {id:'pyt19',name:'YouTube 라이브 시청자 — 30분 유지',pl:'youtube',rate:0.3086,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 30분 동안 붙여 드립니다. 짧은 공지·이벤트 방송에 맞습니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 30분이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19803'},
       {id:'pyt20',name:'YouTube 라이브 시청자 — 1시간 유지 ⭐',pl:'youtube',rate:0.6282,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 1시간 동안 붙여 드립니다. 일반적인 라이브 방송에 가장 무난한 길이입니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 1시간이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19804'},
       {id:'pyt21',name:'YouTube 라이브 시청자 — 2시간 유지',pl:'youtube',rate:1.2453,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 2시간 동안 붙여 드립니다. 라이브 커머스·토크 방송처럼 조금 긴 방송에 맞습니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 2시간이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19806'},
       {id:'pyt22',name:'YouTube 라이브 시청자 — 3시간 유지',pl:'youtube',rate:1.8624,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 3시간 동안 붙여 드립니다. 공연·행사 중계처럼 긴 방송에 맞습니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 3시간이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19808'},
+      {id:'pyt23',name:'YouTube 좋아요 — 글로벌 (30일 보장) ⭐',pl:'youtube',rate:0.2784,min:50,max:100000,description:'유튜브 영상에 좋아요를 빠르게 붙여 드립니다. 30일 보장이라 기간 안에 줄어들면 다시 채워 드립니다. 보장 없는 글로벌 좋아요보다 오래 유지됩니다. watch?v= 또는 youtu.be 형태의 공개 영상 링크를 입력하세요.',api_id:'33476'},
       {id:'pig1',name:'Instagram 댓글 — 프리미엄 글로벌',pl:'instagram',rate:10.0,min:10,max:10000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 댓글 서비스입니다. 댓글이 많은 게시물은 알고리즘이 높은 참여도로 인식해 탐색 탭 노출을 늘립니다. 긍정적 댓글은 브랜드 이미지를 강화하고, 질문형 댓글은 추가 참여를 유발하는 연쇄 효과를 만듭니다.',api_id:'2544'},
       {id:'pig10',name:'Instagram 노출 — 프리미엄 글로벌 (드롭 보상)',pl:'instagram',rate:0.41,min:10,max:300000,description:'전 세계 실계정 기반으로 제공되는 고품질 Instagram 노출 서비스입니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'17506'},
       {id:'pig12',name:'Instagram 노출 — 미국 타겟 (드롭 보상)',pl:'instagram',rate:0.35,min:10,max:20000,description:'미국 기반 고품질 Instagram 노출 서비스로, 미국 광고 RPM이 세계 최고 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 게시물 총 노출 횟수를 늘려 캠페인 리포트의 설득력을 높입니다. 협찬 제안서 작성이나 광고 효율 보고에서 인상 수는 도달 범위를 증명하는 가장 직접적인 지표입니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'29617'},
@@ -534,6 +537,7 @@ async function initDB() {
       {id:'ptt13',name:'TikTok 조회수 — 프리미엄 글로벌 (중단)',pl:'tiktok',rate:0.44,min:10,max:1000000,description:'[판매 중단] 반복 취소·실패 — TikTok 조회수 브라질 타겟(ptt12) 사용 권장. 영상(/video/) 링크만 가능.',api_id:'20976',active:0},
       {id:'ptt14',name:'TikTok 공유 — 무제한 (평생 보장)',pl:'tiktok',rate:0.0182,min:100,max:1000000,description:'틱톡 게시물 공유를 무제한으로 유입시키는 평생 보장 프리미엄 서비스입니다. 공유는 틱톡 알고리즘이 "진짜 가치 있는 콘텐츠"로 판단하는 가장 강력한 신호로, 포유(For You) 탭 바이럴 확률을 급격히 높입니다. 평생 보장 리필로 장기 가치가 영구 유지됩니다.',api_id:'29453'},
       {id:'ptt15',name:'TikTok 맞춤 댓글 — 리얼 HQ 계정',pl:'tiktok',rate:2.03,min:10,max:500,description:'원하는 문구로 틱톡 댓글을 작성해주는 맞춤형 프리미엄 서비스입니다. 실제 HQ 계정이 자연스러운 댓글을 남기며, 초기 댓글 군집은 영상의 "인기 콘텐츠" 신호로 작용해 탐색 탭 노출 우선순위를 극대화합니다. 브랜드 캠페인이나 이벤트 영상의 초기 반응 유도에 가장 효과적입니다.',api_id:'27194'},
+      {id:'ptt16',name:'TikTok 팔로워 — 리얼 (평생 보장) ⭐',pl:'tiktok',rate:1.798,min:10,max:1000000,description:'실계정 틱톡 팔로워입니다. 평생 자동 리필이라 줄어들면 공급 쪽에서 알아서 다시 채웁니다. 30일 보장 상품보다 오래 유지해야 하는 계정에 쓰세요. 틱톡 프로필 링크(@아이디)를 입력하세요.',api_id:'28185'},
       {id:'ptt2',name:'TikTok 팔로워 — 아랍 타겟 (드롭 보상)',pl:'tiktok',rate:1.82,min:10,max:1000000,description:'아랍 기반 고품질 TikTok 팔로워 서비스로, 중동 광고 RPM은 세계 최상위 수준이며 해당 시장 타겟 마케팅에 최적화되어 있습니다. 틱톡 팔로워는 포유(For You) 탭 배포의 기본 신뢰도 지표로, 팔로워가 많을수록 알고리즘이 새 영상을 더 넓은 범위에 먼저 배포합니다. 실계정 기반으로 계정 안전성을 유지하며 인플루언서 레벨로 성장할 기반을 만들어드립니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'26191'},
       {id:'ptt3',name:'TikTok 팔로워 — 브라질 타겟 (드롭 보상)',pl:'tiktok',rate:1.65,min:10,max:10000000,description:'브라질 기반 고품질 TikTok 팔로워 서비스로, 브라질은 중남미 최대 콘텐츠 시장으로 해당 시장 타겟 마케팅에 최적화되어 있습니다. 틱톡 팔로워는 포유(For You) 탭 배포의 기본 신뢰도 지표로, 팔로워가 많을수록 알고리즘이 새 영상을 더 넓은 범위에 먼저 배포합니다. 실계정 기반으로 계정 안전성을 유지하며 인플루언서 레벨로 성장할 기반을 만들어드립니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'26182'},
       {id:'ptt4',name:'TikTok 팔로워 — 프리미엄 글로벌 (드롭 보상)',pl:'tiktok',rate:2.1,min:10,max:1000000,description:'전 세계 실계정 기반으로 제공되는 고품질 TikTok 팔로워 서비스입니다. 틱톡 팔로워는 포유(For You) 탭 배포의 기본 신뢰도 지표로, 팔로워가 많을수록 알고리즘이 새 영상을 더 넓은 범위에 먼저 배포합니다. 실계정 기반으로 계정 안전성을 유지하며 인플루언서 레벨로 성장할 기반을 만들어드립니다. 드롭 발생 시 자동 보상되어 안정적인 장기 운영이 가능합니다.',api_id:'26176'},
@@ -593,7 +597,7 @@ async function initDB() {
       }
     }
     // Peakerr 한국 신규·재오픈 시드만 전 사이트 연결 (파트너가 끈 상품을 전부 강제 ON 하지 않음)
-    for (const id of ['pig17', 'pig28', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pyt17', 'pyt18', 'pyt19', 'pyt20', 'pyt21', 'pyt22']) {
+    for (const id of ['pig17', 'pig28', 'pig29', 'pig30', 'ptt16', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pyt17', 'pyt18', 'pyt19', 'pyt20', 'pyt21', 'pyt22', 'pyt23']) {
       try { await linkServiceToAllSites(id); } catch (_) {}
     }
   }
@@ -3319,37 +3323,57 @@ async function submitPeakerrRefill(apiKey, apiOrderId) {
   return submitPanelRefill('peakerr', apiKey, apiOrderId);
 }
 
+/** 상품명·설명의 보장 기간(일). 평생은 1년까지만 자동 점검 */
+function refillGuaranteeDays(svc) {
+  const t = `${svc?.name || ''} ${svc?.description || ''}`.toLowerCase();
+  if (/평생|lifetime/.test(t)) return 365;
+  if (/1년|365\s*일|365\s*days?/.test(t)) return 365;
+  if (/180\s*일|180\s*days?/.test(t)) return 180;
+  if (/90\s*일|90\s*days?/.test(t)) return 90;
+  if (/60\s*일|60\s*days?/.test(t)) return 60;
+  return 30;
+}
+
+/** n번째 점검일 — 처음 3주는 촘촘히, 이후 30일마다 */
+function refillCheckpointDay(round) {
+  const early = [1, 3, 7, 14, 21];
+  if (round < early.length) return early[round];
+  return 21 + 30 * (round - early.length + 1);
+}
+
 /** 완료 주문 — 드롭 보장 상품: 실제 감소 확인 후 자동 보충 (측정 불가 시 공급사 리필 API 시도) */
 async function processEligibleRefills(opts = {}) {
   const maxPerRun = opts.maxPerRun ?? 15;
   const force = !!opts.force;
   const r = await query(`
-    SELECT o.*, s.refill_guaranteed, s.provider AS service_provider, s.api_id AS service_api_id
+    SELECT o.*, s.refill_guaranteed, s.provider AS service_provider, s.api_id AS service_api_id,
+      s.name AS service_name, s.description AS service_description
     FROM orders o
     INNER JOIN services s ON s.id = o.sid
     WHERE o.status = 'completed'
       AND COALESCE(s.refill_guaranteed, 0) = 1
       AND o.api_order_id IS NOT NULL AND TRIM(o.api_order_id) <> ''
-      AND o.created >= NOW() - INTERVAL '30 days'
-      AND COALESCE(o.refill_count, 0) < 5
+      AND o.created >= NOW() - INTERVAL '366 days'
+      AND COALESCE(o.refill_count, 0) < 20
       AND (
-        $2::boolean = true
+        $1::boolean = true
         OR o.refill_last_at IS NULL
         OR o.refill_last_at < NOW() - INTERVAL '48 hours'
       )
       AND COALESCE(o.completed_at, o.created) <= NOW() - INTERVAL '12 hours'
-    ORDER BY o.created ASC
-    LIMIT $1
-  `, [maxPerRun, force]);
+    ORDER BY o.refill_last_at ASC NULLS FIRST, o.created ASC
+    LIMIT 500
+  `, [force]);
 
   let processed = 0, ok = 0, skipped = 0;
-  const checkpoints = [1, 3, 7, 14, 21];
   for (const order of r.rows) {
-    processed++;
+    if (processed >= maxPerRun) break;
     const daysSince = (Date.now() - new Date(order.completed_at || order.created).getTime()) / 86400000;
+    const guaranteeDays = refillGuaranteeDays({ name: order.service_name, description: order.service_description });
+    if (daysSince > guaranteeDays) continue;
     const checkRound = parseInt(order.refill_count || 0, 10);
-    const checkIdx = Math.min(checkRound, checkpoints.length - 1);
-    if (!force && daysSince < checkpoints[checkIdx]) continue;
+    if (!force && daysSince < refillCheckpointDay(checkRound)) continue;
+    processed++;
 
     const drop = await detectOrderDrop(order);
     // 측정 가능 + 감소 없음 → 보충 불필요 (체크만 기록)
@@ -4150,6 +4174,11 @@ const SMMKINGS_CURATED_SEEDS = [
     id: 'skg14', pl: 'instagram', api_id: '5009', cost: 12.00, min: 100, max: 100000, refill: 0,
     name: 'Instagram 좋아요 — 한국 상위노출용 ⭐',
     description: '한국 계정 기반 좋아요가 게시물에 들어갑니다. 초반 참여가 붙으면 인스타 알고리즘이 탐색·인기 쪽으로 더 넓게 보여줄 가능성이 커집니다. ※네이버·구글 검색 상위노출과는 무관합니다. 게시물·릴스 URL'
+  },
+  {
+    id: 'skg15', pl: 'instagram', api_id: '767', cost: 0.07, min: 10, max: 30000, refill: 0,
+    name: 'Instagram 저장 — 리얼 (게시물·릴스)',
+    description: '실계정이 게시물·릴스를 저장합니다. 저장은 인스타가 콘텐츠 가치를 볼 때 크게 보는 신호라 탐색 노출에 도움이 되고, 한 번 들어가면 거의 줄지 않습니다. 공개 게시물 또는 릴스 URL을 입력하세요.'
   },
 ];
 
@@ -10193,6 +10222,10 @@ const CURATED_SEED_API_LOCK = {
   pkr9: { api_id: '35465', rate: 17.2224 }, // 한국 HQ 1년 리필
   pkr10: { api_id: '35485', rate: 45.444 }, // 공급 삭제 — 판매 중단
   pig28: { api_id: '28933', rate: 2.2892 }, // 리얼 팔로워 60일 리필 (API refill)
+  pig29: { api_id: '29524', rate: 1.334 },  // 리얼 팔로워 평생 리필 (API refill)
+  pig30: { api_id: '10570', rate: 0.0047 }, // 스토리 조회수 리얼
+  ptt16: { api_id: '28185', rate: 1.798 },  // 틱톡 팔로워 평생 자동 리필
+  pyt23: { api_id: '33476', rate: 0.2784 }, // 유튜브 좋아요 30일 리필 (API refill)
   // Instagram 좋아요
   pig13: { api_id: '28283', rate: 0.62 },
   pig15: { api_id: '31244', rate: 0.09 },
