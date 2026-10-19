@@ -499,6 +499,7 @@ async function initDB() {
       {id:'pig28',name:'Instagram 팔로워 — 리얼 (60일 보장) ⭐',pl:'instagram',rate:2.2892,min:10,max:1000000,description:'게시물이 있는 실계정 팔로워입니다. 60일 리필 보장이 있어 줄어들면 보충됩니다. 숫자를 유지할 때 쓰는 글로벌 상품입니다. 한 번에 많이 넣기보다 나눠 주문하면 계정에 덜 튀게 들어옵니다. 공개 프로필 링크를 입력하세요.',api_id:'28933'},
       {id:'pig29',name:'Instagram 팔로워 — 리얼 (평생 보장) ⭐',pl:'instagram',rate:1.334,min:10,max:10000000,description:'프로필 사진과 게시물이 있는 실계정 팔로워입니다. 평생 보장이라 줄어들면 기간 제한 없이 다시 채워 드립니다. 글로벌 계정이며, 숫자를 오래 유지해야 하는 계정에 쓰세요. 공개 프로필 링크를 입력하세요.',api_id:'29524'},
       {id:'pig30',name:'Instagram 스토리 조회수 — 리얼 (빠른 시작)',pl:'instagram',rate:0.0047,min:100,max:100000,description:'지금 올라가 있는 모든 스토리에 조회수를 붙여 드립니다. 15분 안에 시작하고, 스토리는 24시간 뒤 사라지니 숫자가 빠질 걱정이 없습니다. 스토리를 올린 직후 주문하세요. 공개 계정 프로필 링크를 입력하세요.',api_id:'10570'},
+      {id:'pig31',name:'Instagram 저장 — 게시물·릴스 (안정형)',pl:'instagram',rate:0.0647,min:50,max:10000,description:'게시물·릴스에 저장 수를 늘려 드립니다. 저장은 인스타가 콘텐츠 가치를 볼 때 크게 보는 신호라 탐색 노출에 도움이 되고, 한 번 들어가면 거의 줄지 않습니다. 공개 게시물 또는 릴스 URL을 입력하세요.',api_id:'36358'},
       {id:'pyt17',name:'YouTube 조회수 — 한국 Native (평생) ⭐',pl:'youtube',rate:3.8708,min:1000,max:1000000,description:'한국 Native(국내 시청 성격) 유튜브 조회수이며 평생 보장 표기가 있습니다. 영상 업로드 직후 조회수를 채워 추천·홈 피드 신호로 쓰기 좋고, 국내 시청자 비중이 중요한 채널에 적합합니다. watch?v= 또는 youtu.be 형태의 공개 영상 링크를 입력하세요.',api_id:'34592'},
       {id:'pyt18',name:'YouTube 라이브 시청자 — 15분 유지',pl:'youtube',rate:0.1543,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 15분 동안 붙여 드립니다. 방송 시작 직후 시청자 수를 띄울 때 쓰세요. 반드시 방송이 켜진 상태에서 주문해야 하며, 15분이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19802'},
       {id:'pyt19',name:'YouTube 라이브 시청자 — 30분 유지',pl:'youtube',rate:0.3086,min:10,max:1000000,description:'유튜브 라이브 방송에 동시 시청자를 30분 동안 붙여 드립니다. 짧은 공지·이벤트 방송에 맞습니다. 반드시 방송이 켜진 상태에서 주문해야 하며, 30분이 지나면 시청자 수는 빠집니다. 글로벌 시청자입니다. 라이브 방송 링크(youtube.com/live/… 또는 watch?v=…)를 입력하세요.',api_id:'19803'},
@@ -597,7 +598,7 @@ async function initDB() {
       }
     }
     // Peakerr 한국 신규·재오픈 시드만 전 사이트 연결 (파트너가 끈 상품을 전부 강제 ON 하지 않음)
-    for (const id of ['pig17', 'pig28', 'pig29', 'pig30', 'ptt16', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pyt17', 'pyt18', 'pyt19', 'pyt20', 'pyt21', 'pyt22', 'pyt23']) {
+    for (const id of ['pig17', 'pig28', 'pig29', 'pig30', 'pig31', 'ptt16', 'pkr3', 'pkr4', 'pkr5', 'pkr6', 'pkr7', 'pkr9', 'pyt17', 'pyt18', 'pyt19', 'pyt20', 'pyt21', 'pyt22', 'pyt23']) {
       try { await linkServiceToAllSites(id); } catch (_) {}
     }
   }
@@ -4174,11 +4175,6 @@ const SMMKINGS_CURATED_SEEDS = [
     id: 'skg14', pl: 'instagram', api_id: '5009', cost: 12.00, min: 100, max: 100000, refill: 0,
     name: 'Instagram 좋아요 — 한국 상위노출용 ⭐',
     description: '한국 계정 기반 좋아요가 게시물에 들어갑니다. 초반 참여가 붙으면 인스타 알고리즘이 탐색·인기 쪽으로 더 넓게 보여줄 가능성이 커집니다. ※네이버·구글 검색 상위노출과는 무관합니다. 게시물·릴스 URL'
-  },
-  {
-    id: 'skg15', pl: 'instagram', api_id: '767', cost: 0.07, min: 10, max: 30000, refill: 0,
-    name: 'Instagram 저장 — 리얼 (게시물·릴스)',
-    description: '실계정이 게시물·릴스를 저장합니다. 저장은 인스타가 콘텐츠 가치를 볼 때 크게 보는 신호라 탐색 노출에 도움이 되고, 한 번 들어가면 거의 줄지 않습니다. 공개 게시물 또는 릴스 URL을 입력하세요.'
   },
 ];
 
@@ -10224,6 +10220,7 @@ const CURATED_SEED_API_LOCK = {
   pig28: { api_id: '28933', rate: 2.2892 }, // 리얼 팔로워 60일 리필 (API refill)
   pig29: { api_id: '29524', rate: 1.334 },  // 리얼 팔로워 평생 리필 (API refill)
   pig30: { api_id: '10570', rate: 0.0047 }, // 스토리 조회수 리얼
+  pig31: { api_id: '36358', rate: 0.0647 }, // 저장 안정형
   ptt16: { api_id: '28185', rate: 1.798 },  // 틱톡 팔로워 평생 자동 리필
   pyt23: { api_id: '33476', rate: 0.2784 }, // 유튜브 좋아요 30일 리필 (API refill)
   // Instagram 좋아요
