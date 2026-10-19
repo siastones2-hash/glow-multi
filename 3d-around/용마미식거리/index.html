@@ -37,27 +37,6 @@
     button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
     .wrap { width: min(1080px, calc(100% - 40px)); margin: 0 auto; }
 
-    .head {
-      position: sticky;
-      top: 0;
-      z-index: 8;
-      display: flex;
-      align-items: center;
-      gap: 22px;
-      height: 64px;
-      padding: 0 22px;
-      background: #161310;
-      color: #fff;
-    }
-    .brand {
-      margin-right: auto;
-      font-size: 18px;
-      font-weight: 750;
-      letter-spacing: -.04em;
-    }
-    .nav { display: flex; gap: 18px; }
-    .nav a { font-size: 14px; font-weight: 650; color: rgba(255,255,255,.82); }
-
     .hero {
       position: relative;
       height: 72vh;
@@ -66,11 +45,39 @@
     }
     .hero iframe {
       position: absolute;
+      z-index: 1;
       inset: 0;
       width: 100%;
       height: 100%;
       border: 0;
       background: transparent;
+    }
+    .plate, .jump {
+      position: absolute;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      background: #161310;
+      color: #fff;
+      font-weight: 750;
+      letter-spacing: -.03em;
+    }
+    .plate {
+      top: 0;
+      left: 0;
+      height: 60px;
+      min-width: 260px;
+      padding: 0 22px;
+      border-radius: 0 0 16px 0;
+      font-size: 18px;
+    }
+    .jump {
+      top: 12px;
+      right: 14px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      font-size: 14px;
     }
 
     .intro { padding: 54px 0 8px; }
@@ -94,30 +101,29 @@
       font-size: 17px;
       line-height: 1.6;
     }
-    section { padding: 28px 0; scroll-margin-top: 76px; }
+    section { padding: 28px 0; scroll-margin-top: 20px; }
     section h2 {
       margin: 0 0 14px;
       font-size: 22px;
       letter-spacing: -.03em;
     }
     .place p, .how-body li { margin: 0; font-size: 16px; line-height: 1.7; }
-    .how { padding-top: 8px; }
+    .how { padding-top: 0; }
     .fold {
       width: 100%;
-      min-height: 56px;
+      height: 52px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid rgba(28,26,23,.12);
+      justify-content: center;
+      gap: 8px;
+      border-radius: 14px;
+      background: #161310;
+      color: #fff;
       font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -.02em;
+      font-weight: 750;
     }
-    .fold i {
-      color: #6d675f;
-      font-style: normal;
-      font-weight: 500;
-    }
+    .fold::after { content: "↓"; font-size: 14px; }
+    .fold[aria-expanded="true"]::after { content: "↑"; }
     .how-body { padding: 0 0 8px; }
     .how-body[hidden] { display: none; }
     .how-body ol { margin: 0 0 16px; padding-left: 20px; }
@@ -156,23 +162,14 @@
 
     @media (max-width: 800px) {
       .wrap { width: min(100% - 32px, 1080px); }
-      .head { height: 56px; padding: 0 16px; }
-      .brand { font-size: 17px; }
-      .nav { display: none; }
       .hero { height: 70vh; min-height: 460px; }
+      .plate { height: 56px; min-width: 230px; font-size: 17px; }
       .intro { padding-top: 32px; }
       .intro h1 { font-size: 32px; }
     }
   </style>
 </head>
 <body>
-  <header class="head">
-    <a class="brand" href="#top">용마미식거리</a>
-    <nav class="nav">
-      <a href="#place">오시는 길</a>
-    </nav>
-  </header>
-
   <div class="hero" id="top">
     <iframe
       id="tour"
@@ -182,6 +179,8 @@
       referrerpolicy="no-referrer-when-downgrade"
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
     ></iframe>
+    <a class="plate" href="#top">용마미식거리</a>
+    <a class="jump" href="#place">오시는 길</a>
   </div>
 
   <main class="wrap">
@@ -205,8 +204,7 @@
 
     <section class="how" id="how">
       <button class="fold" id="how-btn" type="button" aria-expanded="false" aria-controls="how-body">
-        걷는 법
-        <i id="how-mark">열기</i>
+        <span id="how-label">걷는 법 보기</span>
       </button>
       <div class="how-body" id="how-body" hidden>
         <ol>
@@ -253,12 +251,12 @@
 
     const howBtn = document.getElementById("how-btn");
     const howBody = document.getElementById("how-body");
-    const howMark = document.getElementById("how-mark");
+    const howLabel = document.getElementById("how-label");
     howBtn.addEventListener("click", () => {
       const open = howBtn.getAttribute("aria-expanded") === "true";
       howBtn.setAttribute("aria-expanded", open ? "false" : "true");
       howBody.hidden = open;
-      howMark.textContent = open ? "열기" : "닫기";
+      howLabel.textContent = open ? "걷는 법 보기" : "걷는 법 닫기";
     });
 
     const map = document.getElementById("map-frame");
