@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>용마미식거리</title>
-  <meta name="description" content="강원 강릉시 경강로 포남1동주민센터 일대. 용마미식거리를 3D로 걸어볼 수 있습니다." />
+  <meta name="description" content="강원 강릉시 경강로 포남1동주민센터 일대. 용마미식거리." />
   <link rel="canonical" href="https://siastones2-hash.github.io/glow-multi/3d-around/용마미식거리/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="ko_KR" />
   <meta property="og:site_name" content="용마미식거리" />
   <meta property="og:title" content="용마미식거리" />
-  <meta property="og:description" content="강원 강릉시 경강로 포남1동주민센터 일대. 촬영한 거리를 그대로 걸어볼 수 있습니다." />
+  <meta property="og:description" content="강원 강릉시 경강로 포남1동주민센터 일대. 용마미식거리." />
   <meta property="og:url" content="https://siastones2-hash.github.io/glow-multi/3d-around/용마미식거리/" />
   <meta property="og:image" content="https://siastones2-hash.github.io/glow-multi/3d-around/yongma/og.jpg" />
   <meta property="og:image:secure_url" content="https://siastones2-hash.github.io/glow-multi/3d-around/yongma/og.jpg" />
@@ -19,7 +19,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="용마미식거리" />
-  <meta name="twitter:description" content="강원 강릉시 경강로 포남1동주민센터 일대. 촬영한 거리를 그대로 걸어볼 수 있습니다." />
+  <meta name="twitter:description" content="강원 강릉시 경강로 포남1동주민센터 일대. 용마미식거리." />
   <meta name="twitter:image" content="https://siastones2-hash.github.io/glow-multi/3d-around/yongma/og.jpg" />
   <meta name="theme-color" content="#161310" />
   <style>
@@ -100,9 +100,28 @@
       font-size: 22px;
       letter-spacing: -.03em;
     }
-    .place p, .how li { margin: 0; font-size: 16px; line-height: 1.7; }
-    .how ol { margin: 0; padding-left: 20px; }
-    .how li + li { margin-top: 8px; }
+    .place p, .how-body li { margin: 0; font-size: 16px; line-height: 1.7; }
+    .how { padding-top: 8px; }
+    .fold {
+      width: 100%;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(28,26,23,.12);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .fold i {
+      color: #6d675f;
+      font-style: normal;
+      font-weight: 500;
+    }
+    .how-body { padding: 0 0 8px; }
+    .how-body[hidden] { display: none; }
+    .how-body ol { margin: 0 0 16px; padding-left: 20px; }
+    .how-body li + li { margin-top: 8px; }
     .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .actions a, .actions button {
       height: 40px;
@@ -150,8 +169,7 @@
   <header class="head">
     <a class="brand" href="#top">용마미식거리</a>
     <nav class="nav">
-      <a href="#place">위치</a>
-      <a href="#how">걷는 법</a>
+      <a href="#place">오시는 길</a>
     </nav>
   </header>
 
@@ -170,30 +188,37 @@
     <div class="intro">
       <p class="kicker">3D어라운드</p>
       <h1>용마미식거리</h1>
-      <p>강원 강릉시 경강로 포남1동주민센터 일대.<br />촬영한 거리를 그대로 걸어볼 수 있습니다.</p>
+      <p>강원 강릉시 경강로 포남1동주민센터 일대.<br />촬영한 거리를 열어 두었습니다.</p>
     </div>
 
     <section class="place" id="place">
-      <h2>위치</h2>
+      <h2>오시는 길</h2>
       <p>강원 강릉시 경강로 포남1동주민센터 일대</p>
       <div class="map">
         <iframe id="map-frame" title="용마미식거리 위치" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
       <div class="actions">
         <a href="https://map.naver.com/p/search/%EA%B0%95%EC%9B%90%20%EA%B0%95%EB%A6%89%EC%8B%9C%20%EA%B2%BD%EA%B0%95%EB%A1%9C%20%ED%8F%AC%EB%82%A81%EB%8F%99%EC%A3%BC%EB%AF%BC%EC%84%BC%ED%84%B0" target="_blank" rel="noopener noreferrer">네이버 지도</a>
-        <button class="line" id="reset" type="button">처음 위치</button>
-        <button class="line" id="copy" type="button">주소 복사</button>
+        <button class="line" id="copy" type="button">이 거리 보내기</button>
       </div>
     </section>
 
     <section class="how" id="how">
-      <h2>걷는 법</h2>
-      <ol>
-        <li>바닥을 누르면 그 자리로 이동합니다.</li>
-        <li>화면을 끌면 주변을 둘러봅니다.</li>
-        <li>처음 위치를 누르면 3D 평면도부터 다시 들어갑니다.</li>
-        <li>왼쪽 아래 버튼으로 평면도와 거리 전체를 볼 수 있습니다.</li>
-      </ol>
+      <button class="fold" id="how-btn" type="button" aria-expanded="false" aria-controls="how-body">
+        걷는 법
+        <i id="how-mark">열기</i>
+      </button>
+      <div class="how-body" id="how-body" hidden>
+        <ol>
+          <li>바닥을 누르면 그 자리로 이동합니다.</li>
+          <li>화면을 끌면 주변을 둘러봅니다.</li>
+          <li>처음 위치를 누르면 3D 평면도부터 다시 들어갑니다.</li>
+          <li>왼쪽 아래 버튼으로 평면도와 거리 전체를 볼 수 있습니다.</li>
+        </ol>
+        <div class="actions">
+          <button class="line" id="reset" type="button">처음 위치</button>
+        </div>
+      </div>
     </section>
 
     <footer>용마미식거리 · 강원 강릉시 경강로 포남1동주민센터 일대</footer>
@@ -222,8 +247,18 @@
         document.execCommand("copy");
         field.remove();
       }
-      button.textContent = "복사했습니다";
-      setTimeout(() => { button.textContent = "주소 복사"; }, 1600);
+      button.textContent = "주소를 복사했습니다";
+      setTimeout(() => { button.textContent = "이 거리 보내기"; }, 1600);
+    });
+
+    const howBtn = document.getElementById("how-btn");
+    const howBody = document.getElementById("how-body");
+    const howMark = document.getElementById("how-mark");
+    howBtn.addEventListener("click", () => {
+      const open = howBtn.getAttribute("aria-expanded") === "true";
+      howBtn.setAttribute("aria-expanded", open ? "false" : "true");
+      howBody.hidden = open;
+      howMark.textContent = open ? "열기" : "닫기";
     });
 
     const map = document.getElementById("map-frame");
