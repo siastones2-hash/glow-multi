@@ -49,7 +49,15 @@
       background: #14181d;
       color: #fff;
     }
-    .nav { display: flex; gap: 18px; margin-left: auto; }
+    .brand {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      min-width: 246px;
+      margin-right: auto;
+    }
+    .brand img { height: 26px; width: auto; display: block; }
+    .nav { display: flex; gap: 18px; }
     .nav a { font-size: 14px; font-weight: 650; color: rgba(255,255,255,.82); }
     .call .short { display: none; }
     .call {
@@ -80,20 +88,17 @@
       border: 0;
       background: transparent;
     }
-    .brand {
+    .shade {
       position: absolute;
       z-index: 3;
       top: 0;
       left: 0;
-      height: 64px;
-      min-width: 268px;
-      display: flex;
-      align-items: center;
-      padding: 0 22px 0 20px;
+      width: 268px;
+      height: 48px;
       background: #14181d;
       border-radius: 0 0 18px 0;
+      pointer-events: none;
     }
-    .brand img { height: 26px; width: auto; display: block; }
     .spots {
       position: absolute;
       z-index: 2;
@@ -186,8 +191,9 @@
       .wrap { width: min(100% - 32px, 1080px); }
       .head { height: 56px; padding: 0 14px; gap: 10px; }
       .nav { display: none; }
-      .brand { height: 58px; min-width: 236px; padding: 0 18px 0 14px; }
+      .brand { min-width: 200px; }
       .brand img { height: 22px; }
+      .shade { width: 214px; height: 44px; }
       .call { margin-left: auto; }
       .call .full { display: none; }
       .call .short { display: inline; }
@@ -201,6 +207,9 @@
 </head>
 <body>
   <header class="head">
+    <a class="brand" href="#top" aria-label="이용화플란트치과">
+      <img src="logo.png" alt="이용화플란트치과" />
+    </a>
     <nav class="nav">
       <a href="#time">진료시간</a>
       <a href="#care">진료</a>
@@ -219,9 +228,7 @@
       referrerpolicy="no-referrer-when-downgrade"
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
     ></iframe>
-    <a class="brand" href="#top" aria-label="이용화플란트치과">
-      <img src="logo.png" alt="이용화플란트치과" />
-    </a>
+    <div class="shade" aria-hidden="true"></div>
     <div class="spots">
       <button type="button" data-ss="7">접수</button>
       <button type="button" data-ss="25">진료실</button>
