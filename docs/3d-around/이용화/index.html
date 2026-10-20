@@ -46,17 +46,23 @@
       gap: 22px;
       height: 64px;
       padding: 0 22px;
+      overflow: visible;
       background: #14181d;
       color: #fff;
     }
     .brand {
+      position: relative;
+      z-index: 2;
+      align-self: flex-start;
       display: flex;
       align-items: center;
-      height: 100%;
-      min-width: 246px;
-      margin-right: auto;
+      height: 108px;
+      margin: 0 auto -44px -22px;
+      padding: 0 26px 0 22px;
+      background: #14181d;
+      border-radius: 0 0 18px 0;
     }
-    .brand img { height: 26px; width: auto; display: block; }
+    .brand img { height: 28px; width: auto; display: block; }
     .nav { display: flex; gap: 18px; }
     .nav a { font-size: 14px; font-weight: 650; color: rgba(255,255,255,.82); }
     .call .short { display: none; }
@@ -87,17 +93,6 @@
       height: 100%;
       border: 0;
       background: transparent;
-    }
-    .shade {
-      position: absolute;
-      z-index: 3;
-      top: 0;
-      left: 0;
-      width: 268px;
-      height: 48px;
-      background: #14181d;
-      border-radius: 0 0 18px 0;
-      pointer-events: none;
     }
     .spots {
       position: absolute;
@@ -191,9 +186,12 @@
       .wrap { width: min(100% - 32px, 1080px); }
       .head { height: 56px; padding: 0 14px; gap: 10px; }
       .nav { display: none; }
-      .brand { min-width: 200px; }
-      .brand img { height: 22px; }
-      .shade { width: 214px; height: 44px; }
+      .brand {
+        height: 100px;
+        margin: 0 auto -44px -14px;
+        padding: 0 20px 0 14px;
+      }
+      .brand img { height: 24px; }
       .call { margin-left: auto; }
       .call .full { display: none; }
       .call .short { display: inline; }
@@ -228,7 +226,6 @@
       referrerpolicy="no-referrer-when-downgrade"
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-presentation"
     ></iframe>
-    <div class="shade" aria-hidden="true"></div>
     <div class="spots">
       <button type="button" data-ss="7">접수</button>
       <button type="button" data-ss="25">진료실</button>
