@@ -584,7 +584,7 @@ async function initDB() {
     ];
 
     for (const s of svcs) {
-      const active = s.active != null ? s.active : 1;
+      const active = PERMANENTLY_DISABLED_SEEDS.has(s.id) ? 0 : (s.active != null ? s.active : 1);
       const refill = glowServicePromisesRefill(s.name, s.description) ? 1 : 0;
       await query(`INSERT INTO services(id,name,pl,rate,min,max,description,api_id,active,refill_guaranteed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, pl=EXCLUDED.pl, rate=EXCLUDED.rate, min=EXCLUDED.min, max=EXCLUDED.max, api_id=EXCLUDED.api_id,
@@ -2864,6 +2864,17 @@ const DISABLED_SEED_META = {
     replaceId: 'skg5',
     replaceHint: 'Instagram 팔로워 — 한국 UHQ (30일 보장)'
   },
+  pig25: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'pdu26712' },
+  pig12: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'pdu29616' },
+  pig15: { note: '최근 주문이 자주 실패해 보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'pdu31243' },
+  pkr4: { note: '보장이 있는 같은 종류 상품으로 바꿨습니다.', replaceId: 'pkr3' },
+  ptt10: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'ptt14' },
+  ptt7: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'pdu31268' },
+  ptt4: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'ptt16' },
+  pyt4: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'pdu32116' },
+  pyt8: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'pdu27907' },
+  pyt16: { note: '보장이 있는 같은 종류 상품으로 바꿨습니다.', replaceId: 'pyt14' },
+  ptg2: { note: '보장이 더 긴 같은 종류 상품으로 바꿨습니다.', replaceId: 'pdu33626' },
 };
 const PERMANENTLY_DISABLED_SEEDS = new Set(Object.keys(DISABLED_SEED_META));
 
