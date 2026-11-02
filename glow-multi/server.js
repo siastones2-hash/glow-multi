@@ -11360,7 +11360,7 @@ app.post('/api/super/exrate-sync', requireSuperAdmin, async (req, res) => {
 app.post('/api/super/settings/save', requireSuperAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
-    const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'smmkings_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from'];
+    const allowed = ['super_margin', 'global_site_margin', 'global_exrate', 'peakerr_api_key', 'smmkings_api_key', 'tg_token', 'tg_chat', 'resend_api_key', 'email_from', 'ticket_notify_secret'];
     if (!allowed.includes(key)) return res.json({ error: '잘못된 설정 키' });
     const v = String(value || '').trim();
     if (key === 'peakerr_api_key') {
