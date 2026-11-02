@@ -9751,23 +9751,31 @@ app.post('/api/tg-webhook', async (req, res) => {
           result = { error: '예매 서버에 연결하지 못했습니다' };
         }
       }
-      await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
-      });
       const done = result.ok;
       const line = done
         ? (action === 'approve'
-          ? `✅ 예매 승인\n${result.name || ''} · ${Number(result.amount || 0).toLocaleString('ko-KR')}원\n티켓이 나갑니다.`
-          : `❌ 입금 신청 거절\n${result.name || ''}\n좌석을 풀었습니다.`)
-        : `처리하지 못했습니다\n${result.error || ''}`;
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          ? `✅ 승인했습니다. ${result.name || ''} · ${Number(result.amount || 0).toLocaleString('ko-KR')}원. 티켓이 나갑니다.`
+          : `❌ 거절했습니다. ${result.name || ''}. 좌석을 풀었습니다.`)
+        : `처리하지 못했습니다. ${result.error || ''}`;
+      const prev = data.callback_query.message?.text || data.callback_query.message?.caption || '';
+      const edited = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: line })
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: msgId,
+          text: `${prev}\n\n${line}`.trim().slice(0, 4000),
+          reply_markup: { inline_keyboard: [] }
+        })
       });
+      if (!edited.ok) {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: line })
+        });
+      }
       await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ callback_query_id: data.callback_query.id, text: done ? (action === 'approve' ? '승인했습니다' : '거절했습니다') : (result.error || '실패') })
+        body: JSON.stringify({ callback_query_id: data.callback_query.id, text: done ? (action === 'approve' ? '승인했습니다' : '거절했습니다') : (result.error || '실패').slice(0, 180) })
       });
       return res.json({ ok: true });
     }
