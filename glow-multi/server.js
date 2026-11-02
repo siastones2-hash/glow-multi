@@ -26,6 +26,24 @@ const PANEL_AGENTS = { peakerr: peakerrHttpsAgent, smmkings: smmkingsHttpsAgent 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// glowsiax.com 은 콘서트 예매 사이트(시아스트릿)로 연결 — GLOW 본사는 onrender 주소로 접속
+const TICKET_HOSTS = new Set(['glowsiax.com', 'www.glowsiax.com']);
+const TICKET_ORIGIN = 'glow-ticket.siastreet.workers.dev';
+const ticketAgent = new https.Agent({ keepAlive: true, maxSockets: 32 });
+app.use((req, res, next) => {
+  const host = String(req.headers.host || '').split(':')[0].toLowerCase();
+  if (!TICKET_HOSTS.has(host)) return next();
+  if (host.startsWith('www.')) return res.redirect(301, `https://glowsiax.com${req.originalUrl}`);
+  const headers = { ...req.headers, host: TICKET_ORIGIN, 'x-forwarded-host': host };
+  delete headers.connection;
+  const up = https.request({ host: TICKET_ORIGIN, path: req.originalUrl, method: req.method, headers, agent: ticketAgent }, (r) => {
+    res.writeHead(r.statusCode || 502, r.headers);
+    r.pipe(res);
+  });
+  up.on('error', () => { if (!res.headersSent) res.status(502).send('잠시 후 다시 시도해 주세요.'); else res.end(); });
+  req.pipe(up);
+});
 const MGMT_FEE_DEFAULT_KRW = 100000;
 /** 관리비 면제 — 알림·자동정지 대상 아님 */
 const MGMT_FEE_EXEMPT_SITE_IDS = new Set([
