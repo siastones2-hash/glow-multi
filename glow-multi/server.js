@@ -9695,6 +9695,27 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.json({ error: e.message }); }
 });
 
+app.post('/api/ticket-notify', async (req, res) => {
+  try {
+    const secret = process.env.TICKET_NOTIFY_SECRET || '';
+    const got = req.get('x-ticket-secret') || '';
+    if (!secret || got.length !== secret.length || got !== secret) return res.status(401).json({ error: '권한이 없습니다' });
+    const token = await getGlobalSetting('tg_token');
+    const chat = await getGlobalSetting('tg_chat');
+    if (!token || !chat) return res.status(503).json({ error: '텔레그램이 연결되어 있지 않습니다' });
+    const text = String(req.body?.text || '').slice(0, 3500);
+    if (!text) return res.status(400).json({ error: '내용이 없습니다' });
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML', reply_markup: req.body?.markup || undefined })
+    });
+    return res.json({ ok: r.ok });
+  } catch (e) {
+    return res.status(500).json({ error: '보내지 못했습니다' });
+  }
+});
+
 // 텔레그램 웹훅
 app.post('/api/tg-webhook', async (req, res) => {
   try {
@@ -9705,6 +9726,45 @@ app.post('/api/tg-webhook', async (req, res) => {
     const chatId = data.callback_query.message.chat.id;
     const token = await getGlobalSetting('tg_token');
     if (!token) return res.json({ ok: true });
+
+    if (cbData.startsWith('tktok_') || cbData.startsWith('tktno_')) {
+      const action = cbData.startsWith('tktok_') ? 'approve' : 'reject';
+      const orderId = cbData.slice(6);
+      const secret = process.env.TICKET_NOTIFY_SECRET || '';
+      let result = { error: '연결이 필요합니다' };
+      if (secret && orderId) {
+        try {
+          const r = await fetch('https://glow-ticket.siastreet.workers.dev/api/internal/deposit', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-ticket-secret': secret },
+            body: JSON.stringify({ orderId, action })
+          });
+          result = await r.json().catch(() => ({ error: '응답을 읽지 못했습니다' }));
+          if (!r.ok && !result.error) result.error = '처리하지 못했습니다';
+        } catch (e) {
+          result = { error: '예매 서버에 연결하지 못했습니다' };
+        }
+      }
+      await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } })
+      });
+      const done = result.ok;
+      const line = done
+        ? (action === 'approve'
+          ? `✅ 예매 승인\n${result.name || ''} · ${Number(result.amount || 0).toLocaleString('ko-KR')}원\n티켓이 나갑니다.`
+          : `❌ 입금 신청 거절\n${result.name || ''}\n좌석을 풀었습니다.`)
+        : `처리하지 못했습니다\n${result.error || ''}`;
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: line })
+      });
+      await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callback_query_id: data.callback_query.id, text: done ? (action === 'approve' ? '승인했습니다' : '거절했습니다') : (result.error || '실패') })
+      });
+      return res.json({ ok: true });
+    }
 
     // 관리비 입금 신청 처리 (mfee_approve_ / mfee_reject_)
     if (cbData.startsWith('mfee_approve_') || cbData.startsWith('mfee_reject_')) {
