@@ -9705,18 +9705,29 @@ app.post('/api/ticket-notify', async (req, res) => {
   try {
     const secret = await ticketNotifySecret();
     const got = req.get('x-ticket-secret') || '';
-    if (!secret || got.length !== secret.length || got !== secret) return res.status(401).json({ error: '권한이 없습니다', v: 2 });
+    if (!secret || got.length !== secret.length || got !== secret) return res.status(401).json({ error: '권한이 없습니다', v: 3 });
     const token = await getGlobalSetting('tg_token');
     const chat = await getGlobalSetting('tg_chat');
     if (!token || !chat) return res.status(503).json({ error: '텔레그램이 연결되어 있지 않습니다' });
     const text = String(req.body?.text || '').slice(0, 3500);
-    if (!text) return res.status(400).json({ error: '내용이 없습니다' });
+    if (!text) return res.status(400).json({ error: '내용이 없습니다', v: 3 });
+    const orderId = String(req.body?.orderId || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 40);
+    const markup = orderId
+      ? { inline_keyboard: [
+          [{ text: '✅ 승인', callback_data: `tktok_${orderId}` }],
+          [{ text: '❌ 거절', callback_data: `tktno_${orderId}` }],
+        ] }
+      : (req.body?.markup || null);
+    const payload = { chat_id: chat, text, parse_mode: 'HTML' };
+    if (markup) payload.reply_markup = markup;
     const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML', reply_markup: req.body?.markup || undefined })
+      body: JSON.stringify(payload)
     });
-    return res.json({ ok: r.ok });
+    const tg = await r.json().catch(() => ({}));
+    const hasButtons = !!(tg.result && tg.result.reply_markup);
+    return res.json({ ok: r.ok && (!markup || hasButtons), hasButtons, v: 3, description: tg.description || '' });
   } catch (e) {
     return res.status(500).json({ error: '보내지 못했습니다' });
   }
@@ -9736,6 +9747,22 @@ app.post('/api/tg-webhook', async (req, res) => {
     if (cbData.startsWith('tktok_') || cbData.startsWith('tktno_')) {
       const action = cbData.startsWith('tktok_') ? 'approve' : 'reject';
       const orderId = cbData.slice(6);
+      if (orderId === 'buttoncheck') {
+        const prev = data.callback_query.message?.text || '';
+        await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId, message_id: msgId,
+            text: `${prev}\n\n버튼이 연결되었습니다. 고객 신청이 오면 같은 버튼으로 승인합니다.`.slice(0, 4000),
+            reply_markup: { inline_keyboard: [] }
+          })
+        });
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: data.callback_query.id, text: '버튼이 연결되었습니다' })
+        });
+        return res.json({ ok: true });
+      }
       const secret = await ticketNotifySecret();
       let result = { error: '연결이 필요합니다' };
       if (secret && orderId) {
