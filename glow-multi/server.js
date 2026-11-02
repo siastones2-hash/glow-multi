@@ -9695,11 +9695,17 @@ app.get('/api/admin/api-sync', requireSuperAdmin, async (req, res) => {
   } catch(e) { res.json({ error: e.message }); }
 });
 
+async function ticketNotifySecret() {
+  const fromEnv = process.env.TICKET_NOTIFY_SECRET || '';
+  if (fromEnv) return fromEnv;
+  try { return await getGlobalSetting('ticket_notify_secret'); } catch (e) { return ''; }
+}
+
 app.post('/api/ticket-notify', async (req, res) => {
   try {
-    const secret = process.env.TICKET_NOTIFY_SECRET || '';
+    const secret = await ticketNotifySecret();
     const got = req.get('x-ticket-secret') || '';
-    if (!secret || got.length !== secret.length || got !== secret) return res.status(401).json({ error: '권한이 없습니다' });
+    if (!secret || got.length !== secret.length || got !== secret) return res.status(401).json({ error: '권한이 없습니다', v: 2 });
     const token = await getGlobalSetting('tg_token');
     const chat = await getGlobalSetting('tg_chat');
     if (!token || !chat) return res.status(503).json({ error: '텔레그램이 연결되어 있지 않습니다' });
@@ -9730,7 +9736,7 @@ app.post('/api/tg-webhook', async (req, res) => {
     if (cbData.startsWith('tktok_') || cbData.startsWith('tktno_')) {
       const action = cbData.startsWith('tktok_') ? 'approve' : 'reject';
       const orderId = cbData.slice(6);
-      const secret = process.env.TICKET_NOTIFY_SECRET || '';
+      const secret = await ticketNotifySecret();
       let result = { error: '연결이 필요합니다' };
       if (secret && orderId) {
         try {
