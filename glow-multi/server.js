@@ -8364,6 +8364,76 @@ app.post('/api/orders/estimate', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/** 장바구니 결제 전 점검 — 주문은 넣지 않고 항목별 오류와 합계·잔액만 돌려줌 */
+const CART_MAX_ITEMS = 10;
+app.post('/api/orders/cart-check', requireAuth, async (req, res) => {
+  try {
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    if (!items.length) return res.json({ error: '결제할 상품을 선택해 주세요.' });
+    if (items.length > CART_MAX_ITEMS) {
+      return res.json({ error: `한 번에 최대 ${CART_MAX_ITEMS}개까지 결제할 수 있습니다.` });
+    }
+    const site = req.site;
+    const userR = await query(`SELECT * FROM users WHERE id=$1`, [req.session.userId]);
+    const user = userR.rows[0];
+    const margins = await getSiteMargins(site, user);
+    const adminCreditOnly = site && site.id !== 'default' && ['admin', 'partner'].includes(user?.role || '');
+    const seen = new Set();
+    let totalKrw = 0;
+    const out = [];
+    for (const it of items) {
+      const row = { sid: String(it?.sid || ''), ok: false };
+      const svc = await resolveOrderService(row.sid);
+      if (!svc) { out.push({ ...row, error: '판매가 끝난 상품입니다. 장바구니에서 빼 주세요.' }); continue; }
+      row.name = svc.name;
+      const linkNorm = normalizeOrderLink(String(it?.link || '').trim(), svc.pl);
+      const urlCheck = validateUrl(linkNorm, svc.pl, svc);
+      if (!urlCheck.ok) { out.push({ ...row, error: urlCheck.error }); continue; }
+      const qtyNum = parseInt(it?.qty, 10);
+      if (isNaN(qtyNum) || qtyNum < svc.min || qtyNum > svc.max) {
+        out.push({ ...row, error: `수량은 ${svc.min.toLocaleString()} ~ ${svc.max.toLocaleString()} 사이여야 합니다` });
+        continue;
+      }
+      const key = `${svc.pl}\0${serviceOrderBucket(svc)}\0${linkNorm}`;
+      if (seen.has(key)) { out.push({ ...row, error: '같은 링크에 같은 종류 작업이 두 번 담겨 있습니다.' }); continue; }
+      seen.add(key);
+      const dup = await query(
+        `SELECT id FROM orders WHERE uid=$1 AND sid=$2 AND link=$3
+         AND (status IN ('pending','processing') OR created > NOW() - INTERVAL '30 minutes') LIMIT 1`,
+        [req.session.userId, svc.id, linkNorm]
+      );
+      if (dup.rows.length) { out.push({ ...row, error: '같은 상품·링크 주문이 이미 진행 중입니다.' }); continue; }
+      const conflict = await findActiveOrderConflict(req.siteId, linkNorm, svc);
+      if (conflict) {
+        out.push({ ...row, error: `이 링크로 ${conflict.bucket || svc.name} 작업이 진행 중입니다. 완료 후 다시 주문해 주세요.` });
+        continue;
+      }
+      const { charge, orderCostKrw } = computeOrderAmounts(svc, qtyNum, site, margins);
+      const requiredKrw = Math.ceil(adminCreditOnly ? orderCostKrw : charge);
+      totalKrw += requiredKrw;
+      out.push({ ...row, ok: true, requiredKrw });
+    }
+    let availableKrw;
+    if (adminCreditOnly) {
+      await reconcileSiteCreditUsdFromLedger(site.id).catch(() => null);
+      const siteR = await query(`SELECT credit, exrate FROM sites WHERE id=$1`, [site.id]);
+      const siteEx = parseFloat(siteR.rows[0]?.exrate) > 0 ? parseFloat(siteR.rows[0].exrate) : margins.ex;
+      availableKrw = await getCreditBalanceKrw(site.id, parseFloat(siteR.rows[0]?.credit) || 0, siteEx);
+    } else {
+      availableKrw = Math.round(user?.balance || 0);
+    }
+    const shortfallKrw = Math.max(0, totalKrw - availableKrw);
+    res.json({
+      ok: out.every(r => r.ok) && shortfallKrw <= 0,
+      items: out,
+      totalKrw,
+      availableKrw,
+      shortfallKrw,
+      adminCreditOnly: !!adminCreditOnly
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/orders', requireAuth, async (req, res) => {
   try {
     // 🚦 Rate Limit: 분당 10회 주문 제한 (무차별 주문 방지)

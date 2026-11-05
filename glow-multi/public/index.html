@@ -1606,7 +1606,21 @@ body.partner-intro-lock #pg-dash{visibility:hidden!important}
             </div>
             <div id="oCreditWarn" style="display:none;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.25);border-radius:10px;padding:11px 13px;margin:0 0 12px;font-size:12px;line-height:1.55;color:var(--wn)"></div>
             <button class="bp bpf" id="orderBtn" onclick="placeOrder()">✨ 주문하기</button>
+            <button class="bo bpf" id="cartAddBtn" onclick="addToCart()" style="margin-top:8px">🛒 장바구니 담기</button>
             <div style="font-size:11px;color:var(--tl);text-align:center;margin-top:8px">주문 후 취소가 어려울 수 있습니다</div>
+            <div id="cartBox" style="display:none;margin-top:18px;border-top:1px solid var(--bd);padding-top:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div style="font-size:15px;font-weight:800">🛒 장바구니 <span id="cartCount" style="color:var(--p2)"></span></div>
+                <label style="font-size:12px;color:var(--tm);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="cartAll" onchange="cartToggleAll(this.checked)" style="width:auto"/> 전체 선택</label>
+              </div>
+              <div id="cartList"></div>
+              <div class="osum" style="margin-top:10px">
+                <div class="osr"><span id="cartTotalLabel">선택 합계</span><span class="gt" style="font-size:17px;font-weight:800" id="cartTotal">₩0</span></div>
+              </div>
+              <div id="cartWarn" style="display:none;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.25);border-radius:10px;padding:11px 13px;margin:0 0 12px;font-size:12px;line-height:1.55;color:var(--wn)"></div>
+              <button class="bp bpf" id="cartPayBtn" onclick="payCart()">선택 상품 한 번에 결제</button>
+              <div style="font-size:11px;color:var(--tl);text-align:center;margin-top:8px">한 번에 최대 10개 · 결제 전에 링크·수량·잔액을 모두 확인합니다</div>
+            </div>
           </div>
         </div>
       </div>
@@ -3759,7 +3773,7 @@ function _openTab(tab){
   var ti={home:'대시보드',order:'서비스 주문',orders:'주문 내역',charge:'잔액 충전',profile:'내 정보',관리자:'관리자',super:'슈퍼관리자'};
   var dh=ge('dhTitle');if(dh)dh.textContent=ti[tab]||'';
   if(tab==='orders')loadOrders();
-  if(tab==='order')refreshOrderEstimate();
+  if(tab==='order'){refreshOrderEstimate();renderCart();}
   if(tab==='charge'){refreshMe();loadChargeHis()}
   if(tab==='profile')loadProfile();
   if(tab==='admin'){applyPartnerAdminChrome();loadAdmDash();}
@@ -3770,7 +3784,7 @@ function _openTab(tab){
 // ── 서비스 ──
 async function loadSvcs(){
   var d=await api('/api/services');
-  if(Array.isArray(d)){SVCS=d;window._svcs=d;renderSvcList();renderQCards()}
+  if(Array.isArray(d)){SVCS=d;window._svcs=d;renderSvcList();renderQCards();renderCart()}
 }
 function renderSfBar(){
   var plats=['all','kr_traffic','seo','youtube','instagram','tiktok','twitter','facebook','telegram','threads','spotify','twitch','traffic','other'];
@@ -3946,6 +3960,127 @@ async function placeOrder(){
   goTab('orders');
   loadOrders();
 }
+
+// ── 장바구니 ──
+var CART_MAX=10;
+function cartKey(){return 'glow_cart_'+location.host+'_'+((CUR&&CUR.id)||'guest');}
+function cartLoad(){try{var a=JSON.parse(localStorage.getItem(cartKey())||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function cartSave(items){localStorage.setItem(cartKey(),JSON.stringify(items));}
+function cartEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function cartSvc(sid){for(var i=0;i<SVCS.length;i++){if(SVCS[i].id===sid)return SVCS[i];}return null;}
+function cartItemPrice(it){
+  var s=cartSvc(it.sid);if(!s)return 0;
+  var unit=window._adminCreditOnly?(s.baseCost!=null?s.baseCost:s.sell):s.sell;
+  return Math.round((unit||0)*(it.qty||0));
+}
+function addToCart(){
+  if(!SEL){toast('서비스를 선택하세요','err');return}
+  var link=ge('o링크').value.trim(),qty=parseInt(ge('o수량').value);
+  if(!link){toast('링크를 입력하세요','err');return}
+  if(!qty||qty<(SEL.min||1)||qty>(SEL.max||1e12)){toast('수량은 '+(SEL.min||1).toLocaleString()+' ~ '+(SEL.max||0).toLocaleString()+' 사이여야 합니다','err');return}
+  var items=cartLoad();
+  for(var i=0;i<items.length;i++){if(items[i].sid===SEL.id&&items[i].link===link){toast('같은 상품·링크가 이미 장바구니에 있습니다','err');return}}
+  items.push({key:Date.now()+'_'+Math.random().toString(36).slice(2,7),sid:SEL.id,link:link,qty:qty,checked:true});
+  cartSave(items);
+  ge('o링크').value='';ge('o수량').value='';calcPrice();
+  renderCart();
+  toast('🛒 장바구니에 담았습니다','ok');
+}
+function cartRemove(key){cartSave(cartLoad().filter(function(it){return it.key!==key}));renderCart();}
+function cartCheck(key,on){var items=cartLoad();items.forEach(function(it){if(it.key===key)it.checked=!!on});cartSave(items);renderCart();}
+function cartToggleAll(on){var items=cartLoad();items.forEach(function(it){it.checked=!!on});cartSave(items);renderCart();}
+function renderCart(){
+  var box=ge('cartBox');if(!box)return;
+  var items=cartLoad();
+  if(!items.length){box.style.display='none';return}
+  box.style.display='block';
+  ge('cartCount').textContent='('+items.length+')';
+  var total=0,checkedN=0;
+  ge('cartList').innerHTML=items.map(function(it){
+    var s=cartSvc(it.sid),price=cartItemPrice(it);
+    if(it.checked&&s){total+=price;checkedN++;}
+    var name=s?s.name:'판매가 끝난 상품';
+    var state=it.err?'<div style="font-size:11px;color:var(--wn);margin-top:4px">⚠ '+cartEsc(it.err)+'</div>'
+      :(it.busy?'<div style="font-size:11px;color:var(--p2);margin-top:4px">처리 중…</div>':'');
+    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--bd)">'
+      +'<input type="checkbox" '+(it.checked?'checked':'')+(s?'':' disabled')+' onchange="cartCheck(\''+it.key+'\',this.checked)" style="width:auto;margin-top:3px"/>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(s?(PLI[s.pl]||'')+' ':'')+cartEsc(name)+'</div>'
+      +'<div style="font-size:11px;color:var(--tl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cartEsc(it.link)+'</div>'
+      +'<div style="font-size:11px;color:var(--tm)">'+Number(it.qty).toLocaleString()+'개</div>'+state
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0"><div class="gt" style="font-size:13px;font-weight:800">'+gf(price)+'</div>'
+      +'<button class="bo bsm" onclick="cartRemove(\''+it.key+'\')" style="margin-top:6px;padding:3px 8px;font-size:11px">빼기</button></div>'
+      +'</div>';
+  }).join('');
+  ge('cartAll').checked=items.length>0&&items.every(function(it){return it.checked});
+  ge('cartTotalLabel').textContent=window._adminCreditOnly?'선택 합계 (크레딧)':'선택 합계 ('+checkedN+'개)';
+  ge('cartTotal').textContent=gf(total);
+  var btn=ge('cartPayBtn');
+  if(btn&&!window._cartInFlight){btn.disabled=!checkedN;btn.textContent=checkedN?'선택 '+checkedN+'개 한 번에 결제':'결제할 상품을 선택하세요';}
+}
+async function payCart(){
+  if(window._cartInFlight||window._orderInFlight)return;
+  var items=cartLoad();
+  var picked=items.filter(function(it){return it.checked&&cartSvc(it.sid)});
+  var warn=ge('cartWarn');warn.style.display='none';
+  if(!picked.length){toast('결제할 상품을 선택하세요','err');return}
+  if(picked.length>CART_MAX){toast('한 번에 최대 '+CART_MAX+'개까지 결제할 수 있습니다','err');return}
+  items.forEach(function(it){delete it.err});cartSave(items);
+  var chk=await api('/api/orders/cart-check','POST',{items:picked.map(function(it){return{sid:it.sid,link:it.link,qty:it.qty}})});
+  if(chk.error){toast(chk.error,'err');return}
+  var bad=0;
+  (chk.items||[]).forEach(function(r,i){if(!r.ok){picked[i].err=r.error;bad++;}});
+  cartSave(items.map(function(it){var p=picked.filter(function(x){return x.key===it.key})[0];return p||it}));
+  renderCart();
+  if(bad){warn.style.display='block';warn.innerHTML='⚠️ 표시된 '+bad+'개 상품을 고치거나 빼고 다시 결제해 주세요. 아무것도 결제되지 않았습니다.';return}
+  if(chk.shortfallKrw>0){
+    warn.style.display='block';
+    warn.innerHTML='⚠️ '+(chk.adminCreditOnly?'크레딧':'잔액')+'이 약 '+gf(chk.shortfallKrw)+' 부족합니다. '+(chk.adminCreditOnly?'관리자 → 크레딧 요청에서 충전 후':'충전 탭에서 충전 후')+' 다시 결제해 주세요.';
+    return;
+  }
+  if(!confirm(picked.length+'개 상품을 '+gf(chk.totalKrw)+' 결제할까요?'))return;
+  window._cartInFlight=true;
+  var btn=ge('cartPayBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>결제 중...';
+  var okN=0,failN=0,last=null;
+  try{
+    for(var i=0;i<picked.length;i++){
+      var it=picked[i];
+      var cur=cartLoad();cur.forEach(function(x){if(x.key===it.key)x.busy=true});cartSave(cur);renderCart();
+      btn.innerHTML='<span class="spin"></span>결제 중 '+(i+1)+'/'+picked.length;
+      var d=await api('/api/orders','POST',{sid:it.sid,link:it.link,qty:it.qty});
+      cur=cartLoad();
+      if(d&&!d.error){okN++;last=d;cur=cur.filter(function(x){return x.key!==it.key});}
+      else{failN++;cur.forEach(function(x){if(x.key===it.key){x.busy=false;x.err=(d&&d.error)||'주문 실패'}});}
+      cartSave(cur);renderCart();
+      if(i<picked.length-1)await new Promise(function(r){setTimeout(r,400)});
+    }
+  }finally{
+    window._cartInFlight=false;
+    renderCart();
+  }
+  if(last){
+    if(window._adminCreditOnly){
+      var dash=await api('/api/admin/stats');
+      if(dash&&dash.creditKrw!=null){
+        window._partnerCreditKrw=dash.creditKrw;
+        var sb=ge('stBal');if(sb)sb.textContent=gf(dash.creditKrw);
+        var cb=ge('creditBal');if(cb)cb.textContent=gf(dash.creditKrw);
+      }
+    }else if(last.balance!=null){CUR.balance=last.balance;updBal();}
+    calcPrice();
+    loadOrderStats();
+  }
+  if(failN){
+    warn.style.display='block';
+    warn.innerHTML='⚠️ '+okN+'개 접수, '+failN+'개 실패. 실패한 상품은 결제되지 않았고 장바구니에 남아 있습니다.';
+    toast(okN+'개 접수 · '+failN+'개 실패','err');
+  }else{
+    toast('✨ '+okN+'개 작업 신청이 모두 접수되었습니다','ok');
+    goTab('orders');loadOrders();
+  }
+}
+
 async function loadOrders(){
   var d=await api('/api/orders/my');var tb=ge('ordersTb'),h='';
   var aco=window._adminCreditOnly;
