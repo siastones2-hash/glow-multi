@@ -242,6 +242,18 @@ a.pm-program { color: inherit; }
 .pm-program-note a { margin-left: 10px; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, .5); transition: color .3s var(--pm-ease), border-color .3s var(--pm-ease); }
 .pm-program-note a:hover { color: var(--pm-sage-light); border-color: var(--pm-sage-light); }
 
+/* cases */
+.pm-cases { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.pm-case { padding: 20px; border: 1px solid var(--pm-line); border-radius: var(--pm-radius-lg); background: #fff; box-shadow: var(--pm-shadow); }
+.pm-case-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pm-case-pair figure { position: relative; margin: 0; overflow: hidden; border-radius: 16px; aspect-ratio: 2 / 3; background: var(--pm-warm-2); }
+.pm-case-pair img { width: 100%; height: 100%; object-fit: cover; }
+.pm-case-pair figcaption { position: absolute; left: 12px; top: 12px; padding: 5px 12px; border-radius: 999px; background: rgba(13, 23, 41, .72); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+.pm-case-pair figure + figure figcaption { background: var(--pm-sage-deep); }
+.pm-case-meta { margin: 18px 4px 4px; color: var(--pm-body); font-size: 14.5px; }
+.pm-case-note { margin: 32px 0 0; color: var(--pm-stone); font-size: 14px; line-height: 1.8; }
+.pm-case-note a { margin-left: 8px; color: var(--pm-ink); border-bottom: 1px solid currentColor; }
+
 /* lobby band */
 .pm-band { padding: var(--pm-space) 0 0; }
 .pm-band figure { margin: 0; overflow: hidden; border-radius: var(--pm-radius-lg); background: var(--pm-warm-2); }
@@ -404,6 +416,8 @@ body.home .consult-call:hover { background: var(--pm-sage-deep); }
   .pm-program { min-height: 180px; padding: 30px 26px; }
   .pm-doctor, .pm-location, .pm-method { grid-template-columns: 1fr; }
   .pm-process, .pm-method-list { grid-template-columns: 1fr; }
+  .pm-cases { grid-template-columns: 1fr; gap: 20px; }
+  .pm-case { padding: 14px; }
   .pm-method-photo { min-height: 280px; }
   .pm-career div { grid-template-columns: 64px 1fr; }
   .pm-map, .pm-map iframe { min-height: 320px; }
