@@ -5,11 +5,12 @@
   <script src="track.js?v=45"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>병원소개 · 튼튼연합의원</title>
-  <meta name="description" content="천안 튼튼연합의원. 통증치료, 비만클리닉.">
+  <meta name="description" content="천안 튼튼연합의원. 마취통증의학과 전문의 정순태 원장. 통증치료, 비만클리닉.">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="styles.css?v=52">
+  <link rel="stylesheet" href="home.css?v=5">
 </head>
-<body>
+<body class="home">
   <a class="skip" href="#main">본문으로</a>
   <header class="site-header">
     <div class="wrap bar">
@@ -24,40 +25,41 @@
       </nav>
     </div>
   </header>
+
   <main id="main">
-    <div class="page-head"><div class="wrap">
-      <p class="crumb"><a href="index.html">홈</a> / 병원소개</p>
-      <h1>병원소개</h1>
-      <p class="lead">천안에서 통증과 비만을 중심으로 보는 의원입니다.</p>
-    </div></div>
+    <section class="pm-page-head">
+      <div class="pm-wrap">
+        <p class="pm-crumb"><a href="index.html">홈</a><span>/</span>병원소개</p>
+        <p class="pm-eyebrow">About</p>
+        <h1 class="pm-page-title">병원소개</h1>
+        <p class="pm-page-lead">천안에서 통증치료와 비만클리닉을 중심으로 진료하는 의원입니다.</p>
+      </div>
+    </section>
 
-
-    <section class="page-block">
-      <div class="wrap">
-        <h2 class="sia-title"><span class="line">병원</span><span class="line"><span class="mark">안내</span></span></h2>
-        <div class="pillars">
-          <article class="pillar">
-            <p class="pillar-num">01</p>
-            <h3>진료</h3>
-            <p>마취통증의학과 전문의 정순태 원장. 중심 진료는 통증치료와 비만클리닉.</p>
-          </article>
-          <article class="pillar">
-            <p class="pillar-num">02</p>
-            <h3>환경</h3>
-            <p>소독과 일회용 기구. 아이와 함께 오시는 분, 멀리서 오시는 어르신도 쉬다 가실 수 있게.</p>
-          </article>
-          <article class="pillar">
-            <p class="pillar-num">03</p>
-            <h3>자리</h3>
-            <p>충남 천안시 서북구 직산읍 삼은3길 1, 1층. 롯데리아 삼거리 대각선. 건물 뒤 무료주차.</p>
-          </article>
+    <section class="pm-section">
+      <div class="pm-wrap">
+        <header class="pm-head" data-reveal>
+          <div>
+            <p class="pm-eyebrow">Clinic</p>
+            <h2 class="pm-title">병원 안내</h2>
+          </div>
+        </header>
+        <div class="pm-cards" data-reveal>
+          <article class="pm-card"><p class="pm-card-num">01</p><h3>진료</h3><p>마취통증의학과 전문의 정순태 원장이 진료합니다. 통증치료와 비만클리닉이 중심입니다.</p></article>
+          <article class="pm-card"><p class="pm-card-num">02</p><h3>환경</h3><p>기구는 소독하고 일회용 기구를 씁니다. 아이와 함께 오시는 분, 어르신도 편히 쉬다 가실 수 있습니다.</p></article>
+          <article class="pm-card"><p class="pm-card-num">03</p><h3>위치</h3><p>천안시 서북구 삼은3길 1, 1층입니다. 건물 뒤편에 무료주차장이 있습니다.</p></article>
         </div>
       </div>
     </section>
 
-    <section class="page-block muted">
-      <div class="wrap">
-        <h2 class="sia-title"><span class="line"><span class="mark">둘러보기</span></span></h2>
+    <section class="pm-section pm-section--warm">
+      <div class="pm-wrap">
+        <header class="pm-head" data-reveal>
+          <div>
+            <p class="pm-eyebrow">Clinic Tour</p>
+            <h2 class="pm-title">둘러보기</h2>
+          </div>
+        </header>
         <div class="tour3d" data-matterport hidden>
           <div class="tour3d-stage">
             <button class="tour3d-poster" type="button">
@@ -66,114 +68,153 @@
             </button>
           </div>
         </div>
-        <div class="room-grid">
-          <figure><img src="assets/rooms/wait.jpg" alt="대기실"><figcaption>대기실</figcaption></figure>
-          <figure><img src="assets/rooms/desk.jpg" alt="진료실"><figcaption>진료실</figcaption></figure>
-          <figure><img src="assets/rooms/ultra.jpg" alt="초음파실"><figcaption>초음파실</figcaption></figure>
-          <figure><img src="assets/rooms/body.jpg" alt="체형검사실"><figcaption>체형검사실</figcaption></figure>
-          <figure><img src="assets/rooms/shock.jpg" alt="체외충격파"><figcaption>체외충격파</figcaption></figure>
-          <figure><img src="assets/rooms/hall.jpg" alt="복도"><figcaption>복도</figcaption></figure>
-          <figure><img src="assets/rooms/bed.jpg" alt="처치실"><figcaption>처치실</figcaption></figure>
-          <figure><img src="assets/rooms/curtain.jpg" alt="치료실"><figcaption>치료실</figcaption></figure>
-          <figure><img src="assets/rooms/table.jpg" alt="도수치료"><figcaption>도수치료</figcaption></figure>
+        <div class="pm-tour is-many" data-reveal>
+          <figure><img src="assets/rooms/wait.jpg" alt="대기실" loading="lazy"><figcaption>대기실</figcaption></figure>
+          <figure><img src="assets/rooms/desk.jpg" alt="진료실" loading="lazy"><figcaption>진료실</figcaption></figure>
+          <figure><img src="assets/rooms/ultra.jpg" alt="초음파실" loading="lazy"><figcaption>초음파실</figcaption></figure>
+          <figure><img src="assets/rooms/body.jpg" alt="체형검사실" loading="lazy"><figcaption>체형검사실</figcaption></figure>
+          <figure><img src="assets/rooms/shock.jpg" alt="체외충격파" loading="lazy"><figcaption>체외충격파</figcaption></figure>
+          <figure><img src="assets/rooms/hall.jpg" alt="복도" loading="lazy"><figcaption>복도</figcaption></figure>
+          <figure><img src="assets/rooms/bed.jpg" alt="처치실" loading="lazy"><figcaption>처치실</figcaption></figure>
+          <figure><img src="assets/rooms/curtain.jpg" alt="치료실" loading="lazy"><figcaption>치료실</figcaption></figure>
+          <figure><img src="assets/rooms/table.jpg" alt="도수치료" loading="lazy"><figcaption>도수치료</figcaption></figure>
         </div>
-        <p class="sia-lead"><a class="block-more" href="departments.html">진료과목</a> <a class="block-more" href="greeting.html">인사말</a> <a class="block-more" href="visit.html">오시는 길</a></p>
       </div>
     </section>
 
-    <section class="page-block">
-      <div class="wrap">
-        <h2 class="sia-title"><span class="line"><span class="mark">진료과목</span></span></h2>
-        <div class="dept-feature">
-          <a href="pain.html">
-            <div>
-              <small>01 · 통증치료</small>
-              <h2>비수술 척추·관절</h2>
-              <p>목·허리·어깨·무릎. X-ray, 초음파, C-arm. 일자목, 거북목, 골반, 수술 후, 스포츠 손상.</p>
+    <section class="pm-section">
+      <div class="pm-wrap">
+        <header class="pm-head" data-reveal>
+          <div>
+            <p class="pm-eyebrow">Departments</p>
+            <h2 class="pm-title">진료과목</h2>
+          </div>
+          <a class="pm-link" href="departments.html">진료과목</a>
+        </header>
+        <div class="pm-dept-grid" data-reveal>
+          <a class="pm-dept is-wide" href="pain.html">
+            <figure class="pm-dept-media"><img src="assets/rooms/xray.jpg" alt="X-ray실" loading="lazy"></figure>
+            <div class="pm-dept-body">
+              <p class="pm-dept-num">01</p>
+              <h3>통증치료</h3>
+              <p class="pm-dept-sub">목 · 허리 · 어깨 · 무릎</p>
+              <p class="pm-dept-text">X-ray, 초음파, C-arm으로 확인한 뒤 수술 없이 치료합니다.</p>
+              <span class="pm-arrow" aria-hidden="true"></span>
             </div>
           </a>
-          <a href="obesity.html">
-            <div>
-              <small>02 · 비만클리닉</small>
-              <h2>1:1 상담</h2>
-              <p>식이, 약물, 주사. 울트라슬림주사, 빼빼로슬림주사, 리프팅 빼빼로슬림, 아르기닌+빼빼로.</p>
+          <a class="pm-dept is-wide" href="obesity.html">
+            <figure class="pm-dept-media"><img src="assets/rooms/body.jpg" alt="체형검사실" loading="lazy"></figure>
+            <div class="pm-dept-body">
+              <p class="pm-dept-num">02</p>
+              <h3>비만클리닉</h3>
+              <p class="pm-dept-sub">식이 · 약물 · 주사</p>
+              <p class="pm-dept-text">체성분·체형 검사와 원장 상담 후 식사, 약물, 주사, 도수 치료를 진행합니다.</p>
+              <span class="pm-arrow" aria-hidden="true"></span>
+            </div>
+          </a>
+          <a class="pm-dept" href="physio.html">
+            <figure class="pm-dept-media"><img src="assets/rooms/pt.jpg" alt="물리·도수치료실" loading="lazy"></figure>
+            <div class="pm-dept-body">
+              <p class="pm-dept-num">03</p>
+              <h3>물리 · 도수</h3>
+              <p class="pm-dept-sub">도수 · 체형</p>
+              <p class="pm-dept-text">일자목, 거북목, 굽은 어깨, 척추측만, 골반, 평발. 체외충격파.</p>
+              <span class="pm-arrow" aria-hidden="true"></span>
+            </div>
+          </a>
+          <a class="pm-dept" href="skin.html">
+            <figure class="pm-dept-media"><img src="assets/rooms/bed.jpg" alt="처치실" loading="lazy"></figure>
+            <div class="pm-dept-body">
+              <p class="pm-dept-num">04</p>
+              <h3>피부</h3>
+              <p class="pm-dept-sub">보툴리눔 · 필러 · 피부</p>
+              <p class="pm-dept-text">보툴리눔톡신, 필러, 윤곽주사, 리프팅, 물광주사. 기미, 여드름, 모공, 점.</p>
+              <span class="pm-arrow" aria-hidden="true"></span>
+            </div>
+          </a>
+          <a class="pm-dept" href="internal.html">
+            <figure class="pm-dept-media"><img src="assets/rooms/ultra.jpg" alt="초음파실" loading="lazy"></figure>
+            <div class="pm-dept-body">
+              <p class="pm-dept-num">05</p>
+              <h3>내과</h3>
+              <p class="pm-dept-sub">혈압 · 혈당 · 예방접종</p>
+              <p class="pm-dept-text">고혈압, 당뇨, 이상지질혈증, 소화기. 복부 초음파.</p>
+              <span class="pm-arrow" aria-hidden="true"></span>
             </div>
           </a>
         </div>
-        <div class="pillars">
-          <a class="pillar" href="physio.html">
-            <p class="pillar-num">03 · 물리 · 도수</p>
-            <h3>체형검사실</h3>
-            <p>척추, 관절, 체형, 수술 후, 스포츠. 체외충격파.</p>
-          </a>
-          <a class="pillar" href="skin.html">
-            <p class="pillar-num">04 · 피부</p>
-            <h3>보툴리눔톡신</h3>
-            <p>건조증, 소양증. 시술 전 피부 상태.</p>
-          </a>
-          <a class="pillar" href="internal.html">
-            <p class="pillar-num">05 · 내과</p>
-            <h3>만성질환</h3>
-            <p>고혈압, 당뇨, 이상지질혈증. 소화기, 초음파.</p>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <section class="page-block muted">
-      <div class="wrap pair">
-        <div>
-          <h2 class="sia-title left"><span class="line"><span class="mark">원장</span></span></h2>
-          <ul class="home-points">
-            <li><strong>인하대병원</strong><span>마취통증의학과 전공의 과정 수료</span></li>
-            <li><strong>제주 중앙 · 김포 우리</strong><span>마취통증의학과 과장</span></li>
-            <li><strong>경희대 · 인하대</strong><span>외래교수 역임</span></li>
-            <li><strong>C-arm</strong><span>경추·흉추, 요추·천추 중재 수료</span></li>
-          </ul>
-          <a class="block-more" href="greeting.html">인사말</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="page-block">
-      <div class="wrap">
-        <ul class="reg-list">
-          <li>통증의학과</li>
-          <li>재활의학과</li>
-          <li>신경과</li>
-          <li>피부과</li>
-          <li>내과</li>
-          <li>정형외과</li>
-          <li>이비인후과</li>
-          <li>비뇨기과</li>
-          <li>가정의학과</li>
+        <ul class="pm-chips pm-chips--plain" data-reveal>
+          <li>통증의학과</li><li>재활의학과</li><li>신경과</li><li>피부과</li><li>내과</li><li>정형외과</li><li>이비인후과</li><li>비뇨기과</li><li>가정의학과</li>
         </ul>
       </div>
     </section>
 
+    <section class="pm-section pm-section--warm">
+      <div class="pm-wrap pm-doctor">
+        <div class="pm-doctor-head" data-reveal>
+          <p class="pm-eyebrow">Doctor</p>
+          <h2 class="pm-title">원장</h2>
+          <p class="pm-doctor-meta">마취통증의학과 전문의 정순태</p>
+          <a class="pm-btn pm-btn--navy" href="greeting.html">인사말</a>
+        </div>
+        <dl class="pm-career" data-reveal>
+          <div><dt>수련</dt><dd>인하대병원 마취통증의학과 전공의 과정 수료</dd></div>
+          <div><dt>병원</dt><dd>제주 중앙병원, 김포 우리병원 마취통증의학과 과장</dd></div>
+          <div><dt>교육</dt><dd>경희대 · 인하대 외래교수 역임</dd></div>
+          <div><dt>수료</dt><dd>C-arm 경추·흉추, 요추·천추 중재</dd></div>
+        </dl>
+      </div>
+    </section>
 
-    <section class="page-block" id="hours">
-      <div class="wrap">
-        <h2 class="sia-title"><span class="line">진료</span><span class="line"><span class="mark">시간</span></span></h2>
-        <p class="sia-lead">진료 시작 08:30. 오후 진료 13:30. 목요일 야간 20:00. 점심 12:30–13:30.</p>
-        <ul class="day-row">
-          <li data-day="1"><span>월 · 화 · 금</span><strong>08:30–18:30</strong></li>
-          <li data-day="3"><span>수</span><strong>08:30–13:00</strong></li>
-          <li data-day="4"><span>목 · 야간</span><strong>08:30–20:00</strong></li>
-          <li data-day="6"><span>토</span><strong>08:30–13:00</strong></li>
-          <li data-day="0"><span>일 · 공휴일</span><strong>휴무</strong></li>
-        </ul>
-        <div class="home-meta">
-          <p>충남 천안시 서북구 직산읍 삼은3길 1, 1층. 롯데리아 삼거리 대각선. 건물 뒤 무료주차.</p>
-          <p><a href="tel:041-588-5575">041-588-5575</a></p>
+    <section class="pm-section" id="hours">
+      <div class="pm-wrap">
+        <header class="pm-head" data-reveal>
+          <div>
+            <p class="pm-eyebrow">Hours</p>
+            <h2 class="pm-title">진료시간</h2>
+          </div>
+        </header>
+        <div class="pm-split">
+          <div data-reveal>
+            <ul class="pm-hours">
+              <li data-day="1"><span>월 · 화 · 금</span><strong>08:30 – 18:30</strong></li>
+              <li data-day="3"><span>수</span><strong>08:30 – 13:00</strong></li>
+              <li data-day="4"><span>목 · 야간</span><strong>08:30 – 20:00</strong></li>
+              <li data-day="6"><span>토</span><strong>08:30 – 13:00</strong></li>
+              <li data-day="0"><span>일 · 공휴일</span><strong>휴무</strong></li>
+            </ul>
+            <p class="pm-hours-note">점심시간 12:30 – 13:30</p>
+          </div>
+          <div data-reveal>
+            <dl class="pm-career">
+              <div><dt>주소</dt><dd>충남 천안시 서북구 직산읍 삼은3길 1, 1층</dd></div>
+              <div><dt>이정표</dt><dd>롯데리아 삼거리 대각선</dd></div>
+              <div><dt>주차</dt><dd>건물 뒤편 무료주차</dd></div>
+              <div><dt>전화</dt><dd><a href="tel:041-588-5575">041-588-5575</a></dd></div>
+            </dl>
+            <div class="pm-actions"><a class="pm-btn pm-btn--navy" href="visit.html">오시는 길</a></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pm-close">
+      <div class="pm-wrap" data-reveal>
+        <p class="pm-eyebrow">Teunteun Union Clinic</p>
+        <h2>천안 튼튼연합의원</h2>
+        <p class="pm-close-sub">통증치료 · 비만클리닉</p>
+        <div class="pm-actions pm-actions--center">
+          <a class="pm-btn pm-btn--light" href="tel:041-588-5575">041-588-5575</a>
+          <button class="pm-btn pm-btn--ghost" type="button" data-consult>상담신청</button>
         </div>
       </div>
     </section>
   </main>
+
   <footer class="site-footer">
     <div class="wrap foot">
       <div><p class="word"><b>튼튼</b>연합의원</p><p>마취통증의학과 · 정순태 원장</p><a href="tel:041-588-5575">041-588-5575</a></div>
-      <div><p class="foot-label">진료</p><a href="pain.html">통증치료</a><a href="obesity.html">비만클리닉</a><a href="departments.html">물리 · 피부 · 내과</a></div>
+      <div><p class="foot-label">진료</p><a href="pain.html">통증치료</a><a href="obesity.html">비만클리닉</a><a href="physio.html">물리·도수</a><a href="skin.html">피부</a><a href="internal.html">내과</a></div>
       <div><p class="foot-label">찾아오기</p><p>충남 천안시 서북구 직산읍 삼은3길 1</p><a href="visit.html">오시는 길</a></div>
     </div>
     <div class="wrap legal"><p>대표 정순태 · 사업자등록번호 726-26-00908</p><p>진료 결과는 개인마다 다르며, 치료 전 원장 상담이 필요합니다.</p></div>
