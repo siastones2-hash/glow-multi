@@ -223,6 +223,25 @@ if (todayEl) {
   items.forEach((el) => io.observe(el));
 })();
 
+(() => {
+  const MATTERPORT_ID = "";
+  const id = new URLSearchParams(location.search).get("mp") || MATTERPORT_ID;
+  const boxes = document.querySelectorAll("[data-matterport]");
+  if (!id || !/^[A-Za-z0-9]+$/.test(id) || !boxes.length) return;
+  boxes.forEach((box) => {
+    box.hidden = false;
+    box.querySelector(".tour3d-poster").addEventListener("click", () => {
+      const frame = document.createElement("iframe");
+      frame.src = `https://my.matterport.com/show/?m=${id}&play=1&qs=1&brand=0&help=0&title=0`;
+      frame.title = "튼튼연합의원 3D 둘러보기";
+      frame.allow = "fullscreen; xr-spatial-tracking";
+      frame.allowFullscreen = true;
+      box.querySelector(".tour3d-stage").replaceChildren(frame);
+      if (window.ttEvent) window.ttEvent("tour3d_open", { page: location.pathname });
+    }, { once: true });
+  });
+})();
+
 document.addEventListener("click", (event) => {
   const link = event.target.closest("a");
   if (!link || !window.ttEvent) return;
