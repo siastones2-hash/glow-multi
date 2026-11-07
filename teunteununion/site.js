@@ -177,7 +177,7 @@ if (todayEl) {
     '<p class="consult-kicker">튼튼연합의원</p>',
     '<h2 id="consultTitle">상담신청</h2>',
     '<p class="consult-phone"><a href="tel:041-588-5575">041-588-5575</a></p>',
-    '<p>통증, 비만, 물리·도수, 피부, 내과.</p>',
+    '<p>비만, 통증, 물리·도수, 피부, 내과.</p>',
     '<p>진료 시작 08:30. 오후 진료 13:30. 목요일 야간 20:00.</p>',
     '<a class="consult-call" href="tel:041-588-5575">전화하기</a>',
     '</div>'
