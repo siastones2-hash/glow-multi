@@ -498,3 +498,4 @@ body.home .consult-call:hover { background: var(--pm-sage-deep); }
   .pm-dept, .pm-equip, .pm-program, .pm-btn, .pm-dept-media img, .pm-tour img { transition: none; }
   body.has-intro .pm-hero-eyebrow, body.has-intro .pm-hero-actions { opacity: 1; }
 }
+.pm-figure--dark { background: #000; box-shadow: none; }

@@ -224,7 +224,7 @@ if (todayEl) {
 })();
 
 (() => {
-  const MATTERPORT_ID = "";
+  const MATTERPORT_ID = "UBDXuuDBBTn";
   const id = new URLSearchParams(location.search).get("mp") || MATTERPORT_ID;
   const boxes = document.querySelectorAll("[data-matterport]");
   if (!id || !/^[A-Za-z0-9]+$/.test(id) || !boxes.length) return;
