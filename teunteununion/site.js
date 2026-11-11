@@ -243,6 +243,19 @@ if (todayEl) {
 })();
 
 document.addEventListener("click", (event) => {
+  const zoom = event.target.closest("[data-zoom]");
+  if (!zoom) return;
+  const layer = document.createElement("div");
+  layer.className = "pm-zoom";
+  layer.innerHTML = `<img src="${zoom.dataset.zoom}" alt="">`;
+  const close = () => { layer.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  layer.addEventListener("click", close);
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(layer);
+});
+
+document.addEventListener("click", (event) => {
   const link = event.target.closest("a");
   if (!link || !window.ttEvent) return;
   const href = link.getAttribute("href") || "";
