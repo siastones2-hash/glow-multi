@@ -71,6 +71,10 @@ nav a.on, nav > a:hover, .drop > a:hover { background: transparent; color: #1a5c
 .menu-btn span:before, .menu-btn span:after { content: ""; position: absolute; left: 0; }
 .menu-btn span:before { top: -6px; }
 .menu-btn span:after { top: 6px; }
+.menu-btn span:before, .menu-btn span:after { transition: transform .3s ease, top .3s ease; }
+.menu-btn[aria-expanded="true"] span { background: transparent; }
+.menu-btn[aria-expanded="true"] span:before { top: 0; transform: rotate(45deg); }
+.menu-btn[aria-expanded="true"] span:after { top: 0; transform: rotate(-45deg); }
 
 .visual { height: clamp(260px, 34vw, 420px); background: #ddd6cb; overflow: hidden; }
 .visual img { width: 100%; height: 100%; object-fit: cover; object-position: center 62%; }
@@ -380,7 +384,7 @@ body.has-intro.intro-lock { overflow: hidden; }
   box-shadow: 0 10px 24px rgba(0,0,0,.18);
 }
 .dock a, .dock button {
-  flex: 1; border: 0; background: transparent; color: #fff; cursor: pointer;
+  flex: 1; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; color: #fff; cursor: pointer;
   padding: 14px 8px; font-weight: 800; font-size: 15px;
 }
 .dock button { background: #1a5cff; }
