@@ -230,13 +230,27 @@ if (todayEl) {
   if (!id || !/^[A-Za-z0-9]+$/.test(id) || !boxes.length) return;
   boxes.forEach((box) => {
     box.hidden = false;
-    box.querySelector(".tour3d-poster").addEventListener("click", () => {
+    const poster = box.querySelector(".tour3d-poster");
+    poster.addEventListener("click", () => {
+      const stage = box.querySelector(".tour3d-stage");
       const frame = document.createElement("iframe");
-      frame.src = `https://my.matterport.com/show/?m=${id}&play=1&qs=1&brand=0&help=0&title=0`;
+      frame.src = `https://my.matterport.com/show/?m=${id}&play=1&brand=0&help=0&title=0&hr=0&vr=0&search=0&dh=1`;
       frame.title = "튼튼연합의원 3D 둘러보기";
       frame.allow = "fullscreen; xr-spatial-tracking";
       frame.allowFullscreen = true;
-      box.querySelector(".tour3d-stage").replaceChildren(frame);
+      const crop = document.createElement("div");
+      crop.className = "tour3d-crop";
+      crop.appendChild(frame);
+      stage.prepend(crop);
+      poster.classList.add("is-loading");
+      poster.disabled = true;
+      poster.querySelector(".tour3d-play").innerHTML = "<b>3D</b>불러오는 중";
+      frame.addEventListener("load", () => {
+        setTimeout(() => {
+          poster.classList.add("is-gone");
+          setTimeout(() => poster.remove(), 700);
+        }, 3200);
+      });
       if (window.ttEvent) window.ttEvent("tour3d_open", { page: location.pathname });
     }, { once: true });
   });
