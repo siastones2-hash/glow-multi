@@ -238,6 +238,8 @@ if (todayEl) {
       frame.title = "튼튼연합의원 3D 둘러보기";
       frame.allow = "fullscreen; xr-spatial-tracking";
       frame.allowFullscreen = true;
+      // Without a sandbox, Matterport on phones escapes the embed into a new tab or a full-page redirect.
+      frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-pointer-lock");
       const crop = document.createElement("div");
       crop.className = "tour3d-crop";
       crop.appendChild(frame);
@@ -245,11 +247,23 @@ if (todayEl) {
       poster.classList.add("is-loading");
       poster.disabled = true;
       poster.querySelector(".tour3d-play").innerHTML = "<b>3D</b>불러오는 중";
+      const hide = () => {
+        if (poster.classList.contains("is-gone")) return;
+        poster.classList.add("is-gone");
+        setTimeout(() => poster.remove(), 700);
+      };
+      // Mobile browsers block Matterport autoplay and show its own branded start screen,
+      // so the poster stays on top and lets the next tap fall through to start the tour.
+      const touch = matchMedia("(hover: none)").matches;
       frame.addEventListener("load", () => {
+        if (!touch) { setTimeout(hide, 3200); return; }
         setTimeout(() => {
-          poster.classList.add("is-gone");
-          setTimeout(() => poster.remove(), 700);
-        }, 3200);
+          poster.classList.remove("is-loading");
+          poster.classList.add("is-tap");
+          poster.querySelector(".tour3d-play").innerHTML = "<b>3D</b>화면을 눌러 시작";
+          window.addEventListener("blur", () => setTimeout(hide, 600), { once: true });
+          setTimeout(hide, 9000);
+        }, 2500);
       });
       if (window.ttEvent) window.ttEvent("tour3d_open", { page: location.pathname });
     }, { once: true });
