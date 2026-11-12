@@ -88,6 +88,13 @@ body.home .home-hero::before {
     radial-gradient(ellipse at center, transparent 40%, rgba(13, 23, 41, .45) 100%);
 }
 body.home .home-hero .hero-slide::after { background: rgba(13, 23, 41, .42); }
+body.home .home-hero .hero-copy {
+  position: absolute; inset: 0; z-index: 2;
+  display: grid; place-items: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .9s var(--pm-ease);
+}
+body.home .home-hero .hero-copy.is-on { opacity: 1; pointer-events: auto; }
 body.home .home-hero .hero-inner { width: min(100% - 48px, 1000px); padding: 40px 0 120px; }
 .pm-hero-eyebrow {
   margin: 0 0 28px; color: rgba(255, 255, 255, .78);

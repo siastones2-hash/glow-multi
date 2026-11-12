@@ -110,12 +110,18 @@ if (todayEl) {
 (() => {
   const slides = [...document.querySelectorAll(".home-hero .hero-slide")];
   const dots = [...document.querySelectorAll(".home-hero .hero-dots button")];
+  const copies = [...document.querySelectorAll(".home-hero .hero-copy")];
   if (slides.length < 2) return;
   let index = 0;
   let timer = 0;
   const show = (n) => {
     index = (n + slides.length) % slides.length;
     slides.forEach((slide, i) => slide.classList.toggle("is-on", i === index));
+    copies.forEach((copy, i) => {
+      const on = i === index;
+      copy.classList.toggle("is-on", on);
+      copy.setAttribute("aria-hidden", on ? "false" : "true");
+    });
     dots.forEach((dot, i) => {
       const on = i === index;
       dot.classList.toggle("is-on", on);
