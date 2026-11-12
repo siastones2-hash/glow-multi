@@ -40,7 +40,7 @@ html.is-hold .hold {
   <meta name="description" content="천안 튼튼연합의원 통증치료. 마취통증의학과 전문의. 목, 허리, 어깨, 무릎. X-ray, 초음파, C-arm.">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="styles.css?v=55">
-  <link rel="stylesheet" href="home.css?v=11">
+  <link rel="stylesheet" href="home.css?v=12">
 </head>
 <body class="home">
   <div class="hold">
@@ -60,7 +60,7 @@ html.is-hold .hold {
       <nav data-nav>
         <a href="about.html">병원소개</a>
         <a href="greeting.html">인사말</a>
-        <div class="drop"><a href="departments.html">진료과목</a><div class="drop-menu"><a href="obesity.html"><strong>비만클리닉</strong><em>식이 · 약물 · 주사</em></a><a href="pain.html"><strong>통증치료</strong><em>목 · 허리 · 어깨 · 무릎</em></a><a href="physio.html"><strong>물리 · 도수</strong><em>도수 · 체형</em></a><a href="skin.html"><strong>피부</strong><em>보툴리눔 · 필러 · 피부</em></a><a href="internal.html"><strong>내과</strong><em>혈압 · 혈당 · 예방접종</em></a></div></div>
+        <div class="drop"><a href="departments.html">진료과목</a><div class="drop-menu"><a href="obesity.html"><strong>비만클리닉</strong><em>식이 · 주사</em></a><a href="pain.html"><strong>통증치료</strong><em>목 · 허리 · 어깨 · 무릎</em></a><a href="physio.html"><strong>물리치료</strong><em>체형 · 충격파</em></a><a href="skin.html"><strong>피부</strong><em>보툴리눔 · 필러 · 피부</em></a><a href="internal.html"><strong>내과</strong><em>혈압 · 혈당 · 예방접종</em></a></div></div>
         <a href="visit.html">오시는길</a>
         <button class="nav-cta" type="button" data-consult>상담신청</button>
       </nav>
@@ -85,13 +85,23 @@ html.is-hold .hold {
             <h2 class="pm-title">검사 장비</h2>
           </div>
         </header>
-        <div class="pm-split">
-          <dl class="pm-career" data-reveal>
-          <div><dt>X-ray</dt><dd>뼈와 관절 상태를 확인합니다.</dd></div>
-          <div><dt>초음파</dt><dd>근육과 힘줄을 봅니다.</dd></div>
-          <div><dt>C-arm</dt><dd>영상으로 위치를 보며 시술합니다. 경추·흉추, 요추·천추 중재 수료.</dd></div>
-        </dl>
-          <figure class="pm-split-media" data-reveal><img src="assets/rooms/xray.jpg" alt="X-ray실" loading="lazy"></figure>
+        <div class="pm-gear" data-reveal>
+          <article>
+            <img src="assets/rooms/xray.jpg" alt="X-ray실">
+            <div><p>X-ray</p><h3>뼈와 관절</h3><span>목, 등, 허리, 어깨, 무릎의 뼈와 관절을 확인합니다.</span></div>
+          </article>
+          <article>
+            <img src="assets/rooms/ultra.jpg" alt="초음파실">
+            <div><p>초음파</p><h3>근육과 힘줄</h3><span>어깨, 무릎의 근육과 힘줄을 확인합니다. 복부 초음파도 봅니다.</span></div>
+          </article>
+          <article>
+            <img src="assets/rooms/carm.jpg" alt="C-arm실">
+            <div><p>C-arm</p><h3>영상으로 보는 시술</h3><span>위치를 영상으로 보며 경추·흉추, 요추·천추 시술을 합니다.</span></div>
+          </article>
+          <article>
+            <img src="assets/rooms/shock.jpg" alt="체외충격파">
+            <div><p>체외충격파</p><h3>힘줄과 근육</h3><span>어깨, 무릎처럼 힘줄과 근육이 아픈 부위에 사용합니다.</span></div>
+          </article>
         </div>
       </div>
     </section>
@@ -105,40 +115,32 @@ html.is-hold .hold {
           </div>
         </header>
         <ol class="pm-topics" data-reveal>
-          <li id="neck"><div><small>01</small><h3>목</h3></div><div>
-            <p>목 통증과 일자목, 거북목을 진료합니다.</p>
-            <p>뼈는 X-ray, 근육과 힘줄은 초음파로 확인합니다. 경추 시술이 필요하면 C-arm으로 위치를 보며 진행합니다.</p>
-            <p>시술 후 일시적으로 불편감이 있을 수 있습니다.</p>
+          <li id="spine"><div><small>01</small><h3>척추</h3></div><div>
+            <p>목, 등, 허리를 진료합니다.</p>
+            <p>일자목, 거북목, 허리 통증, 다리로 퍼지는 저림을 X-ray와 초음파로 확인합니다. 경추나 요추 시술이 필요하면 C-arm으로 위치를 보며 진행합니다.</p>
           </div></li>
-          <li id="back"><div><small>02</small><h3>허리</h3></div><div>
-            <p>허리 통증과 다리로 퍼지는 저림을 진료합니다.</p>
-            <p>X-ray와 초음파로 먼저 확인하고, 필요하면 C-arm으로 요추·천추 시술을 합니다.</p>
-            <p>도수치료가 맞는 경우 물리·도수치료실에서 함께 치료합니다.</p>
-          </div></li>
-          <li id="shoulder"><div><small>03</small><h3>어깨</h3></div><div>
-            <p>팔을 올리거나 돌릴 때 아픈 어깨, 굽은 어깨를 진료합니다.</p>
-            <p>근육과 힘줄은 초음파, 뼈와 관절은 X-ray로 확인합니다.</p>
-          </div></li>
-          <li id="knee"><div><small>04</small><h3>무릎</h3></div><div>
-            <p>걸을 때나 계단을 오를 때 아픈 무릎을 진료합니다.</p>
-            <p>X-ray와 초음파로 관절을 확인하고, 다리 정렬이나 골반·평발이 함께 있으면 체형 진료를 같이 합니다.</p>
-            <p>체중이 고민이라면 비만클리닉 진료도 함께 받을 수 있습니다.</p>
+          <li id="joint"><div><small>02</small><h3>관절</h3></div><div>
+            <p>어깨와 무릎을 진료합니다.</p>
+            <p>오십견, 회전근개, 걸을 때 아픈 무릎을 초음파와 X-ray로 확인합니다. 체중이 함께 고민이면 비만클리닉 진료도 받으실 수 있습니다.</p>
           </div></li>
         </ol>
       </div>
     </section>
 
-    <section class="pm-section">
+    <section class="pm-section" id="iv">
       <div class="pm-wrap">
         <header class="pm-head" data-reveal>
           <div>
             <p class="pm-eyebrow">IV Therapy</p>
-            <h2 class="pm-title">영양 수액</h2>
+            <h2 class="pm-title">영양수액</h2>
           </div>
         </header>
-        <ul class="pm-chips" data-reveal>
-          <li>목 · 경추</li><li>허리</li><li>어깨 · 오십견 · 회전근개</li><li>무릎</li><li>만성통증</li><li>경추성 두통</li><li>손발저림</li><li>만성피로</li><li>감기몸살</li><li>장염 · 설사</li><li>간</li><li>갱년기</li><li>대상포진</li><li>피부</li><li>두통 · 어지럼 · 이명</li>
-        </ul>
+        <div class="pm-iv" data-reveal>
+          <article><h3>피로</h3><p>만성피로, 감기몸살</p></article>
+          <article><h3>소화</h3><p>장염 · 설사, 간</p></article>
+          <article><h3>통증과 함께</h3><p>만성통증, 대상포진, 두통 · 어지럼 · 이명</p></article>
+          <article><h3>그 외</h3><p>갱년기, 피부, 손발저림, 경추성 두통</p></article>
+        </div>
       </div>
     </section>
 
@@ -147,14 +149,15 @@ html.is-hold .hold {
         <header class="pm-head" data-reveal>
           <div>
             <p class="pm-eyebrow">Clinic</p>
-            <h2 class="pm-title">1층 치료 공간</h2>
+            <h2 class="pm-title">치료 공간</h2>
           </div>
-          <a class="pm-link" href="physio.html">물리 · 도수치료</a>
+          <a class="pm-link" href="physio.html">물리치료</a>
         </header>
         <div class="pm-tour" data-reveal>
           <figure><img src="assets/rooms/xray.jpg" alt="X-ray실" loading="lazy"><figcaption>X-ray실</figcaption></figure>
           <figure><img src="assets/rooms/ultra.jpg" alt="초음파실" loading="lazy"><figcaption>초음파실</figcaption></figure>
           <figure><img src="assets/rooms/carm.jpg" alt="C-arm실" loading="lazy"><figcaption>C-arm실</figcaption></figure>
+          <figure><img src="assets/rooms/shock.jpg" alt="체외충격파" loading="lazy"><figcaption>체외충격파</figcaption></figure>
         </div>
       </div>
     </section>
@@ -175,12 +178,13 @@ html.is-hold .hold {
   <footer class="site-footer">
     <div class="wrap foot">
       <div><p class="word"><b>튼튼</b>연합의원</p><p>마취통증의학과 · 정순태 원장</p><a href="tel:041-588-5575">041-588-5575</a></div>
-      <div><p class="foot-label">진료</p><a href="obesity.html">비만클리닉</a><a href="pain.html">통증치료</a><a href="physio.html">물리·도수</a><a href="skin.html">피부</a><a href="internal.html">내과</a></div>
-      <div><p class="foot-label">찾아오기</p><p>충남 천안시 서북구 직산읍 삼은3길 1</p><a href="visit.html">오시는 길</a></div>
+      <div><p class="foot-label">진료</p><a href="obesity.html">비만클리닉</a><a href="pain.html">통증치료</a><a href="physio.html">물리치료</a><a href="skin.html">피부</a><a href="internal.html">내과</a></div>
+      <div><p class="foot-label">찾아오기</p><p>충남 천안시 서북구 직산읍 삼은3길 1, 1층</p>
+</div>
     </div>
     <div class="wrap legal"><p>대표 정순태 · 사업자등록번호 726-26-00908</p><p>진료 결과는 개인마다 다르며, 치료 전 원장 상담이 필요합니다.</p></div>
   </footer>
   <div class="dock"><a href="tel:041-588-5575">전화</a><button type="button" data-consult>상담신청</button></div>
-  <script src="site.js?v=55"></script>
+  <script src="site.js?v=56"></script>
 </body>
 </html>

@@ -37,10 +37,10 @@ html.is-hold .hold {
   <script src="track.js?v=45"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>비만클리닉 · 튼튼연합의원</title>
-  <meta name="description" content="천안 튼튼연합의원 비만클리닉. 체성분·체형 검사와 원장 상담을 거쳐 식사, 약물, 주사, 도수 치료를 진행합니다.">
+  <meta name="description" content="천안 튼튼연합의원 비만클리닉. 체성분·체형 검사와 원장 상담을 거쳐 식사와 주사를 진행합니다.">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="styles.css?v=55">
-  <link rel="stylesheet" href="home.css?v=11">
+  <link rel="stylesheet" href="home.css?v=12">
 </head>
 <body class="home">
   <div class="hold">
@@ -60,7 +60,7 @@ html.is-hold .hold {
       <nav data-nav>
         <a href="about.html">병원소개</a>
         <a href="greeting.html">인사말</a>
-        <div class="drop"><a href="departments.html">진료과목</a><div class="drop-menu"><a href="obesity.html"><strong>비만클리닉</strong><em>식이 · 약물 · 주사</em></a><a href="pain.html"><strong>통증치료</strong><em>목 · 허리 · 어깨 · 무릎</em></a><a href="physio.html"><strong>물리 · 도수</strong><em>도수 · 체형</em></a><a href="skin.html"><strong>피부</strong><em>보툴리눔 · 필러 · 피부</em></a><a href="internal.html"><strong>내과</strong><em>혈압 · 혈당 · 예방접종</em></a></div></div>
+        <div class="drop"><a href="departments.html">진료과목</a><div class="drop-menu"><a href="obesity.html"><strong>비만클리닉</strong><em>식이 · 주사</em></a><a href="pain.html"><strong>통증치료</strong><em>목 · 허리 · 어깨 · 무릎</em></a><a href="physio.html"><strong>물리치료</strong><em>체형 · 충격파</em></a><a href="skin.html"><strong>피부</strong><em>보툴리눔 · 필러 · 피부</em></a><a href="internal.html"><strong>내과</strong><em>혈압 · 혈당 · 예방접종</em></a></div></div>
         <a href="visit.html">오시는길</a>
         <button class="nav-cta" type="button" data-consult>상담신청</button>
       </nav>
@@ -73,7 +73,7 @@ html.is-hold .hold {
         <p class="pm-crumb"><a href="index.html">홈</a><span>/</span><a href="departments.html">진료과목</a><span>/</span>비만클리닉</p>
         <p class="pm-eyebrow">Obesity Clinic</p>
         <h1 class="pm-page-title">비만클리닉</h1>
-        <p class="pm-page-lead">체성분·체형 검사와 원장 상담을 거쳐 식사, 약물, 주사, 도수 치료를 진행합니다.</p>
+        <p class="pm-page-lead">체성분·체형 검사와 원장 상담을 거쳐 식사와 주사를 진행합니다.</p>
       </div>
     </section>
 
@@ -98,13 +98,13 @@ html.is-hold .hold {
           </li>
           <li>
             <span class="pm-process-num">03</span>
-            <h3>약물 · 주사</h3>
-            <p>진료 후 필요한 약물이나 주사를 처방합니다.</p>
+            <h3>주사</h3>
+            <p>진료 후 필요한 주사를 진행합니다.</p>
           </li>
           <li>
             <span class="pm-process-num">04</span>
-            <h3>도수</h3>
-            <p>관절에 무리가 덜 가는 운동과 도수치료를 함께 합니다.</p>
+            <h3>식사</h3>
+            <p>식사 시간과 양, 구성을 함께 정합니다.</p>
           </li>
         </ol>
       </div>
@@ -127,19 +127,9 @@ html.is-hold .hold {
               <span>식사 시간과 양, 구성을 함께 정합니다.</span>
             </article>
             <article>
-              <p>약물</p>
-              <h3>체중 조절 약물</h3>
-              <span>진료 후 필요한 경우 처방합니다.</span>
-            </article>
-            <article>
               <p>주사</p>
               <h3>주사 프로그램</h3>
               <span>울트라슬림주사, 빼빼로슬림주사, 리프팅 빼빼로슬림, 아르기닌 + 빼빼로.</span>
-            </article>
-            <article>
-              <p>운동</p>
-              <h3>도수 · 근력</h3>
-              <span>물리·도수치료실에서 관절에 무리가 덜 가는 운동을 합니다.</span>
             </article>
           </div>
         </div>
@@ -154,11 +144,11 @@ html.is-hold .hold {
             <h2 class="pm-title">주사 프로그램</h2>
           </div>
         </header>
-        <div class="pm-program-grid" data-reveal>
-          <article class="pm-program"><p>01</p><h3>울트라슬림주사</h3></article>
-          <article class="pm-program"><p>02</p><h3>빼빼로슬림주사</h3></article>
-          <article class="pm-program"><p>03</p><h3>리프팅 빼빼로슬림</h3></article>
-          <article class="pm-program"><p>04</p><h3>아르기닌 + 빼빼로</h3></article>
+        <div class="pm-program-grid" id="injection" data-reveal>
+          <article class="pm-program"><p>01</p><h3>울트라슬림주사</h3><span>진료 때 부위와 용량을 정합니다.</span></article>
+          <article class="pm-program"><p>02</p><h3>빼빼로슬림주사</h3><span>진료 때 부위와 용량을 정합니다.</span></article>
+          <article class="pm-program"><p>03</p><h3>리프팅 빼빼로슬림</h3><span>진료 때 부위와 용량을 정합니다.</span></article>
+          <article class="pm-program"><p>04</p><h3>아르기닌 + 빼빼로</h3><span>진료 때 함께 맞는지 정합니다.</span></article>
         </div>
       </div>
     </section>
@@ -176,7 +166,7 @@ html.is-hold .hold {
         <div class="pm-tour" data-reveal>
           <figure><img src="assets/rooms/body.jpg" alt="체형검사실" loading="lazy"><figcaption>체형검사실</figcaption></figure>
           <figure><img src="assets/rooms/lobby.jpg" alt="접수 · 수납" loading="lazy"><figcaption>접수 · 수납</figcaption></figure>
-          <figure><img src="assets/rooms/pt.jpg" alt="도수치료실" loading="lazy"><figcaption>도수치료실</figcaption></figure>
+          <figure><img src="assets/rooms/curtain.jpg" alt="물리치료실" loading="lazy"><figcaption>물리치료실</figcaption></figure>
         </div>
       </div>
     </section>
@@ -254,12 +244,13 @@ html.is-hold .hold {
   <footer class="site-footer">
     <div class="wrap foot">
       <div><p class="word"><b>튼튼</b>연합의원</p><p>마취통증의학과 · 정순태 원장</p><a href="tel:041-588-5575">041-588-5575</a></div>
-      <div><p class="foot-label">진료</p><a href="pain.html">통증치료</a><a href="physio.html">물리·도수</a><a href="skin.html">피부</a><a href="internal.html">내과</a></div>
-      <div><p class="foot-label">찾아오기</p><p>충남 천안시 서북구 직산읍 삼은3길 1</p><a href="visit.html">오시는 길</a></div>
+      <div><p class="foot-label">진료</p><a href="pain.html">통증치료</a><a href="physio.html">물리치료</a><a href="skin.html">피부</a><a href="internal.html">내과</a></div>
+      <div><p class="foot-label">찾아오기</p><p>충남 천안시 서북구 직산읍 삼은3길 1, 1층</p>
+</div>
     </div>
     <div class="wrap legal"><p>대표 정순태 · 사업자등록번호 726-26-00908</p><p>진료 결과는 개인마다 다르며, 치료 전 원장 상담이 필요합니다.</p></div>
   </footer>
   <div class="dock"><a href="tel:041-588-5575">전화</a><button type="button" data-consult>상담신청</button></div>
-  <script src="site.js?v=55"></script>
+  <script src="site.js?v=56"></script>
 </body>
 </html>
