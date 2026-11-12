@@ -2,6 +2,38 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
+  <script>
+(function () {
+  var host = location.hostname;
+  if (host === "localhost" || host === "127.0.0.1" || host === "") return;
+  try {
+    if (/(?:^|[?&])see=1(?:&|$)/.test(location.search)) {
+      localStorage.setItem("tt_see", "1");
+      var url = new URL(location.href);
+      url.searchParams.delete("see");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+    if (localStorage.getItem("tt_see") === "1") return;
+  } catch (e) {}
+  document.documentElement.classList.add("is-hold");
+})();
+</script>
+<style>
+html.is-hold, html.is-hold body { margin: 0; background: #13213a; }
+html.is-hold body > :not(.hold) { display: none !important; }
+.hold { display: none; }
+html.is-hold .hold {
+  display: flex; min-height: 100vh; min-height: 100svh; box-sizing: border-box;
+  align-items: center; justify-content: center; padding: 40px 24px;
+  text-align: center; color: #fff;
+  font-family: Pretendard, "Apple SD Gothic Neo", sans-serif;
+}
+.hold-card { width: min(440px, 100%); }
+.hold .name { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -0.02em; color: rgba(255,255,255,.62); }
+.hold h1 { margin: 18px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.35; }
+.hold .sub { margin: 16px 0 0; color: rgba(255,255,255,.74); font-size: 16px; line-height: 1.75; }
+.hold a { display: inline-block; margin-top: 32px; color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.45); padding-bottom: 4px; }
+</style>
   <script src="track.js?v=45"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>내과 · 튼튼연합의원</title>
@@ -11,6 +43,15 @@
   <link rel="stylesheet" href="home.css?v=10">
 </head>
 <body class="home">
+  <div class="hold">
+    <div class="hold-card">
+      <p class="name">튼튼연합의원</p>
+      <h1>홈페이지를<br>수정하고 있습니다.</h1>
+      <p class="sub">진료는 평소대로 합니다.<br>문의는 전화로 주세요.</p>
+      <a href="tel:041-588-5575">041-588-5575</a>
+    </div>
+  </div>
+
   <a class="skip" href="#main">본문으로</a>
   <header class="site-header">
     <div class="wrap bar">
